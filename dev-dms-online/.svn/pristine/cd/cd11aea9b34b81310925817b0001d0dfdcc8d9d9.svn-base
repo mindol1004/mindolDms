@@ -1,0 +1,776 @@
+package dms.ep.epssxbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]단말기대금계좌송금정산관리</li>
+ * <li>설  명 : <pre>단말기대금계좌송금정산관리 FU</pre></li>
+ * <li>작성일 : 2015-10-23 09:54:09</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FEPEqpAmtRmtXclMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPEqpAmtRmtXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>단말기대금계좌송금조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:54:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STRD_FR [정산기준시작일자]
+	 *	- field : STRD_TO [정산기준종료일자]
+	 *	- field : DATA_GB [구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : ACCORMT_XCL_NO [계좌송금 정산 번호]
+	 *		- field : XCL_STRD_STA_DT [정산 기준 시작 일자]
+	 *		- field : XCL_STRD_END_DT [정산 기준 종료 일자]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_DEALCO_CD [정산 거래처 코드]
+	 *		- field : ACCORMT_AMT [계좌송금 금액]
+	 *		- field : ACCORMT_XCL_CNT [계좌송금 정산 건수]
+	 *		- field : SLIP_DT [전표 일자]
+	 *		- field : SLIP_NO [전표 번호]
+	 *		- field : SLIP_ST [전표 상태]
+	 *		- field : YYYY [전표년도]
+	 *		- field : ACCORMT_CNCL_SLIP_DT [계좌송금 취소 전표 일자]
+	 *		- field : ACCORMT_CNCL_SLIP_NO [계좌송금 취소 전표 번호]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : TOTAL_CNT [총건수]
+	 *		- field : CNCL_SLIP_YN [취소전표여부]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpAmtRmtXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        int intTotalCnt = 0; 
+        
+        try {
+            // 1. DU lookup
+            DEPEqpAmtRmtXclMgmt dEPEqpAmtRmtXclMgmt = (DEPEqpAmtRmtXclMgmt) lookupDataUnit(DEPEqpAmtRmtXclMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclList(reqDs, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금상세조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:54:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ACCO_RMT_XCL_NO [정산번호]
+	 *	- field : EXCEL_FIRST [시작번호]
+	 *	- field : EXCEL_LAST [종료번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_AMTRMT_DTL
+	 *		- field : ROWNO [번호]
+	 *		- field : EXCEL_TOTAL_CNT [총건수]
+	 *		- field : ACCO_RMT_XCL_NO [요금 선납 정산 번호]
+	 *		- field : ACCO_RMT_XCL_DTL_SEQ [요금 선납 정산 상세 순번]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : CLCT_DT [회수 일자]
+	 *		- field : RMT_DT [송금 일자]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : CUST_GRP [고객그룹]
+	 *		- field : ACCO_RMT_SLIP_DT [계좌 송금 전표 일자]
+	 *		- field : ACCO_RMT_SLIP_NO [계좌 송금 전표 번호]
+	 *		- field : ACCO_RMT_CNCL_SLIP_DT [계좌송금 취소 전표일자]
+	 *		- field : ACCO_RMT_CNCL_SLIP_NO [계좌송금 취소 전표번호]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpAmtRmtXclDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        try {
+            // 1. DU lookup
+            DEPEqpAmtRmtXclMgmt dEPEqpAmtRmtXclMgmt = (DEPEqpAmtRmtXclMgmt) lookupDataUnit(DEPEqpAmtRmtXclMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclDtl(reqDs, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금재집계</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 10:39:15
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveEqpAmtRmtXcl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+
+        try {
+            // 1. DU lookup
+            DEPEqpAmtRmtXclMgmt dEPEqpAmtRmtXclMgmt = (DEPEqpAmtRmtXclMgmt) lookupDataUnit(DEPEqpAmtRmtXclMgmt.class);
+            
+            IDataSet dsCnt = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclChk(reqDs, onlineCtx);
+            if( dsCnt.getIntField("CNT") > 0){
+                throw new BizRuntimeException("DMS00150"); // 재집계가 불가합니다.
+            }
+            
+            IRecordSet seqRs = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclSeq(reqDs, onlineCtx).getRecordSet("RS_EQP_ACCO_RMT_SEQ");
+           // IDataSet seqDs = null;
+            
+            if (seqRs.getRecordCount() > 0) {
+                throw new BizRuntimeException("DMS00117"); // 재집계가 불가합니다.
+               /* for (int i = 0; i < seqRs.getRecordCount(); i++) {
+                    seqDs = new DataSet();
+                    seqDs.putFieldMap(seqRs.getRecordMap(i));
+                    seqDs.putField("USERNO", requestData.getField("USERNO"));
+
+                    dEPEqpAmtRmtXclMgmt.dUEqpAmtRmtXclDel(seqDs, onlineCtx);
+                    dEPEqpAmtRmtXclMgmt.dUEqpAmtRmtXclDtlDel(seqDs, onlineCtx);
+                }*/
+            }
+
+            // 2. DM호출
+            dEPEqpAmtRmtXclMgmt.dIEqpAmtRmtXcl(reqDs, onlineCtx);
+            dEPEqpAmtRmtXclMgmt.dIEqpAmtRmtXclDtl(reqDs, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금전표발행</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:54:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : STRD_FR [정산기준시작일자]
+	 *		- field : STRD_TO [정산기준종료일자]
+	 *		- field : ACCO_RMT_XCL_NO [계좌송금 정산 번호]
+	 *		- field : XCL_STRD_STA_DT [정산 기준 시작 일자]
+	 *		- field : XCL_STRD_END_DT [정산 기준 종료 일자]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_DEALCO_CD [정산 거래처 코드]
+	 *		- field : ACCO_RMT_AMT [계좌송금 금액]
+	 *		- field : ACCO_RMT_XCL_CNT [계좌송금 정산 건수]
+	 *		- field : SLIP_DT [전표 일자]
+	 *		- field : SLIP_NO [전표 번호]
+	 *		- field : SLIP_ST [전표 상태]
+	 *		- field : YYYY [전표년도]
+	 *		- field : ACCO_RMT_CNCL_SLIP_DT [계좌송금 취소 전표 일자]
+	 *		- field : ACCO_RMT_CNCL_SLIP_NO [계좌송금 취소 전표 번호]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : CNCL_SLIP_YN [취소 전표 여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveEqpAmtRmtXclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        CommonArea ca = getCommonArea(onlineCtx);
+        try {
+            IRecordSet rs = reqDs.getRecordSet("RS_SLIP_LIST");
+            reqDs.putField("USERNO", ca.getUserNo());
+            if("30".equals(rs.getRecordMap(0).get("INVE_TYP_CD") ) ){
+                if("Y".equals(rs.getRecordMap(0).get("CNCL_SLIP_YN"))){
+                    reqDs.putField("SLIP_TYPE", "EP_OU");
+                }else{
+                    reqDs.putField("SLIP_TYPE", "EP_XU");
+                }
+            }else{
+                if("Y".equals(rs.getRecordMap(0).get("CNCL_SLIP_YN"))){
+                    reqDs.putField("SLIP_TYPE", "EP_OR");
+                }else{
+                    reqDs.putField("SLIP_TYPE", "EP_XR");
+                }
+            }
+
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(reqDs, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+
+            // call on-demand batch job
+            Map<String ,String> params = new HashMap<String ,String>();
+            params.put("TASK_ID", "EPR010");
+            params.put("TASK_NM", "전표발행");
+            params.put("USER_NO", ca.getUserNo());
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");               
+            params.put("POST_SLIP_DATASET", dsXml);
+            String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다. 
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금전표취소</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:54:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : STRD_FR [정산기준시작일자]
+	 *		- field : STRD_TO [정산기준종료일자]
+	 *		- field : ACCO_RMT_XCL_NO [계좌송금 정산 번호]
+	 *		- field : XCL_STRD_STA_DT [정산 기준 시작 일자]
+	 *		- field : XCL_STRD_END_DT [정산 기준 종료 일자]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_DEALCO_CD [정산 거래처 코드]
+	 *		- field : ACCO_RMT_AMT [계좌송금 금액]
+	 *		- field : ACCO_RMT_XCL_CNT [계좌송금 정산 건수]
+	 *		- field : SLIP_DT [전표 일자]
+	 *		- field : SLIP_NO [전표 번호]
+	 *		- field : SLIP_ST [전표 상태]
+	 *		- field : YYYY [전표년도]
+	 *		- field : ACCO_RMT_CNCL_SLIP_DT [계좌송금 취소 전표 일자]
+	 *		- field : ACCO_RMT_CNCL_SLIP_NO [계좌송금 취소 전표 번호]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveEqpAmtRmtXclSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            IRecordSet rs = reqDs.getRecordSet("RS_SLIP_LIST");
+            reqDs.putField("USERNO", ca.getUserNo());
+            if("30".equals(rs.getRecordMap(0).get("INVE_TYP_CD") ) ){
+                reqDs.putField("SLIP_TYPE", "EP_XU");
+            }else{
+                reqDs.putField("SLIP_TYPE", "EP_XR");
+            }
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(reqDs, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+
+            // call on-demand batch job
+            Map<String ,String> params = new HashMap<String ,String>();
+            params.put("TASK_ID", "EPR011");
+            params.put("TASK_NM", "전표취소");
+            params.put("USER_NO", ca.getUserNo());
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");               
+            params.put("POST_SLIP_DATASET", dsXml);
+            String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-10-23 09:54:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ACCORMT_XCL_NO [계좌송금 정산 번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveEqpAmtRmtXclDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+
+        try {
+            // 1. DU lookup
+            DEPEqpAmtRmtXclMgmt dEPEqpAmtRmtXclMgmt = (DEPEqpAmtRmtXclMgmt) lookupDataUnit(DEPEqpAmtRmtXclMgmt.class);
+            
+            reqDs.putField("XCL_DEL_CHK", true);
+            IDataSet dsCnt = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclChk(reqDs, onlineCtx);
+            if( dsCnt.getIntField("CNT") > 0){
+                throw new BizRuntimeException("DMS00150"); // 재집계가 불가합니다.
+            }
+            
+            /*IDataSet dsCnt = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclChk(reqDs, onlineCtx);
+            if( dsCnt.getIntField("CNT") > 0){
+                throw new BizRuntimeException("DMS00150"); // 재집계가 불가합니다.
+            }*/
+            IRecordSet seqRs = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclSeq(reqDs, onlineCtx).getRecordSet("RS_EQP_ACCO_RMT_SEQ");
+            IDataSet seqDs = null;
+            
+            if (seqRs.getRecordCount() > 0) {
+                for (int i = 0; i < seqRs.getRecordCount(); i++) {
+                    seqDs = new DataSet();
+                    seqDs.putFieldMap(seqRs.getRecordMap(i));
+                    seqDs.putField("USERNO", requestData.getField("USERNO"));
+           // 2. DM호출
+                    dEPEqpAmtRmtXclMgmt.dUEqpAmtRmtXclDel(seqDs, onlineCtx);
+                    dEPEqpAmtRmtXclMgmt.dUEqpAmtRmtXclDtlDel(seqDs, onlineCtx);
+                }
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금엑셀업로드검증</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:54:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_IN_EXCEL_LIST
+	 *		- field : XCL_STRD_STA_DT [정산기준시작일]
+	 *		- field : XCL_STRD_END_DT [정산기준종료일]
+	 *		- field : INVE_TYP_CD [제고유형코드]
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : XCL_AMT [정산금액]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : INVE_TYP_NM [재고유형명]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : CNSL_DEALCO_CD [거래처코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EXCEL_LIST
+	 *		- field : XCL_STRD_STA_DT [정산기준시작일]
+	 *		- field : XCL_STRD_END_DT [정산기준종료일]
+	 *		- field : INVE_TYP_CD [제고유형코드]
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : XCL_AMT [정산금액]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : INVE_TYP_NM [재고유형명]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : CNSL_DEALCO_CD [거래처코드]
+	 *		- field : ERR_DESC [오류내용]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpAmtRmtXclExcelErrLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        String XCL_STRD_STA_DT = "";
+        String XCL_STRD_END_DT = "";
+        String INVE_TYP_CD = "";
+            
+        try {
+
+            // 1. DU lookup
+            DEPEqpAmtRmtXclMgmt dEPEqpAmtRmtXclMgmt = (DEPEqpAmtRmtXclMgmt) lookupDataUnit(DEPEqpAmtRmtXclMgmt.class);
+            
+            IRecordSet excelRs = reqDs.getRecordSet("RS_IN_EXCEL_LIST");
+            excelRs.addHeader(new RecordHeader("ERR_DESC"));
+
+            if (excelRs != null) {
+                
+                IRecord excelRd = null;
+                for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                    excelRd = excelRs.getRecord(i);
+                    
+                    if(i==0){
+                        XCL_STRD_STA_DT = excelRd.get("XCL_STRD_STA_DT");
+                        XCL_STRD_END_DT = excelRd.get("XCL_STRD_END_DT");
+                    }
+                    
+                    if(excelRd.get("CNSL_MGMT_NO") == null){
+                        excelRd.set("ERR_DESC", "접수관리번호가 없습니다.");
+                        continue;
+                    }
+                    
+                    int chkCnsl = 0;
+                    for (int k = 0; k < excelRs.getRecordCount(); k++) {
+                        if(StringUtils.equals(excelRd.get("CNSL_MGMT_NO"), excelRs.get(k, "CNSL_MGMT_NO"))){
+                            chkCnsl++;
+                        }
+                    }
+                    
+                    if(chkCnsl > 1){
+                        excelRd.set("ERR_DESC", "중복된 접수관리번호가 있습니다.");
+                        continue;
+                    }
+                    
+                    if(excelRd.get("XCL_STRD_STA_DT") == null){
+                        excelRd.set("ERR_DESC", "정산기준시작일이 없습니다.");
+                        continue;
+                    }
+                    
+                    if(excelRd.get("XCL_STRD_END_DT") == null){
+                        excelRd.set("ERR_DESC", "정산기준종료일이 없습니다.");
+                        continue;
+                    }
+                    
+                    if(!StringUtils.equals(XCL_STRD_STA_DT, excelRd.get("XCL_STRD_STA_DT")) || !StringUtils.equals(XCL_STRD_END_DT, excelRd.get("XCL_STRD_END_DT"))){
+                        excelRd.set("ERR_DESC", "정산기준일이 일치하지 않습니다.");
+                        continue;
+                    }
+                    
+                    if(!StringUtils.equals("현장", excelRd.get("INVE_TYP_NM")) && !StringUtils.equals("비현장", excelRd.get("INVE_TYP_NM"))){
+                        excelRd.set("ERR_DESC", "구분값은 [현장] 또는 [비현장]만 입력 가능합니다.");
+                        continue;
+                    }
+                    
+                    reqDs.putField("XCL_STRD_STA_DT", XCL_STRD_STA_DT);
+                    reqDs.putField("XCL_STRD_END_DT", XCL_STRD_END_DT);
+                    reqDs.putField("CNSL_MGMT_NO", excelRd.get("CNSL_MGMT_NO"));
+                    IDataSet xclDs = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclExcelList(reqDs, onlineCtx);
+                    if (xclDs.getFieldCount() == 0) {
+                        excelRd.set("ERR_DESC", "데이터가 없습니다.");
+                        continue;
+                    }
+                    
+                    IDataSet dsCnt = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclExcelChk(reqDs, onlineCtx);
+                    if( dsCnt.getIntField("CNT") > 0){
+                        excelRd.set("ERR_DESC", "해당기준일자에 등록된 데이터 입니다.");
+                        continue;
+                    }
+                    
+                    if(StringUtils.equals("현장", excelRd.get("INVE_TYP_NM"))){
+                        INVE_TYP_CD = "20";
+                    }else if(StringUtils.equals("비현장", excelRd.get("INVE_TYP_NM"))){
+                        INVE_TYP_CD = "10";
+                    }
+                    
+                    if(StringUtils.equals("11050", xclDs.getField("CNSL_DEALCO_CD"))){
+                        INVE_TYP_CD = "30";
+                    }
+                    
+                    excelRd.set("XCL_STRD_STA_DT", excelRd.get("XCL_STRD_STA_DT")); //정산기준시작일
+                    excelRd.set("XCL_STRD_END_DT", excelRd.get("XCL_STRD_END_DT")); //정산기준종료일
+                    excelRd.set("INVE_TYP_CD", INVE_TYP_CD); //재고유형
+                    excelRd.set("INVE_TYP_NM", excelRd.get("INVE_TYP_NM")); //재고유형명
+                    excelRd.set("CNSL_MGMT_NO", xclDs.getField("CNSL_MGMT_NO")); //접수관리번호
+                    excelRd.set("PRCH_MGMT_NO", xclDs.getField("PRCH_MGMT_NO")); //매입관리번호
+                    excelRd.set("XCL_AMT", excelRd.get("XCL_AMT")); //정산금액
+                    excelRd.set("CNSL_DT", xclDs.getField("CNSL_DT")); //상담일자
+                    excelRd.set("EQP_MDL_CD", xclDs.getField("EQP_MDL_CD")); //모델코드
+                    excelRd.set("EQP_MDL_NM", xclDs.getField("EQP_MDL_NM")); //모델명
+                    excelRd.set("EQP_SER_NO", xclDs.getField("EQP_SER_NO")); //일련번호
+                    excelRd.set("CNSL_DEALCO_CD", xclDs.getField("CNSL_DEALCO_CD")); //거래처코드
+                }
+            }
+            
+            responseData.putRecordSet("RS_EXCEL_LIST", excelRs);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금엑셀저장</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:54:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_IN_EXCEL_LIST
+	 *		- field : XCL_STRD_STA_DT [시작일]
+	 *		- field : XCL_STRD_END_DT [종료일]
+	 *		- field : INVE_TYP_NM [재고유형명]
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : XCL_AMT [정산금액]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : INVE_TYP_CD [재고유형코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : CNSL_DEALCO_CD [거래처코드]
+	 *		- field : RMT_DT [송금일자]
+	 *		- field : CLCT_DT [회수일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveEqpAmtRmtXclExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IDataSet seqDs = null;
+        IDataSet xclDs = null;
+        IDataSet xclDtlDs = null;
+        IRecord excelRd = null;
+        
+        String XCL_STRD_STA_DT = "";
+        String XCL_STRD_END_DT = "";
+        String INVE_TYP_CD = "";
+        int ACCO_RMT_XCL_CNT = 0;
+        int ACCO_RMT_AMT = 0;
+        int ACCO_RMT_XCL_DTL_SEQ = 1;
+        
+        boolean result = false;
+
+        try {
+            // 1. DU lookup
+            DEPEqpAmtRmtXclMgmt dEPEqpAmtRmtXclMgmt = (DEPEqpAmtRmtXclMgmt) lookupDataUnit(DEPEqpAmtRmtXclMgmt.class);
+            
+            IRecordSet excelRs = reqDs.getRecordSet("RS_IN_EXCEL_LIST");
+            
+            for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                excelRd = excelRs.getRecord(i);
+                if(StringUtils.equals("10", excelRd.get("INVE_TYP_CD"))){
+                    ACCO_RMT_XCL_CNT++;
+                    ACCO_RMT_AMT += Integer.parseInt(excelRd.get("XCL_AMT"));
+                    INVE_TYP_CD = excelRd.get("INVE_TYP_CD");
+                    XCL_STRD_STA_DT = excelRd.get("XCL_STRD_STA_DT");
+                    XCL_STRD_END_DT = excelRd.get("XCL_STRD_END_DT");
+                    result = true;
+                }
+            }
+            
+            if(result){
+                seqDs = new DataSet();
+                xclDs = new DataSet();
+                seqDs = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclExcelSeq(reqDs, onlineCtx);
+                String seq = seqDs.getField("ACCO_RMT_XCL_NO");
+                
+                xclDs.putField("ACCO_RMT_XCL_NO", seq);
+                xclDs.putField("XCL_STRD_STA_DT", XCL_STRD_STA_DT);
+                xclDs.putField("XCL_STRD_END_DT", XCL_STRD_END_DT);
+                xclDs.putField("XCL_DEALCO_CD", "1000000007");
+                xclDs.putField("INVE_TYP_CD", INVE_TYP_CD);
+                xclDs.putField("ACCO_RMT_XCL_CNT", ACCO_RMT_XCL_CNT);
+                xclDs.putField("ACCO_RMT_AMT", ACCO_RMT_AMT);
+                xclDs.putField("USERNO", reqDs.getField("USERNO"));
+                
+                dEPEqpAmtRmtXclMgmt.dIEqpAmtRmtXclExcel(xclDs, onlineCtx);
+                
+                for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                    excelRd = excelRs.getRecord(i);
+                    xclDtlDs = new DataSet();
+                    if(StringUtils.equals("10", excelRd.get("INVE_TYP_CD"))){
+                        xclDtlDs.putField("ACCO_RMT_XCL_NO", seq);
+                        xclDtlDs.putField("ACCO_RMT_XCL_DTL_SEQ", ACCO_RMT_XCL_DTL_SEQ++);
+                        xclDtlDs.putField("INVE_TYP_CD", excelRd.get("INVE_TYP_CD"));
+                        xclDtlDs.putField("CNSL_MGMT_NO", excelRd.get("CNSL_MGMT_NO"));
+                        xclDtlDs.putField("PRCH_MGMT_NO", excelRd.get("PRCH_MGMT_NO"));
+                        xclDtlDs.putField("EQP_MDL_CD", excelRd.get("EQP_MDL_CD"));
+                        xclDtlDs.putField("EQP_SER_NO", excelRd.get("EQP_SER_NO"));
+                        xclDtlDs.putField("CNSL_DT", excelRd.get("CNSL_DT"));
+                        xclDtlDs.putField("CLCT_DT", excelRd.get("CLCT_DT"));
+                        xclDtlDs.putField("RMT_DT", excelRd.get("RMT_DT"));
+                        xclDtlDs.putField("XCL_AMT", excelRd.get("XCL_AMT"));
+                        xclDtlDs.putField("USERNO", reqDs.getField("USERNO"));
+                        
+                        dEPEqpAmtRmtXclMgmt.dIEqpAmtRmtXclExcelDtl(xclDtlDs, onlineCtx);
+                    }
+                }
+                ACCO_RMT_XCL_CNT = 0;
+                ACCO_RMT_AMT = 0;
+                ACCO_RMT_XCL_DTL_SEQ = 1;
+                result = false;
+            }
+            
+            for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                excelRd = excelRs.getRecord(i);
+                if(StringUtils.equals("20", excelRd.get("INVE_TYP_CD"))){
+                    ACCO_RMT_XCL_CNT++;
+                    ACCO_RMT_AMT += Integer.parseInt(excelRd.get("XCL_AMT"));
+                    INVE_TYP_CD = excelRd.get("INVE_TYP_CD");
+                    XCL_STRD_STA_DT = excelRd.get("XCL_STRD_STA_DT");
+                    XCL_STRD_END_DT = excelRd.get("XCL_STRD_END_DT");
+                    result = true;
+                }
+            }
+            
+            if(result){
+                seqDs = new DataSet();
+                xclDs = new DataSet();
+                seqDs = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclExcelSeq(reqDs, onlineCtx);
+                String seq = seqDs.getField("ACCO_RMT_XCL_NO");
+                
+                xclDs.putField("ACCO_RMT_XCL_NO", seq);
+                xclDs.putField("XCL_STRD_STA_DT", XCL_STRD_STA_DT);
+                xclDs.putField("XCL_STRD_END_DT", XCL_STRD_END_DT);
+                xclDs.putField("XCL_DEALCO_CD", "1000000007");
+                xclDs.putField("INVE_TYP_CD", INVE_TYP_CD);
+                xclDs.putField("ACCO_RMT_XCL_CNT", ACCO_RMT_XCL_CNT);
+                xclDs.putField("ACCO_RMT_AMT", ACCO_RMT_AMT);
+                xclDs.putField("USERNO", reqDs.getField("USERNO"));
+                
+                dEPEqpAmtRmtXclMgmt.dIEqpAmtRmtXclExcel(xclDs, onlineCtx);
+                
+                for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                    excelRd = excelRs.getRecord(i);
+                    xclDtlDs = new DataSet();
+                    if(StringUtils.equals("20", excelRd.get("INVE_TYP_CD"))){
+                        xclDtlDs.putField("ACCO_RMT_XCL_NO", seq);
+                        xclDtlDs.putField("ACCO_RMT_XCL_DTL_SEQ", ACCO_RMT_XCL_DTL_SEQ++);
+                        xclDtlDs.putField("INVE_TYP_CD", excelRd.get("INVE_TYP_CD"));
+                        xclDtlDs.putField("CNSL_MGMT_NO", excelRd.get("CNSL_MGMT_NO"));
+                        xclDtlDs.putField("PRCH_MGMT_NO", excelRd.get("PRCH_MGMT_NO"));
+                        xclDtlDs.putField("EQP_MDL_CD", excelRd.get("EQP_MDL_CD"));
+                        xclDtlDs.putField("EQP_SER_NO", excelRd.get("EQP_SER_NO"));
+                        xclDtlDs.putField("CNSL_DT", excelRd.get("CNSL_DT"));
+                        xclDtlDs.putField("CLCT_DT", excelRd.get("CLCT_DT"));
+                        xclDtlDs.putField("RMT_DT", excelRd.get("RMT_DT"));
+                        xclDtlDs.putField("XCL_AMT", excelRd.get("XCL_AMT"));
+                        xclDtlDs.putField("USERNO", reqDs.getField("USERNO"));
+                        
+                        dEPEqpAmtRmtXclMgmt.dIEqpAmtRmtXclExcelDtl(xclDtlDs, onlineCtx);
+                    }
+                }
+                ACCO_RMT_XCL_CNT = 0;
+                ACCO_RMT_AMT = 0;
+                ACCO_RMT_XCL_DTL_SEQ = 1;
+                result = false;
+            }
+            
+            for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                excelRd = excelRs.getRecord(i);
+                if(StringUtils.equals("30", excelRd.get("INVE_TYP_CD"))){
+                    ACCO_RMT_XCL_CNT++;
+                    ACCO_RMT_AMT += Integer.parseInt(excelRd.get("XCL_AMT"));
+                    INVE_TYP_CD = excelRd.get("INVE_TYP_CD");
+                    XCL_STRD_STA_DT = excelRd.get("XCL_STRD_STA_DT");
+                    XCL_STRD_END_DT = excelRd.get("XCL_STRD_END_DT");
+                    result = true;
+                }
+            }
+            
+            if(result){
+                seqDs = new DataSet();
+                xclDs = new DataSet();
+                seqDs = dEPEqpAmtRmtXclMgmt.dSEqpAmtRmtXclExcelSeq(reqDs, onlineCtx);
+                String seq = seqDs.getField("ACCO_RMT_XCL_NO");
+                
+                xclDs.putField("ACCO_RMT_XCL_NO", seq);
+                xclDs.putField("XCL_STRD_STA_DT", XCL_STRD_STA_DT);
+                xclDs.putField("XCL_STRD_END_DT", XCL_STRD_END_DT);
+                xclDs.putField("XCL_DEALCO_CD", "11050");
+                xclDs.putField("INVE_TYP_CD", INVE_TYP_CD);
+                xclDs.putField("ACCO_RMT_XCL_CNT", ACCO_RMT_XCL_CNT);
+                xclDs.putField("ACCO_RMT_AMT", ACCO_RMT_AMT);
+                xclDs.putField("USERNO", reqDs.getField("USERNO"));
+                
+                dEPEqpAmtRmtXclMgmt.dIEqpAmtRmtXclExcel(xclDs, onlineCtx);
+                
+                for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                    excelRd = excelRs.getRecord(i);
+                    xclDtlDs = new DataSet();
+                    if(StringUtils.equals("30", excelRd.get("INVE_TYP_CD"))){
+                        xclDtlDs.putField("ACCO_RMT_XCL_NO", seq);
+                        xclDtlDs.putField("ACCO_RMT_XCL_DTL_SEQ", ACCO_RMT_XCL_DTL_SEQ++);
+                        xclDtlDs.putField("INVE_TYP_CD", excelRd.get("INVE_TYP_CD"));
+                        xclDtlDs.putField("CNSL_MGMT_NO", excelRd.get("CNSL_MGMT_NO"));
+                        xclDtlDs.putField("PRCH_MGMT_NO", excelRd.get("PRCH_MGMT_NO"));
+                        xclDtlDs.putField("EQP_MDL_CD", excelRd.get("EQP_MDL_CD"));
+                        xclDtlDs.putField("EQP_SER_NO", excelRd.get("EQP_SER_NO"));
+                        xclDtlDs.putField("CNSL_DT", excelRd.get("CNSL_DT"));
+                        xclDtlDs.putField("CLCT_DT", excelRd.get("CLCT_DT"));
+                        xclDtlDs.putField("RMT_DT", excelRd.get("RMT_DT"));
+                        xclDtlDs.putField("XCL_AMT", excelRd.get("XCL_AMT"));
+                        xclDtlDs.putField("USERNO", reqDs.getField("USERNO"));
+                        
+                        dEPEqpAmtRmtXclMgmt.dIEqpAmtRmtXclExcelDtl(xclDtlDs, onlineCtx);
+                    }
+                }
+                ACCO_RMT_XCL_CNT = 0;
+                ACCO_RMT_AMT = 0;
+                ACCO_RMT_XCL_DTL_SEQ = 1;
+                result = false;
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+  
+}

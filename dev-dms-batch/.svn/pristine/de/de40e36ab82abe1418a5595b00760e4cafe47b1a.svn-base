@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR003">
+	<select id="SSelEqpInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR013.SSelEqpInfo 제각대상단말기조회 */
+/* IO: 진병수,2015-08-11T14:11:40(진병수,2015-08-10T17:45:22) */
+SELECT A.INVE_ST_CD 
+     , CD.CM_CD_NM
+     , A.ASSET_NO
+  FROM TB_EQP_ASSET    A
+     , TB_EQP_CNTRT    B
+     , TB_RENTAL_CNTRT C
+     , TB_NR_CNTRT     D
+     , TB_CM_CD        CD
+ WHERE A.DEL_YN    = 'N'
+   AND A.OP_CL_CD  = 'NR'
+   AND A.INVE_ST_CD = '70'   /* 분실 */
+   AND B.ASSET_NO  = A.ASSET_NO
+   AND C.CNTRT_NO  = B.CNTRT_NO
+   AND D.CNTRT_NO  = C.CNTRT_NO
+   AND D.OP_TYP_CD = '02'    /* 해지 */
+   AND CD.CM_CD_ID     = A.INVE_ST_CD
+   AND CD.CM_GRP_CD_ID = 'DMS108']]>
+	</select>
+	<update id="UEqpAsset" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR012.UEqpAsset 단말기자산상태변경 */
+/* IO: 진병수,2015-08-10T17:49:04(진병수,2015-08-10T17:46:23) */
+UPDATE TB_EQP_ASSET
+   SET INVE_ST_CD     = #INVE_ST_CD#
+     , LS_CHG_USER_ID = 'BAT'
+     , LS_CHG_DTM     = SYSDATE                       
+ WHERE ASSET_NO   = #ASSET_NO#]]>
+	</update>
+</sqlMap>

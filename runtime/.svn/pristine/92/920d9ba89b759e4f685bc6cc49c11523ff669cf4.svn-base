@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
+    version="2.4">
+
+    <display-name>Web Application based on NEXCORE J2EE Framework</display-name>
+    <description>Web Application based on NEXCORE J2EE Framework</description>
+
+    <!-- ################################################################## -->
+    <!-- ### Framework INIT                              ################## -->
+    <!-- ################################################################## -->
+    <context-param>  
+        <param-name>nexcore.framework.integration.app.ApplicationListener.ejb</param-name>  
+        <param-value>true</param-value>  
+    </context-param>
+    <context-param>
+        <param-name>nexcore.framework.integration.app.ApplicationListener.ejbJndiName</param-name>  
+        <param-value>ejb/nexcore/online/ServiceInitLocal</param-value>
+        <!--  <param-value>ejblocal:ejb/nexcore/online/ServiceInit</param-value> -->  
+    </context-param>  
+    <listener>  
+        <listener-class>nexcore.framework.integration.app.ApplicationListener</listener-class>  
+    </listener> 
+    
+    <!-- ################################################################## -->
+    <!-- ### Web Application Channel Component loading   ################## -->
+    <!-- ################################################################## -->
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>
+            /WEB-INF/classes/config/component/**/*.xml
+        </param-value>
+    </context-param>
+    <context-param>
+        <param-name>contextClass</param-name>
+        <param-value>nexcore.framework.online.channel.web.context.CustomXmlWebApplicationContext</param-value>
+    </context-param>
+    <listener>
+        <listener-class>nexcore.framework.online.channel.web.context.CustomContextLoaderListener</listener-class>
+    </listener>
+
+    <!-- ################################################################## -->
+    <!-- ### FILTER                                      ################## -->
+    <!-- ################################################################## -->
+	<!-- Character Encoding filter -->
+	<filter>
+		<filter-name>SetCharacterEncodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		<!--  
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		-->
+	</filter>
+
+    <!-- FILE UPLOAD FILTER -->
+    <filter>
+        <filter-name>FileUploadFilter</filter-name>
+        <filter-class>fwk.channel.web.filter.HpcFileUploadFilter</filter-class>        
+    </filter>
+
+	<!-- XSS FILTER -->
+	<filter>
+		<filter-name>XSSFilter</filter-name>
+		<filter-class>nexcore.framework.online.channel.web.filter.XSSFilter</filter-class>
+	</filter>
+
+    <!-- LOGIN CHECK FILTER -->
+    <filter>
+        <filter-name>LoginCheckFilter</filter-name>
+        <filter-class>fwk.channel.web.filter.LoginCheckFilter</filter-class>
+        <init-param>
+        	<description><![CDATA[
+        		로그인 여부를 체크하지 않을 Runtime Mode. 다수건 등록시 구분자(;)를 사용.
+        		Runtime mode :: L:localhost, D:developement, R:production(real)
+        	]]></description>
+            <param-name>IGNORE_RUNTIME_MODE</param-name>
+            <param-value></param-value>
+        </init-param>        
+        <init-param>
+        	<description><![CDATA[로그인 체크를 하지 않고 통과시킬 URL 을 등록한다. 구분자는 ";" 로 등록한다.]]></description>
+            <param-name>BYPASS_PAGE_LIST</param-name>
+            <param-value>/install.jsp;/jsp/login.jsp;/jsp/chgPwdPopup.jsp;/jusoPopup.jsp;/login.cmd;/login.xpf;/logout.xpf</param-value>
+        </init-param>
+        <init-param>
+        	<description><![CDATA[JSP 페이지 요청일때 세션종료인 경우에 redirect 페이지 설정]]></description>
+            <param-name>REDIRECT_URL</param-name>
+            <param-value>/jsp/login.jsp</param-value>
+        </init-param>
+		<init-param>
+			<description><![CDATA[xplatform rendering 객체임]]></description>
+			<param-name>VIEW_ID</param-name>
+			<param-value>nexcore.XPlatformView</param-value>
+		</init-param>
+		<init-param>
+			<description><![CDATA[세션종료인 경우에 UI 에서 리턴받을 에러코드를 정의함]]></description>
+			<param-name>ERROR_CODE</param-name>
+			<param-value>-200</param-value>
+		</init-param>
+    </filter>
+
+    
+    <!-- ################################################################## -->
+    <!-- ### FILTER MAPPING                              ################## -->
+    <!-- ################################################################## -->
+	<!-- Character Encoding filter -->
+	<filter-mapping>
+		<filter-name>SetCharacterEncodingFilter</filter-name>
+		<url-pattern>*.cmd</url-pattern>
+	</filter-mapping>
+	
+	<filter-mapping>
+	    <filter-name>SetCharacterEncodingFilter</filter-name>
+	    <url-pattern>*.jsp</url-pattern>
+	</filter-mapping>
+
+    <!-- FILE UPLOAD FILTER -->
+    <filter-mapping>
+        <filter-name>FileUploadFilter</filter-name>
+        <url-pattern>*.cmd</url-pattern>
+    </filter-mapping>
+
+	<!-- XSS FILTER -->
+	<filter-mapping>
+		<filter-name>XSSFilter</filter-name>
+		<url-pattern>*.cmd</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>XSSFilter</filter-name>
+		<url-pattern>*.xpf</url-pattern>
+	</filter-mapping>	
+
+    <!-- LOGIN CHECK FILTER -->
+    <!--
+      ### 로그인 체크 필터에 대한 URL 패턴을 등록한다.
+    	*.cmd : 표준 web 요청 URL
+    	*.jsp : JSP 페이지
+    	*.xpf : Xplatform 요청 URL
+    	*.xfdl : Xplatform 페이지 
+    -->
+
+    <filter-mapping>
+        <filter-name>LoginCheckFilter</filter-name>
+        <url-pattern>*.cmd</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>LoginCheckFilter</filter-name>
+        <url-pattern>*.jsp</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>LoginCheckFilter</filter-name>
+        <url-pattern>*.xpf</url-pattern>
+    </filter-mapping>
+    
+    <!-- ################################################################## -->
+    <!-- ### SERVLET                                     ################## -->
+    <!-- ################################################################## -->
+    <!-- WEB SERVLET -->
+    <servlet>
+        <servlet-name>StdWebFrontController</servlet-name>
+        <servlet-class>nexcore.framework.online.channel.web.StdWebFrontController</servlet-class>
+        <init-param>
+            <param-name>RequestHandlerId</param-name>
+            <param-value>nc.channel.IWebRequestHandler</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ApplicationControllerId</param-name>
+            <param-value>nc.channel.web.IWebApplicationController</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ErrorPageURL</param-name>
+            <param-value>/Error500.jsp</param-value>
+        </init-param>
+    </servlet>
+
+    <!-- XML SERVLET -->
+    <servlet>
+        <servlet-name>StdXmlFrontController</servlet-name>
+        <servlet-class>nexcore.framework.online.channel.web.StdWebFrontController</servlet-class>
+        <init-param>
+            <param-name>RequestHandlerId</param-name>
+            <param-value>nc.channel.IXmlRequestHandler</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ApplicationControllerId</param-name>
+            <param-value>nc.channel.web.IXmlApplicationController</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ErrorPageURL</param-name>
+            <param-value>viewMapKey:FAIL</param-value>
+        </init-param> 
+        <init-param>
+            <param-name>ErrorResponse</param-name>
+            <param-value>true</param-value>
+        </init-param> 
+    </servlet>
+
+    <!-- JSON SERVLET -->
+    <servlet>
+        <servlet-name>StdJsonFrontController</servlet-name>
+        <servlet-class>nexcore.framework.online.channel.web.StdWebFrontController</servlet-class>
+        <init-param>
+            <param-name>RequestHandlerId</param-name>
+            <param-value>nc.channel.IJsonRequestHandler</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ApplicationControllerId</param-name>
+            <param-value>nc.channel.web.IJsonApplicationController</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ErrorPageURL</param-name>
+            <param-value>viewMapKey:FAIL</param-value>
+        </init-param> 
+        <init-param>
+            <param-name>ErrorResponse</param-name>
+            <param-value>true</param-value>
+        </init-param> 
+    </servlet>
+
+    <!-- HBS(Handlebars) SERVLET -->
+    <!--  
+    <servlet>
+        <servlet-name>StdHbsFrontController</servlet-name>
+        <servlet-class>nexcore.framework.online.channel.web.StdWebFrontController</servlet-class>
+        <init-param>
+            <param-name>RequestHandlerId</param-name>
+            <param-value>nc.channel.IWebHbsRequestHandler</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ApplicationControllerId</param-name>
+            <param-value>nc.channel.web.IWebHbsApplicationController</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ErrorPageURL</param-name>
+            <param-value>/Error500.jsp</param-value>
+        </init-param>
+    </servlet>
+    -->
+
+    <!-- FLAT SERVLET -->
+    <!--
+    <servlet>
+        <servlet-name>StdFlatFrontController</servlet-name>
+        <servlet-class>nexcore.framework.online.channel.web.StdWebFrontController</servlet-class>
+        <init-param>
+            <param-name>RequestHandlerId</param-name>
+            <param-value>nc.channel.IFlatRequestHandler</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ApplicationControllerId</param-name>
+            <param-value>nc.channel.web.IFlatApplicationController</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ErrorPageURL</param-name>
+            <param-value>viewMapKey:FAIL</param-value>
+        </init-param> 
+        <init-param>
+            <param-name>ErrorResponse</param-name>
+            <param-value>true</param-value>
+        </init-param> 
+    </servlet>
+    -->
+
+    <!-- XMI(MIPLATFORM) SERVLET -->
+    <!--
+    <servlet>
+        <servlet-name>StdXmiFrontController</servlet-name>
+        <servlet-class>nexcore.framework.online.channel.web.StdWebFrontController</servlet-class>
+        <init-param>
+            <param-name>RequestHandlerId</param-name>
+            <param-value>nc.channel.IXmiRequestHandler</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ApplicationControllerId</param-name>
+            <param-value>nc.channel.web.IXmiApplicationController</param-value>
+        </init-param>
+    </servlet>
+    -->
+
+	<!-- XPF(XPLATFORM) SERVLET -->
+    <servlet>
+        <servlet-name>StdXPFFrontController</servlet-name>
+        <servlet-class>
+            nexcore.framework.online.channel.web.StdWebFrontController
+        </servlet-class>
+        <init-param>
+            <param-name>RequestHandlerId</param-name>
+            <param-value>nexcore.XPlatformRequestHandler</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ApplicationControllerId</param-name>
+            <param-value>nexcore.XPlatformApplicationController</param-value>
+        </init-param>
+    </servlet>
+    
+    <!-- WEBSERVICE SERVLET  -->
+    <servlet>
+        <servlet-name>WsdlServlet</servlet-name>
+        <servlet-class>nexcore.framework.online.channel.webservice.WsdlServlet</servlet-class>
+    </servlet>  
+	<servlet>
+		<display-name>Apache-Axis Servlet</display-name>
+		<servlet-name>AxisServlet</servlet-name>
+		<servlet-class>org.apache.axis.transport.http.AxisServlet</servlet-class>
+	</servlet>
+	<servlet>
+		<display-name>Axis Admin Servlet</display-name>
+		<servlet-name>AdminServlet</servlet-name>
+		<servlet-class>org.apache.axis.transport.http.AdminServlet</servlet-class>
+		<load-on-startup>100</load-on-startup>
+	</servlet>
+    <servlet>
+        <servlet-name>SOAPMonitorService</servlet-name>
+        <servlet-class>org.apache.axis.monitor.SOAPMonitorService</servlet-class>
+        <init-param>
+            <param-name>SOAPMonitorPort</param-name>
+            <param-value>5001</param-value>
+        </init-param>
+        <load-on-startup>100</load-on-startup>
+    </servlet>
+
+    <!-- ################################################################## -->
+    <!-- ### SERVLET MAPPING                             ################## -->
+    <!-- ################################################################## -->
+    <!-- WEB SERVLET  -->
+    <servlet-mapping>
+        <servlet-name>StdWebFrontController</servlet-name>
+        <url-pattern>*.cmd</url-pattern>
+    </servlet-mapping>
+
+    <!-- XML SERVLET  -->
+    <servlet-mapping>
+        <servlet-name>StdXmlFrontController</servlet-name>
+        <url-pattern>*.xmd</url-pattern>
+    </servlet-mapping>
+
+    <!-- JSON SERVLET  -->
+    <servlet-mapping>
+        <servlet-name>StdJsonFrontController</servlet-name>
+        <url-pattern>*.jmd</url-pattern>
+    </servlet-mapping>
+
+    <!-- HBS(Handlebars) SERVLET  -->
+    <!--
+    <servlet-mapping>
+        <servlet-name>StdHbsFrontController</servlet-name>
+        <url-pattern>*.hmd</url-pattern>
+    </servlet-mapping>
+    -->
+
+    <!-- FLAT SERVLET  -->
+    <!--
+    <servlet-mapping>
+        <servlet-name>StdFlatFrontController</servlet-name>
+        <url-pattern>*.fmd</url-pattern>
+    </servlet-mapping>
+    -->
+
+    <!-- XMI(MIPLATFORM) SERVLET -->
+    <!--
+    <servlet-mapping>
+        <servlet-name>StdXmiFrontController</servlet-name>
+        <url-pattern>*.xmi</url-pattern>
+    </servlet-mapping>
+    -->
+
+	<!-- XPF(XPLATFORM) SERVLET -->
+    <servlet-mapping>
+        <servlet-name>StdXPFFrontController</servlet-name>
+        <url-pattern>*.xpf</url-pattern>
+    </servlet-mapping>
+    
+    <!-- WEBSERVICE SERVLET -->
+    <servlet-mapping>
+        <servlet-name>WsdlServlet</servlet-name>
+        <url-pattern>/wsdl/*</url-pattern>
+    </servlet-mapping> 
+	<servlet-mapping>
+		<servlet-name>AxisServlet</servlet-name>
+		<url-pattern>/servlet/AxisServlet</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>AxisServlet</servlet-name>
+		<url-pattern>/services/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>AdminServlet</servlet-name>
+		<url-pattern>/servlet/AdminServlet</url-pattern>
+	</servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SOAPMonitorService</servlet-name>
+        <url-pattern>/SOAPMonitor</url-pattern>
+    </servlet-mapping>  
+
+    <!-- ################################################################## -->
+    <!-- ### ETC                                         ################## -->
+    <!-- ################################################################## -->
+    <mime-mapping>
+        <extension>css</extension>
+        <mime-type>text/css</mime-type>
+    </mime-mapping>
+
+    <welcome-file-list>    
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>install.jsp</welcome-file>               
+    </welcome-file-list>
+
+    <error-page>
+        <error-code>400</error-code>
+        <location>/Error.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>401</error-code>
+        <location>/Error.jsp</location>
+    </error-page>
+       
+    <error-page>
+        <error-code>403</error-code>
+        <location>/Error.jsp</location>
+    </error-page>
+    
+    <error-page>
+        <error-code>404</error-code>
+        <location>/Error.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/Error.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>501</error-code>
+        <location>/Error.jsp</location>
+    </error-page>
+    
+	<!-- 
+    <jsp-config>
+        <taglib>
+            <taglib-uri>http://java.sun.com/jsp/jstl/core</taglib-uri>
+            <taglib-location>/WEB-INF/tld/c.tld</taglib-location>
+        </taglib>
+        <taglib>
+            <taglib-uri>http://java.sun.com/jsp/jstl/functions</taglib-uri>
+            <taglib-location>/WEB-INF/tld/fn.tld</taglib-location>
+        </taglib>
+        <taglib>
+            <taglib-uri>http://java.sun.com/jsp/jstl/fmt</taglib-uri>
+            <taglib-location>/WEB-INF/tld/fmt.tld</taglib-location>
+        </taglib>
+    </jsp-config>
+    -->
+       
+       <!-- ################################################################## -->
+       <!-- ### 세션 타임아웃 설정 (분단위로 설정)                                                                               ### -->
+       <!-- ################################################################## -->
+       <session-config>
+             <session-timeout>30</session-timeout>
+       </session-config>
+       
+       <!-- ################################################################## -->
+       <!-- ### 세션 공유 위해 설정                                                                                                       ### -->
+       <!-- ################################################################## -->       
+       <distributable/>
+       
+</web-app>

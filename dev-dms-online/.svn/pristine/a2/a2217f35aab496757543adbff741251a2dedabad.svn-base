@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpExcMgmt">
+	<select id="SEqpExcLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpExcMgmt.SEqpExcLstPaging 단말제각현황조회 */
+/* IO: 장미진,2015-08-28T15:40:56(장미진,2015-08-06T09:24:04) */
+SELECT  *
+  FROM  (SELECT 
+                 ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,D.SVC_MGMT_NO    				     /* 서비스관리번호 */
+                ,A.EQP_SER_NO 			/* 단말기일련번호*/
+                ,E.EQP_MDL_NM   					     /* 모델명 */
+                ,A.EQP_MDL_CD   					    /* 모델코드 */
+                ,A.EQP_PRCH_AMT      			 /* 매입가 =출고가 */ 
+                ,#DEPR_DT# AS DEPR_DT
+                ,TRUNC( A.EQP_PRCH_AMT -(A.EQP_PRCH_AMT - (A.EQP_PRCH_AMT / TO_NUMBER(ADD_MONTHS(TO_DATE( A.EQP_PRCH_DT,'YYYYMMDD'), 24)-1 - TO_DATE( A.EQP_PRCH_DT)+1)*(TO_NUMBER(ADD_MONTHS(TO_DATE( A.EQP_PRCH_DT,'YYYYMMDD'), 24)-1 - TO_DATE( A.EQP_PRCH_DT)+1)-TO_NUMBER(( TO_DATE(#DEPR_DT#)-TO_DATE(A.EQP_PRCH_DT)+1))))),-1) AS REM_PRC  /*일별 회계용잔존가*/
+                ,TRUNC(A.EQP_PRCH_AMT - (A.EQP_PRCH_AMT / TO_NUMBER(ADD_MONTHS(TO_DATE( A.EQP_PRCH_DT,'YYYYMMDD'), 24)-1 - TO_DATE( A.EQP_PRCH_DT)+1)*(TO_NUMBER(ADD_MONTHS(TO_DATE( A.EQP_PRCH_DT,'YYYYMMDD'), 24)-1 - TO_DATE( A.EQP_PRCH_DT)+1)-TO_NUMBER(( TO_DATE(#DEPR_DT#)-TO_DATE(A.EQP_PRCH_DT)+1)))),-1)AS DEPR_PRC /*일별 감가상각누계액*/
+                ,A.EQP_LOSS_DT             /*분실일자*/
+                ,A.EQP_PRCH_DT 					 /* 계약일=자산입고일 */
+                ,E.CAPA_CD                 		 /* 용량코드 */
+                ,(SELECT  SUM(ALLWN_AMT) 
+                    FROM  TB_EQP_CNTRT_DTL H
+                   WHERE  B.CNTRT_NO = H.CNTRT_NO
+                     AND  H.RENT_YM BETWEEN SUBSTR( A.EQP_PRCH_DT,0,6) AND SUBSTR(#DEPR_DT#,0,6)
+                   )AS PROV_PRC 					 	 /*충당부채기타잔존가*/
+                ,F.ASSET_SLIP_ST		/*전표상태코드*/
+                ,F.ASSET_SLIP_NO		/*전표번호*/
+                ,A.INVE_ST_CD							 /*단말상태코드*/
+                ,A.ASSET_NO
+           FROM  TB_EQP_ASSET A
+                ,TB_EQP_CNTRT B
+                ,TB_RENTAL_CNTRT C
+                ,TB_NR_CNTRT D
+                ,TB_RENTAL_POLY E
+                ,TB_ASSET_SLIP F
+                ,TB_EQP_JDG G
+          WHERE  A.ASSET_NO = B.ASSET_NO 
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  B.CNTRT_NO = D.CNTRT_NO
+            AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  A.ASSET_NO = F.ASSET_NO(+)
+            AND  B.ASSET_NO = G.ASSET_NO(+)
+            AND  A.OP_CL_CD = 'NR'
+            AND  A.INVE_ST_CD IN ('70','71')
+            AND  #DEPR_DT# > C.RENTAL_CNTRT_STA_DT 
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ASSET_SLIP_NO"><![CDATA[
+        F.ASSET_SLIP_NO = #ASSET_SLIP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.ASSET_SLIP_ST = #ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpExcTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpExcMgmt.SEqpExcTotCnt 단말제각총건수 */
+/* IO: 장미진,2015-08-28T15:41:09(장미진,2015-08-06T09:24:37) */
+SELECT 
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+       ,TB_ASSET_SLIP F
+       ,TB_EQP_JDG G
+ WHERE  A.ASSET_NO = B.ASSET_NO 
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.ASSET_NO = F.ASSET_NO(+)
+   AND  B.ASSET_NO = G.ASSET_NO(+)
+   AND  A.OP_CL_CD = 'NR'
+   AND  A.INVE_ST_CD IN ('70','71')
+   AND  #DEPR_DT# > C.RENTAL_CNTRT_STA_DT 
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ASSET_SLIP_NO"><![CDATA[
+        F.ASSET_SLIP_NO = #ASSET_SLIP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.ASSET_SLIP_ST = #ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<update id="UEqpExcSlipST" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpExcMgmt.UEqpExcSlipST 단말제각상태변경 */
+/* IO: 장미진,2015-08-28T10:53:27(장미진,2015-08-28T10:53:12) */
+UPDATE TB_EQP_ASSET
+   SET INVE_ST_CD = '70'
+ WHERE ASSET_NO = #ASSET_NO#]]>
+	</update>
+</sqlMap>

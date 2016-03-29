@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRLoanMgmt">
+	<select id="SSKNLoanLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanLst SKN여신 조회 */
+/* IO: 장미진,2016-01-25T14:00:29(박홍서,2015-07-23T09:21:21) */
+WITH BASE AS
+  ( SELECT  '01'                                AS PAY_YM_TS 
+           ,SUM(NVL(SPLY_PRC,0))                AS SPLY_PRC
+           ,SUM(NVL(PRCH_CNCL_SPLY_PRC,0))      AS SPLY
+           ,SUM(NVL(SURTAX_AMT,0))              AS SURTAX_AMT
+           ,SUM(NVL(PRCH_CNCL_SURTAX_AMT,0))    AS SURTAX
+           ,COUNT(SPLY_PRC)                     AS PRCH_CNT
+           ,COUNT(PRCH_CNCL_SPLY_PRC)           AS CNT
+           ,SUBSTR(PRCHCO_CD,0,6)               AS PRCHCO_CD 
+           ,SUBSTR(PRCH_DT,0,6)                 AS PRCH_DT
+      FROM  TB_PRCH
+     WHERE  SUBSTR(PRCH_DT,0,6) BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+       AND  PRCH_DT BETWEEN SUBSTR(PRCH_DT,0,6)||'01'
+       AND  SUBSTR(PRCH_DT,0,6)||'23'
+       AND  OP_CL_CD = 'NR'
+     GROUP BY SUBSTR(PRCHCO_CD,0,6),SUBSTR(PRCH_DT,0,6)
+  UNION ALL
+    SELECT  '01'                                AS PAY_YM_TS 
+           ,SUM(NVL(SPLY_PRC,0))                AS SPLY_PRC
+           ,SUM(NVL(PRCH_CNCL_SPLY_PRC,0))      AS SPLY
+           ,SUM(NVL(SURTAX_AMT,0))              AS SURTAX_AMT
+           ,SUM(NVL(PRCH_CNCL_SURTAX_AMT,0))    AS SURTAX
+           ,COUNT(SPLY_PRC)                     AS PRCH_CNT
+           ,COUNT(PRCH_CNCL_SPLY_PRC)           AS CNT
+           ,SUBSTR(PRCHCO_CD,0,6)               AS PRCHCO_CD 
+           ,SUBSTR(PRCH_DT,0,6)                 AS PRCH_DT
+      FROM  TB_PRCH
+     WHERE SUBSTR(PRCH_DT,0,6) BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+       AND PRCH_DT BETWEEN SUBSTR(PRCH_DT,0,6)||'24'
+       AND SUBSTR(PRCH_DT,0,6)||'31'
+       AND OP_CL_CD = 'NR'
+     GROUP BY SUBSTR(PRCHCO_CD,0,6), SUBSTR(PRCH_DT,0,6)
+  )
+SELECT *
+FROM
+  (SELECT ROW_NUMBER() OVER (ORDER BY A.AGN_CD ASC,A.PAY_YM DESC, A.PAY_YM_TS ASC) AS ROWNO ,
+          A.AGN_CD/*여신대리점코드*/
+         ,B.DEALCO_CD/*거래처코드*/
+         ,A.PAY_YM/*여신년차*/
+         ,A.PAY_YM_TS/*회차*/
+         ,A.AGN_CRD_AMT/*여신금액*/
+         ,B.ORG_NM AS AGN_NM/*대리점명*/
+         ,NVL(C.PRCH_CNT,0) AS PRCH_CNT/*판매건수*/
+         ,NVL(C.SPLY_PRC,0) AS SPLY_PRC/*공급가액*/
+         ,NVL(C.SURTAX_AMT,0) AS SURTAX_AMT/*부가세*/
+         ,NVL(C.CNT,0) AS CNT/*환수건수*/
+         ,NVL(C.SPLY,0) AS SPLY/*환수공급가액*/
+         ,NVL(C.SURTAX,0) AS SURTAX/*환수부가세*/
+         ,NVL(C.SPLY_PRC,0)+NVL(C.SURTAX_AMT,0) AS SUM_AGN_CRD/*실적합계*/
+         ,NVL(C.SPLY,0)+NVL(C.SURTAX,0) AS SUM_REDEMPTION/*환수합계*/
+         ,NVL(C.PRCH_CNT - C.CNT,0) AS SUB_CNT/*건수차*/
+         ,NVL(C.SPLY_PRC,0)-NVL(C.SPLY,0) AS SUB_SPLY_PRC/*공급가액차*/
+         ,NVL(C.SURTAX_AMT,0)-NVL(C.SURTAX,0) AS SUB_SURTAX_AMT/*부가세차*/
+         ,NVL(C.SPLY_PRC,0)-NVL(C.SPLY,0)+NVL(C.SURTAX_AMT,0)-NVL(C.SURTAX,0) AS SUM_CRD_SALE/*총계합계*/
+         ,NVL(C.SPLY_PRC,0)-NVL(C.SPLY,0)+NVL(C.SURTAX_AMT,0)-NVL(C.SURTAX,0)-A.AGN_CRD_AMT AS AGN_PAY_PRC/*대리점실지급금*/
+         ,B.BANK_CD AS BANK/*은행*/
+         ,B.DEALCO_ACCO_NO_ENPT 
+         ,B.DEALCO_ACCO_NO AS COIL/*계좌번호*/
+    FROM  TB_NR_SKN_CRD A
+         ,TB_DEALCO B
+         ,(SELECT * FROM BASE) C
+   WHERE  A.AGN_CD = B.UKEY_AGN_CD
+     AND  A.AGN_CD||'A000'      = B.AGN_ORG_CD
+     AND  A.AGN_CD    = C.PRCHCO_CD(+)
+     AND  A.PAY_YM    = C.PRCH_DT(+)
+     AND  A.PAY_YM_TS = C.PAY_YM_TS(+)
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.AGN_CD = SUBSTR(#AGN_CD#,0,6)
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PAY_YM_TS" compareValue="%"><![CDATA[
+                 A.PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+                 A.PAY_YM BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[
+  GROUP BY A.AGN_CD,A.PAY_YM,A.PAY_YM_TS,A.AGN_CRD_AMT,B.ORG_NM,C.SPLY_PRC,C.SURTAX_AMT,B.DEALCO_CD
+          ,C.SPLY,C.SURTAX,C.PRCH_CNT,C.CNT,B.BANK_CD,B.DEALCO_ACCO_NO_ENPT
+) PA]]>
+	</select>
+	<select id="SSKNLoanPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanPaging SKN여신 페이징 조회 */
+/* IO: 진병수,2016-01-14T16:22:25(박홍서,2015-07-23T09:40:40) */
+WITH BASE AS
+  ( 
+    SELECT PAY_YM_TS
+         , SUM(SPLY_PRC)   AS SPLY_PRC
+         , SUM(SPLY)       AS SPLY
+         , SUM(SURTAX_AMT) AS SURTAX_AMT
+         , SUM(SURTAX)     AS SURTAX
+         , SUM(PRCH_CNT)   AS PRCH_CNT
+         , SUM(CNT)        AS CNT
+         , PRCHCO_CD
+         , PRCH_DT
+     FROM (
+            SELECT  (CASE WHEN SUBSTR(PRCH_DT,7,8) BETWEEN '01' AND '23' THEN '01' ELSE '02' END) AS PAY_YM_TS 
+                   ,SUM(NVL(SPLY_PRC,0))                AS SPLY_PRC
+                   ,0                                   AS SPLY
+                   ,SUM(NVL(SURTAX_AMT,0))              AS SURTAX_AMT
+                   ,0                                   AS SURTAX
+                   ,COUNT(SPLY_PRC)                     AS PRCH_CNT
+                   ,0                                   AS CNT
+                   ,SUBSTR(PRCHCO_CD,0,6)               AS PRCHCO_CD 
+                   ,SUBSTR(PRCH_DT,0,6)                 AS PRCH_DT
+              FROM  TB_PRCH
+             WHERE  SUBSTR(PRCH_DT,0,6) BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+               AND  OP_CL_CD = 'NR'
+             GROUP BY SUBSTR(PRCHCO_CD,0,6),SUBSTR(PRCH_DT,0,6), (CASE WHEN SUBSTR(PRCH_DT,7,8) BETWEEN '01' AND '23' THEN '01' ELSE '02' END)
+             UNION
+           SELECT  (CASE WHEN SUBSTR(CNCL_DT,7,8) BETWEEN '01' AND '23' THEN '01' ELSE '02' END) AS PAY_YM_TS 
+                   ,0                                   AS SPLY_PRC
+                   ,SUM(NVL(PRCH_CNCL_SPLY_PRC,0))      AS SPLY
+                   ,0                                   AS SURTAX_AMT
+                   ,SUM(NVL(PRCH_CNCL_SURTAX_AMT,0))    AS SURTAX
+                   ,0                                   AS PRCH_CNT
+                   ,COUNT(PRCH_CNCL_SPLY_PRC)           AS CNT
+                   ,SUBSTR(PRCHCO_CD,0,6)               AS PRCHCO_CD 
+                   ,SUBSTR(CNCL_DT,0,6)                 AS PRCH_DT
+              FROM  TB_PRCH
+             WHERE  SUBSTR(CNCL_DT,0,6) BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+               AND  NVL(PRCH_CNCL_YN,'N') = 'Y'
+               AND  OP_CL_CD = 'NR'
+             GROUP BY SUBSTR(PRCHCO_CD,0,6),SUBSTR(CNCL_DT,0,6), (CASE WHEN SUBSTR(CNCL_DT,7,8) BETWEEN '01' AND '23' THEN '01' ELSE '02' END)
+          )    
+    GROUP BY PAY_YM_TS, PRCHCO_CD, PRCH_DT
+  )
+SELECT *
+FROM
+  (SELECT ROW_NUMBER() OVER (ORDER BY A.AGN_CD ASC,A.PAY_YM DESC, A.PAY_YM_TS ASC) AS ROWNO ,
+          A.AGN_CD/*여신대리점코드*/
+         ,B.DEALCO_CD/*거래처코드*/
+         ,A.PAY_YM/*여신년차*/
+         ,A.PAY_YM_TS/*회차*/
+         ,A.AGN_CRD_AMT/*여신금액*/
+         ,B.ORG_NM AS AGN_NM/*대리점명*/
+         ,NVL(C.PRCH_CNT,0) AS PRCH_CNT/*판매건수*/
+         ,NVL(C.SPLY_PRC,0) AS SPLY_PRC/*공급가액*/
+         ,NVL(C.SURTAX_AMT,0) AS SURTAX_AMT/*부가세*/
+         ,NVL(C.CNT,0) AS CNT/*환수건수*/
+         ,NVL(C.SPLY,0) AS SPLY/*환수공급가액*/
+         ,NVL(C.SURTAX,0) AS SURTAX/*환수부가세*/
+         ,NVL(C.SPLY_PRC,0)+NVL(C.SURTAX_AMT,0) AS SUM_AGN_CRD/*실적합계*/
+         ,NVL(C.SPLY,0)+NVL(C.SURTAX,0) AS SUM_REDEMPTION/*환수합계*/
+         ,NVL(C.PRCH_CNT - C.CNT,0) AS SUB_CNT/*건수차*/
+         ,NVL(C.SPLY_PRC,0)-NVL(C.SPLY,0) AS SUB_SPLY_PRC/*공급가액차*/
+         ,NVL(C.SURTAX_AMT,0)-NVL(C.SURTAX,0) AS SUB_SURTAX_AMT/*부가세차*/
+         ,NVL(C.SPLY_PRC,0)-NVL(C.SPLY,0)+NVL(C.SURTAX_AMT,0)-NVL(C.SURTAX,0) AS SUM_CRD_SALE/*총계합계*/
+         ,NVL(C.SPLY_PRC,0)-NVL(C.SPLY,0)+NVL(C.SURTAX_AMT,0)-NVL(C.SURTAX,0)-A.AGN_CRD_AMT AS AGN_PAY_PRC/*대리점실지급금*/
+         ,B.BANK_CD AS BANK/*은행*/
+         ,B.DEALCO_ACCO_NO_ENPT AS COIL/*계좌번호*/
+    FROM  TB_NR_SKN_CRD A
+         ,TB_DEALCO B
+         ,(SELECT * FROM BASE) C
+   WHERE  A.AGN_CD = B.UKEY_AGN_CD
+     AND  A.AGN_CD||'A000'      = B.AGN_ORG_CD
+     AND  A.AGN_CD    = C.PRCHCO_CD
+     AND  A.PAY_YM    = C.PRCH_DT(+)
+     AND  A.PAY_YM_TS = C.PAY_YM_TS(+)
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.AGN_CD = SUBSTR(#AGN_CD#,0,6)
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PAY_YM_TS" compareValue="%"><![CDATA[
+                 A.PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+                 A.PAY_YM BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[
+  GROUP BY A.AGN_CD,A.PAY_YM,A.PAY_YM_TS,A.AGN_CRD_AMT,B.ORG_NM,C.SPLY_PRC,C.SURTAX_AMT,B.DEALCO_CD
+          ,C.SPLY,C.SURTAX,C.PRCH_CNT,C.CNT,B.BANK_CD,B.DEALCO_ACCO_NO_ENPT
+) PA
+WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSKNLoanTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanTotCnt SKN여신 총건수 조회 */
+/* IO: 진병수,2016-01-14T16:22:36(박홍서,2015-07-23T09:42:39) */
+WITH BASE AS
+(
+    SELECT PAY_YM_TS
+         , SUM(SPLY_PRC)   AS SPLY_PRC
+         , SUM(SPLY)       AS SPLY
+         , SUM(SURTAX_AMT) AS SURTAX_AMT
+         , SUM(SURTAX)     AS SURTAX
+         , SUM(PRCH_CNT)   AS PRCH_CNT
+         , SUM(CNT)        AS CNT
+         , PRCHCO_CD
+         , PRCH_DT
+     FROM (
+            SELECT  (CASE WHEN SUBSTR(PRCH_DT,7,8) BETWEEN '01' AND '23' THEN '01' ELSE '02' END) AS PAY_YM_TS 
+                   ,SUM(NVL(SPLY_PRC,0))                AS SPLY_PRC
+                   ,0                                   AS SPLY
+                   ,SUM(NVL(SURTAX_AMT,0))              AS SURTAX_AMT
+                   ,0                                   AS SURTAX
+                   ,COUNT(SPLY_PRC)                     AS PRCH_CNT
+                   ,0                                   AS CNT
+                   ,SUBSTR(PRCHCO_CD,0,6)               AS PRCHCO_CD 
+                   ,SUBSTR(PRCH_DT,0,6)                 AS PRCH_DT
+              FROM  TB_PRCH
+             WHERE  SUBSTR(PRCH_DT,0,6) BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+               AND  OP_CL_CD = 'NR'
+             GROUP BY SUBSTR(PRCHCO_CD,0,6),SUBSTR(PRCH_DT,0,6), (CASE WHEN SUBSTR(PRCH_DT,7,8) BETWEEN '01' AND '23' THEN '01' ELSE '02' END)
+             UNION
+           SELECT  (CASE WHEN SUBSTR(CNCL_DT,7,8) BETWEEN '01' AND '23' THEN '01' ELSE '02' END) AS PAY_YM_TS 
+                   ,0                                   AS SPLY_PRC
+                   ,SUM(NVL(PRCH_CNCL_SPLY_PRC,0))      AS SPLY
+                   ,0                                   AS SURTAX_AMT
+                   ,SUM(NVL(PRCH_CNCL_SURTAX_AMT,0))    AS SURTAX
+                   ,0                                   AS PRCH_CNT
+                   ,COUNT(PRCH_CNCL_SPLY_PRC)           AS CNT
+                   ,SUBSTR(PRCHCO_CD,0,6)               AS PRCHCO_CD 
+                   ,SUBSTR(CNCL_DT,0,6)                 AS PRCH_DT
+              FROM  TB_PRCH
+             WHERE  SUBSTR(CNCL_DT,0,6) BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+               AND  NVL(PRCH_CNCL_YN,'N') = 'Y'
+               AND  OP_CL_CD = 'NR'
+             GROUP BY SUBSTR(PRCHCO_CD,0,6),SUBSTR(CNCL_DT,0,6), (CASE WHEN SUBSTR(CNCL_DT,7,8) BETWEEN '01' AND '23' THEN '01' ELSE '02' END)
+          )    
+    GROUP BY PAY_YM_TS, PRCHCO_CD, PRCH_DT
+)
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  (SELECT  ROW_NUMBER() OVER (ORDER BY A.AGN_CD ASC,A.PAY_YM DESC, A.PAY_YM_TS ASC) AS ROWNO 
+                ,A.AGN_CD                			 /*여신대리점코드*/
+                ,B.DEALCO_CD             			 /*거래처코드*/
+                ,A.PAY_YM               			 /*여신년차*/
+                ,A.PAY_YM_TS            			 /*회차*/
+                ,A.AGN_CRD_AMT          			 /*여신금액*/
+                ,B.ORG_NM AS AGN_NM      			 /*대리점명*/ 
+                ,NVL(C.SPLY_PRC,0)   AS SPLY_PRC     /*공급가액*/
+                ,NVL(C.SURTAX_AMT,0) AS SURTAX_AMT   /*부가세*/
+                ,NVL(C.PRCH_CNT,0)   AS PRCH_CNT     /*판매건수*/
+                ,'' AS BANK              			 /*은행*/
+                ,'' AS COIL              			 /*계좌번호*/
+                ,0 AS SPLY              			 /*환수공급가액*/
+                ,0 AS SURTAX           				 /*환수부가세*/
+                ,0 AS CNT          			     	 /*환수건수*/
+           FROM  TB_NR_SKN_CRD A
+                ,TB_DEALCO B
+                ,(SELECT * FROM BASE) C
+          WHERE  A.AGN_CD = B.UKEY_AGN_CD
+            AND  A.AGN_CD||'A000'  = B.AGN_ORG_CD
+            AND  A.AGN_CD = C.PRCHCO_CD
+            AND  A.PAY_YM = C.PRCH_DT(+)
+            AND  A.PAY_YM_TS = C.PAY_YM_TS(+)
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+               A.AGN_CD = SUBSTR(#AGN_CD#,0,6)
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PAY_YM_TS" compareValue="%"><![CDATA[
+               A.PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+               A.PAY_YM BETWEEN #PAY_FR_YM# AND #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[            
+         GROUP BY A.AGN_CD,A.PAY_YM,A.PAY_YM_TS,A.AGN_CRD_AMT,B.ORG_NM,C.SPLY_PRC,C.SURTAX_AMT,B.DEALCO_CD,C.PRCH_CNT) PA]]>
+	</select>
+	<select id="SSKNLoanDtlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanDtlPaging SKN여신 상세 페이징 조회 */
+/* IO: 진병수,2016-01-14T16:03:42(박홍서,2015-07-23T15:08:56) */
+SELECT  * 
+  FROM (SELECT  ROW_NUMBER() OVER (ORDER BY A.AGN_CD, A.SVC_MGMT_NO) AS ROWNO
+               ,A.*
+          FROM  (
+                  SELECT  A.PRCHCO_CD AS AGN_CD
+                         ,B.ORG_NM AS AGN_NM
+                         ,CASE WHEN TO_NUMBER(SUBSTR(A.PRCH_DT,7)) > 23 THEN '02'
+                               ELSE '01'
+                               END AS CNTRT_YM_TS
+                         ,A.PRCH_DT AS NR_CNTRT_DT
+                         ,FLOOR(MONTHS_BETWEEN( TO_DATE(SUBSTR(#CNTRT_FR_DTM#,0,6),'YYYYMM'),TO_DATE(SUBSTR(A.PRCH_DT,0,6),'YYYYMM') )+1)||' 개월' AS CNTRT_MTH
+                         ,SUBSTR(A.PRCH_DT,0,6) AS CNTRT_YM
+                         ,E.SVC_MGMT_NO
+                         ,A.EQP_SER_NO
+                         ,E.NEW_CNTRTR_NM AS NR_CNTRTR_NM
+                         ,B.DEALCO_CD 
+                         ,A.SPLY_PRC+A.SURTAX_AMT-NVL(PRCH_CNCL_SPLY_PRC,0)-NVL(PRCH_CNCL_SURTAX_AMT,0) AS PRCH_AMT
+                         ,'' AS SUM_PRC
+                         ,F.RENTAL_CNTRT_STA_DT
+                         ,F.RENTAL_CNTRT_END_DT
+                         ,A.SPLY_PRC
+                         ,A.SURTAX_AMT
+                         ,NVL(PRCH_CNCL_SPLY_PRC,0) AS SPLY
+                         ,NVL(PRCH_CNCL_SURTAX_AMT,0) AS SURTAX
+                         ,G.EQP_MDL_NM
+                         ,A.PRCH_CNCL_YN
+                         ,NEW_CNTRTR_NM_ENPT
+                    FROM  TB_PRCH A
+                         ,TB_DEALCO B
+                         ,TB_EQP_ASSET C
+                         ,TB_EQP_CNTRT D
+                         ,TB_NR_CNTRT E
+                         ,TB_RENTAL_CNTRT F
+                         ,TB_EQP_MDL G
+                   WHERE  NVL(A.PRCH_CNCL_YN,'N')='N'
+                     AND  PRCHCO_CD = B.AGN_ORG_CD(+)
+                     AND  A.PRCH_NO = C.PRCH_NO
+                     AND  C.ASSET_NO = D.ASSET_NO
+                     AND  D.CNTRT_NO = E.CNTRT_NO
+                     AND  D.CNTRT_NO = F.CNTRT_NO
+                     AND  A.EQP_MDL_CD = G.EQP_MDL_CD
+                     AND  C.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="CNTRT_FR_DTM"><![CDATA[
+                          A.PRCH_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+]]></isNotEmpty><![CDATA[                     
+                  UNION ALL
+                  SELECT  A.PRCHCO_CD AS AGN_CD
+                         ,B.ORG_NM AS AGN_NM
+                         ,CASE WHEN TO_NUMBER(SUBSTR(A.PRCH_DT,7)) > 23 THEN '02'
+                               ELSE '01'
+                               END AS CNTRT_YM_TS
+                         ,A.PRCH_DT AS NR_CNTRT_DT
+                         ,FLOOR(MONTHS_BETWEEN( TO_DATE(SUBSTR(#CNTRT_FR_DTM#,0,6),'YYYYMM'),TO_DATE(SUBSTR(A.PRCH_DT,0,6),'YYYYMM') )+1)||' 개월' AS CNTRT_MTH
+                         ,SUBSTR(A.PRCH_DT,0,6) AS CNTRT_YM
+                         ,E.SVC_MGMT_NO
+                         ,A.EQP_SER_NO
+                         ,E.NEW_CNTRTR_NM AS NR_CNTRTR_NM
+                         ,B.DEALCO_CD 
+                         ,A.SPLY_PRC+A.SURTAX_AMT-NVL(PRCH_CNCL_SPLY_PRC,0)-NVL(PRCH_CNCL_SURTAX_AMT,0) AS PRCH_AMT
+                         ,'' AS SUM_PRC
+                         ,F.RENTAL_CNTRT_STA_DT
+                         ,F.RENTAL_CNTRT_END_DT
+                         ,CASE WHEN SUBSTR(A.PRCH_DT,0,6) = SUBSTR(A.CNCL_DT,0,6) THEN A.SPLY_PRC   ELSE 0 END AS SPLY_PRC
+                         ,CASE WHEN SUBSTR(A.PRCH_DT,0,6) = SUBSTR(A.CNCL_DT,0,6) THEN A.SURTAX_AMT ELSE 0 END AS SURTAX_AMT
+                         ,NVL(PRCH_CNCL_SPLY_PRC,0) AS SPLY
+                         ,NVL(PRCH_CNCL_SURTAX_AMT,0) AS SURTAX
+                         ,G.EQP_MDL_NM
+                         ,A.PRCH_CNCL_YN
+                         ,NEW_CNTRTR_NM_ENPT
+                    FROM  TB_PRCH A
+                         ,TB_DEALCO B
+                         ,TB_EQP_ASSET C
+                         ,TB_EQP_CNTRT D
+                         ,TB_NR_CNTRT E
+                         ,TB_RENTAL_CNTRT F
+                         ,TB_EQP_MDL G
+                   WHERE  NVL(A.PRCH_CNCL_YN,'N')='Y'
+                     AND  PRCHCO_CD = B.AGN_ORG_CD(+)
+                     AND  A.PRCH_NO = C.PRCH_NO
+                     AND  C.ASSET_NO = D.ASSET_NO
+                     AND  D.CNTRT_NO = E.CNTRT_NO
+                     AND  D.CNTRT_NO = F.CNTRT_NO
+                     AND  A.EQP_MDL_CD = G.EQP_MDL_CD
+                     AND  C.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="CNTRT_FR_DTM"><![CDATA[
+                          A.CNCL_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+]]></isNotEmpty><![CDATA[                     
+                ) A
+          WHERE AGN_CD = AGN_CD
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                A.AGN_CD LIKE #AGN_CD# || '%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="NR_CNTRTR_NM"><![CDATA[
+                A.NEW_CNTRTR_NM_ENPT LIKE '%'||#NR_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSKNLoanDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanDtlLst SKN여신 상세 조회 */
+/* IO: 장미진,2015-11-09T17:44:34(박홍서,2015-07-23T15:10:47) */
+SELECT  A.PRCHCO_CD                                                   AS AGN_CD 
+       ,B.ORG_NM                                                      AS AGN_NM 
+       ,CASE WHEN TO_NUMBER(SUBSTR(A.PRCH_DT,7)) > 23  THEN '02'
+             ELSE '01'
+         END       AS CNTRT_YM_TS 
+       ,A.PRCH_DT AS NR_CNTRT_DT 
+       ,FLOOR(MONTHS_BETWEEN(SYSDATE,TO_DATE(A.PRCH_DT,'YYYYMMDD'))+1) ||' 개월'               AS CNTRT_MTH 
+       ,SUBSTR(A.PRCH_DT,0,6) AS CNTRT_YM
+       ,E.SVC_MGMT_NO
+       ,A.EQP_SER_NO
+       ,E.NEW_CNTRTR_NM AS NR_CNTRTR_NM
+       ,B.DEALCO_CD
+       ,A.PRCH_AMT
+       ,''  AS SUM_PRC
+       ,F.RENTAL_CNTRT_STA_DT
+       ,F.RENTAL_CNTRT_END_DT
+       ,A.SPLY_PRC
+       ,A.SURTAX_AMT
+       ,G.EQP_MDL_NM
+  FROM  TB_PRCH A 
+       ,TB_DEALCO B
+       ,TB_EQP_ASSET C 
+       ,TB_EQP_CNTRT D 
+       ,TB_NR_CNTRT E
+       ,TB_RENTAL_CNTRT F
+       ,TB_EQP_MDL G
+ WHERE  PRCHCO_CD = B.AGN_ORG_CD(+)
+   AND  A.PRCH_NO = C.PRCH_NO
+   AND  C.ASSET_NO = D.ASSET_NO
+   AND  D.CNTRT_NO = E.CNTRT_NO
+   AND  E.CNTRT_NO = F.CNTRT_NO
+   AND  A.EQP_MDL_CD = G.EQP_MDL_CD
+   AND  C.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="DEALCO_BLICENS_NO"><![CDATA[
+        B.DEALCO_BLICENS_NO = #DEALCO_BLICENS_NO#
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+       SUBSTR(A.PRCHCO_CD,0,6) = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="NR_CNTRTR_NM"><![CDATA[
+        A.NEW_CNTRTR_NM_ENPT LIKE '%'||#NR_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_FR_DTM"><![CDATA[
+        A.PRCH_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+]]></isNotEmpty><![CDATA[
+ ORDER BY A.PRCHCO_CD, A.PRCH_NO]]>
+	</select>
+	<select id="SSKNLoanDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanDtlTotCnt SKN여신 상세 총건수 조회 */
+/* IO: 안진갑,2016-03-07T12:30:59(박홍서,2015-07-23T15:13:23) */
+SELECT  COUNT(1) AS TOTAL_CNT
+       ,NVL(SUM(A.SPLY_PRC+A.SURTAX_AMT-NVL(A.PRCH_CNCL_SPLY_PRC,0)-NVL(A.PRCH_CNCL_SURTAX_AMT,0)),0) AS SUM_OUT_PRC
+       FROM (
+               SELECT  A.PRCHCO_CD AS AGN_CD
+                      ,B.ORG_NM AS AGN_NM
+                      ,A.SPLY_PRC
+                      ,A.SURTAX_AMT
+                      ,NVL (PRCH_CNCL_SPLY_PRC, 0) AS PRCH_CNCL_SPLY_PRC
+                      ,NVL (PRCH_CNCL_SURTAX_AMT, 0) AS PRCH_CNCL_SURTAX_AMT
+                      ,E.SVC_MGMT_NO
+                      ,NEW_CNTRTR_NM_ENPT 
+                 FROM  TB_PRCH A
+                      ,TB_DEALCO B
+                      ,TB_EQP_ASSET C
+                      ,TB_EQP_CNTRT D
+                      ,TB_NR_CNTRT E
+                      ,TB_RENTAL_CNTRT F
+                      ,TB_EQP_MDL G
+                WHERE  NVL (A.PRCH_CNCL_YN, 'N') = 'N'
+                  AND  PRCHCO_CD = B.AGN_ORG_CD(+)
+                  AND  A.PRCH_NO = C.PRCH_NO
+                  AND  C.ASSET_NO = D.ASSET_NO
+                  AND  D.CNTRT_NO = E.CNTRT_NO
+                  AND  D.CNTRT_NO = F.CNTRT_NO
+                  AND  A.EQP_MDL_CD = G.EQP_MDL_CD
+                  AND C.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="CNTRT_FR_DTM"><![CDATA[
+                           A.PRCH_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+]]></isNotEmpty><![CDATA[                        
+                UNION ALL
+                SELECT  A.PRCHCO_CD AS AGN_CD
+                       ,B.ORG_NM AS AGN_NM
+                       ,CASE WHEN SUBSTR (A.PRCH_DT, 0, 6) = SUBSTR (A.CNCL_DT, 0, 6) THEN A.SPLY_PRC   ELSE 0 END AS SPLY_PRC
+                       ,CASE WHEN SUBSTR (A.PRCH_DT, 0, 6) = SUBSTR (A.CNCL_DT, 0, 6) THEN A.SURTAX_AMT ELSE 0 END AS SURTAX_AMT
+                       ,NVL (PRCH_CNCL_SPLY_PRC, 0) AS PRCH_CNCL_SPLY_PRC
+                       ,NVL (PRCH_CNCL_SURTAX_AMT, 0) AS PRCH_CNCL_SURTAX_AMT
+                       ,E.SVC_MGMT_NO                       
+                       ,NEW_CNTRTR_NM_ENPT
+                  FROM  TB_PRCH A
+                       ,TB_DEALCO B
+                       ,TB_EQP_ASSET C
+                       ,TB_EQP_CNTRT D
+                       ,TB_NR_CNTRT E
+                       ,TB_RENTAL_CNTRT F
+                       ,TB_EQP_MDL G
+                 WHERE  NVL (A.PRCH_CNCL_YN, 'N') = 'Y'
+                   AND PRCHCO_CD = B.AGN_ORG_CD(+)
+                   AND A.PRCH_NO = C.PRCH_NO
+                   AND C.ASSET_NO = D.ASSET_NO
+                   AND D.CNTRT_NO = E.CNTRT_NO
+                   AND D.CNTRT_NO = F.CNTRT_NO
+                   AND A.EQP_MDL_CD = G.EQP_MDL_CD
+                   AND C.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="CNTRT_FR_DTM"><![CDATA[
+                       A.CNCL_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+]]></isNotEmpty><![CDATA[                       
+           ) A
+     WHERE AGN_CD = AGN_CD
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        AGN_CD LIKE #AGN_CD# || '%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="NR_CNTRTR_NM"><![CDATA[
+        A.NEW_CNTRTR_NM_ENPT LIKE '%'||#NR_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SApplfChkPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SApplfChkPaging 신청서항목체크 페이징 조회 */
+/* IO: 이영진,2015-12-09T13:27:05(박홍서,2015-08-04T13:30:40) */
+SELECT  * 
+  FROM (
+        SELECT  /*+ ORDERED */ ROW_NUMBER() OVER (ORDER BY B.AGN_CD, B.CNTRT_NO) AS ROWNO
+               ,B.CNTRT_NO
+               ,B.AGN_CD
+               ,C.ORG_NM AS AGN_NM
+               ,B.SVC_MGMT_NO
+               ,B.RENTAL_SER_NO AS RENTAL_SER_NUM
+               ,B.NEW_CNTRTR_NM AS NR_CNTRTR_NM
+               ,B.NEW_CNTRTR_BIZ_REG_NO AS NR_CNTRTR_BIZ_NUM
+               ,NVL(D.APPLF_ST,'01') AS APPLF_ST
+               ,D.APPLF_ITM
+               ,D.APPLF_RMK
+          FROM  TB_RENTAL_CNTRT A 
+               ,TB_NR_CNTRT B
+               ,TB_DEALCO C
+               ,TB_NR_APPLF D
+         WHERE  A.CNTRT_NO = B.CNTRT_NO
+           AND  B.AGN_CD = C.AGN_ORG_CD
+           AND  B.CNTRT_NO = D.CNTRT_NO(+)
+]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+		        A.RENTAL_CNTRT_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                B.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SApplfChkTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SApplfChkTotCnt 신청서항목체크 총건수 조회 */
+/* IO: 이영진,2015-12-09T13:29:26(박홍서,2015-08-04T13:31:21) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_RENTAL_CNTRT A 
+       ,TB_NR_CNTRT B
+       ,TB_DEALCO C
+       ,TB_NR_APPLF D
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.AGN_CD = C.AGN_ORG_CD
+   AND  B.CNTRT_NO = D.CNTRT_NO(+)
+]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+		A.RENTAL_CNTRT_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        B.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SApplfChkLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SApplfChkLst 신청서항목체크 조회 */
+/* IO: 정동현,2015-08-18T09:00:44(박홍서,2015-08-04T13:32:02) */
+SELECT  A.AGN_CD
+       ,B.ORG_NM AS AGN_NM
+       ,A.SVC_MGMT_NO
+       ,A.RENTAL_SER_NO AS RENTAL_SER_NUM
+       ,A.NEW_CNTRTR_NM AS NR_CNTRTR_NM
+       ,A.NEW_CNTRTR_BIZ_REG_NO AS NR_CNTRTR_BIZ_NUM
+       ,C.APPLF_TYP
+       ,CASE WHEN C.APPLF_IMG_URL IS NULL OR C.APPLF_IMG_URL = '' THEN 'Y'
+             ELSE 'N' 
+        END AS APPLF_IMG_URL_YN
+       ,C.APPLF_IMG_ERR_YN
+       ,C.APPLF_IMG_ITM_ERR_YN  AS  ITM_01_ERR_YN
+       ,C.APPLF_IMG_OMIT_YN  AS  ITM_02_ERR_YN
+       ,C.ITM_03_ERR_YN
+       ,C.ITM_04_ERR_YN
+       ,C.ITM_05_ERR_YN
+       ,C.ITM_06_ERR_YN
+       ,C.ITM_07_ERR_YN
+       ,C.ITM_08_ERR_YN
+       ,C.ITM_09_ERR_YN
+       ,C.ITM_10_ERR_YN
+       ,C.APPLF_RMK
+       ,C.FS_REG_USER_ID
+       ,C.FS_REG_DTM
+       ,C.LS_CHG_USER_ID
+       ,C.LS_CHG_DTM
+  FROM  TB_NR_CNTRT A
+       ,TB_DEALCO B
+       ,TB_NR_APPLF C
+ WHERE  A.AGN_CD = B.AGN_ORG_CD
+   AND  A.CNTRT_NO = C.CNTRT_NO
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="APPLF_TYP" compareValue="%"><![CDATA[
+        C.APPLF_TYP = #APPLF_TYP#
+]]></isNotEqual><![CDATA[
+ ORDER BY A.AGN_CD, A.CNTRT_NO]]>
+	</select>
+	<select id="SApplfChkDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SApplfChkDtl 신청서항목체크 조회상세 */
+/* IO: 이영진,2015-11-11T14:11:46(박홍서,2015-08-04T13:30:40) */
+SELECT  A.CNTRT_NO
+       ,MAX(DECODE(A.APPLF_TYP,'1A','Y','N')) AS AA
+       ,MAX(DECODE(A.APPLF_TYP,'1B','Y','N')) AS AB
+       ,MAX(DECODE(A.APPLF_TYP,'1C','Y','N')) AS AC
+       ,MAX(DECODE(A.APPLF_TYP,'1D','Y','N')) AS AD
+       ,MAX(DECODE(A.APPLF_TYP,'2A','Y','N')) AS BA
+       ,MAX(DECODE(A.APPLF_TYP,'2B','Y','N')) AS BB
+       ,MAX(DECODE(A.APPLF_TYP,'2C','Y','N')) AS BC
+       ,MAX(DECODE(A.APPLF_TYP,'2D','Y','N')) AS BD
+       ,MAX(DECODE(A.APPLF_TYP,'3A','Y','N')) AS CA
+       ,MAX(DECODE(A.APPLF_TYP,'3B','Y','N')) AS CB
+       ,MAX(DECODE(A.APPLF_TYP,'3C','Y','N')) AS CC
+       ,MAX(DECODE(A.APPLF_TYP,'3D','Y','N')) AS CD
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1A01',B.APPLF_ITM_ERR_YN,'N')) AS DMS253_01
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1A02',B.APPLF_ITM_ERR_YN,'N')) AS DMS253_02
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1A03',B.APPLF_ITM_ERR_YN,'N')) AS DMS253_03
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1A04',B.APPLF_ITM_ERR_YN,'N')) AS DMS253_04
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1A05',B.APPLF_ITM_ERR_YN,'N')) AS DMS253_05
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1B01',B.APPLF_ITM_ERR_YN,'N')) AS DMS254_01
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1B02',B.APPLF_ITM_ERR_YN,'N')) AS DMS254_02
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1B03',B.APPLF_ITM_ERR_YN,'N')) AS DMS254_03
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'1B04',B.APPLF_ITM_ERR_YN,'N')) AS DMS254_04
+       ,MAX(DECODE(A.APPLF_TYP,'1C',A.APPLF_IMG_ERR_YN,'N')) AS AC_IMGYN
+       ,MAX(DECODE(A.APPLF_TYP,'1D',A.APPLF_IMG_ERR_YN,'N')) AS AD_IMGYN
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2A01',B.APPLF_ITM_ERR_YN,'N')) AS DMS255_01
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2A02',B.APPLF_ITM_ERR_YN,'N')) AS DMS255_02
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2A03',B.APPLF_ITM_ERR_YN,'N')) AS DMS255_03
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2A04',B.APPLF_ITM_ERR_YN,'N')) AS DMS255_04
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2A05',B.APPLF_ITM_ERR_YN,'N')) AS DMS255_05
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2B01',B.APPLF_ITM_ERR_YN,'N')) AS DMS256_01
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2B02',B.APPLF_ITM_ERR_YN,'N')) AS DMS256_02
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2B03',B.APPLF_ITM_ERR_YN,'N')) AS DMS256_03
+       ,MAX(DECODE(A.APPLF_TYP||B.APPLF_ITM_CD,'2B04',B.APPLF_ITM_ERR_YN,'N')) AS DMS256_04
+       ,MAX(DECODE(A.APPLF_TYP,'2C',A.APPLF_IMG_ERR_YN,'N')) AS BC_IMGYN
+       ,MAX(DECODE(A.APPLF_TYP,'2D',A.APPLF_IMG_ERR_YN,'N')) AS BD_IMGYN
+       ,MAX(DECODE(A.APPLF_TYP,'3A',A.APPLF_IMG_ERR_YN,'N')) AS CA_IMGYN
+       ,MAX(DECODE(A.APPLF_TYP,'3B',A.APPLF_IMG_ERR_YN,'N')) AS CB_IMGYN
+       ,MAX(DECODE(A.APPLF_TYP,'3C',A.APPLF_IMG_ERR_YN,'N')) AS CC_IMGYN
+       ,MAX(DECODE(A.APPLF_TYP,'3D',A.APPLF_IMG_ERR_YN,'N')) AS CD_IMGYN
+       ,MAX(C.APPLF_RMK) AS APPLF_RMK
+       ,MAX(A.APPLF_SUBMIT_DTM) AS APPLF_SUBMIT_DTM
+  FROM  TB_NR_APPLF A,
+        TB_NR_APPLF_ITM B,
+       (
+        SELECT  A.CNTRT_NO, LISTAGG(DECODE(A.APPLF_TYP,'1A',DECODE(A.APPLF_RMK,NULL,'','1.')
+                                  ,'1B',DECODE(A.APPLF_RMK,NULL,'','2.')
+                                  ,'1C',DECODE(A.APPLF_RMK,NULL,'','3.')
+                                  ,'1D',DECODE(A.APPLF_RMK,NULL,'','4.')
+                                  ,'2A',DECODE(A.APPLF_RMK,NULL,'','5.')
+                                  ,'2B',DECODE(A.APPLF_RMK,NULL,'','6.')
+                                  ,'2C',DECODE(A.APPLF_RMK,NULL,'','7.')
+                                  ,'2D',DECODE(A.APPLF_RMK,NULL,'','8.')
+                                  ,'3A',DECODE(A.APPLF_RMK,NULL,'','9.')
+                                  ,'3B',DECODE(A.APPLF_RMK,NULL,'','10.')
+                                  ,'3C',DECODE(A.APPLF_RMK,NULL,'','11.')
+                                  ,'3D',DECODE(A.APPLF_RMK,NULL,'','12.'))||A.APPLF_RMK, ' ') 
+                                  WITHIN GROUP (ORDER BY A.APPLF_TYP) AS APPLF_RMK
+          FROM  TB_NR_APPLF A
+         WHERE  A.CNTRT_NO = #CNTRT_NO#
+         GROUP  BY A.CNTRT_NO
+       ) C
+ WHERE  A.CNTRT_NO = B.CNTRT_NO(+)
+   AND  A.APPLF_TYP = B.APPLF_TYP(+)
+   AND  A.CNTRT_NO = #CNTRT_NO#
+   AND  A.CNTRT_NO = C.CNTRT_NO
+ GROUP  BY A.CNTRT_NO]]>
+	</select>
+</sqlMap>

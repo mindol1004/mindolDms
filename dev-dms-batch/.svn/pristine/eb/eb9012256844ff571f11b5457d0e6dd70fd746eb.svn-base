@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.BIF003">
+	<select id="SRentalPolyLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.BIF003.SRentalPolyLst 렌탈정책목록 */
+/* IO: 안한모,2015-08-11T13:51:59(admin,2015-03-20T13:41:26) */
+SELECT
+        IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,'D' AS REC_CL_CD
+       ,PROC_CL_CD
+       ,RENTAL_PLAN_ID
+       ,RENTAL_CNTRT_MTH_CNT
+       ,POLY_FR_DT
+       ,POLY_TO_DT
+       ,FST_STRD_AMT
+       ,MTH_RENTAL_FEE
+       ,TOT_RENTAL_FEE
+       ,EQP_MDL_CD
+       ,PROC_ST_CD
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TF_RENTAL_POLY
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="URentalPoly" parameterClass="map" ><![CDATA[/* Biz: dms.inf.BIF003.URentalPoly 렌탈정책처리상태코드수정 */
+/* IO: 안한모,2015-08-11T13:54:01(이영진,2015-08-10T13:35:41) */
+UPDATE 
+        TF_RENTAL_POLY
+   SET  PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#]]>
+	</update>
+</sqlMap>

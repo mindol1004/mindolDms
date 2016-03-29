@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR602">
+	<select id="SDealCoLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR602.SDealCoLst 거래처목록조회 */
+/* IO: 안한모,2015-09-23T13:22:18(admin,2015-03-20T13:38:02) */
+SELECT 
+        DEALCO_CD
+       ,DECODE(DEALCO_CL_1,'A1',DEALCO_CD,'A2',
+        (SELECT 
+                DEALCO_CD
+          FROM  TB_DEALCO
+         WHERE  AGN_ORG_CD = SUBSTR(A.AGN_ORG_CD,1,6)||'A000'
+           AND  ROWNUM = 1)
+       ) AS AFFIL_AGN
+  FROM  TB_DEALCO A
+ WHERE  AFFIL_AGN IS NULL
+   AND  DEALCO_CL_1 IN ('A1','A2')
+   AND  AGN_ORG_CD IS NOT NULL]]>
+	</select>
+	<update id="UDealCo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR602.UDealCo 상위거래처수정 */
+/* IO: 안한모,2015-09-23T13:23:17(이영진,2015-08-07T10:01:05) */
+UPDATE 
+        TB_DEALCO                      /* 거래처 */
+   SET  AFFIL_AGN      = #AFFIL_AGN#   /* 상위거래처코드 */ 
+       ,LS_CHG_USER_ID = 'BAT'         /* 최종변경사용자ID */  
+       ,LS_CHG_DTM     = SYSDATE       /* 최종변경일시 */ 
+ WHERE  DEALCO_CD= #DEALCO_CD#         /* 거래처코드 */]]>
+	</update>
+</sqlMap>

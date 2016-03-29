@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Deploy NEXCORE EarContent" default="" basedir=".">
+
+	<!-- ################################################################## -->
+	<!-- ## [NEXCORE_HOME] common build property ########################## -->
+	<!-- ################################################################## -->
+	<!-- default build.properties -->
+	<property file="${NEXCORE_HOME_ANT}/script/build/nexcore.build.properties" />
+
+	<!-- default for CI tool (Continuous Integration : quickBuild etc) -->
+	<property file="${ant.home}/nexcore.build.properties" />
+	
+	
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/webapp/web.war             ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent/webapp/web.war               ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.ui" description="" >
+		<echo>NEXCORE_HOME =${NEXCORE_HOME}</echo>
+		<echo>WORKSPACE_HOME =${WORKSPACE_HOME}</echo>
+			
+		<copy todir="${NEXCORE_HOME}/EarContent/webapp/web.war/dms" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/WebContent/kokr">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ../EarContent                                           ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent                              ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.EarContent.all" description="" >
+		<echo>NEXCORE_HOME =${NEXCORE_HOME}</echo>
+		<echo>WORKSPACE_HOME =${WORKSPACE_HOME}</echo>
+		
+		<copy todir="${NEXCORE_HOME}/EarContent/APP-INF" preservelastmodified="${preservelastmodified}" includeemptydirs="true" >
+			<fileset dir="${WORKSPACE_HOME}/EarContent/APP-INF">
+				<exclude name="**/.svn/**" />
+				<exclude name="lib/sapjco3.jar"/>
+				<exclude name="lib/sapjco3.dll"/>
+			</fileset>
+		</copy>
+		
+		<copy todir="${NEXCORE_HOME}/EarContent/META-INF" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/META-INF">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${NEXCORE_HOME}/EarContent/ejb" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/ejb">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${NEXCORE_HOME}/lib" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/lib">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${NEXCORE_HOME}/EarContent/webapp" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/webapp">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		
+		<!-- script폴더는 서버마다 nexcore.build.properties 가 차이가 있기 때문에 배포하지 않음.-->
+		<copy todir="${NEXCORE_HOME}/script" preservelastmodified="true" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/script">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/APP-INF                                   ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent/APP-INF                      ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.EarContent.app-inf" description="" >
+		<copy todir="${NEXCORE_HOME}/EarContent/APP-INF" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/APP-INF">
+				<exclude name="**/.svn/**" />
+				<exclude name="nexcore-jboss-service.xml"/>
+			</fileset>
+		</copy>
+	</target>
+
+
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/classes                   ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/env                   ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent/classes      ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent/env      ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.EarContent.App.Source" description="copy and paste Resource" >
+			<copy todir="${NEXCORE_HOME}/EarContent/classes" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+						<fileset dir="${WORKSPACE_HOME}/EarContent/classes">
+							<exclude name="**/.svn/**" />
+						</fileset>
+			</copy>
+			<copy todir="${NEXCORE_HOME}/EarContent/env" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+						<fileset dir="${WORKSPACE_HOME}/EarContent/env">
+							<exclude name="**/.svn/**" />
+						</fileset>
+			</copy>
+		    <copy todir="${NEXCORE_HOME}/batch" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+						<fileset dir="${WORKSPACE_HOME}/batch">
+							<exclude name="**/.svn/**" />
+						</fileset>
+			</copy>
+	</target>
+</project>

@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpPrchMgmt">
+	<select id="SInqEqpPrchObjListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpPrchMgmt.SInqEqpPrchObjListPaging 매입관리목록조회 */
+/* IO: 양재석,2015-08-28T09:15:28(양재석,2015-08-24T13:19:47) */
+SELECT  PA.*
+  FROM  (SELECT ROW_NUMBER() OVER(ORDER BY A.PRCH_MGMT_NO DESC) AS ROWNO
+                ,A.PRCH_MGMT_NO
+                ,A.CNSL_MGMT_NO
+                ,A.EQP_MDL_CD
+                ,A.CNSL_MGMT_SER_NO
+                ,A.TLY_DT
+                ,A.EQP_COLOR_CD
+                ,B.AFFIL_ORG_ID
+                ,(SELECT ORG_NM FROM TB_EP_BAS_ORG_MGMT WHERE DEL_YN = 'N' AND ORG_ID = B.AFFIL_ORG_ID) ORG_NM /*조직명*/
+                ,B.AGN_ORG_CD
+                ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM /*대리점명*/
+                ,B.DEALCO_NM
+                ,A.CNSL_DEALCO_CD
+                ,C.EQP_MDL_NM
+                ,A.PRCH_AMT
+                ,A.BANK_CD
+                ,A.ACCO_NO
+                ,A.DPSTR
+                ,A.TEL_NO
+                ,A.EQP_ST
+                ,nvl(A.CUST_IDEA,' ') CUST_IDEA
+                ,nvl(A.CUST_IDEA,' ') CUST_IDEA_T
+                ,'0' PRC_CHECK
+                ,B.AFFIL_AGN
+                ,A.PROGR_ST
+           FROM TB_EP_CST_PRCHS_MGMT A
+                ,TB_DEALCO B
+                ,TB_EQP_MDL C
+          WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+            AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+            AND B.EFF_STA_DT <= A.CNSL_DT
+            AND B.EFF_END_DT >= A.CNSL_DT
+            AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT# 
+            AND A.DEL_YN = 'N'
+            AND A.PRCH_CL IN ('Y','N')
+            AND B.DEL_YN = 'N'
+            AND A.SKN_CL = 'N'
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[
+                B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[
+                A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_SER_NO"><![CDATA[
+                A.CNSL_MGMT_SER_NO = #CNSL_MGMT_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR"><![CDATA[
+                A.DPSTR LIKE '%'||#DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PROGR_ST" compareValue="%"><![CDATA[
+                A.PROGR_ST = #PROGR_ST#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[
+                A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[            
+      )PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInqEqpPrchObjListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpPrchMgmt.SInqEqpPrchObjListTotCnt 매입관리목록조회총건수 */
+/* IO: 양재석,2015-08-27T17:27:03(양재석,2015-08-21T16:58:00) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_EP_CST_PRCHS_MGMT A
+       ,TB_DEALCO B
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+   AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT# 
+   AND A.DEL_YN = 'N'
+   AND A.PRCH_CL IN ('Y','N')
+   AND B.DEL_YN = 'N'
+   AND A.SKN_CL = 'N'
+]]><isNotEmpty prepend="AFFIL_AGN" property="AFFIL_AGN"><![CDATA[
+   	   B.AGN_CD = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[
+       A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_SER_NO"><![CDATA[
+       A.CNSL_MGMT_SER_NO = #CNSL_MGMT_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR"><![CDATA[
+       A.DPSTR LIKE '%'||#DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PROGR_ST" compareValue="%"><![CDATA[
+       A.PROGR_ST = #PROGR_ST#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqEqpPrchRegListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpPrchMgmt.SInqEqpPrchRegListTotCnt 매입확인목록조회총건수 */
+/* IO: 양재석,2015-08-27T17:37:53(양재석,2015-08-24T20:20:28) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_EP_CST_PRCHS_MGMT A  
+     	 ,TB_DEALCO B
+     	 ,TB_EQP_MDL D
+     	 /*,PS_MNG_ECO.TBAS_DEAL_CO_MARKETING C*/
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+   AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.PRCH_CL = 'N'
+   /*
+   --AND B.AGN_ORG_CD  = C.AGN_ORG_CD(+)
+   --AND C.DEL_YN(+) = 'N' 
+   --AND NVL(C.STA_DT,A.CNSL_DT) <= A.CNSL_DT
+   --AND NVL(C.END_DT,A.CNSL_DT) >= A.CNSL_DT  
+   */
+   AND A.SKN_CL = 'N'
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+       B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	       
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_SER_NO"><![CDATA[      
+       A.CNSL_MGMT_SER_NO = #CNSL_MGMT_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR"><![CDATA[      
+       A.DPSTR LIKE '%'||#DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PROGR_ST" compareValue="%"><![CDATA[
+       A.PROGR_ST = #PROGR_ST#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqEqpPrchRegListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpPrchMgmt.SInqEqpPrchRegListPaging 매입확인목록조회 */
+/* IO: 양재석,2015-08-28T10:06:50(양재석,2015-08-24T20:23:38) */
+SELECT PA.*
+  FROM (SELECT ROW_NUMBER() OVER(ORDER BY A.PRCH_MGMT_NO DESC) AS ROWNO
+               ,A.PRCH_MGMT_NO
+               ,A.CNSL_MGMT_NO
+               ,A.EQP_MDL_CD
+               ,A.CNSL_MGMT_SER_NO
+               ,A.CNSL_DT
+               ,A.TLY_DT
+               ,A.EQP_COLOR_CD
+               ,B.AFFIL_ORG_ID
+               ,(SELECT ORG_NM FROM TB_EP_BAS_ORG_MGMT WHERE DEL_YN = 'N' AND ORG_ID = B.AFFIL_ORG_ID) ORG_NM /*조직명*/
+               /*
+               --,C.HQ_NM
+               --,C.MARKET_CD
+               --,C.MARKET_NM  
+               */
+               ,'' AS HQ_NM
+               ,'' AS MARKET_CD
+               ,'' AS MARKET_NM
+               ,B.AGN_ORG_CD    
+               ,B.UKEY_SUB_CD    
+               ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM /*대리점명*/
+               ,B.DEALCO_NM
+               ,A.CNSL_DEALCO_CD
+               ,D.EQP_MDL_NM
+               ,A.PRCH_AMT
+               ,A.BANK_CD
+               ,A.ACCO_NO
+               ,A.DPSTR
+               ,A.TEL_NO
+               ,A.EQP_ST
+               ,DECODE(A.PRCH_CL,'N','O') PRCH_CL
+               ,DECODE(A.CUST_IDEA,'N','O') CUST_IDEA
+               ,A.PROGR_ST
+               ,A.EVALCNSLR_SUGG
+          FROM TB_EP_CST_PRCHS_MGMT A  
+               ,TB_DEALCO B
+               ,TB_EQP_MDL D
+               /*,PS_MNG_ECO.TBAS_DEAL_CO_MARKETING C*/
+         WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+           AND A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+           AND B.EFF_STA_DT <= A.CNSL_DT
+           AND B.EFF_END_DT >= A.CNSL_DT
+           AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.PRCH_CL = 'N'
+           /*
+           --AND B.UKEY_AGENCY_CD  = C.AGN_ORG_CD(+)
+           --AND C.DEL_YN(+) = 'N' 
+           --AND NVL(C.STA_DT,A.CNSL_DT) <= A.CNSL_DT
+           --AND NVL(C.END_DT,A.CNSL_DT) >= A.CNSL_DT  
+           */
+           AND A.SKN_CL = 'N'
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+               B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+               A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	       
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_SER_NO"><![CDATA[      
+               A.CNSL_MGMT_SER_NO = #CNSL_MGMT_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR"><![CDATA[      
+               A.DPSTR LIKE '%'||#DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PROGR_ST" compareValue="%"><![CDATA[
+               A.PROGR_ST = #PROGR_ST#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+               A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[ 
+       )PA
+ WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

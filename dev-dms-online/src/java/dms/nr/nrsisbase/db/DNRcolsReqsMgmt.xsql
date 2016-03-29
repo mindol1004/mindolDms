@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRcolsReqsMgmt">
+	<select id="SColsReqsLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRcolsReqsMgmt.SColsReqsLstPaging 추심현황조회 */
+/* IO: 안진갑,2016-01-21T10:15:18(장미진,2015-11-11T09:31:49) */
+SELECT  *      
+  FROM (SELECT  ROW_NUMBER() OVER (ORDER BY INSU_INV_NO) AS ROWNO
+               ,A.INSU_INV_NO                 		 /*보증보험청구번호*/
+               ,A.UKEY_INSU_NO                		 /*UKEY보증보험번호*/
+               ,A.UKEY_INSURE_MGMT_NO         		 /*UKEY보험관리번호*/
+               ,A.INV_ST_CD   	              		 /*청구상태코드*/
+               ,NVL(A.UNPD_RENTAL_FEE,0)   AS UNPD_RENTAL_FEE             /*미납렌탈요금*/
+               ,NVL(A.DMG_CMP_UNRTN_AMT,0) AS DMG_CMP_UNRTN_AMT       /*손해배상금미반납금액*/
+               ,NVL(A.ARR_ADD_AMT,0)       AS ARR_ADD_AMT         /*연체가산금액*/
+               ,NVL(A.MID_TERM_PEN_AMT,0)  AS MID_TERM_PEN_AMT			 /*중도해지위약금금액*/
+               ,NVL(A.RTN_DELAY_PEN_AMT,0) AS RTN_DELAY_PEN_AMT			 /*반납지연위약금금액*/
+               ,NVL(A.DMG_CMP_BKAG_AMT,0)  AS DMG_CMP_BKAG_AMT			 /*손해배상파손금액*/
+               ,NVL(A.UNPD_RENTAL_FEE,0) +NVL(A.DMG_CMP_UNRTN_AMT,0) +NVL(A.ARR_ADD_AMT,0) +NVL(A.MID_TERM_PEN_AMT,0) +NVL(A.RTN_DELAY_PEN_AMT,0) +NVL(A.DMG_CMP_BKAG_AMT,0) AS COLS_PRC
+               ,CASE WHEN NVL(D.UKEY_RECV_AMT,0) = 0 THEN '00'
+                     WHEN A.UKEY_INV_AMT = D.UKEY_RECV_AMT THEN '01'  
+                     ELSE '02'
+                      END AS RECV_ST_CD                    			 /*수납상태*/
+               ,D.UKEY_RECV_DT                						 /*UKEY수납일자*/
+               ,NVL(D.UKEY_RECV_AMT,0) AS UKEY_RECV_AMT              /*UKEY수납금액*/
+               ,A.RSN_CD                      /*사유코드*/
+               ,A.INSU_INV_MEMO				  /*사유*/	
+               ,B.UKEY_SVC_MGMT_NO            /*서비스관리번호*/
+               ,CASE WHEN A.INV_ST_CD = '04' THEN A.CONF_INV_CNCL_DT /*확정청구취소일자*/
+                     WHEN A.INV_ST_CD = '09' THEN A.COLS_REQS_DT     /*추심요청일자*/
+                     ELSE A.INV_PROC_DT
+                     END  AS INV_PROC_DT
+          FROM  TB_INSU_INV A
+               ,TB_INSU_UKEY B
+               ,TB_NR_CNTRT C
+               ,(SELECT  SUM(RECV_AMT) AS UKEY_RECV_AMT,MAX(RECV_DT) AS UKEY_RECV_DT,SVC_MGMT_NO,RENTAL_SER_NO 
+                   FROM  TB_NR_PAY_RFND_DTL_SYNC 
+                  WHERE  RECV_CL_CD = '1'/*수납구분코드 - 1.수납 2.환불*/
+                  GROUP BY SVC_MGMT_NO,RENTAL_SER_NO) D 
+         WHERE  A.UKEY_INSU_NO = B.UKEY_INSU_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  (C.SVC_MGMT_NO = D.SVC_MGMT_NO(+) AND  C.RENTAL_SER_NO = D.RENTAL_SER_NO(+)) 
+           AND  INV_ST_CD IN ('04','08','09','10')
+]]><isNotEmpty prepend="AND" property="COLS_REQS_STA_DT"><![CDATA[
+                (A.COLS_REQS_DT BETWEEN #COLS_REQS_STA_DT# AND #COLS_REQS_END_DT#
+                 OR A.CONF_INV_CNCL_DT BETWEEN #COLS_REQS_STA_DT# AND #COLS_REQS_END_DT#)
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="UKEY_INSURE_MGMT_NO"><![CDATA[
+                A.UKEY_INSURE_MGMT_NO = #UKEY_INSURE_MGMT_NO#       
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="UKEY_SVC_MGMT_NO"><![CDATA[
+                B.UKEY_SVC_MGMT_NO = #UKEY_SVC_MGMT_NO#       
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="RSN_CD" compareValue="%"><![CDATA[              
+	            A.RSN_CD = #RSN_CD#
+]]></isNotEqual><![CDATA[ )PA           
+  WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SColsReqsLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRcolsReqsMgmt.SColsReqsLstTotCnt 추심현황총건수 */
+/* IO: 안진갑,2016-02-23T15:23:47(장미진,2015-11-11T09:32:31) */
+SELECT  COUNT(1) AS TOTAL_CNT
+       ,SUM(CASE WHEN INV_ST_CD='10' THEN 1
+                 ELSE 0
+             END )  AS SUM_CNT
+       ,SUM(CASE WHEN INV_ST_CD='10' THEN COLS_PRC
+           ELSE 0
+           END )  AS SUM_PRC             
+  FROM (SELECT  ROW_NUMBER() OVER (ORDER BY INSU_INV_NO) AS ROWNO
+               ,A.INSU_INV_NO                 /*보증보험청구번호*/
+               ,A.UKEY_INSU_NO                /*UKEY보증보험번호*/
+               ,A.UKEY_INSURE_MGMT_NO         /*UKEY보험관리번호*/
+               ,A.INV_ST_CD   	              /*청구상태코드*/
+               ,NVL(A.UNPD_RENTAL_FEE,0) +NVL(A.DMG_CMP_UNRTN_AMT,0) +NVL(A.ARR_ADD_AMT,0) +NVL(A.MID_TERM_PEN_AMT,0) +NVL(A.RTN_DELAY_PEN_AMT,0) +NVL(A.DMG_CMP_BKAG_AMT,0) AS COLS_PRC
+               ,A.RECV_ST_CD                  /*수납상태*/
+               ,A.UKEY_RECV_DT                /*UKEY수납일자*/
+               ,A.UKEY_RECV_AMT               /*UKEY수납금액*/
+               ,A.RSN_CD                      /*사유코드*/
+               ,B.UKEY_SVC_MGMT_NO            /*서비스관리번호*/
+               ,A.CONF_INV_CNCL_DT			  /*확정청구취소일자*/
+               ,A.COLS_REQS_DT                  /*추심요청일자*/
+          FROM  TB_INSU_INV A
+               ,TB_INSU_UKEY B 
+         WHERE  A.UKEY_INSU_NO = B.UKEY_INSU_NO
+           AND  INV_ST_CD IN ('04','08','09','10')
+]]><isNotEmpty prepend="AND" property="COLS_REQS_STA_DT"><![CDATA[
+                (A.COLS_REQS_DT BETWEEN #COLS_REQS_STA_DT# AND #COLS_REQS_END_DT#
+                 OR A.CONF_INV_CNCL_DT BETWEEN #COLS_REQS_STA_DT# AND #COLS_REQS_END_DT#)
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="UKEY_INSURE_MGMT_NO"><![CDATA[
+                A.UKEY_INSURE_MGMT_NO = #UKEY_INSURE_MGMT_NO#       
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="UKEY_SVC_MGMT_NO"><![CDATA[
+                B.UKEY_SVC_MGMT_NO = #UKEY_SVC_MGMT_NO#       
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="RSN_CD" compareValue="%"><![CDATA[              
+	            A.RSN_CD = #RSN_CD#
+]]></isNotEqual><![CDATA[
+)PA]]>
+	</select>
+	<select id="SColsReqsLstDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRcolsReqsMgmt.SColsReqsLstDtl 추심현황상세조회 */
+/* IO: 안진갑,2016-02-22T16:26:54(장미진,2015-11-11T13:43:14) */
+SELECT  A.INSU_INV_NO                 /*보증보험청구번호*/
+       ,A.UKEY_INSU_NO                /*UKEY보증보험번호*/
+       ,A.UKEY_INSURE_MGMT_NO         /*UKEY보험관리번호*/
+       ,A.INV_ST_CD                   /*청구상태코드*/
+       ,CASE WHEN A.INV_ST_CD='04' THEN A.CONF_INV_CNCL_DT		/*청구확정취소일자*/
+             WHEN A.INV_ST_CD='08' THEN A.COLS_REQS_DT 			/*재추심요청일자*/
+             ELSE A.INV_PROC_DT 	  /*상태변경처리일자*/
+             END AS COLS_REQS_DT      /*처리일자*/
+       ,A.COLS_CO_CD                  /*추심사*/
+       ,NVL(D.UKEY_RECV_AMT,0) AS UKEY_RECV_AMT              /*UKEY수납금액*/
+       ,A.RSN_CD                      /*사유코드*/
+       ,A.INSU_INV_MEMO               /*보증보험청구비고*/
+       ,B.UKEY_SVC_MGMT_NO
+  FROM  TH_INSU_INV_HST A
+       ,TB_INSU_UKEY B
+       ,TB_NR_CNTRT C
+       ,(SELECT  SUM(RECV_AMT) AS UKEY_RECV_AMT,MAX(RECV_DT) AS UKEY_RECV_DT,SVC_MGMT_NO,RENTAL_SER_NO 
+           FROM  TB_NR_PAY_RFND_DTL_SYNC 
+          WHERE  RECV_CL_CD = '1'/*수납구분코드 - 1.수납 2.환불*/
+          GROUP BY SVC_MGMT_NO,RENTAL_SER_NO) D 
+ WHERE  A.UKEY_INSURE_MGMT_NO =B.UKEY_INSURE_MGMT_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  (C.SVC_MGMT_NO = D.SVC_MGMT_NO(+) AND  C.RENTAL_SER_NO = D.RENTAL_SER_NO(+)) 
+   AND  B.OP_TYP_CD = '01'
+   AND  A.INSU_INV_NO = #INSU_INV_NO#
+ORDER BY INV_HST_SEQ DESC]]>
+	</select>
+	<update id="UColsReqs" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRcolsReqsMgmt.UColsReqs 재추심요청_미사용 */
+/* IO: 장미진,2016-01-11T16:38:11(장미진,2015-11-11T16:31:04) */
+UPDATE  TB_INSU_INV
+   SET  INV_ST_CD = #INV_ST_CD#
+       ,COLS_REQS_DT=#COLS_REQS_DT# 
+   	   ,LS_CHG_USER_ID = #USER_NO#
+   	   ,LS_CHG_DTM = SYSDATE
+ WHERE  INSU_INV_NO=#INSU_INV_NO#
+   AND  UKEY_INSURE_MGMT_NO = #UKEY_INSURE_MGMT_NO#]]>
+	</update>
+	<insert id="IColsReqsHst" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRcolsReqsMgmt.IColsReqsHst 추심정보Hst입력 */
+/* IO: 장미진,2015-11-12T16:16:52(장미진,2015-11-11T16:33:54) */
+]]><selectKey resultClass="String" keyProperty="INV_HST_SEQ" type="pre"><![CDATA[
+SELECT  NVL(MAX(INV_HST_SEQ),0)+1 AS INV_HST_SEQ 
+  FROM  TH_INSU_INV_HST 
+ WHERE  INSU_INV_NO=#INSU_INV_NO# 
+   AND  UKEY_INSURE_MGMT_NO = #UKEY_INSURE_MGMT_NO#
+]]></selectKey><![CDATA[
+INSERT INTO  TH_INSU_INV_HST
+            (INSU_INV_NO				/*보증보험청구번호*/
+            ,INV_HST_SEQ				/*청구이력순번*/
+            ,UKEY_INSU_NO				/*UKEY보증보험번호*/
+            ,UKEY_INSURE_MGMT_NO		/*UKEY보험관리번호*/
+            ,INV_ST_CD					/*청구상태코드*/
+            ,UNPD_RENTAL_FEE			/*미납렌탈요금*/
+            ,DMG_CMP_UNRTN_AMT			/*손해배상미반납금액*/
+            ,ARR_ADD_AMT				/*연체가산금액*/
+            ,MID_TERM_PEN_AMT			/*중도해지위약금금액*/
+            ,RTN_DELAY_PEN_AMT			/*반납지연위약금금액*/
+            ,DMG_CMP_BKAG_AMT			/*손해배상파손금액*/
+            ,RECV_ST_CD					/*수납상태코드*/
+            ,RSN_CD						/*사유코드*/
+            ,INSU_INV_MEMO				/*보증보험청구메모*/
+            ,FS_REG_USER_ID				/*최초등록사용자ID*/
+            ,FS_REG_DTM					/*최초등록일시*/
+            ,LS_CHG_USER_ID				/*최종변경사용자ID*/
+            ,LS_CHG_DTM 				/*최종변경일시*/
+            ,COLS_REQS_DT				/*추심요청일자*/
+            ,COLS_CO_CD					/*추심사*/
+            ,UKEY_RECV_AMT)
+     VALUES (#INSU_INV_NO#
+            ,#INV_HST_SEQ#
+            ,#UKEY_INSU_NO#
+            ,#UKEY_INSURE_MGMT_NO#
+            ,#INV_ST_CD#
+            ,#UNPD_RENTAL_FEE#
+            ,#DMG_CMP_UNRTN_AMT#
+            ,#ARR_ADD_AMT#
+            ,#MID_TERM_PEN_AMT#			/*중도해지위약금금액*/
+            ,#RTN_DELAY_PEN_AMT#			/*반납지연위약금금액*/
+            ,#DMG_CMP_BKAG_AMT#			/*손해배상파손금액*/
+            ,#RECV_ST_CD#
+            ,#RSN_CD#
+            ,#INSU_INV_MEMO#
+            ,#USER_NO#
+            ,SYSDATE
+            ,#USER_NO# 
+            ,SYSDATE
+            ,TO_CHAR(SYSDATE,'YYYYMMDD')
+            ,#COLS_CO_CD#
+            ,#UKEY_RECV_AMT#)]]>
+	</insert>
+</sqlMap>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR012">
+	<select id="SUnrtnTermReq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR012.SUnrtnTermReq 해지요청 */
+/* IO: 문재웅,2015-08-28T19:50:26(문재웅,2015-08-18T14:24:43) */
+/* 손해배상금(미반납) 산출  발생 시점은 계약종료 후 D+30이 해당하는 월 기준(해당일이 휴일일 경우 가장 일찍 도래하는 영업일 기준)
+  예) 계약기간 : 14/08/01 ~ 15/07/31, 
+  손해배상금 발생일(계약종료일 + 30일) : 15/08/30 -> 손해배상금(미반납) : (출고가 – 출고가*13/36)*1.005
+  ※ 8/30, 8/31이 휴일일 경우 -> 손해배상금 발생일 : 15/09/01 -> 손해배상금(미반납) : (출고가 – 출고가*14/36)*1.005
+*/  
+
+/* ■■CASE 1 계약의 미반납,반납지연위약금 금액세팅 DATA 산출 ■■ */  
+WITH
+UNRTN_AMT_DATA AS
+(
+  SELECT  CNTRT_NO
+         ,RENTAL_POLY_NO
+         ,RENTAL_CNTRT_STA_DT
+         ,RENTAL_CNTRT_END_DT
+         ,RENTAL_CNTRT_END_DT_30
+         ,MONTHS_BETWEEN(TO_DATE(SUBSTR(RENTAL_CNTRT_END_DT_30,1,6),'YYYYMM'),TO_DATE(SUBSTR(RENTAL_CNTRT_STA_DT,1,6),'YYYYMM')) +1 AS MONTH_DIFF
+         ,OUT_PRC
+         ,TRUNC(( OUT_PRC - OUT_PRC * (MONTHS_BETWEEN(TO_DATE(SUBSTR(RENTAL_CNTRT_END_DT_30,1,6),'YYYYMM'),TO_DATE(SUBSTR(RENTAL_CNTRT_STA_DT,1,6),'YYYYMM')) +1) / 36 ) *1.005, 0) AS UNRTN_AMT  /* 미반납금액 */
+         ,SVC_MGMT_NO
+         ,RENTAL_SER_NO
+         ,TO_DATE(RENTAL_CNTRT_END_DT_30,'YYYYMMDD') - (TO_DATE(RENTAL_CNTRT_END_DT,'YYYYMMDD') + 1) + 1 AS RTN_DLY_PEN_DAY
+         ,TRUNC( ((RENTAL_PRN/365)*(DAY_RENTAL_FEE_RT/100)) * ((TO_DATE(RENTAL_CNTRT_END_DT_30,'YYYYMMDD') - (TO_DATE(RENTAL_CNTRT_END_DT,'YYYYMMDD') + 1)) + 1) , -1) AS RTN_DLY_PEN /* 반납지연위약금 최대30 */
+    FROM  (SELECT  B.CNTRT_NO            /* 계약번호 */
+                  ,A.RENTAL_POLY_NO      /* 렌탈정책번호 */
+                  ,B.RENTAL_CNTRT_STA_DT /* 렌탈계약시작일자 */
+                  ,B.RENTAL_CNTRT_END_DT /* 렌탈계약종료일자 */
+                  ,(SELECT  MIN(SCARL_DT) AS OP_PROC_DT 
+                      FROM  TB_HOLY 
+                     WHERE  SCARL_DT >= (SELECT TO_CHAR(TO_DATE(B.RENTAL_CNTRT_END_DT) + 30,'YYYYMMDD') FROM DUAL)   /* 렌탈계약종료일자+30(영업일) 날자대상인 것 */
+                       AND  HOLY_YN = 'N'
+                   ) AS RENTAL_CNTRT_END_DT_30 /* 계약종료 후 D+30이 해당하는 월 기준(해당일이 휴일일 경우 가장 일찍 도래하는 영업일 기준) */
+                  ,A.OUT_PRC           /* 출고가격 */
+                  ,C.SVC_MGMT_NO       /* 서비스관리번호 */
+                  ,C.RENTAL_SER_NO     /* 렌탈일련번호   */
+                  ,D.DAY_RENTAL_FEE_RT
+                  ,E.RENTAL_PRN
+             FROM  TB_RENTAL_POLY A     /* 렌탈정책   */
+                  ,TB_RENTAL_CNTRT B    /* PR_렌탈계약 */
+                  ,TB_NR_CNTRT C        /* NR_신규R계약 */
+                  ,TB_PEN_POLY D        /* NR_위약금정책*/
+                  ,TB_RENTAL_POLY E     /* NR_렌탈정책 */
+            WHERE A.RENTAL_POLY_NO = B.RENTAL_POLY_NO   
+              AND B.CNTRT_NO       =  C.CNTRT_NO
+              AND C.OP_TYP_CD IN('01','04','02')   /* 가입,변경,정상해지 */
+             AND  B.PEN_POLY_NO 	= D.PEN_POLY_NO
+             AND  B.RENTAL_POLY_NO= E.RENTAL_POLY_NO
+         )  TA       
+  /* TF_UNRTN_TERM_REQ(IF_미반납해지요청) 진행데이터 제외 */         
+  WHERE  NOT EXISTS(SELECT * FROM TF_UNRTN_TERM_REQ 
+                    WHERE  TA.SVC_MGMT_NO    = SVC_MGMT_NO 
+                      AND  TA.RENTAL_SER_NO  = RENTAL_SER_NO)       
+)
+
+/* ■■CASE 2.1 계약상태 가입,변경된건중 종료일+30 경우 ■■ */  
+SELECT  A.SVC_MGMT_NO       /* 서비스관리번호 */
+       ,A.RENTAL_SER_NO     /* 렌탈일련번호   */
+       ,A.OP_PROC_DT        /* 작업처리일자 */
+       ,B.RENTAL_CNTRT_END_DT
+       ,UA.UNRTN_AMT        /* 미반납금액 */
+       ,UA.RTN_DLY_PEN      /* 반납지연위약금 */
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,UNRTN_AMT_DATA UA
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  A.OP_TYP_CD IN('01','04')   /* 가입,변경 */
+   AND  TO_CHAR(SYSDATE, 'YYYYMMDD') >=
+        (SELECT  MIN(SCARL_DT) AS OP_PROC_DT 
+           FROM  TB_HOLY 
+          WHERE  SCARL_DT >= (SELECT TO_CHAR(TO_DATE(B.RENTAL_CNTRT_END_DT) + 30,'YYYYMMDD') FROM DUAL)   /* 렌탈계약종료일자+30(영업일) 날자대상인 것 */
+            AND  HOLY_YN = 'N'
+        )  
+   AND  NOT EXISTS(SELECT * FROM TF_UNRTN_TERM_REQ 
+                    WHERE  A.SVC_MGMT_NO    = SVC_MGMT_NO 
+                      AND  A.RENTAL_SER_NO  = RENTAL_SER_NO)                        /* TF_UNRTN_TERM_REQ(IF_미반납해지요청) 진행데이터 제외 */
+   AND  A.SVC_MGMT_NO   = UA.SVC_MGMT_NO
+   AND  A.RENTAL_SER_NO = UA.RENTAL_SER_NO
+UNION                       
+/* ■■CASE 2.2 정상해지건중 다말기반납예정(S) 처리건 ■■ */  
+SELECT  A.SVC_MGMT_NO       /* 서비스관리번호 */
+       ,A.RENTAL_SER_NO     /* 렌탈일련번호   */
+       ,A.OP_PROC_DT        /* 작업처리일자 */
+       ,'' AS RENTAL_CNTRT_END_DT
+       ,UA.UNRTN_AMT        /* 미반납금액 */
+       ,UA.RTN_DLY_PEN      /* 반납지연위약금 */
+  FROM  TB_NR_CNTRT A
+       ,UNRTN_AMT_DATA UA  
+ WHERE  A.OP_TYP_CD IN('02')  /* 정상해지 */
+   AND  A.EQP_RTN_YN  = 'S'     /* 단말기반납여부상태:해지상태나 단말기는 미반납상태 */
+   AND  NOT EXISTS(SELECT * FROM TF_UNRTN_TERM_REQ 
+                    WHERE  A.SVC_MGMT_NO    = SVC_MGMT_NO 
+                      AND  A.RENTAL_SER_NO  = RENTAL_SER_NO)                        /* TF_UNRTN_TERM_REQ(IF_미반납해지요청) 진행데이터 제외 */
+   AND  A.SVC_MGMT_NO   = UA.SVC_MGMT_NO
+   AND  A.RENTAL_SER_NO = UA.RENTAL_SER_NO]]>
+	</select>
+	<insert id="IUnrtnTermReq" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR012.IUnrtnTermReq 해지요청I/F저장 */
+/* IO: 문재웅,2015-08-27T10:32:19(문재웅,2015-08-18T14:22:20) */
+INSERT
+  INTO  TF_UNRTN_TERM_REQ /* IF_미반납해지요청 */ 
+       (
+        IF_PROC_DT          /* IF_처리일자 */
+       ,IF_FILE_NM          /* IF_파일명 */
+       ,IF_SEQ              /* IF_순번 */
+       ,SVC_MGMT_NO         /* 서비스관리번호 */
+       ,RENTAL_SER_NO       /* 렌탈일련번호 */
+       ,PROC_ST_CD          /* 처리상태코드 */
+       ,FS_REG_USER_ID      /* 최초등록사용자ID */
+       ,FS_REG_DTM          /* 최초등록일시 */
+       ,LS_CHG_USER_ID      /* 최종변경사용자ID */
+       ,LS_CHG_DTM          /* 최종변경일시 */
+       )
+VALUES
+       (
+       	#IF_PROC_DT#        /* IF_처리일자 */
+       ,#IF_FILE_NM#        /* IF_파일명 */
+       ,#IF_SEQ#            /* IF_순번 */
+       ,#SVC_MGMT_NO#       /* 서비스관리번호 */
+       ,#RENTAL_SER_NO#     /* 렌탈일련번호 */
+       ,#PROC_ST_CD#        /* 처리상태코드 */
+       ,'BAT'               /* 최초등록사용자ID */
+       ,SYSDATE             /* 최초등록일시 */
+       ,'BAT'               /* 최종변경사용자ID */
+       ,SYSDATE             /* 최종변경일시 */
+       )]]>
+	</insert>
+	<update id="UTbNrCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR012.UTbNrCntrt 계약해지처리요청일자입력 */
+/* IO: 문재웅,2015-08-27T20:12:21(문재웅,2015-08-27T10:34:07) */
+UPDATE  TB_NR_CNTRT
+   SET  TERM_PROC_REQS_DT   = SYSDATE			/* 해지처리요청일자 */
+   	   ,UNRTN_AMT           = #UNRTN_AMT# 		/* 미반납금액 */
+       ,LS_CHG_USER_ID 		= 'BAT'				/* 최종변경사용자ID */
+       ,LS_CHG_DTM 			= SYSDATE			/* 최종변경일시 */
+WHERE  SVC_MGMT_NO    		= #SVC_MGMT_NO#   	/* 서비스관리번호 */
+  AND  RENTAL_SER_NO  		= #RENTAL_SER_NO# 	/* 렌탈일련번호   */]]>
+	</update>
+</sqlMap>

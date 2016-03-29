@@ -1,0 +1,301 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="nexcore.framework.core.Constants"%>
+<%@ page import="nexcore.framework.core.util.BaseUtils"%>
+<%@ page import="nexcore.framework.core.data.user.IUserInfo"%>
+<%@ page import="nexcore.framework.online.channel.util.WebUtils"%>
+<%@page import="java.util.*" %>
+<%@page import="java.text.*" %>
+<%@page import="nexcore.framework.core.data.IDataSet" %>
+<%@page import="nexcore.framework.core.data.IRecordSet" %>
+<%@page import="nexcore.framework.core.data.IRecord" %>
+<%@page import="nexcore.framework.core.data.IResultMessage" %>
+<%@page import="nexcore.framework.core.util.BaseUtils" %>
+<%@page import="nexcore.framework.core.util.ExceptionUtil" %>
+<%@page import="nexcore.framework.core.code.ICode"%>
+<%@page import="fwk.utils.HpcUtils"%>
+<%@page import="fwk.code.HpcCodeManager"%>
+<%@page import="fwk.code.internal.HpcCode"%>
+<!DOCTYPE html>
+<html>
+<head> 
+	<title>SKN여신조회</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" >
+	<!-- libraryList include  start -->
+	<jsp:include page="./include/libraryList.jsp"/>
+	<!-- top page include  end -->	
+</head>	
+<body>
+	<!-- top file include  start -->
+	<%@ include file="include/top.jsp" %>	
+	<!-- top page include  end -->	
+<%		
+	//조회조건값  
+	String _PAY_FR_YM = request.getParameter("PAY_FR_YM_PARAM");  //조회시작년월
+	String _PAY_TO_TM = request.getParameter("PAY_TO_YM_PARAM"); //조회종료년월
+	String _PAY_YM_TS = request.getParameter("PAY_YM_TS"); 			 //지급차수
+			
+	if(_PAY_FR_YM == null || "".equals(_PAY_FR_YM)){
+	 	//   _PAY_FR_YM = todate;
+		/* TODO 기준년월 현행화하기 */ 
+    	_PAY_FR_YM = "2007-01";
+	}
+	if(_PAY_TO_TM == null || "".equals(_PAY_TO_TM)){
+	    _PAY_TO_TM = todate;
+	}
+	//지급차수 공통코드 리스트
+	List<HpcCode> codelist = HpcUtils.getCodes("DMS119");
+	Iterator<HpcCode> _codelist = codelist.iterator();
+	
+	//리스트 결과 
+	IDataSet responseData = WebUtils.getResultDataSet(request);	
+	IResultMessage resultMessage = null;
+	IRecordSet rsList = null;
+	
+	String message = null;
+	String sNoData = "";
+	int _recordCnt = 0; //데이터건수
+	int _totalCnt = 0;	//총건수
+	
+	if(responseData != null){
+	    //**********************************************************************************************************//
+	    sNoData = sNoDataMessage;
+	    resultMessage = responseData.getResultMessage();
+	    message = BaseUtils.getMessage(resultMessage.getMessageId(), resultMessage.getMessageParams());
+	    
+	    //세션체크
+	    out.println( "<script>");
+	    out.println("checkSessionAfterService('"+resultMessage.getMessageId()+"','"+message+"');");
+	    out.println( "</script>");
+	  //**********************************************************************************************************//
+	    if (responseData.getRecordSet("RS_SKN_PG") != null){
+		    rsList = responseData.getRecordSet("RS_SKN_PG");
+		    _recordCnt = rsList.getRecordCount();
+		    _totalCnt = rsList.getTotalRecordCount(); //총건수		    
+		}
+	  //**********************************************************************************************************//
+	} 
+%>		
+	<!-- content start -->
+	<div id="contentDiv"> 
+		<div id ="contentWrapDiv"> 
+			<div id ="titleDiv" >
+				<p>SKN여신조회</p>
+			</div>
+			<div id="searchDiv"  > 
+				<div class="searchFormDiv">
+					<form name="MyForm" method="post">  
+						 <input type="hidden" name="<%= Constants.TRANSACTION_ID %>">
+						  <input type="hidden" name="<%= Constants.TARGET %>">
+						  <input type="hidden" name="PAY_FR_YM"  value="">
+						  <input type="hidden" name="PAY_TO_YM"  value="">
+						  <input type="hidden" name="AGN_CD"  value="">
+						  <input type="hidden" name="DEALCO_CD"  value="">						  
+						  <input type="hidden" name="page" value="<%=_page%>"> 
+						  <input type="hidden" name="page_size" value="<%=_page_size%>">
+  
+		  				 <div class="formGroup">
+			          		<div class="formGroupLabel"><label class="formLabelFontStyle"  for="기준년월">기준년월</label></div>
+			          		<div class="input-append date"  id="fromDt" data-date="" data-date-format="yyyy-mm" data-date-viewmode="months" data-date-minviewmode="months">
+									<input class="span2"  size="16"  name="PAY_FR_YM_PARAM"  type="text" value="<%=_PAY_FR_YM %>"  style="font-size:12px; font-family:돋움,Dotum,Arial,sans-serif;">
+									<span class="add-on"><i class="icon-calendar"></i></span>
+						 	</div>
+						 	<div>~</div>
+			          		<div class="input-append date"  id="toDt" data-date="" data-date-format="yyyy-mm" data-date-viewmode="months" data-date-minviewmode="months">
+									<input class="span2" size="16"  name="PAY_TO_YM_PARAM"  type="text" value="<%=_PAY_TO_TM %>"   style="font-size:12px; font-family:돋움,Dotum,Arial,sans-serif;">
+									<span class="add-on"><i class="icon-calendar"></i></span>
+						 	 </div>
+	          			</div> 
+	          		<div class="formGroup">	
+						<div class="formGroupLabel"><label class="formLabelFontStyle"  for="지급차수">지급차수</label></div>
+						<div class="input-append">
+          					<select name="PAY_YM_TS"  style="font-size:12px; font-family:돋움,Dotum,Arial,sans-serif;">
+          						<option value="%">전체</option>
+							<%
+							while (_codelist.hasNext()) {
+								HpcCode c = (HpcCode) _codelist.next();
+							%>
+								<option value="<%=c.getCodeId() %>" <%if(c.getCodeId().equals(_PAY_YM_TS)) {%>selected<% } %>><%=c.getCodeNm() %></option>
+							<%
+							}
+							%>
+							</select>        
+						</div>
+					</div>  		
+					<div class="searchBtnDiv btn-group float-right" >
+				      <input type="button" value="초기화" onclick="formEmpty();" class="btn btn-default  btn-lg" />
+				      <input type="button" value="검색" onclick="goSearch();" class="btn btn-default  btn-lg" />
+				    </div>					
+			      </form> 	
+		      </div>	
+			</div>
+			<div id ="listDiv" >
+				<!-- 대리점정보  -->
+				<div id="DealInfoDiv"> 
+					<table class="table table-bordered table-striped listTable">
+						<colgroup>
+							<col width="10%" />
+							<col width="10%" />
+							<col width="10%" />
+							<col width="20%" />
+							<col width="10%" />
+							<col width="15%" />
+							<col width="10%" />
+							<col width="15%" />
+						</colgroup>
+						<thead>
+							<tr style="background-color:#f9f9f9;">
+								<th style="text-align: center;" >대리점코드</th>
+								<th style="text-align: center;font-weight:normal;">${dealCoCd}</th>
+								<th style="text-align: center;">대리점명</th>
+								<th style="text-align: center;font-weight:normal;">${dealCoNm}</th>
+								<th style="text-align: center;" >대표자명</th>
+								<th style="text-align: center;font-weight:normal;">${dealCoRepveNm}</th>
+								<th style="text-align: center;">사업자번호</th>
+								<th style="text-align: center;font-weight:normal;">${dealCoBlicensNo}</th>
+							</tr>
+						</thead>
+						<!-- <tbody>						
+							<tr>
+								<td style="text-align: center;"></td>	
+								<td style="text-align: center;"></td>
+								<td style="text-align: center;"></td>
+								<td style="text-align: center;"></td>
+							</tr>
+						</tbody> -->
+					</table>
+				</div>
+				<div id="listTitleDiv">
+					<p class="listTitleP float-left">총 <%=_totalCnt %> 건</p> 
+					<p class="float-right listTitleInfo" >*부가세(V.A.T) 포함가</p>
+				</div>
+				<div id="listTableDiv">
+					<table class="table table-bordered table-hover table-striped listTable">
+						<colgroup>
+							<col/>
+							<col/>
+							<col/>
+							<col/>
+							<col/>
+							<col/>
+						</colgroup>
+						<thead>
+							<tr>
+								<th style="text-align: center;" width="2%" >NO.</th>
+								<th style="text-align: center;">기준년월</th>
+								<th style="text-align: center;">지급차수</th>
+								<th style="text-align: center;">대리점여신금액</th>
+								<th style="text-align: center;">대리점판매금액</th>
+								<th style="text-align: center;">여신판매차액</th>
+							</tr>
+						</thead>
+						<tbody>
+						<%
+							if(_recordCnt==0){
+						 %>	    
+						 	<tr>
+								<td colspan="6" ><p class="text-center table-noDataInfo"><%=sNoData%></p></td>								
+							</tr>
+						<% } else {
+					    	for(int i=0; i<_recordCnt; i++){
+								IRecord record = rsList.getRecord(i);
+						%>
+							<tr>
+								<td style="text-align: center;"><%=record.get("ROWNO")%></td>	
+								<td style="text-align: center;"><%=record.get("PAY_YM").substring(0,4) + "-" + record.get("PAY_YM").substring(4,6)%></td>
+								<td style="text-align: center;"><%=Integer.parseInt(record.get("PAY_YM_TS")) + "차"%></td>
+								<td style="text-align: right;"><%=df.format(Integer.parseInt(record.get("AGN_CRD_AMT")))%></td>
+								<td style="text-align: right;"><%=df.format(Integer.parseInt(record.get("AGN_SALE_AMT")))%></td>
+								<td style="text-align: right;"><%=df.format(Integer.parseInt(record.get("CRD_SALE_DAMT")))%></td>
+							</tr>
+							<%
+									}//for
+								}
+							%>
+						</tbody>
+					</table>
+				</div>
+				<!-- paging navi start -->
+				<div class="page-wrap"></div>
+				<!-- paging navi end -->
+			</div>
+		</div>
+		<!-- content end -->
+		<!-- footer file include  start -->
+		<%@ include file="include/footer.jsp" %>	
+		<!-- footer page include  end -->	
+	</div>
+	<script>	
+		//다른 페이지이동시 이벤트
+		function goSearchPage(page){
+			goSearch(page);
+		}
+		
+		//조회 버튼 클릭시 이벤트
+ 		function goSearch(nPage){
+			
+			document.MyForm.<%= Constants.TRANSACTION_ID %>.value="PNRLoanMgmt_pInqSKNLoanLstWeb";
+			document.MyForm.<%= Constants.TARGET %>.value="forward:jsp/SknCrdLstM.jsp";			
+			document.MyForm.PAY_FR_YM.value = document.MyForm.PAY_FR_YM_PARAM.value;
+			document.MyForm.PAY_TO_YM.value = document.MyForm.PAY_TO_YM_PARAM.value;		
+			document.MyForm.PAY_FR_YM.value = document.MyForm.PAY_FR_YM.value.replace("-","");
+			document.MyForm.PAY_TO_YM.value = document.MyForm.PAY_TO_YM.value.replace("-","");	
+			
+			//페이지 설정
+			if(nPage != null){
+				document.MyForm.page.value = nPage;
+			}
+			
+			document.MyForm.target = "_self";
+			document.MyForm.action = "<%=request.getContextPath()%>/standard.cmd";
+			document.MyForm.submit();
+		} 
+		//초기화 버튼 클릭시 이벤트
+		function formEmpty(){
+			//document.MyForm.reset();
+			document.MyForm.PAY_FR_YM_PARAM.value ="<%=todate%>";
+			document.MyForm.PAY_TO_YM_PARAM.value = "<%=todate%>";	
+			
+			$("select[name=PAY_YM_TS] option[value='%']").attr("selected",true);
+		}		
+		
+		//대리점 기본정보조회
+		function goSearchDealInfo(){
+			document.MyForm.<%= Constants.TRANSACTION_ID %>.value="PSCDealMgmt_pInqDealInfo";
+			document.MyForm.<%= Constants.TARGET %>.value="forward:jsp/SknCrdLstM.jsp";			
+			document.MyForm.target = "_self";
+			document.MyForm.action = "<%=request.getContextPath()%>/standard.cmd";
+			document.MyForm.submit();
+		}	 
+		
+		$(document).ready(function() {
+			//1.달력초기화
+			$('#fromDt').datepicker();
+			$('#toDt').datepicker();
+			
+			//2. 페이징초기화 			
+			var page = <%=_page%>;
+			var pageCnt = <%=_page_size%>;			
+			var totalCnt = <%=_totalCnt%>;
+
+			if(totalCnt >0){
+				 $(".page-wrap").pager({ 
+							pagenumber: page, 
+							pagecount: pageCnt, 
+							totalcount: totalCnt,
+							buttonClickCallback: 
+							function(pagenumber){ 
+								goSearchPage(pagenumber);
+							}
+				});
+				$(".page-wrap .page-list li ").css("margin","0 2px");		
+			}
+			
+			if(<%=responseData == null %>){
+				goSearchDealInfo();
+			}			
+		});		
+	</script>	
+</body>
+</html>

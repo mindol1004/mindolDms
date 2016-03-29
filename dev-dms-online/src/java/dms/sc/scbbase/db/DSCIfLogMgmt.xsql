@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCIfLogMgmt">
+	<select id="SIfErpLogLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCIfLogMgmt.SIfErpLogLstTotCnt ERP_IF전체건수조회 */
+/* IO: 진병수,2015-11-24T17:40:49(진병수,2015-11-23T14:36:55) */
+SELECT COUNT(1) AS TOTAL_CNT
+  FROM TB_SLIP_TRMS_HST           B                                                    
+     , TB_SLIP_TRMS_DTL_HST       C                                                    
+     , TB_SLIP_TRMS_DTL_DTAIL_HST D                                                    
+     , TB_SLIP_TYP                T                                                    
+ WHERE C.SLIP_TRMS_HST_NO           =  B.SLIP_TRMS_HST_NO                                                    
+   AND D.SLIP_TRMS_HST_NO           =  C.SLIP_TRMS_HST_NO                                                    
+   AND D.SLIP_TRMS_DTL_HST_NO       =  C.SLIP_TRMS_DTL_HST_NO                                                    
+   AND SLIP_TRMS_DTL_DTAIL_HST_CONT IS NOT NULL                                                       
+   AND T.SLIP_TYP_CD             (+)= B.SLIP_TYP_CD
+]]><isNotEmpty prepend="AND" property="OP_CL_CD"><![CDATA[                                                                                                          
+       T.OP_CL_CD LIKE #OP_CL_CD#
+]]></isNotEmpty><![CDATA[                                                                               
+]]><isNotEmpty prepend="AND" property="SLIP_TYP_CD"><![CDATA[                                                                                                          
+       T.SLIP_TYP_CD = #SLIP_TYP_CD#
+]]></isNotEmpty><![CDATA[         
+]]><isNotEmpty prepend="AND" property="DMS_NO"><![CDATA[                                                                                                          
+       NVL(B.DMS_SLIP_NO,B.SLIP_TRMS_HST_NO) LIKE '%' || #DMS_NO# || '%'
+]]></isNotEmpty><![CDATA[                                            
+]]><isNotEmpty prepend="AND" property="SAP_NO"><![CDATA[                                                                                                          
+       NVL(B.FISCL_SLIP_NO,(SELECT SLIP_NO FROM TB_SLIP WHERE FISCL_SYS_SEQ = B.DMS_SLIP_NO)) LIKE '%' || #SAP_NO# || '%'
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SIfErpLogLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCIfLogMgmt.SIfErpLogLstPaging ERP_IF목록조회 */
+/* IO: 진병수,2015-11-24T17:40:55(진병수,2015-11-23T14:30:58) */
+SELECT *
+  FROM (   
+       SELECT ROW_NUMBER() OVER(ORDER BY TO_NUMBER(NVL(B.DMS_SLIP_NO,B.SLIP_TRMS_HST_NO)) DESC , C.SLIP_TRMS_DTL_HST_NO , SLIP_TRMS_DTL_DTAIL_HST_EVNT) AS ROWNO
+            ,  NVL(B.DMS_SLIP_NO,B.SLIP_TRMS_HST_NO)   AS DMS_NO                                                                 
+             , NVL(B.FISCL_SLIP_NO,(SELECT SLIP_NO FROM TB_SLIP WHERE FISCL_SYS_SEQ = B.DMS_SLIP_NO))  AS SAP_NO                 
+             , B.SLIP_TYP_CD                                                                                                     
+             , T.SLIP_TYP_NM                                                                                                     
+             , C.SLIP_TRMS_DTL_EVNT                                                                                              
+               || DECODE(C.SLIP_TRMS_DTL_EVNT , 'IT_DMS_ITEM', ' ' || C.SLIP_TRMS_DTL_HST_NO - 1 , NULL) AS COL_KEY              
+             , C.SLIP_TRMS_DTL_CONT                                  AS COL_VALUE                                                
+             , D.SLIP_TRMS_DTL_DTAIL_HST_EVNT                        AS ITEM_KEY                                                 
+             , D.SLIP_TRMS_DTL_DTAIL_HST_CONT                        AS ITEM_VALUE                                               
+             , B.FS_REG_USER_ID                                                                                                  
+             , MIN(B.FS_REG_DTM) OVER(PARTITION BY B.SLIP_TRMS_HST_NO) AS FS_REG_DTM                                             
+             , B.LS_CHG_USER_ID                                                                                                  
+             , MAX(B.LS_CHG_DTM) OVER(PARTITION BY B.SLIP_TRMS_HST_NO) AS LS_CHG_DTM                                             
+             ,   (MAX(B.LS_CHG_DTM) OVER(PARTITION BY B.SLIP_TRMS_HST_NO)                                                        
+               - MIN(B.FS_REG_DTM) OVER(PARTITION BY B.SLIP_TRMS_HST_NO)) *24*60*60*1000 AS ELASPED                              
+          FROM PS_MNG.TB_SLIP_TRMS_HST B                                                                                                
+             , PS_MNG.TB_SLIP_TRMS_DTL_HST C                                                                                            
+             , PS_MNG.TB_SLIP_TRMS_DTL_DTAIL_HST D                                                                                      
+             , PS_MNG.TB_SLIP_TYP                T                                                                                      
+         WHERE C.SLIP_TRMS_HST_NO = B.SLIP_TRMS_HST_NO                                                                           
+           AND D.SLIP_TRMS_HST_NO = C.SLIP_TRMS_HST_NO                                                                           
+           AND D.SLIP_TRMS_DTL_HST_NO = C.SLIP_TRMS_DTL_HST_NO                                                                   
+           AND SLIP_TRMS_DTL_DTAIL_HST_CONT IS NOT NULL                                                                             
+           AND T.SLIP_TYP_CD           (+)= B.SLIP_TYP_CD        
+]]><isNotEmpty prepend="AND" property="OP_CL_CD"><![CDATA[                                                                                                          
+               T.OP_CL_CD LIKE #OP_CL_CD#
+]]></isNotEmpty><![CDATA[                                                                               
+]]><isNotEmpty prepend="AND" property="SLIP_TYP_CD"><![CDATA[                                                                                                          
+               T.SLIP_TYP_CD = #SLIP_TYP_CD#
+]]></isNotEmpty><![CDATA[         
+]]><isNotEmpty prepend="AND" property="DMS_NO"><![CDATA[                                                                                                          
+               NVL(B.DMS_SLIP_NO,B.SLIP_TRMS_HST_NO) LIKE '%' || #DMS_NO# || '%'
+]]></isNotEmpty><![CDATA[                                            
+]]><isNotEmpty prepend="AND" property="SAP_NO"><![CDATA[                                                                                                          
+               NVL(B.FISCL_SLIP_NO,(SELECT SLIP_NO FROM TB_SLIP WHERE FISCL_SYS_SEQ = B.DMS_SLIP_NO)) LIKE '%' || #SAP_NO# || '%'
+]]></isNotEmpty><![CDATA[            
+       ORDER BY TO_NUMBER(NVL(B.DMS_SLIP_NO,B.SLIP_TRMS_HST_NO)) DESC , C.SLIP_TRMS_DTL_HST_NO , SLIP_TRMS_DTL_DTAIL_HST_EVNT
+      ) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSlipTyp4Combo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCIfLogMgmt.SSlipTyp4Combo 전표유형조회 */
+/* IO: 진병수,2015-11-24T17:40:39(진병수,2015-11-24T11:14:02) */
+SELECT NULL AS CM_CD_ID
+     , '전체' AS CM_CD_NM
+  FROM DUAL
+ UNION ALL
+SELECT SLIP_TYP_CD AS CM_CD_ID
+     , DECODE(USE_YN, 'N' , '[중지]', CASE WHEN TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN STA_DT AND END_DT THEN '[만료]' ELSE '' END , '') 
+       || SLIP_TYP_NM AS CM_CD_NM
+  FROM TB_SLIP_TYP
+]]><dynamic prepend="WHERE"><![CDATA[                                                                                                                                                       
+]]><isNotEmpty prepend="AND" property="OP_CL_CD"><![CDATA[                                                                                                         
+        OP_CL_CD LIKE #OP_CL_CD#                                                                                               
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+</sqlMap>

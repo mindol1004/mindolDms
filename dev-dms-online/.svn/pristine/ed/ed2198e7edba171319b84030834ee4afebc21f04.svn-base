@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPPriceListMgmt">
+	<select id="SEpBasProdFixPriceMstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.SEpBasProdFixPriceMstPaging 상품고정가격관리목록조회 */
+/* IO: 김윤환,2015-08-19T15:29:14(김윤환,2015-08-19T15:08:19) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT 
+				ROW_NUMBER() OVER(ORDER BY A.PRCLST_MGMT_NO ) AS ROWNO
+				,A.PRCLST_MGMT_NO	/* 가격표 관리 번호 */
+				,A.STA_DT			/* 시작 일자 */
+				,A.PRCLST_QTY		/* 가격표 수량 */
+				,A.RMK				/* 비고 */
+		  FROM TB_EP_BAS_PROD_FIX_PRICE_MST A
+		 WHERE A.DEL_YN = 'N'
+]]><isNotEmpty property="STA_DT" prepend="AND"><![CDATA[
+			   A.STA_DT LIKE #STA_DT#||'%' 
+]]></isNotEmpty><![CDATA[
+		 ORDER BY STA_DT DESC
+	    ) PA
+WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEpBasProdFixPriceMstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.SEpBasProdFixPriceMstTotCnt 상품고정가격관리목록총건수 */
+/* IO: 김윤환,2015-08-19T15:28:43(김윤환,2015-08-19T15:20:02) */
+SELECT 
+	   COUNT(*) AS TOTAL_CNT /*전체건수*/				
+  FROM TB_EP_BAS_PROD_FIX_PRICE_MST A
+ WHERE A.DEL_YN = 'N'
+]]><isNotEmpty property="STA_DT" prepend="AND"><![CDATA[
+	   A.STA_DT LIKE #STA_DT#||'%' 
+]]></isNotEmpty><![CDATA[
+ ORDER BY STA_DT DESC]]>
+	</select>
+</sqlMap>

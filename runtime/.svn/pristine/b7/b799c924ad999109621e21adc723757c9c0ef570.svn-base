@@ -1,0 +1,539 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<%@ page import="java.io.*"%>
+<%@ page import="java.util.*"%>
+<%@ page import="java.text.*"%>
+<%@ page import="java.lang.reflect.*"%>
+<%@ page import="java.net.InetAddress"%>
+<%@ page import="nexcore.framework.core.component.*"%>
+<%@ page import="nexcore.framework.core.component.internal.*"%>
+<%@ page import="nexcore.framework.core.util.*"%>
+<%@ page import="nexcore.framework.core.ioc.*"%>
+<%@ page import="nexcore.framework.core.*"%>
+<%@ page import="nexbank.fwk.flat.FlatHeaderSpec"%>
+
+<%
+	request.setCharacterEncoding("UTF-8");
+
+	String input_layout_id = request.getParameter("input_layout_id");
+	String input_data_type = request.getParameter("input_data_type");
+	String input_data = request.getParameter("input_data");
+	byte[] bytes = null;
+	if(input_data == null){
+		input_data = "";
+	}
+	else{
+		bytes = input_data.getBytes();
+	}
+	
+	if(input_data_type == null){
+		input_data_type = "IQ";
+	}
+	
+	boolean isValid = true;
+
+	//	boolean isOutbound = input_layout_id !=null && input_layout_id.trim().length() > 0;
+	boolean isOutbound = "O".equals(input_data_type);
+	
+	int trailerLength = 2;
+	String trailerStr = "@@";
+%>
+
+<%
+	String userInfo = null;
+	try{
+		InetAddress ia = InetAddress.getLocalHost();
+		userInfo = ia.getHostName() + "(" + ia.getHostAddress() + ")";
+	}catch(Exception e){
+	}
+%>
+
+<html>
+<head>
+<title>[<%= userInfo == null ? "" : userInfo %>] - 전문분석</title>
+<script>
+	function doAnalysis() {
+		document.MyForm.target = "_self";
+		document.MyForm.action = "flat.jsp";
+		document.MyForm.submit();
+    }
+	function doChangeInputDataType(){
+		var style = document.getElementById('div_detail_outbound').style;
+		if(document.MyForm.input_data_type.value == "O"){
+			style.display = "block";
+		}
+		else {
+			style.display = "none";
+		}
+	}
+</script>
+</head>
+<body>
+<form name="MyForm" method="post">
+<b>[전문 분석기]</b>
+<table width="100%">
+	<tr><td><textarea cols="70" rows="5" name="input_data" ><%= input_data %></textarea></td></tr>
+	<tr>
+		<td>
+			<select name="input_data_type" onchange="javascript:doChangeInputDataType();return false;">
+				<option value="IQ" <%= "IQ".equals(input_data_type) ? "selected" : "" %>>요청전문</option>
+				<option value="IR" <%= "IR".equals(input_data_type) ? "selected" : "" %>>응답전문</option>
+				<option value="O"  <%= "O".equals(input_data_type) ? "selected" : "" %>>아웃바운드전문</option>
+			</select>
+			<div id="div_detail_outbound" style="display:none;">
+				(<b>아웃바운드</b>전문은 아래에 '<b>전문 레이아웃 아이디</b>'를 입력하세요.)
+				<input type="text" name="input_layout_id" style="width:350;" value="<%= input_layout_id == null ? "" : input_layout_id %>">
+			</div>
+		</td>
+	</tr>
+	<tr><td><button onClick="javascript:doAnalysis();">분석</button></td></tr>
+</table>
+</form>
+<%
+	if(bytes != null && bytes.length >= FlatHeaderSpec.getTotalLength()){
+		// 입력된 전문 사이즈
+		int length = bytes.length;
+		
+		int offset = 0;
+		
+		// 전체 사이즈
+		String WHL_MESG_LEN_STR = new String(bytes, 0, FlatHeaderSpec.WHL_MESG_LEN.length());
+		int WHL_MESG_LEN = Integer.parseInt(WHL_MESG_LEN_STR);
+		offset += FlatHeaderSpec.WHL_MESG_LEN.length();
+
+		// 헤더 사이즈
+		String STND_HDR_LEN_STR = new String(bytes, FlatHeaderSpec.WHL_MESG_LEN.length(), FlatHeaderSpec.STND_HDR_LEN.length());
+		int STND_HDR_LEN = Integer.parseInt(STND_HDR_LEN_STR);
+		offset += FlatHeaderSpec.STND_HDR_LEN.length();
+		
+		// 전문 사이즈 비교
+		if(WHL_MESG_LEN  != (length - trailerLength)){
+			isValid = false;
+    	}
+		
+		int index = 0;
+		String value = null;
+		
+		String TRN_CD = null; //거래코드
+		String MESG_DVCD = null; //전문구분코드
+		int APRV_MSG_CCNT = 0; //승인메시지건수
+		int LOIN_PRCG_PCNT = 0; //로그인 책임자 인원수
+		int APRR_PCNT = 0; //승인자 인원수
+		int MSG_CCNT = 0; //메시지 건수
+		int OTPT_MEDI_PTRN_CCNT = 0; //출력매체유형건수		
+		
+		int userDataSize = 0;
+		byte[] userDataBytes = null;
+%>	
+	<b>분석 결과 : <%= isValid ? "사이즈 정상 " : "사이즈 오류" %></b>
+	<table border="1" style = "border-collapse:collapse" bordercolor = "#000000" width="100%">
+		<colgroup>
+			<col width="10%"/>
+			<col width="10%"/>
+			<col width="10%"/>
+			<col width="10%"/>
+			<col width="60%"/>
+		</colgroup>
+		<tr style="background-color:gray; font-weight:bold;">
+			<th>No</th>
+			<th colspan="2">Name</th>
+			<th>Size (bytes)</th>
+			<th>Value</th>
+		</tr>
+		<tr>
+			<td align="center"><%= ++index %></td>
+			<td align="left" colspan="2">WHL_MESG_LEN</td>
+			<td align="right"><%= FlatHeaderSpec.WHL_MESG_LEN.length() %></td>
+			<td align="left"><%= WHL_MESG_LEN_STR == null ? "[]" : "["+ StringUtils.replaceAll(WHL_MESG_LEN_STR, " ", "&nbsp;") + "]"  %></td>
+		</tr>
+		<tr>
+			<td align="center"><%= ++index %></td>
+			<td align="left" colspan="2">STND_HDR_LEN_STR</td>
+			<td align="right"><%= FlatHeaderSpec.STND_HDR_LEN.length() %></td>
+			<td align="left"><%= STND_HDR_LEN_STR == null ? "[]" : "["+ StringUtils.replaceAll(STND_HDR_LEN_STR, " ", "&nbsp;") + "]"  %></td>
+		</tr>
+<%
+		int MSG_CNT = 0;
+		int LGIN_RSPP_NMPR = 0;
+		for(FlatHeaderSpec spec : FlatHeaderSpec.values()){
+			if( !FlatHeaderSpec.WHL_MESG_LEN.equals(spec) && !FlatHeaderSpec.STND_HDR_LEN.equals(spec) && !spec.isChild() ) {
+				index++;
+				value = new String(bytes, offset, spec.length());
+				offset += spec.length();
+%>
+		<tr>
+			<td align="center"><%= index %></td>
+			<td align="left" colspan="2"><%= spec.name() %></td>
+			<td align="right"><%= spec.length() %></td>
+			<td align="left"><pre><%= value == null ? "[]" : "["+ StringUtils.replaceAll(value, " ", "&nbsp;") + "]"  %></pre></td>
+		</tr>
+<%		
+				if("TRN_CD".equals(spec.name())){
+					TRN_CD = value;
+				}
+				else if("MESG_DVCD".equals(spec.name())){
+					MESG_DVCD = value;
+				}
+				else if("APRV_MSG_CCNT".equals(spec.name())){ //승인메시지건수
+					try{
+						APRV_MSG_CCNT = Integer.parseInt(value);
+					}catch(Exception e){}
+					if(APRV_MSG_CCNT > 0){
+						FlatHeaderSpec[] spec_temp_list = new FlatHeaderSpec[]{FlatHeaderSpec.APRV_MSG_CD, FlatHeaderSpec.APRV_MSG_CNTN};
+						for(int i=0; i<APRV_MSG_CCNT; i++){
+							int tempcnt = 0;
+							for(FlatHeaderSpec spec_temp : spec_temp_list){
+								index++;
+								String temp = new String(bytes, offset, spec_temp.length());
+								offset += spec_temp.length();
+%>							
+								<tr>
+									<td align="center"><%= index %></td>
+<%
+									if(tempcnt == 0){
+%>									
+										<td align="left" rowspan="<%= spec_temp_list.length %>">APRV_MSG_CCNT (<%= i+1 %>)</td>
+<%
+									}
+%>									
+									<td align="left"><%= spec_temp.name() %></td>
+									<td align="right"><%= spec_temp.length() %></td>
+									<td align="left"><pre><%= temp == null ? "[]" : "["+ StringUtils.replaceAll(temp, " ", "&nbsp;") + "]"  %></pre></td>
+								</tr>
+<%
+								tempcnt++;
+							}
+						}
+					}
+				}
+				else if("LOIN_PRCG_PCNT".equals(spec.name())){ //로그인 책임자 인원수
+					try{
+						LOIN_PRCG_PCNT = Integer.parseInt(value);
+					}catch(Exception e){}
+					if(LOIN_PRCG_PCNT > 0){
+						FlatHeaderSpec[] spec_temp_list = new FlatHeaderSpec[]{FlatHeaderSpec.LOIN_PRCG_EMNO, FlatHeaderSpec.LOIN_PRCG_NM, FlatHeaderSpec.LOIN_PRCG_IPAD};
+						for(int i=0; i<LOIN_PRCG_PCNT; i++){
+							int tempcnt = 0;
+							for(FlatHeaderSpec spec_temp : spec_temp_list){
+								index++;
+								String temp = new String(bytes, offset, spec_temp.length());
+								offset += spec_temp.length();
+%>							
+								<tr>
+									<td align="center"><%= index %></td>
+<%
+									if(tempcnt == 0){
+%>									
+										<td align="left" rowspan="<%= spec_temp_list.length %>">LOIN_PRCG_PCNT (<%= i+1 %>)</td>
+<%
+									}
+%>									
+									<td align="left"><%= spec_temp.name() %></td>
+									<td align="right"><%= spec_temp.length() %></td>
+									<td align="left"><pre><%= temp == null ? "[]" : "["+ StringUtils.replaceAll(temp, " ", "&nbsp;") + "]"  %></pre></td>
+								</tr>
+<%
+								tempcnt++;
+							}
+						}
+					}
+				}
+				else if("APRR_PCNT".equals(spec.name())){ //승인자 인원수
+					try{
+						APRR_PCNT = Integer.parseInt(value);
+					}catch(Exception e){}
+					if(APRR_PCNT > 0){
+						FlatHeaderSpec[] spec_temp_list = new FlatHeaderSpec[]{FlatHeaderSpec.APRR_EMNO};
+						for(int i=0; i<APRR_PCNT; i++){
+							int tempcnt = 0;
+							for(FlatHeaderSpec spec_temp : spec_temp_list){
+								index++;
+								String temp = new String(bytes, offset, spec_temp.length());
+								offset += spec_temp.length();
+%>							
+								<tr>
+									<td align="center"><%= index %></td>
+<%
+									if(tempcnt == 0){
+%>									
+										<td align="left" rowspan="<%= spec_temp_list.length %>">APRR_PCNT (<%= i+1 %>)</td>
+<%
+									}
+%>									
+									<td align="left"><%= spec_temp.name() %></td>
+									<td align="right"><%= spec_temp.length() %></td>
+									<td align="left"><pre><%= temp == null ? "[]" : "["+ StringUtils.replaceAll(temp, " ", "&nbsp;") + "]"  %></pre></td>
+								</tr>
+<%
+								tempcnt++;
+							}
+						}
+					}
+				}
+				else if("MSG_CCNT".equals(spec.name())){ //메시지 건수
+					try{
+						APRV_MSG_CCNT = Integer.parseInt(value);
+					}catch(Exception e){}
+					if(APRV_MSG_CCNT > 0){
+						FlatHeaderSpec[] spec_temp_list = new FlatHeaderSpec[]{FlatHeaderSpec.MSG_CD, FlatHeaderSpec.MSG_CNTN, FlatHeaderSpec.EROR_OCRN_PRRM_LINE, FlatHeaderSpec.EROR_OCRN_PRRM_NM};
+						for(int i=0; i<APRV_MSG_CCNT; i++){
+							int tempcnt = 0;
+							for(FlatHeaderSpec spec_temp : spec_temp_list){
+								index++;
+								String temp = new String(bytes, offset, spec_temp.length());
+								offset += spec_temp.length();
+%>							
+								<tr>
+									<td align="center"><%= index %></td>
+<%
+									if(tempcnt == 0){
+%>									
+										<td align="left" rowspan="<%= spec_temp_list.length %>">APRV_MSG_CCNT (<%= i+1 %>)</td>
+<%
+									}
+%>									
+									<td align="left"><%= spec_temp.name() %></td>
+									<td align="right"><%= spec_temp.length() %></td>
+									<td align="left"><pre><%= temp == null ? "[]" : "["+ StringUtils.replaceAll(temp, " ", "&nbsp;") + "]"  %></pre></td>
+								</tr>
+<%
+								tempcnt++;
+							}
+						}
+					}
+				}
+				else if("OTPT_MEDI_PTRN_CCNT".equals(spec.name())){ //출력매체유형건수
+					try{
+						OTPT_MEDI_PTRN_CCNT = Integer.parseInt(value);
+					}catch(Exception e){}
+					if(OTPT_MEDI_PTRN_CCNT > 0){
+						FlatHeaderSpec[] spec_temp_list = new FlatHeaderSpec[]{FlatHeaderSpec.OTPT_TRN_CD, FlatHeaderSpec.OTPT_YN, FlatHeaderSpec.OTPT_SCRN_NO, FlatHeaderSpec.DRVTN_DVCD, FlatHeaderSpec.GDNC_MSG};
+						for(int i=0; i<OTPT_MEDI_PTRN_CCNT; i++){
+							int tempcnt = 0;
+							for(FlatHeaderSpec spec_temp : spec_temp_list){
+								index++;
+								String temp = new String(bytes, offset, spec_temp.length());
+								offset += spec_temp.length();
+%>							
+								<tr>
+									<td align="center"><%= index %></td>
+<%
+									if(tempcnt == 0){
+%>									
+										<td align="left" rowspan="<%= spec_temp_list.length %>">OTPT_MEDI_PTRN_CCNT (<%= i+1 %>)</td>
+<%
+									}
+%>									
+									<td align="left"><%= spec_temp.name() %></td>
+									<td align="right"><%= spec_temp.length() %></td>
+									<td align="left"><pre><%= temp == null ? "[]" : "["+ StringUtils.replaceAll(temp, " ", "&nbsp;") + "]"  %></pre></td>
+								</tr>
+<%
+								tempcnt++;
+							}
+						}
+					}
+				}
+			}
+		}
+			
+		userDataSize = length-offset-trailerLength;
+		index++;
+		if(userDataSize > 0){
+			userDataBytes = new byte[userDataSize];
+			System.arraycopy(bytes, offset, userDataBytes, 0, userDataSize);
+			offset += userDataSize;
+		}
+%>
+			<tr>
+				<td align="center"><%= index %></td>
+				<td align="left" colspan="2">USER DATA</td>
+				<td align="right"><%= userDataSize %></td>
+				<td align="left"><textarea cols="50" rows="5" ><%= userDataSize <= 0 ? "[]" : "["+ StringUtils.replaceAll(new String(userDataBytes, 0, userDataSize), " ", "&nbsp;") + "]"  %></textarea>					
+				</td>
+			</tr>
+<%					
+			index++;
+			value = new String(bytes, offset, trailerLength);
+			offset += trailerLength;
+%>							
+			<tr>
+				<td align="center"><%= index %></td>
+				<td align="left" colspan="2">TRAILER</td>
+				<td align="right"><%= trailerLength %></td>
+				<td align="left"><pre><%= value == null ? "[]" : "["+ StringUtils.replaceAll(value, " ", "&nbsp;") + "]"  %></pre></td>
+			</tr>
+		</table>
+		<br>
+<%
+		List fmdList = null;
+		String analysisTitle = null;
+		if(userDataSize > 0){
+			IBizComponentMetaDataRegistry registry = (IBizComponentMetaDataRegistry) ComponentRegistry.lookup(ServiceConstants.COMPONENT_METADATA_REGISTRY);
+			if(!isOutbound){
+				IMethodMetaData methodMetaData = registry.getMethodMetaData(TRN_CD);
+				if(methodMetaData != null){
+					//if("Q".equals(MESG_DVCD)){
+					if("IQ".equals(input_data_type)){
+						analysisTitle = "인바운드 요청 전문 : " + TRN_CD + "("+ methodMetaData.getMethodName() + ")";
+						fmdList = methodMetaData.getInputIoMetaData().getFlMetaDataList();
+					}
+					else {
+						analysisTitle = "인바운드 응답 전문 : " + TRN_CD + "("+ methodMetaData.getMethodName() + ")";
+						fmdList = methodMetaData.getOutputIoMetaData().getFlMetaDataList();
+					}
+				}
+			}
+			else {
+				List<IComponentMetaData> cmdList = registry.getAllComponentMetaData();
+				for(IComponentMetaData cmd : cmdList){
+					IIoLayoutMetaData ilmd = registry.getIoLayoutMetaData(cmd.getFqId(), input_layout_id);
+					if(ilmd != null){
+						analysisTitle = "아웃바운드 전문 : " + input_layout_id + "("+ ilmd.getName() + "), 컴포넌트 : " + cmd.getFqId();
+						fmdList = ilmd.getIoMetaData().getFlMetaDataList();
+						break;
+					}
+				}
+			}
+		}
+%>
+		<b>사용자 데이타 (<%= userDataSize %> bytes)</b><br>
+<%
+		if(analysisTitle != null && analysisTitle.trim().length() > 0){
+%>	
+		<b><%= analysisTitle %></b><br>
+<%
+		}
+		if(userDataSize > 0){
+%>	
+		<table border="1" style = "border-collapse:collapse" bordercolor = "#000000" width="100%">
+			<colgroup>
+				<col width="10%"/>
+				<col width="10%"/>
+				<col width="10%"/>
+				<col width="20%"/>
+				<col width="5%"/>
+				<col width="5%"/>
+				<col width="40%"/>
+			</colgroup>
+			<tr style="background-color:gray; font-weight:bold;">
+				<th>No</th>
+				<th colspan="2">ID</th>
+				<th>Name</th>
+				<th>Offset (bytes)</th>
+				<th>Length (bytes)</th>
+				<th>Value</th>
+			</tr>
+<%
+			if(fmdList != null){
+				int len = fmdList.size();
+				Object obj = null;
+				offset = 0;
+				index = 0;
+				FieldMetaData fmd = null;
+				RecordSetMetaData rsmd = null;
+				HashMap<String, Integer> map = new HashMap<String, Integer>();
+				for (int i = 0; i < len; i++) {
+					obj = fmdList.get(i);
+					if (obj instanceof FieldMetaData) {
+						fmd = (FieldMetaData)obj;
+						index++;
+						
+						boolean isBreak = false;
+						if(fmd.getLengthFixed() == -99 || fmd.getLengthFixed() == -1){
+							value = new String(userDataBytes, offset, userDataBytes.length - offset);
+							isBreak = true;
+						}
+						else {
+							value = new String(userDataBytes, offset, fmd.getLengthFixed());
+					        if (FieldMetaData.TYPE_BIGDECIMAL.equalsIgnoreCase(fmd.getType())) {
+					        }
+					        else if (FieldMetaData.TYPE_STRING.equalsIgnoreCase(fmd.getType())) {
+					        }
+					        else if (FieldMetaData.TYPE_ASC.equalsIgnoreCase(fmd.getDataTypeAscBin())) {
+					        	int ix = 0;
+					        	try{
+					        		ix = (int)Double.parseDouble(value);
+					        	}
+					        	catch(Exception e){
+					        	}
+					        	map.put(fmd.getId(), ix);					        	
+					        }
+						}
+%>							
+						<tr>
+							<td align="center"><%= index %></td>
+							<td align="left" colspan="2"><%= fmd.getId() %></td>
+							<td align="left"><%= fmd.getName() %></td>
+							<td align="right"><%= offset %></td>
+							<td align="right"><%= fmd.getLengthFixed() %></td>
+							<td align="left"><pre><%= value == null ? "[]" : "["+ StringUtils.replaceAll(value, " ", "&nbsp;") + "]"  %></pre></td>
+						</tr>
+<%	
+						if(isBreak){
+							break;
+						}
+						else {
+							offset += fmd.getLengthFixed();
+						}
+					}
+					// RecordSet은 fixed length 일때만 적용
+					else if (obj instanceof RecordSetMetaData) {
+						rsmd = (RecordSetMetaData)obj;
+						List rsfmdList = rsmd.getFieldMetaDataList();
+						if(rsfmdList != null){
+							String ref = rsmd.getRecordCountRef() == null ? "" : rsmd.getRecordCountRef().trim();
+							int loopCount = 0;
+							if(ref.length() > 0){
+								loopCount = map.get(ref);
+							}
+							else{
+								loopCount = rsmd.getRecordCount();
+							}
+							
+							for(int j=0; j<loopCount; j++){
+								int rsfmdListSize = rsfmdList.size();
+								for(int k=0; k<rsfmdListSize; k++){
+									Object obj1 = rsfmdList.get(k);
+									if (obj1 instanceof FieldMetaData) {
+										fmd = (FieldMetaData)obj1;
+										index++;
+										value = new String(userDataBytes, offset, fmd.getLengthFixed());
+%>							
+										<tr>
+											<td align="center"><%= index %></td>
+<%
+										if(k == 0){
+%>												
+											<td align="center" rowspan="<%= rsfmdListSize %>"><%= rsmd.getId() %>(<%= (j+1) %>)</td>
+<%
+										}
+%>												
+											<td align="left"><%= fmd.getId() %></td>
+											<td align="left"><%= fmd.getName() %></td>
+											<td align="right"><%= offset %></td>
+											<td align="right"><%= fmd.getLengthFixed() %></td>
+											<td align="left"><pre><%= value == null ? "[]" : "["+ StringUtils.replaceAll(value, " ", "&nbsp;") + "]"  %></pre></td>
+										</tr>
+<%
+										offset += fmd.getLengthFixed();
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+%>		
+	</table>
+<%
+	if(!isValid){
+%>
+	<script>alert('사이즈 오류.');</script>
+<%
+	}
+%>	
+</body>
+</html>

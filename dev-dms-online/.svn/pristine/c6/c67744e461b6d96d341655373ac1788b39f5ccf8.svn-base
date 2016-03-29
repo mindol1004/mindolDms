@@ -1,0 +1,169 @@
+package dms.nr.nrbisbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]보증보험기각정보관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-10-12 15:52:40</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class PNRInsuInvRjctLstMgnt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRInsuInvRjctLstMgnt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-12 15:52:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DMS_INV_STA_DT [청구시작일자]
+	 *	- field : DMS_INV_END_DT [청구종료일자]
+	 *	- field : UKEY_INSURE_MGMT_NO [보험관리번호]
+	 *	- field : INV_STAT_CD [청구상태코드]
+	 *	- field : RSN_CD [사유코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INSU_INV_RJCT_LIST
+	 *		- field : DMS_INV_DT [청구일자]
+	 *		- field : UKEY_INSURE_MGMT_NO [보증보험관리번호]
+	 *		- field : INV_STAT_CD [기각상태]
+	 *		- field : UKEY_INV_AMT [기각금액]
+	 *		- field : INSU_INV_MEMO [비고]
+	 *		- field : INVE_MATCHED [사유코드상태]
+	 *		- field : UNPD_RENTAL_FEE [미납렌탈료]
+	 *		- field : DMG_CMP_UNRTN_AMT [손해배상금미반납]
+	 *		- field : ARR_ADD_AMT [연체가산금]
+	 *		- field : MID_TERM_PEN_AMT [중도해지위약금]
+	 *		- field : RTN_DELAY_PEN_AMT [반납지연위약금]
+	 *		- field : DMG_CMP_BKAG_AMT [손해배상금파손금]
+	 *		- field : INV_PROC_DT [청구처리일자]
+	 *	- record : RS_SUM_LIST
+	 *		- field : TOT_CNT [총건수]
+	 *		- field : UKEY_INV_AMT [합계]
+	 * </pre>
+	 */
+	public IDataSet pInsuInvRjctLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInsuInvRjctLst", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-12 15:52:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INSU_INV_RJCT_LIST
+	 *		- field : DMS_INV_DT [필드1]
+	 *		- field : UKEY_INSURE_MGMT_NO [필드2]
+	 *		- field : INV_ST_CD [필드3]
+	 *		- field : UKEY_INV_AMT [필드4]
+	 *		- field : RSN_CD [필드5]
+	 *		- field : INSU_INV_MEMO [필드6]
+	 *		- field : INVE_MATCHED [필드7]
+	 *		- field : CHK [필드1]
+	 *		- field : UKEY_INV_SUM_AMT [필드2]
+	 *		- field : UKEY_INV_AMT_CNT [필드1]
+	 *		- field : INSU_INV_NO [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveInsuReq(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fSaveInsuReq", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다. 
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-12 15:52:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INSU_INV_RJCT_LIST
+	 *		- field : DMS_INV_DT [필드1]
+	 *		- field : UKEY_INSURE_MGMT_NO [필드2]
+	 *		- field : INV_ST_CD [필드3]
+	 *		- field : UKEY_INV_AMT [필드4]
+	 *		- field : RSN_CD [필드1]
+	 *		- field : INSU_INV_MEMO [필드2]
+	 *		- field : INVE_MATCHED [필드3]
+	 *		- field : CHK [필드1]
+	 *		- field : UKEY_INV_SUM_AMT [필드2]
+	 *		- field : UKEY_INV_AMT_CNT [필드1]
+	 *		- field : INSU_INV_NO [필드2]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveInsuDecideReq(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fSaveInsuDecideReq", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다. 
+		
+	    return responseData;
+	}
+  
+}

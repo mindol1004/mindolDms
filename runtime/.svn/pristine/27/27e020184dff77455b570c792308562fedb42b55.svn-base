@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 에이전트의 DB 처리 모듈들 -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <bean id="nc.bat.agent.log.BatchRunLogDao" class="nexcore.framework.bat.agent.log.DefaultBatchRunLogDao"
+        init-method="init" destroy-method="destroy">
+        <property name="sqlManager"             ref  ="nc.bat.agent.ISqlManager"/>
+	</bean>
+
+
+    <bean id="nc.bat.agent.AgentSelfLogger" class="nexcore.framework.bat.agent.internal.AgentSelfLogger"
+        init-method="init" destroy-method="destroy" depends-on="nc.bat.agent.AgentRMIExporter">
+        <property name="enabled"                value="true"/>
+        <property name="agentIpForIncomming"    value="${nexcore.bat.agent.ip.from.adminconsole.${system.id}}"/>
+        <property name="fileLoggerFactory"      ref  ="nc.bat.agent.FileLoggerFactory"/>
+		<property name="agentSelfDao">
+			<bean class="nexcore.framework.bat.agent.db.DefaultAgentSelfDao">
+				<property name="sqlManager"     ref  ="nc.bat.agent.ISqlManager"/>
+			</bean>
+        </property>
+	</bean>
+
+    <bean id="nc.bat.agent.ISqlManager" class="nexcore.framework.bat.agent.db.FwkSqlManager"
+        init-method="init">
+        <description><![CDATA[프레임워크 테이블 access 용]]></description>
+        <property name="configFile"             value="config/sql/agent-sql-config.xml"/>
+        <property name="dsFactory"              ref  ="nc.bat.dsFactory-JNDI"/>
+        <property name="dataSourceName"         value="jdbc/NexcoreDS_NonXA"/>
+        <property name="txManagerFactory"       ref  ="nc.bat.txManagerFactory-JDBC"/>
+    </bean>
+</beans>

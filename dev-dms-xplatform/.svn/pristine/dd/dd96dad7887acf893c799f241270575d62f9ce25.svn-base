@@ -1,0 +1,1267 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/********************************   Program description   ******************************
+* File Name        : PivotGrid.xjs
+* File Desc.       : 
+* Author           : HSJI - DAESANG ONLY
+* Create Date      : 2012/08
+* Change History : 
+****************************************************************************************/
+class PivotGrid extends Grid
+{
+	var summarykey= "";
+	var groupkey= "";
+	var pivotkey = "";
+	var groupsortkey= "";
+	var pivotsortkey = "";
+	var bindds = "";		//원본 데이타셋
+	var bOnDraw = false;
+	var factorinfo = "";
+	var fixinfo = "";
+
+	// merge는 추가기능으로 2개의 dataset을 merge하여 groupkey로 구성하기 위함.
+	// groupkey에 summary 데이타가 오는 경우 사용...
+
+	var fixmergeinfo = "";	// mergeds info
+	var mergeds = "";		//merge 데이타셋
+	var mergekey = "";		//merge key
+	var mergecolumn = "";	//merge column
+	
+	var nFixCnt = 0;
+	var bInit = false;
+	var nFactorCnt = 0;
+	//------------------------------------------------------------------------------------------------------------
+	//
+	//------------------------------------------------------------------------------------------------------------
+	function PivotGrid() {
+		this.ondraw.setHandler(OnDraw);
+	}
+
+	function OnDraw(Canvas, EventArgs)	
+	{
+		DefaultDraw(Canvas.getPainter());
+		if(bOnDraw == true) {
+			return;
+		} else {
+			bOnDraw = true;
+		}
+		this.usebitmapcache = true;
+		initPv();
+		this.bindds = this.binddataset;
+		this.binddataset = "";
+		//201.04.30 Tooltip 기능추가, 심상준
+		this.onmousemove.addHandler(usrGrid_onmousemove);
+		//201.04.30 ctrl-c 클립보드 복사기능 추가, 심상준
+		this.onkeydown.addHandler(usrGrid_onkeydown);
+		
+		//2015.01.09 grid의 css class가 지정되어있지 않은 경우 기본 border값 설정 (grid의 border 값이 적용되지 않는 현상)
+		if(this.class ==""){
+			this.border="1 solid #687084, 1 solid #e4e4e4, 1 solid #e4e4e4, 1 solid #e4e4e4";		
+		}
+	}
+	
+	function initPv()
+	{
+		if(bInit == true) return;
+		bInit = true;
+		//var owner = parent.getOwnerFrame();
+		var owner = application.getActiveForm();
+		if(owner == undefined) owner = parent;
+		
+		// Grid Information Dataset
+		var dsname = "ds_gridinfo_" + this.name;
+		var ds0 = new Dataset;		
+		owner.addChild(dsname , ds0);
+		ds0.name = dsname;
+		//2014.12.29 피벗그리드 reset용 데이터셋 추가 
+		var dsname2 = dsname+"_copy";
+		var ds0Copy = new Dataset;
+		owner.addChild(dsname2 , ds0Copy);
+		ds0Copy.name = dsname2;
+		
+		ds0.addColumn("seq","int",5);
+		ds0.addColumn("cell","int",5);
+		ds0.addColumn("band","string",10);
+		ds0.addColumn("fix","string",10);
+		ds0.addColumn("size","int",10);
+		ds0.addColumn("text","string",20);
+		ds0.addColumn("displaytype","string",20);
+		ds0.addColumn("edittype","string",20);
+		ds0.addColumn("combocodecol","string",20);
+		ds0.addColumn("combodatacol","string",20);
+		ds0.addColumn("combodataset","string",20);
+		ds0.addColumn("align","string",20);
+		ds0.addColumn("color","string",50);
+		ds0.addColumn("background","string",50);			
+		ds0.addColumn("color2","string",50);
+		ds0.addColumn("background2","string",50);
+		ds0.addColumn("col","int",50);			
+		ds0.addColumn("colspan","int",50);			
+		ds0.addColumn("row","int",50);			
+		ds0.addColumn("rowspan","int",50);			
+		ds0.addColumn("subcell","int",50);	
+		ds0.addColumn("suppress","string",1);	
+		ds0.addColumn("suppressalign","string",50);	
+		ds0.addColumn("mask","string",50);	
+		ds0.addColumn("subsumtext","string",50);	
+		ds0.addColumn("expr","string",50);	
+
+		getGridInfo(ds0);
+		ds0Copy.copyData(ds0);
+				
+		// Grid Binding용 dummy Dataset
+		dsname = "ds_pivot_" + this.name;
+		var	ds1 = new Dataset;
+		owner.addChild(dsname , ds1);
+		ds1.name = dsname;
+		//2014.12.29 피벗그리드 reset용 데이터셋 추가 
+		dsname2 = dsname+"_copy";
+		var ds1Copy = new Dataset;
+		owner.addChild(dsname2 , ds1Copy);
+		ds1Copy.name = dsname2;
+		
+		// Pivot Head 정보를 담고 있는 Dataset
+		var arrpivot = this.pivotkey.split(/,/g);
+		dsname = "ds_pivothead_" + this.name;
+		var	ds2 = new Dataset;
+		owner.addChild(dsname , ds2);
+		ds2.name = dsname;
+		
+		//2014.12.29 피벗그리드 reset용 데이터셋 추가 
+		dsname2 = dsname+"_copy";
+		var ds2Copy = new Dataset;
+		owner.addChild(dsname2 , ds2Copy);
+		ds2Copy.name = dsname2;
+		
+		for(var i=0;i<arrpivot.length;i++) {
+			ds2.addColumn("PCOL_" + i.toString().padLeft(3,'0') + "_VALUE","string",100);
+			ds2.addColumn("PCOL_" + i.toString().padLeft(3,'0') + "_START","int",5);
+			ds2.addColumn("PCOL_" + i.toString().padLeft(3,'0') + "_CNT","int",5);
+		}
+		ds2.addColumn("cell","string",5);
+		ds1Copy.copyData(ds1);	
+		ds2Copy.copyData(ds2);	
+		
+		ds0 = null;
+		ds1 = null;
+		ds2 = null;
+		
+		if ( _nodataimage = "true" ) this.nodataimage = "URL('theme://Img/ico_WFDA_nodata.png')";
+	}
+	
+	//-----------------------------------------------------------
+	// Grid Info Setting
+	//-----------------------------------------------------------
+	function getGridInfo(ds)
+	{
+		ds.clearData();
+		ds.enableevent = false;
+		var nrow = 0;
+		// columns
+		var nCount = this.getFormatColCount();
+		var seq = 0;
+		for(var i=0;i<nCount;i++) {
+			seq++;
+			nrow = ds.addRow();
+			ds.setColumn(nrow,"band","columns");
+			ds.setColumn(nrow,"fix",this.getFormatColProperty(i,"band"));
+			ds.setColumn(nrow,"size",this.getFormatColProperty(i,"size"));
+			ds.setColumn(nrow,"cell",i);
+			ds.setColumn(nrow,"seq",seq);
+		}
+		// rows
+		nCount = this.getFormatRowCount();
+		for(var i=0;i<nCount;i++) {
+			seq++;
+			nrow = ds.addRow();
+			ds.setColumn(nrow,"band","rows");
+			ds.setColumn(nrow,"fix",this.getFormatRowProperty(i,"band"));
+			ds.setColumn(nrow,"size",this.getFormatRowProperty(i,"size"));
+			ds.setColumn(nrow,"cell",i);
+			ds.setColumn(nrow,"seq",seq);
+		}
+		var arrband = new Array();
+		arrband[0] = "head";
+		arrband[1] = "body";
+		arrband[2] = "summary";
+		
+		var sband = "";
+		for(var ii=0;ii<3;ii++) {
+			sband = arrband[ii];
+			
+			nCount = this.getCellCount(sband);
+			for(var i=0;i<nCount;i++) {
+				seq++;
+				nrow = ds.addRow();
+				ds.setColumn(nrow,"band",sband);
+				ds.setColumn(nrow,"cell",i);
+				ds.setColumn(nrow,"text",this.getCellProperty(sband,i,"text"));
+				ds.setColumn(nrow,"displaytype",this.getCellProperty(sband,i,"displaytype"));
+				ds.setColumn(nrow,"edittype",this.getCellProperty(sband,i,"edittype"));
+				ds.setColumn(nrow,"combocodecol",this.getCellProperty(sband,i,"combocodecol"));
+				ds.setColumn(nrow,"combodatacol",this.getCellProperty(sband,i,"combodatacol"));
+				ds.setColumn(nrow,"combodataset",this.getCellProperty(sband,i,"combodataset"));
+				ds.setColumn(nrow,"align",this.getCellProperty(sband,i,"align"));
+				ds.setColumn(nrow,"color",this.getCellProperty(sband,i,"color"));
+				ds.setColumn(nrow,"background",this.getCellProperty(sband,i,"background"));
+				ds.setColumn(nrow,"color2",this.getCellProperty(sband,i,"color2"));
+				ds.setColumn(nrow,"background2",this.getCellProperty(sband,i,"background2"));
+				ds.setColumn(nrow,"col",this.getCellProperty(sband,i,"col"));
+				ds.setColumn(nrow,"colspan",this.getCellProperty(sband,i,"colspan"));
+				ds.setColumn(nrow,"row",this.getCellProperty(sband,i,"row"));
+				ds.setColumn(nrow,"rowspan",this.getCellProperty(sband,i,"rowspan"));
+				ds.setColumn(nrow,"subcell",this.getCellProperty(sband,i,"subcell"));
+				ds.setColumn(nrow,"suppress",this.getCellProperty(sband,i,"suppress"));
+				ds.setColumn(nrow,"suppressalign",this.getCellProperty(sband,i,"suppressalign"));
+				ds.setColumn(nrow,"mask",this.getCellProperty(sband,i,"mask"));
+				ds.setColumn(nrow,"subsumtext",this.getCellProperty(sband,i,"subsumtext"));
+				ds.setColumn(nrow,"expr",this.getCellProperty(sband,i,"expr"));
+				ds.setColumn(nrow,"seq",seq);
+			}
+		}
+		//ds.enableevent = true;
+	}
+	
+	function IsNull(sValue)
+	{
+		if( new String(sValue).valueOf() == "undefined") 
+			return true;
+		if( sValue == null )
+			return true;
+		if( ("x"+sValue == "xNaN") && ( new String(sValue.length).valueOf() == "undefined" ) )
+			return true;
+		if( sValue.length == 0 )
+			return true;
+		return false;
+	}
+		
+	//-----------------------------------------------------------
+	// LEFT FIXED Column Setting
+	//-----------------------------------------------------------	
+	function dsGroupColSetting(ds,orgds)
+	{
+
+		var dsname = eval("ds_gridinfo_" + this.name);
+		var dsmerge;
+		var arrmergecol;
+		if(IsNull(mergeds)==false) {
+			dsmerge = eval(this.mergeds);
+			arrmergecol = this.mergecolumn.split(/,/g);
+		}	
+		dsname.filter('band=="columns" && fix=="left"');
+		this.nFixCnt = dsname.getRowCount();
+		if(this.nFixCnt == 0) {
+			trace("@@@@@ Grid의 Left Fixed Column이 존재하지 않습니다.");
+			return false;
+		}
+		dsname.filter('band=="body"');
+		dsname.keystring = "S:cell";
+		
+		this.fixinfo = "";
+		this.fixmergeinfo = "";
+		var orgds = eval(this.bindds);
+		var colinfo;
+		var colid;
+		for(var i=0;i<this.nFixCnt;i++) {
+			colid = dsname.getColumn(i,"text");
+			if(colid.indexOf("bind:")>=0) {
+				colid = colid.replace("bind:","");
+			} else continue;
+			
+			if(IsNull(this.fixinfo) == false) this.fixinfo += ",";
+			if(IsNull(this.fixmergeinfo) == false) this.fixmergeinfo += ",";
+			this.fixinfo += colid;
+			colinfo = orgds.getColumnInfo(colid);
+			// Column 정보를 찾을 수 없을 경우 merge ds에서 찾는다..
+			if(IsNull(colinfo)) {
+				if(colid == this.mergekey) this.fixmergeinfo += "K";
+				else this.fixmergeinfo += "C";
+				colinfo = dsmerge.getColumnInfo(colid);
+			} else {
+				this.fixmergeinfo += " ";
+			}
+			if(IsNull(colinfo)) {
+				trace("@@@@ GroupKey Column정보를 찾을 수 없습니다..ID:" + colid);
+				return false;
+			}
+			ds.addColumn(colid,colinfo.type,colinfo.size);
+		}
+		return true;
+	}
+
+	//-----------------------------------------------------------
+	// Factor Column Setting
+	//-----------------------------------------------------------	
+	function dsPivotColSetting(ds)
+	{
+		// Factor Column 정보를 찾아온다
+		var dsname = eval("ds_gridinfo_" + this.name);
+		dsname.filter("");
+		var nRightRow = dsname.findRowExpr('band=="columns" && fix=="right"');
+		var nRight = 9999;
+		if(nRightRow >= 0) nRight = dsname.getColumn(nRightRow,"cell");
+	
+		dsname.filter('band=="body"');
+		
+		dsname.keystring = "S:cell";
+		this.factorinfo = "";
+		var colid = "";
+
+		for(var i=this.nFixCnt;i<dsname.getRowCount();i++) {
+			if(i>=nRight) continue;
+			colid = dsname.getColumn(i,"text");
+			if(colid.indexOf("bind:")>=0) {
+				colid = colid.replace("bind:","");
+			} else colid = "";
+			
+			if(IsNull(this.factorinfo) == false) this.factorinfo += ",";
+			this.factorinfo += colid;
+		}
+
+		var dshead = eval("ds_pivothead_" + this.name);
+		dshead.clearData();
+		var orgds = eval(this.bindds);
+		
+		//orgds.keystring = "G:" + this.pivotsortkey.replace(",","+");
+		orgds.keystring = "S:" + this.pivotsortkey.replace(",","+");
+		var arrpivot = this.pivotkey.split(/,/g);
+		var arrfactor = this.factorinfo.split(/,/g);
+		
+		var sPrevVal = "";
+		var sCurrVal = "";
+		var nCnt = 0;
+		var nRow = 0;
+		var js = "";
+		var colinfo;
+		var colid;
+
+		// pivot head 정보 dataset에 pivotkey별로 추가하고 
+		// binding용 데이타셋에 factor column을 추가한다
+		orgds.enableevent = false;
+		
+		
+		var arrList1 = new Array();
+		var arrList2 = new Array();
+		for(var j = 0; j < arrfactor.length; j++) {
+			colinfo = orgds.getColumnInfo(arrfactor[j]);
+			arrList1[j] = colinfo.type;
+			arrList2[j] = colinfo.size;
+		}		
+	
+		for(var i=0;i<orgds.getRowCount();i++) {
+			sCurrVal = "";
+			for(var j = 0; j < arrpivot.length; j++) {
+				sCurrVal = sCurrVal + orgds.getColumn(i, arrpivot[j]);
+			}
+			if(sCurrVal == sPrevVal) {
+				orgds.setColumn(i,"PVSEQ",(nCnt-1).toString().padLeft(3,'0'));
+			} else {
+				nRow = dshead.addRow();
+				for(var j = 0; j < arrpivot.length; j++) {
+					dshead.setColumn(nRow,
+									"PCOL_" + j.toString().padLeft(3,'0') + "_VALUE",
+									orgds.getColumn(i, arrpivot[j]));
+				}
+				dshead.setColumn(nRow,"cell",nCnt.toString().padLeft(3,'0'));
+				for(var j = 0; j < arrfactor.length; j++) {
+					ds.addColumn(arrfactor[j] + "_" + nCnt.toString().padLeft(3,'0'),arrList1[j],arrList2[j]);
+				}
+				orgds.setColumn(i,"PVSEQ",nCnt.toString().padLeft(3,'0'));
+				nCnt = nCnt + 1;
+				sPrevVal = sCurrVal;
+			}
+		}
+		
+		// HEAD MERGE 용도
+		var nAddCnt = 1;
+		var nStart = 0;
+		
+		for(var i = 0; i < arrpivot.length; i++) {
+		
+			if(dshead.getRowCount() == 1) {
+				dshead.setColumn(0,"PCOL_" + i.toString().padLeft(3,'0') + "_CNT",  1);
+				dshead.setColumn(0,"PCOL_" + i.toString().padLeft(3,'0') + "_START",0);
+			} else {
+		
+				for(var j=0;j<dshead.getRowCount()-1;j++) {
+					if(nAddCnt == 1) {
+						//nStart = (j+this.nFixCnt);
+						nStart = j;
+					}
+					if( dshead.getColumn(j,  "PCOL_" + i.toString().padLeft(3,'0') + "_VALUE") == 
+						dshead.getColumn(j+1,"PCOL_" + i.toString().padLeft(3,'0') + "_VALUE") ) {
+						nAddCnt++;
+					} else {
+						dshead.setColumn(j,"PCOL_" + i.toString().padLeft(3,'0') + "_CNT",nAddCnt);
+						dshead.setColumn(j,"PCOL_" + i.toString().padLeft(3,'0') + "_START",nStart);
+						nAddCnt = 1;
+					}
+				}
+				if( dshead.getColumn(dshead.getRowCount()-1,  	"PCOL_" + i.toString().padLeft(3,'0') + "_VALUE") <> 
+					dshead.getColumn(dshead.getRowCount()-2,	"PCOL_" + i.toString().padLeft(3,'0') + "_VALUE") ) {
+					//nStart = nStart + 1;
+					dshead.setColumn(dshead.getRowCount()-1,"PCOL_" + i.toString().padLeft(3,'0') + "_START",dshead.getRowCount()-1);
+				} else {
+					dshead.setColumn(dshead.getRowCount()-1,"PCOL_" + i.toString().padLeft(3,'0') + "_START",nStart);
+				}
+				
+				dshead.setColumn(dshead.getRowCount()-1,"PCOL_" + i.toString().padLeft(3,'0') + "_CNT",nAddCnt);
+				nAddCnt = 1;
+			}
+		}
+					
+			
+		nFactorCnt = dshead.getRowCount();		
+		orgds.enableevent = true;
+
+	}
+	
+	function copyFixRecord(ds,orgds,dsrow,orgrow)
+	{
+		var dsmerge;
+		var skey = "";
+		var nRow = 0;
+		if(IsNull(mergeds)==false) {
+			dsmerge = eval(this.mergeds);
+			skey = orgds.getColumn(orgrow,this.mergekey);
+			nRow = dsmerge.findRow(this.mergekey,skey);
+		}
+		var arrfix = this.fixinfo.split(/,/g);
+		var arrmergefix = this.fixmergeinfo.split(/,/g);
+		var arrmergecol = this.mergecolumn.split(/,/g);
+		for(var i=0;i<arrfix.length;i++) {
+			if(arrmergefix[i] == "C") {
+				ds.setColumn(dsrow,arrfix[i],dsmerge.getColumn(nRow,arrfix[i]));
+			} else {
+				ds.setColumn(dsrow,arrfix[i],orgds.getColumn(orgrow,arrfix[i]));
+			}
+		}
+	}
+
+	function copyFactorRecord(ds,orgds,dsrow,orgrow,arrfactor)
+	{
+		var seq = orgds.getColumn(orgrow,"PVSEQ");
+		for(var i=0;i<arrfactor.length;i++) {
+			ds.setColumn(dsrow,
+						arrfactor[i] + "_" + seq,
+						orgds.getColumn(orgrow,arrfactor[i]));
+		}
+	}
+		
+	function reCalcPivot()
+	{
+		stime();
+		
+		if(IsNull(this.groupkey) == true) {
+			trace("@@@@@ GroupKey[groupkey]를 설정하십시오...");
+			return;
+		}
+		if(IsNull(this.pivotkey) == true) {
+			trace("@@@@@ PivotKey[pivotkey]를 설정하십시오...");
+			return;
+		}
+
+		this.groupkey = this.groupkey.replace(" ","");
+		this.pivotkey = this.pivotkey.replace(" ","");
+		if(IsNull(this.groupsortkey) == true) this.groupsortkey = this.groupkey;
+		if(IsNull(this.pivotsortkey) == true) this.pivotsortkey = this.pivotkey;
+		this.groupsortkey = this.groupsortkey.replace(" ","");
+		this.pivotsortkey = this.pivotsortkey.replace(" ","");
+		
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var arrpivot = this.pivotkey.split(/,/g);
+		var dspivot = eval("ds_pivot_" + this.name);
+		var dshead = eval("ds_pivothead_" + this.name);
+		var orgds = eval(this.bindds);
+		
+		orgds.addColumn("PVSEQ","string",5);
+	
+		if(IsNull(this.mergeds) == false) {
+			var dsmerge = eval(this.mergeds);
+			if(IsNull(dsmerge)) {
+				trace("@@@@@ mergeds가 존재하지 않습니다.");
+				return;
+			}
+			if(IsNull(this.mergekey)) {
+				trace("@@@@@ mergekey가 존재하지 않습니다.");
+				return;
+			}
+			if(IsNull(this.mergecolumn)) {
+				trace("@@@@@ mergecolumn이 존재하지 않습니다.");
+				return;
+			}
+			var colinfo = orgds.getColumnInfo(this.mergekey);
+			if(IsNull(colinfo)) {
+				trace("@@@@@ mergeds를 설정할 경우 원본 Dataset과의 Key Column이 존재해야 합니다.");
+				trace("Help>> Dataset : " + this.bindds + " Column : " + this.mergekey);
+				return;
+			}
+			colinfo = dsmerge.getColumnInfo(this.mergekey);
+			if(IsNull(colinfo)) {
+				trace("@@@@@ mergeds를 설정할 경우 원본 Dataset과의 Key Column이 존재해야 합니다.");
+				trace("Help>> Dataset : " + this.mergeds + " Column : " + this.mergekey);
+				return;
+			}
+			var arrmergecol = this.mergecolumn.split(/,/g);
+			for(var i=0;i<arrmergecol.length;i++) {
+				colinfo = dsmerge.getColumnInfo(arrmergecol[i]);
+				if(IsNull(colinfo)) {
+					trace("@@@@@ mergeds를 설정할 경우 merge Dataset에 mergecolumn이 존재하여야 합니다.");
+					trace("Help>> Dataset : " + this.mergeds + " Column : " + arrmergecol[i]);
+					return;
+				}
+			}
+		}
+				
+		dspivot.clear();
+		//20141231 조회결과가 없으면 binddataset이 설정이 안되는 현상발생 
+		//if(orgds.getRowCount() == 0) return;
+		
+		dspivot.enableevent = false;
+		dshead.enableevent = false;
+		if(dsGroupColSetting(dspivot,orgds) == false) return;
+		dsPivotColSetting(dspivot,orgds);
+			
+		//etime("end dsPivotColSetting");
+		
+		orgds.keystring = "S:" + this.groupsortkey.replace(",","+") + "+" + this.pivotsortkey.replace(",","+");
+		var arrfactor = this.factorinfo.split(/,/g);
+		
+		var arrfix = this.fixinfo.split(/,/g);
+		var arrmergefix = this.fixmergeinfo.split(/,/g);
+		var arrmergecol = this.mergecolumn.split(/,/g);	
+		var arrfactor = this.factorinfo.split(/,/g);
+		var pre_pvseq = "";
+		
+		//trace("script>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+		var sCurrGroupVal = "";
+		var sPrevGroupVal = "";
+		var sCurrVal = "";
+		var sPrevVal = "";
+		var nRow = 0;
+		orgds.enableevent = false;
+		for(var i=0;i<orgds.getRowCount();i++) {
+			// 중복데이타는 1건만 처리
+			sCurrVal = "";
+			for(var j = 0; j < arrgroup.length; j++) {
+				sCurrVal += orgds.getColumn(i, arrgroup[j]);
+			}
+			sCurrGroupVal = sCurrVal;
+			sCurrVal += orgds.getColumn(i, "PVSEQ");
+
+			if(sCurrVal == sPrevVal) continue;
+			
+			if(sCurrGroupVal == sPrevGroupVal) {
+				// 기존 row
+				copyFactorRecord(dspivot,orgds,nRow,i,arrfactor);
+				
+			} else {
+				// 추가
+				nRow = dspivot.addRow();
+				copyFixRecord(dspivot,orgds,nRow,i);
+				copyFactorRecord(dspivot,orgds,nRow,i,arrfactor);
+			}
+			
+			sPrevGroupVal = sCurrGroupVal;
+			sPrevVal = sCurrVal;
+			
+		}
+		orgds.enableevent = true;
+
+		//etime("end for");
+
+		setGridFormat();
+		dspivot.enableevent = true;
+		dshead.enableevent = true;
+		
+		orgds.deleteColumn("PVSEQ");
+		etime("end setGridFormat");
+		
+	}
+		
+	var fvTime = "";
+	function stime()
+	{
+		var objDate = new Date();
+		var nTime = objDate.getTime();	
+		fvTime = nTime.toString();
+	}
+	function etime(s)
+	{
+		var objDate = new Date();
+		var nTime = objDate.getTime();	
+		
+		var lap = (nTime - toNumber(fvTime));
+		var t = (lap / 1000).toFixed() + (lap%1000); 	
+	
+	}
+	
+	function contentsRow(ds,i,nCol,seq,sText,nStart,nCount,nFactorCnt)
+	{
+		var styles = ' style="';
+		styles = styles + 'align:' + replaceCol(ds,i,"align",seq) + ';';
+		styles = styles + 'color:' + replaceCol(ds,i,"color",seq) + ';';
+		styles = styles + 'color2:' + replaceCol(ds,i,"color2",seq) + ';';
+		styles = styles + 'background:' + replaceCol(ds,i,"background",seq) + ';';
+		styles = styles + 'background2:' + replaceCol(ds,i,"background2",seq) + ';"';
+		var colspan = ds.getColumn(i,"colspan");
+
+		var sContents = '\t\t<Cell ';
+			 if(sText <> undefined && sText <> null) {
+				if(nStart <> undefined && nStart > 0) {
+					nCol = nStart;
+				}
+				if(nCount <> undefined && nCount > 1) {
+					colspan = nCount * nFactorCnt;
+				}
+				sContents += ' text="' +  xmlChrReplace(sText) + '"'
+			 } else {
+				sContents += ' text="' +  replaceCol(ds,i,"text",seq) + '"'
+			 }
+			 sContents += ' displaytype="' + replaceCol(ds,i,"displaytype",seq) + '"'
+			 + ' edittype="' + replaceCol(ds,i,"edittype",seq) + '"'
+			 + styles
+			 + ' col="' + nCol + '"'
+			 + ' row="' + ds.getColumn(i,"row") + '"'
+			 + ' colspan="' + colspan + '"'
+			 //+ ' colspan="' + ds.getColumn(i,"colspan") + '"'
+			 + ' rowspan="' + ds.getColumn(i,"rowspan") + '"'
+			 + ' subcell="' + ds.getColumn(i,"subcell") + '"'
+			 + ' suppress="' + replaceCol(ds,i,"suppress",seq) + '"'
+			 + ' suppressalign="' + replaceCol(ds,i,"suppressalign",seq) + '"'
+			 + ' mask="' + replaceCol(ds,i,"mask",seq) + '"'
+			 + ' subsumtext="' + replaceCol(ds,i,"subsumtext",seq) + '"'
+			 + ' expr="' + replaceCol(ds,i,"expr",seq) + '"'
+			 + '/>\n';
+		return sContents;
+	}
+	
+	function replaceCol(ds,nrow,value,seq)
+	{
+		var sval = ds.getColumn(nrow,value);
+		if(sval == undefined) sval = "";
+		
+		if(seq <> "") {
+			var arrfactor = this.factorinfo.split(/,/g);
+			for(var i = 0; i < arrfactor.length; i++) {
+				if(sval.indexOf(arrfactor[i]) >= 0) {
+					sval = sval.replace(arrfactor[i],arrfactor[i] + "_" + seq);
+					sval = sval.replace('"',"'");
+					return sval;
+				}
+			}
+		}
+		return xmlChrReplace(sval);
+	}
+	
+
+	function xmlChrReplace(rtnVal) {
+		var test = String.fromCharCode(13);
+		 rtnVal = rtnVal.replace("&", "&amp;");
+		 rtnVal = rtnVal.replace("<", "&lt;");
+		 rtnVal = rtnVal.replace(">", "&gt;");
+		 rtnVal = rtnVal.replace("\"", "&quot;");
+		 rtnVal = rtnVal.replace("'", "&apos;");
+		 rtnVal = rtnVal.replace('"', '/"');
+		 rtnVal = rtnVal.replace(" ", "&#32;");
+		 rtnVal = rtnVal.replace(test,"&#13;");
+		 
+		 return rtnVal;
+	}
+	
+	function setGridFormat()
+	{
+		var arrfactor = this.factorinfo.split(/,/g);
+		var arrpivot = this.pivotkey.split(/,/g);
+		var dshead = eval("ds_pivothead_" + this.name);
+		var dsgridinfo = eval("ds_gridinfo_" + this.name);
+		var nColCnt = arrfactor.length * dshead.getRowCount();
+		dsgridinfo.filter("");
+		dsgridinfo.keystring = "S:seq";
+		
+		var sContents = "";
+		
+		sContents += '<Formats>\n';
+		sContents += '<Format id="default">\n';
+		
+		sContents += '\t<Columns>\n';
+		
+		dsgridinfo.filter('band=="columns" && fix<>"right"');
+		// Columns : LEFT FIXED Column
+		for(var i=0;i<nFixCnt;i++) {
+			sContents += '\t\t<Column size="' + dsgridinfo.getColumn(i,"size") + '"' 
+					  + ' band="' + dsgridinfo.getColumn(i,"fix") + '"/>\n' ;
+		}
+		// Columns : FACTOR Column
+		for(var i=0;i<dshead.getRowCount();i++) { //for(var i=0;i<nColCnt;i++) {
+			for(var j=nFixCnt;j<dsgridinfo.getRowCount();j++) {
+				sContents += '\t\t<Column size="' + dsgridinfo.getColumn(j,"size") + '"/>\n' ;
+			}
+		}
+		// Columns : RIGHT FIXED Column
+		dsgridinfo.filter('band=="columns" && fix=="right"');
+		for(var i=0;i<dsgridinfo.getRowCount();i++) {
+			sContents += '\t\t<Column size="' + dsgridinfo.getColumn(i,"size") + '"' 
+					  + ' band="' + dsgridinfo.getColumn(i,"fix") + '"/>\n' ;
+		}
+		
+		sContents += '\t</Columns>\n';
+		
+		// Rows
+		sContents += '\t<Rows>\n';
+		dsgridinfo.filter('band=="rows"');
+		for(var i=0;i<dsgridinfo.getRowCount();i++) {
+			sContents += '\t\t<Row size="' + dsgridinfo.getColumn(i,"size") + '"' 
+					  + ' band="' + dsgridinfo.getColumn(i,"fix") + '"/>\n' ;
+		}
+		sContents += '\t</Rows>\n';
+		
+		// Head : LEFT FIXED Column
+		sContents += '\t<Band id="head">\n';
+		dsgridinfo.filter('band=="head" && col<' + nFixCnt);
+		
+		//etime("setGridFormat before for");
+		for(var i=0;i<dsgridinfo.getRowCount();i++) {	
+			sContents = sContents + contentsRow(dsgridinfo,i,dsgridinfo.getColumn(i,"col"),"");
+		}
+		dsgridinfo.filter("");
+		var nRightRow = dsgridinfo.findRowExpr('band=="columns" && fix=="right"');
+		var nRight = 9999;
+		if(nRightRow >= 0) nRight = dsgridinfo.getColumn(nRightRow,"cell");
+		// factor 1개에 head 1개 있다는 제한
+		
+		// Head : FACTOR Column
+		dsgridinfo.filter('band=="head" && (col>=' + nFixCnt + ' && col < ' + nRight + ')');
+		var headtext1 = "";
+		var nFactorCol = dsgridinfo.getColumn(0,"col");
+		var nPivotCol = dsgridinfo.getColumn(0,"col");
+		var nStartCol = dsgridinfo.getColumn(0,"col");
+		var sCol = "";
+		var sText = "";
+		var nStart = 0;
+		var nCount = 0;
+		var nCol = 0;
+		//etime("setGridFormat end for1");
+		var colIdx = 0;
+		// FACTOR Column
+		for(var i=0;i<dshead.getRowCount();i++) {
+		
+			for(var j=0;j<dsgridinfo.getRowCount();j++) {
+				if(dsgridinfo.getColumn(j,"text").indexOf("bind:")<0) {
+					sText = dsgridinfo.getColumn(j,"text");
+					nCol = nFactorCol;
+					nFactorCol++;
+					nCount = 1;
+					nStart = 0;
+				} else {
+					sCol = dsgridinfo.getColumn(j,"text").replace("bind:","");
+					for(var k=0;k<arrpivot.length;k++) {
+						if(arrpivot[k] == sCol) {
+							sText = dshead.getColumn(i,"PCOL_" +  k.toString().padLeft(3,'0') + "_VALUE");
+							nStart = dshead.getColumn(i,"PCOL_" +  k.toString().padLeft(3,'0') + "_START");
+							if(nStart == 0) {
+								nStart = nStartCol;
+							} else {
+								nStart = (nStart * arrfactor.length) + nStartCol;
+							}
+							nCount = dshead.getColumn(i,"PCOL_" +  k.toString().padLeft(3,'0') + "_CNT");
+							break;
+						}
+					}
+					nCol = nPivotCol;
+				}
+				if(nCount <> undefined) {
+					//col index 구하기 (colspan이 2 이상이고 헤더col에 bind컬럼이 연속됨을 반영해야함)
+					colIdx = dsgridinfo.getColumn(j,"col")+(i* dsgridinfo.getColumn(0,"colspan"));				
+					sContents = sContents + contentsRow(dsgridinfo,j,colIdx ,"",sText,nStart,nCount,arrfactor.length);
+				}
+				
+				
+				
+			//	sContents = sContents + contentsRow(dsgridinfo,j,nCol,"",sText,nStart,nCount,arrfactor.length);
+			}
+			nPivotCol = nPivotCol + arrfactor.length;
+		}
+		
+		// Head : RIGHT FIXED Column
+		dsgridinfo.filter('band=="head" && col>=' + nRight);
+		nCol++;
+		var nFcol = dsgridinfo.getColumn(0,"col");
+		var nGap = 0;
+		for(var i=0;i<dsgridinfo.getRowCount();i++) {
+			nGap = dsgridinfo.getColumn(i,"col") - nFcol;
+			nCol = nCol + nGap;
+			sContents = sContents + contentsRow(dsgridinfo,i,nCol,"");
+		}
+		
+		//etime("setGridFormat end for2");
+		
+		sContents += '\t</Band>\n';		
+		// BODY : LEFT FIXED Column
+		sContents += '\t<Band id="body">\n';		
+		dsgridinfo.filter('band=="body" && col<' + nFixCnt);
+		for(var i=0;i<dsgridinfo.getRowCount();i++) {
+			sContents = sContents + contentsRow(dsgridinfo,i,dsgridinfo.getColumn(i,"col"),"");
+		}
+		//etime("setGridFormat end for3");
+		
+		//dsgridinfo.filter('band=="body" && col>=' + nFixCnt);		
+		// BODY : FACTOR Column
+		dsgridinfo.filter('band=="body" && (col>=' + nFixCnt + ' && col < ' + nRight + ')');
+		
+		nFactorCol = dsgridinfo.getColumn(0,"col");
+		nPivotCol = dsgridinfo.getColumn(0,"col");
+		sCol = "";
+		sText = "";
+		nCol = 0;
+		var seq = "";
+		for(var i=0;i<dshead.getRowCount();i++) {
+			seq = dshead.getColumn(i,"cell");
+			for(var j=0;j<dsgridinfo.getRowCount();j++) {
+				//sCol = dsgridinfo.getColumn(j,"text") + "_" + dshead.getColumn(i,"cell");
+				nCol = nFactorCol;
+				nFactorCol++;
+				
+				sContents = sContents + contentsRow(dsgridinfo,j,nCol,seq);
+			}
+		}
+		
+		// BODY : RIGHT Column
+		dsgridinfo.filter('band=="body" && col>=' + nRight);
+		nCol++;
+		nFcol = dsgridinfo.getColumn(0,"col");
+		nGap = 0;
+		for(var i=0;i<dsgridinfo.getRowCount();i++) {
+			nGap = dsgridinfo.getColumn(i,"col") - nFcol;
+			nCol = nCol + nGap;
+			sContents = sContents + contentsRow(dsgridinfo,i,nCol,"");
+		}
+		sContents += '\t</Band>\n';			
+		dsgridinfo.filter('band=="summary" && col<' + nFixCnt);
+		if(dsgridinfo.getRowCount()>0) {
+			// SUMMARY : LEFT FIXED Column
+			sContents += '\t<Band id="summary">\n';
+			//dsgridinfo.filter('band=="summary" && col<' + nFixCnt);
+			for(var i=0;i<dsgridinfo.getRowCount();i++) {
+				sContents = sContents + contentsRow(dsgridinfo,i,dsgridinfo.getColumn(i,"col"),"");
+			}
+			// SUMMARY : FACTOR Column
+			dsgridinfo.filter('band=="summary" && (col>=' + nFixCnt + ' && col < ' + nRight + ')');
+			nFactorCol = dsgridinfo.getColumn(0,"col");
+			nPivotCol = dsgridinfo.getColumn(0,"col");
+			sCol = "";
+			sText = "";
+			nCol = 0;
+			seq = "";
+			for(var i=0;i<dshead.getRowCount();i++) {
+				seq = dshead.getColumn(i,"cell");
+				for(var j=0;j<dsgridinfo.getRowCount();j++) {
+					nCol = nFactorCol;
+					nFactorCol++;
+					
+					sContents = sContents + contentsRow(dsgridinfo,j,nCol,seq);
+				}
+			}
+			
+			// SUMMARY : RIGHT FIXED Column
+			dsgridinfo.filter('band=="summary" && col>=' + nRight);
+			
+			nCol++;
+			nFcol = dsgridinfo.getColumn(0,"col");
+			nGap = 0;
+			for(var i=0;i<dsgridinfo.getRowCount();i++) {
+				nGap = dsgridinfo.getColumn(i,"col") - nFcol;
+				nCol = nCol + nGap;
+				sContents = sContents + contentsRow(dsgridinfo,i,nCol,"");
+			}
+			sContents += '\t</Band>\n';			
+		}
+
+		sContents += '\t</Format>\n';			
+		sContents += '\t</Formats>\n';	
+		//etime("setGridFormat end for4");
+		
+		//sContents = sContents.replace("undefined","");
+		
+		//etime("replace");
+		this.formats = sContents;
+		//etime("set contents");
+		//mergeHead();
+		//etime("merge");
+		var dspivot = eval("ds_pivot_" + this.name);
+		dspivot.rowposition = 0;
+		this.binddataset = "ds_pivot_" + this.name;
+
+		dspivot.keystring = "S:" + this.groupsortkey.replace(",","+");
+		if(IsNull(this.summarykey) == false)
+			dspivot.keystring = "G:" + this.summarykey.replace(",","+");
+		//trace("dspivot.keystring="+dspivot.keystring);
+		//etime("bind");
+	}
+
+	
+	function mergeHead()
+	{
+		var	nCount = this.getCellCount("head");
+		var nsrow = -1;
+		var nerow = -1;
+		var sband = "head";
+		var necol = toNumber(this.getCellProperty(sband,(nCount-1),"col")) + (toNumber(this.getCellProperty(sband,(nCount-1),"colspan"))-1);
+		var nscol = -1;
+		var nextrow = this.getCellProperty(sband,0,"row");
+		
+		var nAddCnt = 0;
+		for(var i=(nCount-1);i>0;i--) {
+			if(this.getCellProperty(sband,i,"row") <> nextrow) nAddCnt = 0;
+
+			if(	(this.getCellProperty(sband,i,"text") == this.getCellProperty(sband,i-1,"text")) &&
+				(this.getCellProperty(sband,i,"row") == this.getCellProperty(sband,i-1,"row")) &&
+				(toNumber(this.getCellProperty(sband,i,"col")) >= this.nFixCnt)	) {
+				nAddCnt++;
+			} else {
+				if(nAddCnt > 0) {
+					nscol = toNumber(this.getCellProperty(sband,i,"col"));
+					
+					var x = this.getCellProperty(sband,i,"text");
+// 					this.mergeContentsCell(sband,
+// 								  this.getCellProperty(sband,i,"row"),
+// 								  nscol,
+// 								  this.getCellProperty(sband,i,"row"),
+// 								  necol,
+// 								  nscol,
+// 								  false);
+					this.setCellProperty(sband,i,"text",x);
+				}
+				nAddCnt = 0;
+				necol = toNumber(this.getCellProperty(sband,i-1,"col")) + (toNumber(this.getCellProperty(sband,(i-1),"colspan"))-1);
+			}
+			nextrow = this.getCellProperty(sband,i,"row");
+		}
+	}
+	
+	// 속도문제 때문에 row별 merge는 하지 않음. (row merge시 index변경으로 다시 읽어야 함)
+	// 대신 처음 또는 마지막 head부 merge처리 함수 재공
+	function mergeTotalHead()
+	{
+		var sband = "head";
+		var	nCount = this.getCellCount("head");
+		var rowText = "";
+		var nCol = 0;
+		var nColspan = 0;
+		var nRow = 0;
+		var nCnt = 0;
+		var nMaxCol = 0;
+		var bChk=false;
+		var sv_i = 0;
+		for(var i=0;i<nCount;i++) {
+			if(this.getCellProperty(sband,i,"col") == nFixCnt && bChk==false) {
+				bChk=true;
+				rowText = this.getCellProperty(sband,i,"text");
+				nCol = this.getCellProperty(sband,i,"col");
+				nColspan = this.getCellProperty(sband,i,"colspan");
+				nRow = this.getCellProperty(sband,i,"row");
+				sv_i = i;
+				i++;
+			}
+			
+			if(this.getCellProperty(sband,i,"col") == nCol) {
+				if(	(this.getCellProperty(sband,i,"colspan") == nColspan) &&
+					(this.getCellProperty(sband,i,"text") == rowText) ) {
+					nCnt++;
+				}
+			}
+			if(this.getCellProperty(sband,i,"row") == 0) {
+				if(this.getCellProperty(sband,nFixCnt,"col") > nMaxCol) nMaxCol = this.getCellProperty(sband,nFixCnt,"col");
+			}
+		}
+		if(nCnt > 0) {
+			this.mergeContentsCell(sband,
+						  nRow,
+						  nCol,
+						  nRow + nCnt,
+						  nCol + (nColspan-1),
+						  nCol,
+						  false);	
+			this.setCellProperty(sband,sv_i,"text",rowText);
+		}
+	}
+	
+	// 이거이는 속도문제로 데이타로 가져 와와 함.
+	// 대신 right fix처리 함수 필요할 듯....
+	function pivotMax(scol,nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i] + "=='" + 
+					dspivot.getColumn(nRow,arrgroup[i]) + "')";
+		}
+		return dsorg.getCaseMax(sSum,scol);		
+	}
+	
+	function pivotCaseMax(scol,nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i] + "=='" + 
+					dspivot.getColumn(nRow,arrgroup[i]) + "')";
+		}
+		sSum += " && (" +  sCase + ")";
+		return dsorg.getCaseMax(sSum,scol);		
+	}	
+	
+	function pivotMin(scol,nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i] + "=='" + 
+					dspivot.getColumn(nRow,arrgroup[i]) + "')";
+		}
+		return dsorg.getCaseMin(sSum,scol);		
+	}
+	
+	function pivotCaseMin(scol,nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i] + "=='" + 
+					dspivot.getColumn(nRow,arrgroup[i]) + "')";
+		}
+		sSum += " && (" +  sCase + ")";
+		return dsorg.getCaseMin(sSum,scol);		
+	}	
+	
+	function pivotSum(scol,nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i] + "=='" + 
+					dspivot.getColumn(nRow,arrgroup[i]) + "')";
+		}
+		return dsorg.getCaseSum(sSum,scol);
+	}
+	
+	function pivotSubSum(sCol, gCol, nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var arrgroup = gCol.split(/,|\.|:/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i].trim() + "=='" + 
+					dspivot.getColumn(nRow-1,arrgroup[i].trim()) + "')";
+		}
+		return dsorg.getCaseSum(sSum,sCol);
+	}
+		
+	function pivotSumTotal(scol)
+	{
+		var dsorg = eval(this.bindds);
+		return dsorg.getSum(scol);
+	}
+	
+	function pivotCaseSum(sCase,scol,nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i] + "=='" + 
+					dspivot.getColumn(nRow,arrgroup[i]) + "')";
+		}
+		sSum += " && (" +  sCase + ")";
+		return dsorg.getCaseSum(sSum,scol);
+	}	
+	
+	function pivotAvg(scol,nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i] + "=='" + 
+					dspivot.getColumn(nRow,arrgroup[i]) + "')";
+		}
+		return dsorg.getCaseAvg(sSum,scol);	
+	}
+
+	function pivotCaseAvg(sCase,scol,nRow)
+	{
+		var dsorg = eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var sgrp = this.groupkey.replace(":",",");
+		var arrgroup = sgrp.split(/,/g);
+		var sSum = "";
+		for(var i=0;i<arrgroup.length;i++) {
+			if(i>0) sSum += " && ";
+			sSum += 	"(" + arrgroup[i] + "=='" + 
+					dspivot.getColumn(nRow,arrgroup[i]) + "')";
+		}
+		sSum += " && (" +  sCase + ")";
+		return dsorg.getCaseAvg(sSum,scol);	
+	}
+	
+	function getPivotValue(nCell,sCol)
+	{
+		var sText = this.getCellProperty("body",nCell,"text");
+		if(sText.indexOf("bind:") < 0) return  "";
+		var arrList = sText.split("_");
+		if(arrList.length == 0) return "";
+		var sSeq = arrList[arrList.length-1];
+		if(sSeq == undefined || sSeq == null) return "";
+		var dshead = eval("ds_pivothead_" + this.name);
+		var nRow = dshead.findRow("cell",sSeq);
+		if(nRow < 0) return "";
+		
+		var arrpivot = this.pivotkey.split(/,/g);
+		for(var i=0;i<arrpivot.length;i++) {
+			if(arrpivot[i] == sCol) {
+				var sCol = "PCOL_" + i.toString().padLeft(3,'0') + "_VALUE";
+				return dshead.getColumn(nRow,sCol);
+			}
+		}
+		
+		return "";
+	}
+	
+	function getPivotColName(nCell)
+	{
+		var sText = this.getCellProperty("body",nCell,"text");
+		if(sText.indexOf("bind:") < 0) return  "";
+		var nIdx = sText.lastIndexOf("_");
+		return sText.substr(0,nIdx);
+		
+	}
+
+	function getBindDataset()  
+	{
+		return eval(this.binddataset);
+	}
+	
+	function pivotgridReset()
+	{
+		var dsOrigin =  eval(this.bindds);
+		var dspivot = eval(this.binddataset);
+		var dshead = eval("ds_pivothead_" + this.name);
+		var dsGridInfo = eval("ds_gridinfo_" + this.name);
+		
+		//원본데이터셋 clear
+		dsOrigin.clearData();
+		
+		//초기그리드포맷정보 데이터셋
+		var dspivotForInit = eval(dspivot.name+"_copy");
+		var dsheadForInit = eval(dshead.name+"_copy");
+		var dsGridInfoForInit = eval(dsGridInfo.name+"_copy");
+		
+		//초기그리드정보로 변경
+		dspivot.copyData(dspivotForInit);
+		dshead.copyData(dsheadForInit);
+		dsGridInfo.copyData(dsGridInfoForInit);
+		
+		//그리드포맷재설정
+		setGridFormat();
+		
+	}
+	
+	function usrGrid_onmousemove(obj:Grid,e:GridMouseEventInfo)
+	{
+		var objBindDs 		= eval(this.binddataset);
+		var bindText 		= obj.getCellProperty("body", e.cell, "text");
+		var bindToolTipText = obj.getCellProperty("body", e.cell, "tooltiptext");
+		
+		if( !ufn_isNull(bindToolTipText) ) {
+			var sText = "";
+		
+			var aBindText = String(bindToolTipText).split(":");
+			if( aBindText.length != 2 ) {
+				sText = ufn_isNull( bindToolTipText ) ? "" : bindToolTipText;
+			} else {
+				sText = objBindDs.getColumn(e.row, aBindText[1]);
+				sText = ufn_isNull( sText ) ? "" : sText;
+			}
+			
+			obj.tooltiptype = "hover";
+			obj.tooltiptext = sText;
+
+		} else if(!ufn_isNull(bindText) && ufn_isNull(bindToolTipText) && bindText.indexOf("expr:") == -1){ 
+			var sText = "";
+			var aBindText = String(bindText).split(":");
+			if( aBindText.length != 2 ) {
+				sText = ufn_isNull( bindText ) ? "" : bindText;  
+			} else {				 
+				sText = obj.getCellText(e.row,e.cell);
+				sText = ufn_isNull( sText ) ? "" : sText;  
+			}
+			obj.tooltiptype = "hover";
+			obj.tooltiptext = sText;
+			
+		} else {
+		
+			obj.tooltiptype = "";
+			obj.tooltiptext = "";
+		}	
+		
+	}
+	
+	function usrGrid_onkeydown(obj:Grid, e:KeyEventInfo)
+	{
+		if(e.ctrlKey == true && e.keycode == 67) {
+			system.setClipboard("CF_UNICODETEXT",obj.tooltiptext);
+		}
+	}
+		/**
+	 * @desc   : 입력값이 null에 해당하는지 여부
+	 * @param  : sValue 체크할 문자열( 예 : null 또는 undefined 또는 "" 또는 "abc" )
+	 * @return : true - sValue가 undefined, null, NaN, "", Array.length = 0인 경우
+				 false - 이외의 경우
+	 */
+	private function ufn_isNull(sValue){
+		if (new String(sValue).valueOf() == "undefined") 
+			return true;
+		if (sValue == null)
+			return true;
+		if (("x"+sValue == "xNaN") && (new String(sValue.length).valueOf() == "undefined"))
+			return true;
+		if (sValue.length == 0)
+			return true;
+		return false;
+	}
+	
+	
+//-------------------------------------grd_basic end --------------------------------------------//
+} // class
+
+
+
+]]></Script>

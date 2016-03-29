@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRUnpdBondDisProcMgmt">
+	<select id="SUnpdBondDisProcTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.SUnpdBondDisProcTotCnt 채권추심미납채권조회총건수 */
+/* IO: 안진갑,2016-02-24T09:47:30(김혁범,2015-11-11T09:50:23) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  (
+          SELECT  ROW_NUMBER() OVER(ORDER BY PA.SVC_MGMT_NO ASC) AS ROWNO
+                 ,PA.SVC_MGMT_NO 	/*서비스관리번호*/
+                 ,PA.CNTRT_NO 		/*계약번호*/
+                 ,PA.FR_INV_PROC_DT /*최초미납일*/
+                 ,PA.INV_DT			/*청구일자*/
+                 ,PA.ITM_CD			/*매출항목*/
+                 ,TRUNC(MONTHS_BETWEEN(NVL(TO_DATE(#STAND_DT#,'YYYYMMDD'),SYSDATE),TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD')))+1 AS INV_PROC_DATE/*미납기간(개월수)*/
+                 ,PA.UNPAID 		/*미납금액*/
+                 ,'' AS SLIP_ST_CD
+        /*전표번호*/
+        /*전표상태*/
+        /*처리일자*/
+            FROM (
+  
+  /*■■■■■■■■ 렌탈미납계산 ■■■■■■■■■*/
+                   SELECT  'CRRNTUS' AS ITM_CD
+                          ,B.SVC_MGMT_NO /*서비스관리번호*/ 
+                          ,A.CNTRT_NO
+                          ,(CASE WHEN A.RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                           ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                           END) AS FR_INV_PROC_DT /*최초미납일*/
+                          ,NVL(A.INV_AMT,0) - NVL(A.RECV_AMT,0) AS UNPAID /*미납요금*/ 
+                          ,A.INV_DT	/*청구일자*/
+                          ,A.RENT_YM AS OBJ_YM
+                     FROM  TB_EQP_CNTRT_DTL A
+                          ,TB_NR_CNTRT B
+                    WHERE  A.CNTRT_NO = B.CNTRT_NO
+                      AND  NVL(A.INV_AMT,0) != NVL(A.RECV_AMT,0)  /*미납금액*/
+                      AND  A.INV_DT IS NOT NULL     /*렌탈료*/
+                  GROUP BY B.SVC_MGMT_NO 
+                          ,A.CNTRT_NO 
+                          ,A.RECV_DT
+                          ,A.INV_DT
+                          ,A.INV_AMT
+                          ,A.RECV_AMT
+                          ,A.RENT_YM
+/*■■■■■■■■ 손해배상금미납계산 ■■■■■■■■■*/ 
+                  UNION ALL       
+                  SELECT  (CASE WHEN A.DCP_CL='03' THEN 'CRRNBAP'   /*파손*/
+                                WHEN A.DCP_CL='02' THEN 'CRRNBME'   /*미반납*/
+                            END)  AS ITM_CD
+                         ,B.SVC_MGMT_NO /*서비스관리번호*/ 
+                         ,A.CNTRT_NO
+                         ,(CASE WHEN A.DMG_CMP_RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.DMG_CMP_INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                                ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.DMG_CMP_RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                            END) AS FR_INV_PROC_DT /*최초미납일*/ 
+                         ,NVL(A.UKEY_DMG_CMP_AMT,0) - NVL(A.DMG_CMP_RECV_AMT,0) AS UNPAID/*손해배상금*/
+                         ,DMG_CMP_INV_DT	AS INV_DT/*손해배상청구일자*/
+                         ,SUBSTR(A.DMG_CMP_PROC_DT,0,6) AS OBJ_YM
+                    FROM  TB_RENTAL_DCP A
+                         ,TB_NR_CNTRT B
+                   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  NVL(A.UKEY_DMG_CMP_AMT,0) != NVL(A.DMG_CMP_RECV_AMT,0)
+                     AND  A.DMG_CMP_INV_DT IS NOT NULL /*손배금*/
+                 GROUP BY B.SVC_MGMT_NO
+                         ,A.CNTRT_NO 
+                         ,A.DMG_CMP_RECV_DT
+                         ,A.DMG_CMP_INV_DT
+                         ,A.UKEY_DMG_CMP_AMT
+                         ,A.DMG_CMP_RECV_AMT
+                         ,(CASE WHEN A.DCP_CL='03' THEN 'CRRNBAP'
+                               WHEN A.DCP_CL='02' THEN 'CRRNBME'
+                           END)
+                         ,A.DMG_CMP_PROC_DT
+/*■■■■■■■■ 위약금미납계산 ■■■■■■■■■*/  
+                  UNION ALL     
+                  SELECT  (CASE WHEN A.PEN_POLY_CL ='01' THEN 'CRRNTHA' /*중도해지*/
+                                WHEN A.PEN_POLY_CL ='02' THEN 'CRRNTDE' /*반납지연*/
+                                WHEN A.PEN_POLY_CL ='03' THEN 'CRPREGA' /*연체*/
+                            END) AS ITM_CD   
+                         ,B.SVC_MGMT_NO /*서비스관리번호*/
+                         ,A.CNTRT_NO
+                         ,(CASE WHEN A.PEN_RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.PEN_INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                                ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.PEN_RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                            END) AS FR_INV_PROC_DT /*최초미납일*/ 
+                         ,NVL(A.UKEY_PEN_AMT,0) - NVL(A.PEN_RECV_AMT,0) AS UNPAID /*위약금*/
+                         ,A.PEN_INV_DT AS INV_DT	/*위약금청구일자*/
+                         ,SUBSTR(A.PEN_PROC_DT,0,6) AS OBJ_YM  
+                    FROM  TB_RENTAL_PEN A
+                         ,TB_NR_CNTRT B
+                   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  NVL(A.UKEY_PEN_AMT,0) != NVL(A.PEN_RECV_AMT,0) 
+                     AND  A.PEN_INV_DT IS NOT NULL /*위약금*/
+                 GROUP BY B.SVC_MGMT_NO
+                         ,A.CNTRT_NO
+                         ,A.PEN_RECV_DT
+                         ,A.PEN_INV_DT
+                         ,A.UKEY_PEN_AMT
+                         ,A.PEN_RECV_AMT
+                         ,(CASE WHEN A.PEN_POLY_CL ='01' THEN 'CRRNTHA' /*중도해지*/
+                                WHEN A.PEN_POLY_CL ='02' THEN 'CRRNTDE' /*반납지연*/
+                                WHEN A.PEN_POLY_CL ='03' THEN 'CRPREGA' /*연체*/
+                            END)
+                         ,A.PEN_PROC_DT  )PA
+      ,(SELECT A.CNTRT_NO,A.SALE_ITM_CD,A.OBJ_YM,A.SLIP_NO,B.SLIP_DT,B.SLIP_ST_CD,B.SLIP_APRV_DT FROM TB_UNPD_DIS_SLIP A ,TB_SLIP B WHERE A.SLIP_NO=B.SLIP_NO) PB       
+  WHERE  PA.CNTRT_NO = PB.CNTRT_NO(+)  
+    AND  PA.ITM_CD = PB.SALE_ITM_CD(+)                     
+    AND  PA.OBJ_YM = PB.OBJ_YM(+)
+]]><isNotEmpty prepend="AND" property="INV_PROC_DATE"><![CDATA[
+                 (SELECT TRUNC(MONTHS_BETWEEN(NVL(TO_DATE(#STAND_DT#,'YYYYMMDD'),SYSDATE),TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD')))+1 FROM DUAL) = #INV_PROC_DATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                 PA.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="ITM_CD" compareValue="%"><![CDATA[              
+	             PA.ITM_CD = #ITM_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="FR_INV_PROC_STA_DT"><![CDATA[
+                 PA.FR_INV_PROC_DT BETWEEN #FR_INV_PROC_STA_DT# AND #FR_INV_PROC_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SLIP_STA_DT"><![CDATA[
+                 PB.SLIP_DT BETWEEN #SLIP_STA_DT# AND #SLIP_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SLIP_NO"><![CDATA[
+   	   			 PB.SLIP_NO = #SLIP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+	]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+				 PB.SLIP_ST_CD IS NULL
+	]]></isEqual><![CDATA[
+	]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+				 PB.SLIP_ST_CD = #SLIP_ST_CD#
+	]]></isNotEqual><![CDATA[              
+]]></isNotEqual><![CDATA[
+           GROUP BY  PA.SVC_MGMT_NO
+                    ,PA.CNTRT_NO
+                    ,PA.FR_INV_PROC_DT
+                    ,PA.INV_DT
+                    ,PA.ITM_CD
+                    ,PA.UNPAID
+                    ,PA.OBJ_YM                    
+      )]]>
+	</select>
+	<select id="SUnpdBondDisProcLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.SUnpdBondDisProcLstPaging 채권추심미납채권조회 */
+/* IO: 안진갑,2016-02-24T09:10:47(김혁범,2015-11-11T09:51:11) */
+SELECT  * 
+  FROM  (
+          SELECT  ROW_NUMBER() OVER(ORDER BY PA.SVC_MGMT_NO ASC) AS ROWNO
+                 ,PA.SVC_MGMT_NO 	/*서비스관리번호*/
+                 ,PA.CNTRT_NO 		/*계약번호*/
+                 ,PA.FR_INV_PROC_DT /*최초미납일*/
+                 ,PA.INV_DT			/*청구일자*/
+                 ,PA.ITM_CD			/*매출항목*/
+                 ,TRUNC(MONTHS_BETWEEN(NVL(TO_DATE(#STAND_DT#,'YYYYMMDD'),SYSDATE),TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD')))+1 AS INV_PROC_DATE/*미납기간(개월수)*/
+                 ,NVL(PA.UNPAID,0) AS UNPAID 		/*미납금액*/
+                 ,NVL(PB.SLIP_ST_CD, '00') AS SLIP_ST_CD
+                 ,PB.SLIP_NO
+                 ,PB.SLIP_DT
+                 ,PA.INVE_ST_CD
+                 ,NVL(PB.DMG_ALLWN_AMT,0) AS DMG_ALLWN_AMT	/*대손충당금*/
+                 ,CASE WHEN NVL(PB.SLIP_ST_CD, '00')='00' OR PB.SLIP_ST_CD ='05' THEN 0
+                       ELSE NVL(PA.UNPAID,0) - NVL(PB.DMG_ALLWN_AMT,0)
+                  END AS DMG_DEPR_AMT	/*대손상각비*/
+                 ,CASE WHEN SLIP_ST_CD ='20' THEN '02'	/*미진행*/
+                     ELSE '01'						/*완료*/
+                  END AS UNPD_BOND_ST_CD				/*채권제각상태*/
+                 ,PA.CUST_TYP_NM
+                 ,PA.BIZ_REG_NO			      
+                 ,PA.OBJ_YM
+            FROM (
+  
+  /*■■■■■■■■ 렌탈미납계산 ■■■■■■■■■*/
+                   SELECT  'CRRNTUS' AS ITM_CD
+                          ,B.SVC_MGMT_NO /*서비스관리번호*/ 
+                          ,A.CNTRT_NO
+                          ,(CASE WHEN A.RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                           ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                           END) AS FR_INV_PROC_DT /*최초미납일*/
+                          ,NVL(A.INV_AMT,0) - NVL(A.RECV_AMT,0) AS UNPAID /*미납요금*/ 
+                          ,A.INV_DT	/*청구일자*/
+                          ,C.INVE_ST_CD
+                          ,CASE WHEN B.CUST_TYP IN ('01','04') THEN '개인'
+                                WHEN B.CUST_TYP IN ('02','03','05') THEN '법인'
+                           END AS CUST_TYP_NM
+                          ,CASE WHEN B.CUST_TYP IN ('01','04') THEN (SELECT  DEALCO_BLICENS_NO
+                                                                       FROM  TB_DEALCO 
+                                                                      WHERE  DEALCO_CD = '1000000009')
+                                WHEN B.CUST_TYP IN ('02','03','05') THEN B.NEW_CNTRTR_BIZ_REG_NO
+                           END AS BIZ_REG_NO         
+                          ,A.RENT_YM AS OBJ_YM                 
+                     FROM  TB_EQP_CNTRT_DTL A
+                          ,TB_NR_CNTRT B
+                          ,TB_EQP_ASSET C
+                    WHERE  A.CNTRT_NO = B.CNTRT_NO
+                      AND  A.ASSET_NO = C.ASSET_NO 
+                      AND  NVL(A.INV_AMT,0) != NVL(A.RECV_AMT,0)  /*미납금액*/
+                      AND  A.INV_DT IS NOT NULL     /*렌탈료*/
+                  GROUP BY B.SVC_MGMT_NO 
+                          ,A.CNTRT_NO 
+                          ,A.RECV_DT
+                          ,A.INV_DT
+                          ,A.INV_AMT
+                          ,A.RECV_AMT
+                          ,C.INVE_ST_CD
+                          ,B.CUST_TYP
+                          ,B.NEW_CNTRTR_BIZ_REG_NO                          
+                          ,A.RENT_YM
+                          
+/*■■■■■■■■ 손해배상금미납계산 ■■■■■■■■■*/ 
+                  UNION ALL       
+                  SELECT  (CASE WHEN A.DCP_CL='03' THEN 'CRRNBAP'   /*파손*/
+                                WHEN A.DCP_CL='02' THEN 'CRRNBME'   /*미반납*/
+                            END)  AS ITM_CD
+                         ,B.SVC_MGMT_NO /*서비스관리번호*/ 
+                         ,A.CNTRT_NO
+                         ,(CASE WHEN A.DMG_CMP_RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.DMG_CMP_INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                                ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.DMG_CMP_RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                            END) AS FR_INV_PROC_DT /*최초미납일*/ 
+                         ,NVL(A.UKEY_DMG_CMP_AMT,0) - NVL(A.DMG_CMP_RECV_AMT,0) AS UNPAID/*손해배상금*/
+                         ,DMG_CMP_INV_DT	AS INV_DT/*손해배상청구일자*/
+                         ,D.INVE_ST_CD
+                         ,CASE WHEN B.CUST_TYP IN ('01','04') THEN '개인'
+                               WHEN B.CUST_TYP IN ('02','03','05') THEN '법인'
+                          END AS CUST_TYP_NM
+                         ,CASE WHEN B.CUST_TYP IN ('01','04') THEN (SELECT  DEALCO_BLICENS_NO
+                                                                      FROM  TB_DEALCO 
+                                                                     WHERE  DEALCO_CD = '1000000009')
+                               WHEN B.CUST_TYP IN ('02','03','05') THEN B.NEW_CNTRTR_BIZ_REG_NO
+                          END AS BIZ_REG_NO    
+                         ,SUBSTR(A.DMG_CMP_PROC_DT,0,6) AS OBJ_YM                                               
+                    FROM  TB_RENTAL_DCP A
+                         ,TB_NR_CNTRT B
+                         ,TB_EQP_CNTRT C
+                         ,TB_EQP_ASSET D
+                   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  B.CNTRT_NO = C.CNTRT_NO
+                     AND  C.ASSET_NO = D.ASSET_NO
+                     AND  NVL(A.UKEY_DMG_CMP_AMT,0) != NVL(A.DMG_CMP_RECV_AMT,0)
+                     AND  A.DMG_CMP_INV_DT IS NOT NULL /*손배금*/
+                 GROUP BY B.SVC_MGMT_NO
+                         ,A.CNTRT_NO 
+                         ,A.DMG_CMP_RECV_DT
+                         ,A.DMG_CMP_INV_DT
+                         ,A.UKEY_DMG_CMP_AMT
+                         ,A.DMG_CMP_RECV_AMT
+                         ,(CASE WHEN A.DCP_CL='03' THEN 'CRRNBAP'
+                               WHEN A.DCP_CL='02' THEN 'CRRNBME'
+                           END)
+                         ,D.INVE_ST_CD
+                         ,B.CUST_TYP
+                         ,B.NEW_CNTRTR_BIZ_REG_NO                         
+                         ,A.DMG_CMP_PROC_DT
+                         
+/*■■■■■■■■ 위약금미납계산 ■■■■■■■■■*/  
+                  UNION ALL     
+                  SELECT  (CASE WHEN A.PEN_POLY_CL ='01' THEN 'CRRNTHA' /*중도해지*/
+                                WHEN A.PEN_POLY_CL ='02' THEN 'CRRNTDE' /*반납지연*/
+                                WHEN A.PEN_POLY_CL ='03' THEN 'CRPREGA' /*연체*/
+                            END) AS ITM_CD   
+                         ,B.SVC_MGMT_NO /*서비스관리번호*/
+                         ,A.CNTRT_NO
+                         ,(CASE WHEN A.PEN_RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.PEN_INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                                ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.PEN_RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                            END) AS FR_INV_PROC_DT /*최초미납일*/ 
+                         ,NVL(A.UKEY_PEN_AMT,0) - NVL(A.PEN_RECV_AMT,0) AS UNPAID /*위약금*/
+                         ,A.PEN_INV_DT AS INV_DT	/*위약금청구일자*/
+                         ,D.INVE_ST_CD
+                         ,CASE WHEN B.CUST_TYP IN ('01','04') THEN '개인'
+                               WHEN B.CUST_TYP IN ('02','03','05') THEN '법인'
+                          END AS CUST_TYP_NM                         
+                         ,CASE WHEN B.CUST_TYP IN ('01','04') THEN (SELECT  DEALCO_BLICENS_NO
+                                                                      FROM  TB_DEALCO 
+                                                                     WHERE  DEALCO_CD = '1000000009')
+                               WHEN B.CUST_TYP IN ('02','03','05') THEN B.NEW_CNTRTR_BIZ_REG_NO
+                          END AS BIZ_REG_NO 
+                         ,SUBSTR(A.PEN_PROC_DT,0,6) AS OBJ_YM                                                                           
+                    FROM  TB_RENTAL_PEN A
+                         ,TB_NR_CNTRT B
+                         ,TB_EQP_CNTRT C
+                         ,TB_EQP_ASSET D
+                   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  B.CNTRT_NO = C.CNTRT_NO
+                     AND  C.ASSET_NO = D.ASSET_NO
+                     AND  NVL(A.UKEY_PEN_AMT,0) != NVL(A.PEN_RECV_AMT,0) 
+                     AND  A.PEN_INV_DT IS NOT NULL /*위약금*/
+                 GROUP BY B.SVC_MGMT_NO
+                         ,A.CNTRT_NO
+                         ,A.PEN_RECV_DT
+                         ,A.PEN_INV_DT
+                         ,A.UKEY_PEN_AMT
+                         ,A.PEN_RECV_AMT
+                         ,(CASE WHEN A.PEN_POLY_CL ='01' THEN 'CRRNTHA' /*중도해지*/
+                                WHEN A.PEN_POLY_CL ='02' THEN 'CRRNTDE' /*반납지연*/
+                                WHEN A.PEN_POLY_CL ='03' THEN 'CRPREGA' /*연체*/
+                            END)
+                         ,D.INVE_ST_CD
+                         ,B.CUST_TYP
+                         ,B.NEW_CNTRTR_BIZ_REG_NO
+                         ,A.PEN_PROC_DT )PA
+        ,(SELECT A.CNTRT_NO,A.SALE_ITM_CD,A.OBJ_YM,A.DMG_ALLWN_AMT,A.SLIP_NO,B.SLIP_ST_CD,B.SLIP_DT FROM TB_UNPD_DIS_SLIP A ,TB_SLIP B WHERE A.SLIP_NO=B.SLIP_NO) PB  
+  WHERE  PA.CNTRT_NO = PB.CNTRT_NO(+)   
+    AND  PA.ITM_CD = PB.SALE_ITM_CD(+)
+    AND  PA.OBJ_YM = PB.OBJ_YM(+)
+]]><isNotEmpty prepend="AND" property="INV_PROC_DATE"><![CDATA[
+                 (SELECT TRUNC(MONTHS_BETWEEN(NVL(TO_DATE(#STAND_DT#,'YYYYMMDD'),SYSDATE),TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD')))+1 FROM DUAL) = #INV_PROC_DATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                 PA.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="ITM_CD" compareValue="%"><![CDATA[              
+	             PA.ITM_CD = #ITM_CD#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="FR_INV_PROC_STA_DT"><![CDATA[
+                 PA.FR_INV_PROC_DT BETWEEN #FR_INV_PROC_STA_DT# AND #FR_INV_PROC_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SLIP_STA_DT"><![CDATA[
+                 PB.SLIP_DT BETWEEN #SLIP_STA_DT# AND #SLIP_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SLIP_NO"><![CDATA[
+   	   			 PB.SLIP_NO = #SLIP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+	]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+				 PB.SLIP_ST_CD IS NULL
+	]]></isEqual><![CDATA[
+	]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+				 PB.SLIP_ST_CD = #SLIP_ST_CD#
+	]]></isNotEqual><![CDATA[              
+]]></isNotEqual><![CDATA[
+
+           GROUP BY  PA.SVC_MGMT_NO
+                    ,PA.CNTRT_NO
+                    ,PA.FR_INV_PROC_DT
+                    ,PA.INV_DT
+                    ,PA.ITM_CD
+                    ,PA.UNPAID
+                    ,PB.SLIP_ST_CD
+                    ,PB.SLIP_NO
+                    ,PB.SLIP_DT
+                    ,PA.INVE_ST_CD
+                    ,PA.CUST_TYP_NM
+                    ,PA.BIZ_REG_NO	  
+                    ,PB.DMG_ALLWN_AMT
+                    ,PA.OBJ_YM
+                    
+      )              
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SUnpdBondDisProcTotSum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.SUnpdBondDisProcTotSum 미납채권 미납금합계 조회 */
+/* IO: 장미진,2016-01-13T17:22:29(김혁범,2015-12-28T10:42:54) */
+SELECT  NVL(SUM(UNPAID),0) AS TOTAL_SUM
+	   ,0 AS BD_AMT 
+	   ,'' AS CASE_WHEN /*전표발행/삭제용 플래그*/	
+  FROM  (
+          SELECT  ROW_NUMBER() OVER(ORDER BY PA.SVC_MGMT_NO ASC) AS ROWNO
+                 ,PA.SVC_MGMT_NO 	/*서비스관리번호*/
+                 ,PA.CNTRT_NO 		/*계약번호*/
+                 ,PA.FR_INV_PROC_DT /*최초미납일*/
+                 ,PA.INV_DT			/*청구일자*/
+                 ,PA.ITM_CD			/*매출항목*/
+                 ,TRUNC(MONTHS_BETWEEN(NVL(TO_DATE(#STAND_DT#,'YYYYMMDD'),SYSDATE),TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD')))+1 AS INV_PROC_DATE/*미납기간(개월수)*/
+                 ,PA.UNPAID 		/*미납금액*/
+                 ,'' AS SLIP_ST_CD
+        /*전표번호*/
+        /*전표상태*/
+        /*처리일자*/
+            FROM (
+  
+  /*■■■■■■■■ 렌탈미납계산 ■■■■■■■■■*/
+                   SELECT  'CRRNTUS' AS ITM_CD
+                          ,B.SVC_MGMT_NO /*서비스관리번호*/ 
+                          ,A.CNTRT_NO
+                          ,(CASE WHEN A.RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                           ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                           END) AS FR_INV_PROC_DT /*최초미납일*/
+                          ,NVL(A.INV_AMT,0) - NVL(A.RECV_AMT,0) AS UNPAID /*미납요금*/ 
+                          ,A.INV_DT	/*청구일자*/
+                     FROM  TB_EQP_CNTRT_DTL A
+                          ,TB_NR_CNTRT B
+                    WHERE  A.CNTRT_NO = B.CNTRT_NO
+                      AND  NVL(A.INV_AMT,0) != NVL(A.RECV_AMT,0)  /*미납금액*/
+                      AND  A.INV_DT IS NOT NULL     /*렌탈료*/
+                  GROUP BY B.SVC_MGMT_NO 
+                          ,A.CNTRT_NO 
+                          ,A.RECV_DT
+                          ,A.INV_DT
+                          ,A.INV_AMT
+                          ,A.RECV_AMT
+                          
+/*■■■■■■■■ 손해배상금미납계산 ■■■■■■■■■*/ 
+                  UNION ALL       
+                  SELECT  (CASE WHEN A.DCP_CL='03' THEN 'CRRNBAP'   /*파손*/
+                                WHEN A.DCP_CL='02' THEN 'CRRNBME'   /*미반납*/
+                            END)  AS ITM_CD
+                         ,B.SVC_MGMT_NO /*서비스관리번호*/ 
+                         ,A.CNTRT_NO
+                         ,(CASE WHEN A.DMG_CMP_RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.DMG_CMP_INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                                ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.DMG_CMP_RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                            END) AS FR_INV_PROC_DT /*최초미납일*/ 
+                         ,NVL(A.UKEY_DMG_CMP_AMT,0) - NVL(A.DMG_CMP_RECV_AMT,0) AS UNPAID/*손해배상금*/
+                         ,DMG_CMP_INV_DT	AS INV_DT/*손해배상청구일자*/
+                    FROM  TB_RENTAL_DCP A
+                         ,TB_NR_CNTRT B
+                   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  NVL(A.UKEY_DMG_CMP_AMT,0) != NVL(A.DMG_CMP_RECV_AMT,0)
+                     AND  A.DMG_CMP_INV_DT IS NOT NULL /*손배금*/
+                 GROUP BY B.SVC_MGMT_NO
+                         ,A.CNTRT_NO 
+                         ,A.DMG_CMP_RECV_DT
+                         ,A.DMG_CMP_INV_DT
+                         ,A.UKEY_DMG_CMP_AMT
+                         ,A.DMG_CMP_RECV_AMT
+                         ,(CASE WHEN A.DCP_CL='03' THEN 'CRRNBAP'
+                               WHEN A.DCP_CL='02' THEN 'CRRNBME'
+                           END)
+/*■■■■■■■■ 위약금미납계산 ■■■■■■■■■*/  
+                  UNION ALL     
+                  SELECT  (CASE WHEN A.PEN_POLY_CL ='01' THEN 'CRRNTHA' /*중도해지*/
+                                WHEN A.PEN_POLY_CL ='02' THEN 'CRRNTDE' /*반납지연*/
+                                WHEN A.PEN_POLY_CL ='03' THEN 'CRPREGA' /*연체*/
+                            END) AS ITM_CD   
+                         ,B.SVC_MGMT_NO /*서비스관리번호*/
+                         ,A.CNTRT_NO
+                         ,(CASE WHEN A.PEN_RECV_DT IS NULL THEN TO_CHAR(ADD_MONTHS(TO_DATE(A.PEN_INV_DT,'YYYYMMDD'),1),'YYYYMM')||'01'/*수납없을때는 청구일 익월1일*/
+                                ELSE TO_CHAR(ADD_MONTHS(TO_DATE(MAX(A.PEN_RECV_DT),'YYYYMMDD'),1),'YYYYMM')||'01'/*수납있을때는 수납일 익월1일*/
+                            END) AS FR_INV_PROC_DT /*최초미납일*/ 
+                         ,NVL(A.UKEY_PEN_AMT,0) - NVL(A.PEN_RECV_AMT,0) AS UNPAID /*위약금*/
+                         ,A.PEN_INV_DT AS INV_DT	/*위약금청구일자*/
+                    FROM  TB_RENTAL_PEN A
+                         ,TB_NR_CNTRT B
+                   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  NVL(A.UKEY_PEN_AMT,0) != NVL(A.PEN_RECV_AMT,0) 
+                     AND  A.PEN_INV_DT IS NOT NULL /*위약금*/
+                 GROUP BY B.SVC_MGMT_NO
+                         ,A.CNTRT_NO
+                         ,A.PEN_RECV_DT
+                         ,A.PEN_INV_DT
+                         ,A.UKEY_PEN_AMT
+                         ,A.PEN_RECV_AMT
+                         ,(CASE WHEN A.PEN_POLY_CL ='01' THEN 'CRRNTHA' /*중도해지*/
+                                WHEN A.PEN_POLY_CL ='02' THEN 'CRRNTDE' /*반납지연*/
+                                WHEN A.PEN_POLY_CL ='03' THEN 'CRPREGA' /*연체*/
+                            END)
+                
+               )PA
+]]><dynamic prepend="WHERE"><![CDATA[                
+]]><isNotEmpty prepend="AND" property="INV_PROC_DATE"><![CDATA[
+                 (SELECT TRUNC(MONTHS_BETWEEN(SYSDATE,TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD'))) FROM DUAL) = #INV_PROC_DATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                 PA.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="FR_INV_PROC_STA_DT"><![CDATA[
+                 PA.FR_INV_PROC_DT BETWEEN #FR_INV_PROC_STA_DT# AND #FR_INV_PROC_END_DT#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[                 
+           GROUP BY  PA.SVC_MGMT_NO
+                    ,PA.CNTRT_NO
+                    ,PA.FR_INV_PROC_DT
+                    ,PA.INV_DT
+                    ,PA.ITM_CD
+                    ,PA.UNPAID
+      )
+ WHERE INV_PROC_DATE >= 36 /*36개월이상*/]]>
+	</select>
+	<insert id="IUnpdDisSlip" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.IUnpdDisSlip 미납채권용 전표테이블 입력 */
+/* IO: 장미진,2016-01-20T12:30:47(장미진,2016-01-13T17:56:58) */
+INSERT INTO TB_UNPD_DIS_SLIP
+	(
+	 CNTRT_NO
+	,OCCR_YM
+	,SALE_ITM_CD
+	,SVC_MGMT_NO	
+	,INV_DT	
+	,FST_UNPD_DT		
+	,FS_REG_USER_ID
+	,FS_REG_DTM
+	,LS_CHG_USER_ID
+	,LS_CHG_DTM
+	)
+VALUES(
+	 #CNTRT_NO#
+	,SUBSTR(#FR_INV_PROC_DT#,0,6)
+	,#ITM_CD#
+	,#SVC_MGMT_NO#
+	,TO_CHAR(SYSDATE,'YYYYMMDD')
+	,#FR_INV_PROC_DT#
+	,#USER_NO#
+	,TO_CHAR(SYSDATE,'YYYYMMDD')
+	,#USER_NO#
+	,TO_CHAR(SYSDATE,'YYYYMMDD')
+	)]]>
+	</insert>
+	<delete id="DUnpdDisSlip" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.DUnpdDisSlip 미납채권용 전표테이블 삭제 */
+/* IO: 장미진,2016-01-13T18:14:05(장미진,2016-01-13T18:12:29) */
+DELECT FROM TB_UNPD_DIS_SLIP
+ WHERE  CNTRT_NO = #CNTRT_NO#
+	   ,OCCR_YM  = SUBSTR(#FR_INV_PROC_DT#,0,6)
+	   ,SALE_ITM_CD = #ITM_CD#]]>
+	</delete>
+</sqlMap>

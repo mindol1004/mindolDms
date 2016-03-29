@@ -1,0 +1,89 @@
+package dms.pr.prbimbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]임대폰분실관리</li>
+ * <li>설  명 : <pre>[PU]임대폰분실관리</pre></li>
+ * <li>작성일 : 2015-07-22 18:02:48</li>
+ * <li>작성자 : 이준우 (elmsliw)</li>
+ * </ul>
+ *
+ * @author 이준우 (elmsliw)
+ */
+public class PPRReqpClctInfoLst extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PPRReqpClctInfoLst(){
+		super();
+	}
+
+	/**
+	 * <pre>[PM]임대폰회수정보조회</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-07-23 21:00:53
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ST_DT [기간st]
+	 *	- field : ED_DT [기간ed]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : EQP_SER_NUM [시리얼넘버]
+	 *	- field : BOX_NO [BOX_NO]
+	 *	- field : IN_OBJ_DTL_CD [회수구분코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_RCIBM_LIST
+	 *		- field : RTN_REG_DT [반납등록일자]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_MDL_NM [단말기모델이름]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : IN_OBJ_DTL_CD [회수구분코드]
+	 * </pre>
+	 */
+	public IDataSet pInqReqpClctInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		
+	    try {
+			// 1. FU lookup
+			//FPRReqpClctInRgst fPRReqpClctInRgst = (FPRReqpClctInRgst) lookupFunctionUnit(FPRReqpClctInRgst.class);
+			// 2. FM 호출
+			responseData = callSharedBizComponentByDirect("pr.PRSIMBase", "fInqReqpClctInfoLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	    
+	    return responseData;
+	} 
+}

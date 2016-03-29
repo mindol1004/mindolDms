@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE sqlMapConfig
+        PUBLIC "-//iBATIS.com//DTD SQL Map Config 2.0//EN"
+        "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+    <settings useStatementNamespaces="true" cacheModelsEnabled="true"/>
+
+	<!-- DATA TYPE ALIASES -->
+	<typeAlias type="nexcore.framework.core.data.CaseIgnoreHashMap"                        alias="hmap" />
+	<typeAlias type="com.ibatis.sqlmap.engine.type.ClobTypeHandlerCallback"                alias="clobHandler" />
+	<typeAlias type="com.ibatis.sqlmap.engine.type.BlobTypeHandlerCallback"                alias="blobHandler" />
+    <typeAlias type="nexcore.framework.integration.ibatis.ObjectTypeBlobHandler"           alias="AsyncQueueMessageType"/>
+    <typeAlias type="nexcore.framework.integration.ibatis.ObjectTypeBlobHandler"           alias="AsyncQueueMessageTypeHandler" />
+    
+    <typeHandler callback="nexcore.framework.integration.ibatis.ObjectTypeBlobHandler" javaType="AsyncQueueMessageType" />
+
+	<transactionManager type="EXTERNAL">
+		<property name="SetAutoCommitAllowed" value="false" />
+		<property name="DefaultAutoCommit"    value="false" />
+		<dataSource type="NC_JNDI">
+			<property name="DataSource" value="jdbc/NexcoreDS" />
+			<property name="SpyEnabled" value="false" />
+		</dataSource>
+	</transactionManager>
+
+    <sqlMap resource="nexcore/framework/core/service/asyncqueue/internal/AsyncQueue.oracle.xsql"/>
+    
+</sqlMapConfig>

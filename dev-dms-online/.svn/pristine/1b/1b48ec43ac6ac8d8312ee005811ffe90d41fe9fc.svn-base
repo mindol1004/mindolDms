@@ -1,0 +1,638 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpDspslMgmt">
+	<select id="SEqpDspslLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.SEqpDspslLstPaging 단말매각현황조회_미사용 */
+/* IO: 문재웅,2015-11-03T16:05:13(문재웅,2015-10-29T14:35:42) */
+WITH
+/* ■■CASE 1 감가상각대상 RAW_DATA 산출 ■■ */  
+RAW_DATA AS
+(
+  SELECT  A.ASSET_NO
+         ,C.SPLY_PRC                              AS DEPR_OBJ_AMT                                                       /* 공급가격 */
+         ,TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')      AS RENT_STA_DT                                                        /* 대여시작일  */
+         ,TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD') AS DEPR_END_YMD         /* 대여종료일  */
+         ,C.SPLY_PRC / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS UNIT_AMT  /* 일단가:공급가격/전체일수 */
+         ,(TO_DATE(#DEPR_DT#,'YYYYMMDD') - TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')) + 1              AS LIFE_DAY_CNT         /* 전체일수:기준일 */
+         ,(SELECT  ((T1.OUT_PRC*(100/110)) / 2 - T1.EXPT_DSPSL_PRC) / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), 12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD'))  
+             FROM  TB_RENTAL_POLY  T1  /* PR_렌탈계약 */
+                  ,TB_RENTAL_CNTRT T2  /* NR_렌탈정책 */
+            WHERE  T1.RENTAL_POLY_NO = T2.RENTAL_POLY_NO
+              AND  T2.CNTRT_NO       = B.CNTRT_NO)  AS ALLWN_UNIT_AMT    /* 충당금 일단가 */
+    FROM  TB_EQP_ASSET  A        /* PR_단말기자산 */
+         ,TB_EQP_CNTRT  B        /* PR_단말기계약 */
+         ,TB_PRCH       C        /* NR 매입       */
+   WHERE  A.OP_CL_CD    = 'NR'
+     AND  A.FISCL_SVCL  > 0
+     AND  A.ASSET_NO    = B.ASSET_NO
+     AND  A.PRCH_NO     = C.PRCH_NO
+     AND  A.INVE_ST_CD  IN ('60','61')  /* 매각 */   
+     AND  C.SPLY_PRC    > 0             /* 매입취소는 감가상가제외 */
+     AND  #DEPR_DT# BETWEEN B.RENT_STA_DT AND TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD')
+)
+/* ■■CASE 2 감가상각 DATA 산출 ■■ */  
+,DEPR_DATA AS
+(
+  SELECT  TA.ASSET_NO
+         ,TA.DEPR_OBJ_AMT - (TA.UNIT_AMT*TA.LIFE_DAY_CNT)  AS DEPR_DTL_REM_AMT  /* 감가상각상세잔여금액 */
+         ,TA.UNIT_AMT*TA.LIFE_DAY_CNT                      AS DEPR_DTL_SUM_AMT  /* 감가상각상세누계금액 */
+         ,TB.EQP_CMP_AMT_TOT   /* 단말기배상금액 */
+         ,TB.EQP_JDG_DT        /* 단말기감정일자 */
+         ,NVL(TA.ALLWN_UNIT_AMT*TA.LIFE_DAY_CNT,0)  AS ALLWN_AMT /* 충당금:일자까지기준 */
+    FROM  RAW_DATA    TA
+         ,TB_EQP_JDG  TB       /* PR_단말기감정 */ 
+   WHERE  TA.ASSET_NO   = TB.ASSET_NO(+)
+)
+/* ■■CASE 3 단말매각현황조회 산출 ■■ */  
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,D.SVC_MGMT_NO    			  /* 서비스관리번호 */
+                ,A.EQP_SER_NO  				  /* 단말기일련번호*/
+                ,E.EQP_MDL_NM   			  /* 모델명 */
+                ,A.EQP_MDL_CD   			  /* 모델코드 */
+                ,A.EQP_PRCH_AMT      		  /* 매입가 =출고가 */ 
+                ,A.DSPSL_DT AS DEPR_DT		  /* 기준일 */	 
+                ,NVL(TRUNC(G.DEPR_DTL_REM_AMT),0) AS REM_PRC  /* 일별 회계용잔존가 */
+                ,NVL(TRUNC(G.DEPR_DTL_SUM_AMT),0) AS DEPR_PRC /* 일별 감가상각누계액 */
+                ,E.EXPT_DSPSL_PRC AS SALE_PRC      
+                ,A.EQP_PRCH_DT 				  /* 계약일=자산입고일 */
+                ,E.CAPA_CD             		  /* 용량코드 */
+              /*,(SELECT  NVL(SUM(ALLWN_AMT),0)
+                    FROM  TB_EQP_CNTRT_DTL H
+                   WHERE  B.CNTRT_NO = H.CNTRT_NO
+                     AND  H.RENT_YM <= SUBSTR(샵DEPR_DT샵,1,6)
+                  ) AS PROV_PRC 			           충당부채기타잔존가 */
+                ,TRUNC(G.ALLWN_AMT) AS PROV_PRC /* 충당부채기타잔존가:일자까지기준*/
+                ,F.SLIP_ST_CD AS ASSET_SLIP_ST	/* 전표상태코드*/
+                ,A.ACQR_XCL_SLIP_NO AS ASSET_SLIP_NO /* 전표번호*/
+                ,G.EQP_CMP_AMT_TOT			  /* 단말변상금액*/
+                ,G.EQP_JDG_DT				  /* 단말감정일자*/
+                ,A.INVE_ST_CD				  /* 단말상태코드*/
+                ,A.ASSET_NO             	  /* 자산번호 */
+           FROM  TB_EQP_ASSET     A
+                ,TB_EQP_CNTRT     B
+                ,TB_RENTAL_CNTRT  C
+                ,TB_NR_CNTRT      D
+                ,TB_RENTAL_POLY   E
+                ,TB_SLIP 		  F
+                ,DEPR_DATA        G
+          WHERE  A.ASSET_NO = B.ASSET_NO 
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  B.CNTRT_NO = D.CNTRT_NO
+            AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  A.ACQR_XCL_SLIP_NO = F.SLIP_NO(+)
+            AND  B.ASSET_NO = G.ASSET_NO(+)  
+            AND  A.OP_CL_CD = 'NR'
+            AND  A.INVE_ST_CD IN ('60','61')
+            AND  (A.DSPSL_DT = #DEPR_DT# OR A.DSPSL_DT IS NULL)
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ASSET_SLIP_NO"><![CDATA[
+        A.ACQR_XCL_SLIP_NO = #ASSET_SLIP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.SLIP_ST_CD IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.SLIP_ST_CD = #ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+) PA
+
+/*  WHERE  ROWNO BETWEEN 셥nc_firstRowIndex셥 AND 셥nc_lastRowIndex셥 */]]>
+	</select>
+	<select id="SEqpDspslSum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.SEqpDspslSum 단말매각전표처리현황 */
+/* IO: 문재웅,2015-11-16T10:39:44(장미진,2015-08-06T09:25:41) */
+WITH
+/* ■■CASE 1 감가상각대상 RAW_DATA 산출 ■■ */  
+RAW_DATA AS
+(
+  SELECT  A.ASSET_NO
+         ,C.SPLY_PRC                              AS DEPR_OBJ_AMT                                                       /* 공급가격 */
+         ,TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')      AS RENT_STA_DT                                                        /* 대여시작일  */
+         ,TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD') AS DEPR_END_YMD         /* 대여종료일  */
+         ,C.SPLY_PRC / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS UNIT_AMT  /* 일단가:공급가격/전체일수 */
+         ,(TO_DATE(#DEPR_DT#,'YYYYMMDD') - TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')) + 1              AS LIFE_DAY_CNT         /* 전체일수:기준일 */
+         ,(SELECT  ((T1.OUT_PRC*(100/110)) / 2 - T1.EXPT_DSPSL_PRC) / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), 12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD'))  
+             FROM  TB_RENTAL_POLY  T1  /* PR_렌탈계약 */
+                  ,TB_RENTAL_CNTRT T2  /* NR_렌탈정책 */
+            WHERE  T1.RENTAL_POLY_NO = T2.RENTAL_POLY_NO
+              AND  T2.CNTRT_NO       = B.CNTRT_NO)  AS ALLWN_UNIT_AMT    /* 충당금 일단가 */
+    FROM  TB_EQP_ASSET  A       /* PR_단말기자산 */
+         ,TB_EQP_CNTRT  B       /* PR_단말기계약 */
+         ,TB_PRCH       C       /* NR 매입 */
+   WHERE  A.OP_CL_CD    = 'NR'
+     AND  A.FISCL_SVCL  > 0
+     AND  A.ASSET_NO    = B.ASSET_NO
+     AND  A.PRCH_NO     = C.PRCH_NO
+     AND  A.INVE_ST_CD IN ('60','61')   /* 매각 */        
+     AND  C.SPLY_PRC    > 0             /* 매입취소는 감가상가제외 */
+     AND  #DEPR_DT# BETWEEN B.RENT_STA_DT AND TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD')
+)
+/* ■■CASE 2 감가상각 DATA 산출 ■■ */  
+,DEPR_DATA AS
+(
+  SELECT  TA.ASSET_NO
+         ,TA.DEPR_OBJ_AMT - (TA.UNIT_AMT*TA.LIFE_DAY_CNT)  AS DEPR_DTL_REM_AMT  /* 감가상각상세잔여금액 */
+         ,TA.UNIT_AMT*TA.LIFE_DAY_CNT                      AS DEPR_DTL_SUM_AMT  /* 감가상각상세누계금액 */
+         ,TB.EQP_CMP_AMT_TOT   /* 단말기배상금액 */
+         ,TB.EQP_JDG_DT        /* 단말기감정일자 */
+         ,NVL(TA.ALLWN_UNIT_AMT*TA.LIFE_DAY_CNT,0)  AS ALLWN_AMT /* 충당금: 일자까지기준 */
+    FROM  RAW_DATA    TA
+         ,TB_EQP_JDG  TB        /* PR_단말기감정 */ 
+   WHERE  TA.ASSET_NO   = TB.ASSET_NO(+)
+)
+/* ■■CASE 3 단말매각현황조회 산출 ■■ */  
+SELECT  COUNT(*)                            AS TOTAL_CNT
+       ,NVL(SUM(DEPR_PRC),0)                AS DEPR_PRC /* 감가상각누계액 */
+       ,NVL(SUM(PROV_PRC),0) 			    AS PROV_PRC     	/* 부채충당누계액 */
+       ,NVL(SUM(EQP_PRCH_AMT),0) 			AS EQP_PRCH_AMT 	/* 매입금액 */ 
+       ,NVL(SUM(REM_PRC),0) 			    AS REM_PRC      	/* 잔존금액 */
+       ,NVL(SUM(EQP_CMP_AMT_TOT),0) 		AS EQP_CMP_AMT_TOT 	/* 단말기변상액합계 */
+       ,DEPR_DT      	/* 매각일자 */
+       ,INVE_ST_CD		/* 단말상태코드*/
+       ,ASSET_SLIP_NO   /* 전표번호 */
+       ,ASSET_SLIP_ST   /* 전표처리상태 */
+       ,YYYY			/* 전표처리년도 */
+  FROM  (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,D.SVC_MGMT_NO    				/* 서비스관리번호 */
+                ,A.EQP_SER_NO  					/* 단말기일련번호*/
+                ,E.EQP_MDL_NM   				/* 모델명 */
+                ,A.EQP_MDL_CD   				/* 모델코드 */
+                ,A.EQP_PRCH_AMT      			/* 매입가 =출고가 */ 
+                ,A.DSPSL_DT AS DEPR_DT			/* 기준일 */	 
+                ,NVL(TRUNC(G.DEPR_DTL_REM_AMT),0) AS REM_PRC  /*일별 회계용잔존가*/
+                ,NVL(TRUNC(G.DEPR_DTL_SUM_AMT),0) AS DEPR_PRC /*일별 감가상각누계액*/
+                ,NVL(E.EXPT_DSPSL_PRC,0) AS SALE_PRC      
+                ,A.EQP_PRCH_DT 					/* 계약일=자산입고일 */
+                ,E.CAPA_CD             			/* 용량코드 */
+                ,TRUNC(G.ALLWN_AMT) AS PROV_PRC /* 충당부채기타잔존가*/   
+                ,F.SLIP_ST_CD AS ASSET_SLIP_ST	/* 전표상태코드*/
+                ,H.ASSET_DISPO_SLIP_NO AS ASSET_SLIP_NO 	/* 전표번호*/
+                ,G.EQP_CMP_AMT_TOT				/* 단말변상금액*/
+                ,G.EQP_JDG_DT					/* 단말감정일자*/
+                ,A.INVE_ST_CD					/* 단말상태코드*/
+                ,A.ASSET_NO               		/* 자산번호 */
+                ,SUBSTR(F.SLIP_DT,0,4) AS YYYY
+           FROM  TB_EQP_ASSET     A
+                ,TB_EQP_CNTRT     B
+                ,TB_RENTAL_CNTRT  C
+                ,TB_NR_CNTRT      D
+                ,TB_RENTAL_POLY   E
+                ,TB_SLIP 		  F
+                ,DEPR_DATA        G
+                ,TB_CLS_ASSET_DISPO_DTL H                
+          WHERE  A.ASSET_NO = B.ASSET_NO 
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  B.CNTRT_NO = D.CNTRT_NO
+            AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  A.ACQR_XCL_SLIP_NO = F.SLIP_NO(+)
+            AND  B.ASSET_NO = G.ASSET_NO(+)  
+            AND  A.OP_CL_CD = 'NR'
+            AND  A.ASSET_NO = H.ASSET_NO(+)
+            AND  A.INVE_ST_CD IN ('60','61')
+            AND  (SUBSTR(A.DSPSL_DT,1,6) = SUBSTR(#DEPR_DT#,1,6) OR A.DSPSL_DT IS NULL)
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#	/* 미사용시 향후 삭제 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#	/* 미사용시 향후 삭제 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ASSET_SLIP_NO"><![CDATA[
+        A.ACQR_XCL_SLIP_NO = #ASSET_SLIP_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEqual prepend="AND" property="ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isNotEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.SLIP_ST_CD = #ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]><isEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.SLIP_ST_CD IS NULL
+]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+) PA
+GROUP BY DEPR_DT,INVE_ST_CD,ASSET_SLIP_NO,ASSET_SLIP_ST,YYYY]]>
+	</select>
+	<update id="UPowerDspslController" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.UPowerDspslController 단말자산직권매각처리_미사용 */
+/* IO: 문재웅,2015-11-05T15:25:54(장미진,2015-09-30T10:09:26) */
+UPDATE  TB_EQP_ASSET
+   SET  INVE_ST_CD = '60'	/*매각*/
+       ,DSPSL_DT = TO_CHAR(SYSDATE,'YYYYMMDD')
+       ,LS_CHG_USER_ID = NVL(#USER_NO#,'SYSTEM')
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  OP_CL_CD = 'NR'
+   AND  ASSET_NO = #ASSET_NO#]]>
+	</update>
+	<select id="SEqpDspslAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.SEqpDspslAllExcel 단말매각현황전체다운로드 */
+/* IO: 문재웅,2015-11-03T10:48:15(문재웅,2015-10-29T14:41:08) */
+WITH
+/* ■■CASE 1 감가상각대상 RAW_DATA 산출 ■■ */  
+RAW_DATA AS
+(
+  SELECT  A.ASSET_NO
+         ,C.SPLY_PRC                              AS DEPR_OBJ_AMT                                                       /* 공급가격 */
+         ,TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')      AS RENT_STA_DT                                                        /* 대여시작일  */
+         ,TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD') AS DEPR_END_YMD         /* 대여종료일  */
+         ,C.SPLY_PRC / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS UNIT_AMT  /* 일단가:공급가격/전체일수 */
+         ,(TO_DATE(#DEPR_DT#,'YYYYMMDD') - TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')) + 1              AS LIFE_DAY_CNT         /* 전체일수:기준일 */
+         ,(SELECT  ((T1.OUT_PRC*(100/110)) / 2 - T1.EXPT_DSPSL_PRC) / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), 12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD'))  
+             FROM  TB_RENTAL_POLY  T1  /* PR_렌탈계약 */
+                  ,TB_RENTAL_CNTRT T2  /* NR_렌탈정책 */
+            WHERE  T1.RENTAL_POLY_NO = T2.RENTAL_POLY_NO
+              AND  T2.CNTRT_NO       = B.CNTRT_NO)  AS ALLWN_UNIT_AMT    /* 충당금 일단가 */
+    FROM  TB_EQP_ASSET  A        /* PR_단말기자산 */
+         ,TB_EQP_CNTRT  B        /* PR_단말기계약 */
+         ,TB_PRCH       C        /* NR 매입       */
+   WHERE  A.OP_CL_CD    = 'NR'
+     AND  A.FISCL_SVCL  > 0
+     AND  A.ASSET_NO    = B.ASSET_NO
+     AND  A.PRCH_NO     = C.PRCH_NO
+     AND  A.INVE_ST_CD  IN ('60','61')  /* 매각 */   
+     AND  C.SPLY_PRC    > 0             /* 매입취소는 감가상가제외 */
+     AND  #DEPR_DT# BETWEEN B.RENT_STA_DT AND TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD')
+)
+/* ■■CASE 2 감가상각 DATA 산출 ■■ */  
+,DEPR_DATA AS
+(
+  SELECT  TA.ASSET_NO
+         ,TA.DEPR_OBJ_AMT - (TA.UNIT_AMT*TA.LIFE_DAY_CNT)  AS DEPR_DTL_REM_AMT  /* 감가상각상세잔여금액 */
+         ,TA.UNIT_AMT*TA.LIFE_DAY_CNT                      AS DEPR_DTL_SUM_AMT  /* 감가상각상세누계금액 */
+         ,TB.EQP_CMP_AMT_TOT   /* 단말기배상금액 */
+         ,TB.EQP_JDG_DT        /* 단말기감정일자 */
+         ,NVL(TA.ALLWN_UNIT_AMT*TA.LIFE_DAY_CNT,0)  AS ALLWN_AMT /* 충당금: 일자까지기준 */
+    FROM  RAW_DATA    TA
+         ,TB_EQP_JDG  TB        /* PR_단말기감정 */ 
+   WHERE  TA.ASSET_NO   = TB.ASSET_NO(+)
+)
+/* ■■CASE 5 단말매각현황조회 산출 ■■ */  
+SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS "NO" 
+       ,D.SVC_MGMT_NO   AS "서비스관리번호"
+       ,A.EQP_SER_NO  	AS "단말일련번호"
+       ,A.ASSET_NO      AS "자산번호"
+       ,A.EQP_MDL_CD   	AS "모델코드"
+       ,E.EQP_MDL_NM   	AS "모델명"
+       ,A.EQP_PRCH_AMT  AS "매입가" 
+       ,NVL(TRUNC(G.DEPR_DTL_REM_AMT),0) 			AS "잔존가(회계용)"
+       ,NVL(TRUNC(G.DEPR_DTL_SUM_AMT),0) 			AS "감가상각누계액"
+       ,E.EXPT_DSPSL_PRC      						AS "FPA예상매각가격"      
+       ,TO_CHAR(TO_DATE(A.EQP_PRCH_DT),'YYYY-MM-DD')AS "계약일(자산입고일)"
+       ,TRUNC(G.ALLWN_AMT) 							AS "충당부채기타잔존가"
+       ,G.EQP_CMP_AMT_TOT 							AS "단말변상금액"
+       ,G.EQP_JDG_DT 								AS "감정확정일자"
+       ,A.DSPSL_DT 							        AS "매각일자"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID  = 'DMS108'
+            AND  CM_CD_ID      = A.INVE_ST_CD) 		AS "단말상태"
+       ,A.ACQR_XCL_SLIP_NO							AS "전표번호"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS153'
+            AND  CM_CD_ID     = F.SLIP_ST_CD) 	AS "전표상태"
+  FROM  TB_EQP_ASSET     A
+       ,TB_EQP_CNTRT     B
+       ,TB_RENTAL_CNTRT  C
+       ,TB_NR_CNTRT      D
+       ,TB_RENTAL_POLY   E
+       ,TB_SLIP F
+       ,DEPR_DATA  G
+ WHERE  A.ASSET_NO = B.ASSET_NO 
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.ACQR_XCL_SLIP_NO = F.SLIP_NO(+)
+   AND  B.ASSET_NO = G.ASSET_NO(+)  
+   AND  A.OP_CL_CD = 'NR'
+   AND  A.INVE_ST_CD IN ('60','61')
+   AND  (A.DSPSL_DT = #DEPR_DT# OR A.DSPSL_DT IS NULL)
+ ORDER BY SVC_MGMT_NO ASC]]>
+	</select>
+	<select id="SEqpDspslTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.SEqpDspslTotCnt 단말매각총건수_미사용 */
+/* IO: 문재웅,2015-11-05T15:26:29(장미진,2015-08-06T09:25:41) */
+WITH
+/* ■■CASE 1 감가상각대상 RAW_DATA 산출 ■■ */  
+RAW_DATA AS
+(
+  SELECT  A.ASSET_NO
+         ,C.SPLY_PRC                              AS DEPR_OBJ_AMT                                                       /* 공급가격 */
+         ,TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')      AS RENT_STA_DT                                                        /* 대여시작일  */
+         ,TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD') AS DEPR_END_YMD         /* 대여종료일  */
+         ,C.SPLY_PRC / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS UNIT_AMT  /* 일단가:공급가격/전체일수 */
+         ,(TO_DATE(#DEPR_DT#,'YYYYMMDD') - TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')) + 1              AS LIFE_DAY_CNT         /* 전체일수:기준일 */
+         ,(SELECT  ((T1.OUT_PRC*(100/110)) / 2 - T1.EXPT_DSPSL_PRC) / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), 12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD'))  
+             FROM  TB_RENTAL_POLY  T1  /* PR_렌탈계약 */
+                  ,TB_RENTAL_CNTRT T2  /* NR_렌탈정책 */
+            WHERE  T1.RENTAL_POLY_NO = T2.RENTAL_POLY_NO
+              AND  T2.CNTRT_NO       = B.CNTRT_NO)  AS ALLWN_UNIT_AMT    /* 충당금 일단가 */
+    FROM  TB_EQP_ASSET  A       /* PR_단말기자산 */
+         ,TB_EQP_CNTRT  B       /* PR_단말기계약 */
+         ,TB_PRCH       C       /* NR 매입 */
+   WHERE  A.OP_CL_CD    = 'NR'
+     AND  A.FISCL_SVCL  > 0
+     AND  A.ASSET_NO    = B.ASSET_NO
+     AND  A.PRCH_NO     = C.PRCH_NO
+     AND  A.INVE_ST_CD IN ('60','61')   /* 매각 */        
+     AND  C.SPLY_PRC    > 0             /* 매입취소는 감가상가제외 */
+     AND  #DEPR_DT# BETWEEN B.RENT_STA_DT AND TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD')
+)
+/* ■■CASE 2 감가상각 DATA 산출 ■■ */  
+,DEPR_DATA AS
+(
+  SELECT  TA.ASSET_NO
+         ,TA.DEPR_OBJ_AMT - (TA.UNIT_AMT*TA.LIFE_DAY_CNT)  AS DEPR_DTL_REM_AMT  /* 감가상각상세잔여금액 */
+         ,TA.UNIT_AMT*TA.LIFE_DAY_CNT                      AS DEPR_DTL_SUM_AMT  /* 감가상각상세누계금액 */
+         ,TB.EQP_CMP_AMT_TOT   /* 단말기배상금액 */
+         ,TB.EQP_JDG_DT        /* 단말기감정일자 */
+         ,NVL(TA.ALLWN_UNIT_AMT*TA.LIFE_DAY_CNT,0)  AS ALLWN_AMT /* 충당금: 일자까지기준 */
+    FROM  RAW_DATA    TA
+         ,TB_EQP_JDG  TB        /* PR_단말기감정 */ 
+   WHERE  TA.ASSET_NO   = TB.ASSET_NO(+)
+)
+/* ■■CASE 3 단말매각현황조회 산출 ■■ */  
+SELECT  COUNT(*)                            AS TOTAL_CNT
+       ,NVL(SUM(DEPR_PRC),0)                AS DEPR_PRC     	/* 감가상각누계액 */
+       ,NVL(SUM(PROV_PRC),0) 			    AS PROV_PRC     	/* 부채충당누계액 */
+       ,NVL(SUM(EQP_PRCH_AMT),0) 			AS EQP_PRCH_AMT 	/* 매입금액 */ 
+       ,NVL(SUM(REM_PRC),0) 			    AS REM_PRC      	/* 잔존금액 */
+       ,NVL(SUM(EQP_CMP_AMT_TOT),0) 		AS EQP_CMP_AMT_TOT 	/* 단말기변상액합계 */
+  FROM  (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,D.SVC_MGMT_NO    				/* 서비스관리번호 */
+                ,A.EQP_SER_NO  					/* 단말기일련번호*/
+                ,E.EQP_MDL_NM   				/* 모델명 */
+                ,A.EQP_MDL_CD   				/* 모델코드 */
+                ,A.EQP_PRCH_AMT      			/* 매입가 =출고가 */ 
+                ,A.DSPSL_DT AS DEPR_DT			/* 기준일 */	 
+                ,NVL(TRUNC(G.DEPR_DTL_REM_AMT),0) AS REM_PRC  /*일별 회계용잔존가*/
+                ,NVL(TRUNC(G.DEPR_DTL_SUM_AMT),0) AS DEPR_PRC /*일별 감가상각누계액*/
+                ,NVL(E.EXPT_DSPSL_PRC,0) AS SALE_PRC      
+                ,A.EQP_PRCH_DT 					/* 계약일=자산입고일 */
+                ,E.CAPA_CD             			/* 용량코드 */
+                ,TRUNC(G.ALLWN_AMT) AS PROV_PRC /* 충당부채기타잔존가*/   
+                ,F.SLIP_ST_CD AS ASSET_SLIP_ST	/* 전표상태코드*/
+                ,A.ACQR_XCL_SLIP_NO AS ASSET_SLIP_NO /* 전표번호*/
+                ,G.EQP_CMP_AMT_TOT				/* 단말변상금액*/
+                ,G.EQP_JDG_DT					/* 단말감정일자*/
+                ,A.INVE_ST_CD					/* 단말상태코드*/
+                ,A.ASSET_NO               		/* 자산번호 */
+           FROM  TB_EQP_ASSET     A
+                ,TB_EQP_CNTRT     B
+                ,TB_RENTAL_CNTRT  C
+                ,TB_NR_CNTRT      D
+                ,TB_RENTAL_POLY   E
+                ,TB_SLIP F
+                ,DEPR_DATA  G
+          WHERE  A.ASSET_NO = B.ASSET_NO 
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  B.CNTRT_NO = D.CNTRT_NO
+            AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  A.ACQR_XCL_SLIP_NO = F.SLIP_NO(+)
+            AND  B.ASSET_NO = G.ASSET_NO(+)  
+            AND  A.OP_CL_CD = 'NR'
+            AND  A.INVE_ST_CD IN ('60','61')
+            AND  (A.DSPSL_DT = #DEPR_DT# OR A.DSPSL_DT IS NULL)
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ASSET_SLIP_NO"><![CDATA[
+        A.ACQR_XCL_SLIP_NO = #ASSET_SLIP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.SLIP_ST_CD IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.SLIP_ST_CD = #ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+) PA]]>
+	</select>
+	<select id="SEqpDspslLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.SEqpDspslLst 단말매각현황조회 */
+/* IO: 문재웅,2015-11-13T17:55:43(문재웅,2015-10-29T14:35:42) */
+WITH
+/* ■■CASE 1 감가상각대상 RAW_DATA 산출 ■■ */  
+RAW_DATA AS
+(
+  SELECT  A.ASSET_NO
+         ,C.SPLY_PRC                              AS DEPR_OBJ_AMT                                                       /* 공급가격 */
+         ,TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')      AS RENT_STA_DT                                                        /* 대여시작일  */
+         ,TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD') AS DEPR_END_YMD         /* 대여종료일  */
+         ,C.SPLY_PRC / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS UNIT_AMT  /* 일단가:공급가격/전체일수 */
+         ,(TO_DATE(#DEPR_DT#,'YYYYMMDD') - TO_DATE(B.RENT_STA_DT, 'YYYYMMDD')) + 1              AS LIFE_DAY_CNT         /* 전체일수:기준일 */
+         ,(SELECT  ((T1.OUT_PRC*(100/110)) / 2 - T1.EXPT_DSPSL_PRC) / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), 12) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD'))  
+             FROM  TB_RENTAL_POLY  T1  /* PR_렌탈계약 */
+                  ,TB_RENTAL_CNTRT T2  /* NR_렌탈정책 */
+            WHERE  T1.RENTAL_POLY_NO = T2.RENTAL_POLY_NO
+              AND  T2.CNTRT_NO       = B.CNTRT_NO)  AS ALLWN_UNIT_AMT    /* 충당금 일단가 */
+    FROM  TB_EQP_ASSET  A        /* PR_단말기자산 */
+         ,TB_EQP_CNTRT  B        /* PR_단말기계약 */
+         ,TB_PRCH       C        /* NR 매입       */
+   WHERE  A.OP_CL_CD    = 'NR'
+     AND  A.FISCL_SVCL  > 0
+     AND  A.ASSET_NO    = B.ASSET_NO
+     AND  A.PRCH_NO     = C.PRCH_NO
+     AND  A.INVE_ST_CD  IN ('60','61')  /* 매각 */   
+     AND  C.SPLY_PRC    > 0             /* 매입취소는 감가상가제외 */
+     AND  #DEPR_DT# BETWEEN B.RENT_STA_DT AND TO_CHAR(ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMMDD')
+)
+/* ■■CASE 2 감가상각 DATA 산출 ■■ */  
+,DEPR_DATA AS
+(
+  SELECT  TA.ASSET_NO
+         ,TA.DEPR_OBJ_AMT - (TA.UNIT_AMT*TA.LIFE_DAY_CNT)  AS DEPR_DTL_REM_AMT  /* 감가상각상세잔여금액 */
+         ,TA.UNIT_AMT*TA.LIFE_DAY_CNT                      AS DEPR_DTL_SUM_AMT  /* 감가상각상세누계금액 */
+         ,TB.EQP_CMP_AMT_TOT   /* 단말기배상금액 */
+         ,TB.EQP_JDG_DT        /* 단말기감정일자 */
+         ,NVL(TA.ALLWN_UNIT_AMT*TA.LIFE_DAY_CNT,0)  AS ALLWN_AMT /* 충당금:일자까지기준 */
+    FROM  RAW_DATA    TA
+         ,TB_EQP_JDG  TB       /* PR_단말기감정 */ 
+   WHERE  TA.ASSET_NO   = TB.ASSET_NO(+)
+)
+/* ■■CASE 3 단말매각현황조회 산출 ■■ */  
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,D.SVC_MGMT_NO    			  /* 서비스관리번호 */
+                ,A.EQP_SER_NO  				  /* 단말기일련번호*/
+                ,E.EQP_MDL_NM   			  /* 모델명 */
+                ,A.EQP_MDL_CD   			  /* 모델코드 */
+                ,A.EQP_PRCH_AMT      		  /* 매입가 =출고가 */ 
+                ,A.DSPSL_DT AS DEPR_DT		  /* 기준일 */	 
+                ,NVL(TRUNC(G.DEPR_DTL_REM_AMT),0) AS REM_PRC  /* 일별 회계용잔존가 */
+                ,NVL(TRUNC(G.DEPR_DTL_SUM_AMT),0) AS DEPR_PRC /* 일별 감가상각누계액 */
+                ,E.EXPT_DSPSL_PRC AS SALE_PRC      
+                ,A.EQP_PRCH_DT 				  /* 계약일=자산입고일 */
+                ,E.CAPA_CD             		  /* 용량코드 */
+                ,TRUNC(G.ALLWN_AMT) AS PROV_PRC /* 충당부채기타잔존가:일자까지기준*/
+                ,F.SLIP_ST_CD AS ASSET_SLIP_ST	/* 전표상태코드*/
+                ,A.ACQR_XCL_SLIP_NO AS ASSET_SLIP_NO /* 전표번호*/
+                ,G.EQP_CMP_AMT_TOT			  /* 단말변상금액*/
+                ,G.EQP_JDG_DT				  /* 단말감정일자*/
+                ,A.INVE_ST_CD				  /* 단말상태코드*/
+                ,A.ASSET_NO             	  /* 자산번호 */
+                ,H.DISPO_DT         		  /* 마감자산 처분일자 */
+                ,DECODE(H.DISPO_DT,NULL,'N','Y') AS DISPO_YN /* 마감자산 처분여부 */
+           FROM  TB_EQP_ASSET     A
+                ,TB_EQP_CNTRT     B
+                ,TB_RENTAL_CNTRT  C
+                ,TB_NR_CNTRT      D
+                ,TB_RENTAL_POLY   E
+                ,TB_SLIP 		  F
+                ,DEPR_DATA        G
+                ,TB_CLS_ASSET_DISPO_DTL H    /* NR_마감자산처분상세 */
+          WHERE  A.ASSET_NO = B.ASSET_NO 
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  B.CNTRT_NO = D.CNTRT_NO
+            AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  A.ACQR_XCL_SLIP_NO = F.SLIP_NO(+)
+            AND  B.ASSET_NO = G.ASSET_NO(+)  
+            AND  A.OP_CL_CD = 'NR'
+            AND  A.ASSET_NO = H.ASSET_NO(+)
+            AND  A.INVE_ST_CD = #LST_INVE_ST_CD#
+            /* AND  A.INVE_ST_CD IN ('60','61') */
+]]><isNotEmpty prepend="AND" property="LST_DEPR_DT"><![CDATA[
+        A.DSPSL_DT = #LST_DEPR_DT#
+]]></isNotEmpty><![CDATA[
+
+]]><isEmpty prepend="AND" property="LST_DEPR_DT"><![CDATA[
+		A.DSPSL_DT IS NULL
+]]></isEmpty><![CDATA[
+
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#	/* 미사용시 향후 삭제 */
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#		/* 미사용시 향후 삭제 */
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty prepend="AND" property="LST_ASSET_SLIP_NO"><![CDATA[
+        H.ASSET_DISPO_SLIP_NO = #LST_ASSET_SLIP_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isEmpty prepend="AND" property="LST_ASSET_SLIP_NO"><![CDATA[
+		H.ASSET_DISPO_SLIP_NO IS NULL
+]]></isEmpty><![CDATA[
+
+]]><isEqual prepend="AND" property="LST_ASSET_SLIP_ST" compareValue="%"><![CDATA[
+		F.SLIP_ST_CD IS NULL
+]]></isEqual><![CDATA[
+
+]]><isNotEqual prepend="AND" property="LST_ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isNotEqual property="LST_ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.SLIP_ST_CD = #LST_ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]><isEqual property="LST_ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		F.SLIP_ST_CD IS NULL
+]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+) PA]]>
+	</select>
+	<delete id="DDspslClsAssetDispo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.DDspslClsAssetDispo 전표마감자산처분삭제 */
+/* IO: 문재웅,2015-11-06T13:12:17(문재웅,2015-11-04T13:53:22) */
+BEGIN
+  /* NR_마감자산처분 삭제 */
+  DELETE  FROM TB_CLS_ASSET_DISPO
+   WHERE  ASSET_DISPO_STRD_YM = SUBSTR(#DEPR_DT#,1,6)
+     AND  DSPSL_DIS_CL 	= 'AS'			/*매각*/
+     AND  OP_CL_CD 		= 'NR'	
+     AND  DISPO_DT = #LST_DEPR_DT#		/* 처분일자:매각일자 */
+     AND  ASSET_DISPO_DEPT_CD = 'NR'	/* 자산처분부서 */
+     ;
+  /* NR_마감자산처분상세 */     
+  DELETE  FROM TB_CLS_ASSET_DISPO_DTL
+   WHERE  ASSET_DISPO_STRD_YM = SUBSTR(#DEPR_DT#,1,6)
+     AND  DSPSL_DIS_CL 	= 'AS'			/*매각*/
+     AND  OP_CL_CD 		= 'NR'	
+     AND  DISPO_DT = #LST_DEPR_DT#		/* 처분일자:매각일자 */
+     AND  ASSET_DISPO_DEPT_CD = 'NR'	/* 자산처분부서 */
+     ;
+END;]]>
+	</delete>
+	<insert id="IDspslClsAssetDispoDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.IDspslClsAssetDispoDtl 매각마감자산처분상세등록 */
+/* IO: 문재웅,2015-11-13T17:48:12(문재웅,2015-11-04T14:32:11) */
+INSERT
+  INTO  TB_CLS_ASSET_DISPO_DTL 
+        ( ASSET_DISPO_STRD_YM
+         ,DSPSL_DIS_CL
+         ,OP_CL_CD
+         ,ASSET_NO
+         ,DISPO_DT
+         ,ASSET_DISPO_DEPT_CD
+         ,ASSET_DISPO_ACNTB_AMT
+         ,ASSET_DISPO_REM_AMT
+         ,DISPO_AMT
+         ,DISPO_PRFITLS_AMT
+         ,DISPO_PRE_PRFITLS_AMT
+         ,FS_REG_USER_ID
+         ,FS_REG_DTM
+         ,LS_CHG_USER_ID
+         ,LS_CHG_DTM
+       )
+SELECT  SUBSTR(#DEPR_DT#,1,6)  AS ASSET_DISPO_STRD_YM 
+       ,'AS'          AS DSPSL_DIS_CL             /* 매각제각구분:매각 */
+       ,'NR'          AS OP_CL_CD	                /* 업무구분코드 */
+       ,A.ASSET_NO                                /* 자산번호 */
+       ,#DEPR_DT#       AS DISPO_DT               /* 처분일자:매각일자 */
+       ,'NR'            AS ASSET_DISPO_DEPT_CD    /* 자산처분부서코드 */ 
+       ,A.EQP_PRCH_AMT  AS ASSET_DISPO_ACNTB_AMT  /* 회계장부금액:자산처분장부금액 매입금  */
+       ,#REM_PRC#       AS ASSET_DISPO_REM_AMT    /* 회계잔존가:자산처분잔여금액   */
+       ,#DEPR_PRC#      AS DISPO_AMT			  /* 감가상각누계약:자산처분장부금액 매입금  */
+       ,A.EQP_PRCH_AMT-(NVL(#DEPR_PRC#,0)+NVL(#PROV_PRC#,0)) AS DISPO_PRFITLS_AMT	  /* 처분손익금액 */
+       ,#PROV_PRC#      AS DISPO_PRE_PRFITLS_AMT  /* 충당부채누계액:처분선손익금액 */
+       ,#USER_NO# AS FS_REG_USER_ID
+       ,SYSDATE   AS FS_REG_DTM
+       ,#USER_NO# AS LS_CHG_USER_ID
+       ,SYSDATE   AS LS_CHG_DTM
+ FROM  TB_EQP_ASSET A
+WHERE  A.ASSET_NO = #ASSET_NO#]]>
+	</insert>
+	<insert id="IDspslClsAssetDispo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.IDspslClsAssetDispo 매각마감자산처분등록 */
+/* IO: 문재웅,2015-11-06T13:27:33(문재웅,2015-11-04T15:25:42) */
+INSERT
+  INTO  TB_CLS_ASSET_DISPO
+        ( ASSET_DISPO_STRD_YM
+         ,DSPSL_DIS_CL
+         ,OP_CL_CD
+         ,DISPO_DT
+         ,ASSET_DISPO_DEPT_CD
+         ,ASSET_DISPO_ACNTB_AMT
+         ,ASSET_DISPO_REM_AMT
+         ,DISPO_AMT
+         ,DISPO_PRFITLS_AMT
+         ,FS_REG_USER_ID
+         ,FS_REG_DTM
+         ,LS_CHG_USER_ID
+         ,LS_CHG_DTM        
+       )
+SELECT  ASSET_DISPO_STRD_YM 
+       ,DSPSL_DIS_CL
+       ,OP_CL_CD 
+       ,DISPO_DT
+       ,ASSET_DISPO_DEPT_CD
+       ,SUM(ASSET_DISPO_ACNTB_AMT) AS ASSET_DISPO_ACNTB_AMT       /* 자산처분장부금액 */
+       ,SUM(ASSET_DISPO_REM_AMT  ) AS ASSET_DISPO_REM_AMT         /* 자산처분잔여금액 */
+       ,SUM(DISPO_AMT            ) AS DISPO_AMT                   /* 처분금액         */
+       ,SUM(DISPO_PRFITLS_AMT    ) AS DISPO_PRFITLS_AMT           /* 처분손익금액 */
+       ,#USER_NO# AS FS_REG_USER_ID
+       ,SYSDATE   AS FS_REG_DTM
+       ,#USER_NO# AS LS_CHG_USER_ID
+       ,SYSDATE   AS LS_CHG_DTM
+ FROM  TB_CLS_ASSET_DISPO_DTL
+WHERE  ASSET_DISPO_STRD_YM =  SUBSTR(#DEPR_DT#,1,6)
+  AND  DSPSL_DIS_CL = 'AS'
+  AND  OP_CL_CD = 'NR'
+  AND  DISPO_DT = #DEPR_DT# /* 처분일자:매각일자 */
+  AND  ASSET_DISPO_DEPT_CD  = 'NR'
+GROUP BY ASSET_DISPO_STRD_YM 
+       ,DSPSL_DIS_CL
+       ,OP_CL_CD 
+       ,DISPO_DT
+       ,ASSET_DISPO_DEPT_CD]]>
+	</insert>
+</sqlMap>

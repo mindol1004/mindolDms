@@ -1,0 +1,166 @@
+package dms.nr.nrbfxbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]FPA수수료정산관리</li>
+ * <li>설  명 : <pre>[PU]FPA수수료정산관리</pre></li>
+ * <li>작성일 : 2015-10-13 10:57:39</li>
+ * <li>작성자 : 문재웅 (jaiwoong)</li>
+ * </ul>
+ *
+ * @author 문재웅 (jaiwoong)
+ */
+public class PNRFpaCmmsXclMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRFpaCmmsXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]FPA수수료정산조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-13 10:57:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [정산년월]
+	 *	- field : EQP_MDL_CD [단말기코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FPA_CMMS_XCL_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : NEW_CNTRTR_NM [신규계약자명]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : EQP_MDL_CD [모델번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : OUT_PRC [출고가격]
+	 *		- field : FPA_CMMS_NO [FPA수수료번호]
+	 *		- field : MID_TERM_CMMS [중도해지수수료]
+	 *		- field : NORM_END_CMMS [정상종료수수료]
+	 *		- field : CMMS_AMT [정상_중도해지 수수료]
+	 *		- field : EXTNS_CMMS [연장수수료]
+	 *		- field : MONTH_TS [차수]
+	 *		- field : OP_TYP_CD [계약상태]
+	 *		- field : RENTAL_CNTRT_STA_DT [렌탈계약시작일자]
+	 *		- field : RENTAL_CNTRT_END_DT [렌탈계약종료일자]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_DT [전표일자]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 *		- field : TAX_BILL_NO [세금계산서번호]
+	 *		- field : TAX_BILL_ST_CD [세금계산서상태코드]
+	 *		- field : CNTRT_NO [계약번호]
+	 * </pre>
+	 */
+	public IDataSet pFpaCmmsXclLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSFXBase", "fFpaCmmsXclLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]FPA수수료정산전체엑셀다운로드</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-13 10:57:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [정산년월]
+	 *	- field : EQP_MDL_CD [단말기코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pFpaCmmsXclAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSFXBase", "fFpaCmmsXclAllExcel", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PU]FPA수수료정산재집계/전표생성/전표취소</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-13 10:57:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [정산/감가상각월]
+	 *	- field : IS_RECALL [재집계/전표생성 구분값]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pFpaCmmsXclOnlineRecall(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            
+            if("01".equals(requestData.getField("IS_RECALL"))){ //재집계            
+                responseData = callSharedBizComponentByDirect("nr.NRSFXBase", "fFpaCmmsXclOnlineRecall", requestData, onlineCtx);
+            }else if("02".equals(requestData.getField("IS_RECALL"))) {//전표생성
+                responseData = callSharedBizComponentByDirect("nr.NRSFXBase", "fFpaCmmsXclDeprOnlineRecall", requestData, onlineCtx);
+            }else if("03".equals(requestData.getField("IS_RECALL"))) {//전표취소
+                responseData = callSharedBizComponentByDirect("nr.NRSFXBase", "fFpaCmmsXclDeprCnclOnlineRecall", requestData, onlineCtx);
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,144 @@
+package dms.nr.nrscsbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]상담관리</li>
+ * <li>설  명 : <pre>[FU]상담관리</pre></li>
+ * <li>작성일 : 2015-08-06 10:49:33</li>
+ * <li>작성자 : 박홍서 (uni9401)</li>
+ * </ul>
+ *
+ * @author 박홍서 (uni9401)
+ */
+public class FNRCnslMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRCnslMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>가입현황 리스트 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-08-06 10:49:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_FR_DTM [계약시작일자]
+	 *	- field : CNTRT_TO_DTM [계약종료일자]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : AGN_NM [대리점명]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SCRB_PG
+	 *		- field : NR_CNTRT_DT [계약일자]
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : NR_CNTRTR_NM [가입자명]
+	 *		- field : SVC_NO [핸드폰번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : RENTAL_SER_NUM [렌탈일련번호]
+	 *		- field : DMS_PEN_AMT [위약금]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : AGN_NM [대리점명]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet fInqScrbPrstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DNRCnslMgmt dNRCnslMgmt = (DNRCnslMgmt) lookupDataUnit(DNRCnslMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRCnslMgmt.dSScrbPrstTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            // 3. LISTDM호출
+            responseData = dNRCnslMgmt.dSScrbPrstPaging(requestData, onlineCtx);
+            rsPagingList = responseData.getRecordSet("RS_SCRB_PG");
+            
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>가입현황 리스트 모두 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-08-06 10:49:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_FR_DTM [계약시작일자]
+	 *	- field : CNTRT_TO_DTM [계약종료일자]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : AGN_NM [대리점명]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SCRB_LST
+	 *		- field : NR_CNTRT_DT [계약일자]
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : NR_CNTRTR_NM [가입자명]
+	 *		- field : SVC_NO [핸드폰번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : RENTAL_SER_NUM [렌탈일련번호]
+	 *		- field : DMS_PEN_AMT [위약금]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : AGN_NM [대리점명]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet fInqScrbPrstLstAll(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 1. DU lookup
+            DNRCnslMgmt dNRCnslMgmt = (DNRCnslMgmt) lookupDataUnit(DNRCnslMgmt.class);
+            // 3. LISTDM호출 (RS_SCRB_LST)
+            responseData = dNRCnslMgmt.dSScrbPrstLst(requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+  
+}

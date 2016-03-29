@@ -1,0 +1,202 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  comAutr.xjs
+ * 03. js 설명 :  권한관리구현 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+/************************************************************************************************
+ * gfn_setAutrForm                      : Form에 속한 모든 컴포넌트의 Autr 셋업
+ * gfn_setAutrChild                     : Object에 속한 모든 컴포넌트의 Autr 셋업
+ * gfn_setAutrTab                       : Tab page에 속한 모든 컴포넌트의 Autr 셋업
+ * gfn_checkAutr                        : Object에 userdata셋팅을 gds_autr과 비교하여 Enable여부 리턴
+************************************************************************************************/
+
+/************************************************************************************************
+ * Function : Form에 속한 모든 컴포넌트의 Autr 셋업
+ * @param   : obj - Form Object
+ * @param   : sScrID - Program ID(화면ID) 
+ * Return   : void
+************************************************************************************************/
+function gfn_setAutrForm(obj:Form, sScrID)
+{
+	//화면오픈시마다 권한가져오도록 변경(2014.12.12 심상준)
+	//임시데이터셋 생성
+	var objDataset = gfn_makeDataSet("ds_ncFieldMapAutr");
+	objDataset.addColumn("FRM_ID","string");
+	objDataset.addRow();
+	objDataset.setColumn(0,"FRM_ID",sScrID);
+	
+	var sSvcID		 = "getFrmAutr";
+	var sTrID		 = "PSCFrmAutrRolMgmt_pInqFrmAutrRol";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_ncFieldMapAutr";
+	var sOutputDs	 = "gds_autr=RS_FRM_AUTR";
+	var sArgs		 = "";
+	var sCallBackFnc = "";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc, false); //sync로 실행됨
+
+	var aComponents = obj.components;
+	for(var i=0; i<aComponents.length; i++){
+		if(aComponents[i] instanceof Button) {
+			aComponents[i].enable = gfn_checkAutr(aComponents[i]);
+			//trace("aComponents[i].enable==="+aComponents[i].name+":"+aComponents[i].enable);
+		} else if(aComponents[i] instanceof Div) {
+			gfn_setAutrChild(aComponents[i]);
+		} else if(aComponents[i] instanceof Tab) {
+			gfn_setAutrTab(aComponents[i]);
+		}
+	}
+
+	obj.redraw();
+			
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function gfn_callBack_autr(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+	switch(sSvcID) {
+		case "getFrmAutr" : 
+
+			break;
+		default :
+			break;
+	}
+}
+/************************************************************************************************
+ * Function : Object에 속한 모든 컴포넌트의 Autr 셋업
+ * @param   : obj - Div Object / Tabpage Object
+ * Return   : void
+************************************************************************************************/
+function gfn_setAutrChild(obj)
+{
+	var aComponents = obj.components;
+	for(var i=0; i<aComponents.length; i++){
+		if(aComponents[i] instanceof Button) {
+			aComponents[i].enable = gfn_checkAutr(aComponents[i]);
+			//trace("aComponents[i].enable==="+aComponents[i].name+":"+aComponents[i].enable);
+		} else if(aComponents[i] instanceof Div) {
+			gfn_setAutrChild(aComponents[i]);
+		} else if(aComponents[i] instanceof Tab) {
+			gfn_setAutrTab(aComponents[i]);
+		}
+	}
+}
+
+/************************************************************************************************
+ * Function : Tab page에 속한 모든 컴포넌트의 Autr 셋업
+ * @param   : obj - Tab Object
+ * Return   : void
+************************************************************************************************/
+function gfn_setAutrTab(obj:Tab)
+{
+	var aTabPages = obj.tabpages;
+
+	for(var i=0; i<aTabPages.length; i++){
+		gfn_setAutrChild(aTabPages[i]);
+	}
+}
+
+/************************************************************************************************
+ * Function : Object에 userdata셋팅을 gds_autr과 비교하여 Enable여부 리턴
+ * @param   : obj - Object Component
+ * Return   : true/false
+************************************************************************************************/
+function gfn_checkAutr(obj)
+{
+	//trace("objID="+objID);
+	var sEnable = "";
+	var sAutrGroup  = "";
+	var sAutrItem   = "";
+	if (!obj.enable) return obj.enable;
+	if(gfn_isNull(obj.orgEnable)) obj.orgEnable = obj.enable;
+	//trace("obj.name="+obj.name+"/obj.orgEnable="+obj.orgEnable);
+	if(gds_autr.rowcount == 0) return obj.orgEnable;	
+	//if(gfn_isNull(obj.userdata)) return obj.orgEnable;
+	
+	//userdata Null 일때 버튼명으로 기본값 셋팅
+	if (gfn_isNull(obj.userdata)) {
+		sAutrGroup  = "GRP1";
+		if (obj.name == "btn_search") sAutrItem = "INQ_AUTR_YN";
+		else if (obj.name == "btn_filter") sAutrItem = "INQ_AUTR_YN";
+		else if (obj.name == "btn_save") sAutrItem = "SAVE_AUTR_YN";
+		else if (obj.name == "btn_new") sAutrItem = "SAVE_AUTR_YN";
+		else if (obj.name == "btn_reset") sAutrItem = "SAVE_AUTR_YN";
+		else if (obj.name == "btn_upd") sAutrItem = "SAVE_AUTR_YN";
+		else if (obj.name == "btn_copy") sAutrItem = "SAVE_AUTR_YN";
+		else if (obj.name == "btn_delete") sAutrItem = "DEL_AUTR_YN";
+		else if (obj.name == "btn_print") sAutrItem = "OPUT_AUTR_YN";
+		else if (obj.name == "btn_excel") sAutrItem = "EXL_AUTR_YN";
+		else if (obj.name == "btn_excelAll") sAutrItem = "EXL_AUTR_YN";
+		else if (obj.name == "btn_prn") sAutrItem = "PRN_INFO_INQ_AUTR_YN";
+	} else {
+		var arrUserAutr = obj.userdata.split(":");
+		sAutrGroup  = arrUserAutr[0];
+		sAutrItem   = arrUserAutr[1];
+	}
+	//trace("sAutrGroup="+sAutrGroup+"/sAutrItem="+sAutrItem);
+	
+	if (gfn_isNull(sAutrItem)) return obj.orgEnable;
+	
+	var iRow = gds_autr.findRowExpr("FRM_ID=="+wrapQuote(objID)+"&& FRM_ITEM_GRP_ID=="+wrapQuote(sAutrGroup));	
+		
+	if(iRow > -1){
+		sEnable = gds_autr.getColumn(iRow, sAutrItem);
+		//trace("iRow="+iRow+"/sEnable="+sEnable);
+		if(gfn_isNull(sEnable)) {
+			sEnable = obj.orgEnable;
+		} else {
+			if ( sEnable == "Y" || sEnable == "1") {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	} else {
+		return obj.orgEnable;
+	}
+}
+
+
+/************************************************************************************************
+ * Function : gds_autr과 비교하여 Enable여부 리턴
+ * @param   : obj - Object Component
+ * @param   : sAutrGroup - Autr Grp ID
+ * @param   : sAutrItem - Autr Grp key  
+ * Return   : true/false
+************************************************************************************************/
+function gfn_checkAutrObj(objID, sAutrGroup, sAutrItem)
+{
+	var sEnable = "";
+	
+	var iRow = gds_autr.findRowExpr("FRM_ID=="+wrapQuote(objID)+"&&FRM_ITEM_GRP_ID=="+wrapQuote(sAutrGroup));	
+		
+	if(iRow > -1){
+		sEnable = gds_autr.getColumn(iRow, sAutrItem);
+		//strace("iRow="+iRow+"/sEnable="+sEnable);
+		if(gfn_isNull(sEnable)) {
+			return false;
+		} else {
+			if ( sEnable == "Y" || sEnable == "1") {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	} else {
+		return false;
+	}
+}
+]]></Script>

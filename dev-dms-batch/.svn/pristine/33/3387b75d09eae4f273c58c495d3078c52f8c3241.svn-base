@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBS005">
+	<select id="SIFInsuInvRsltAprv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBS005.SIFInsuInvRsltAprv 보증보험청구결과승인 IF조회 */
+/* IO: 장미진,2016-01-13T09:49:45(장미진,2015-12-14T10:42:43) */
+SELECT  A.IF_PROC_DT
+       ,A.IF_FILE_NM
+       ,A.IF_SEQ
+       ,A.CO_CL_CD
+       ,A.SVC_NO
+       ,A.SVC_NO_ENPT
+       ,A.CTZ_COPREG_NO
+       ,A.CTZ_COPREG_NO_ENPT
+       ,A.INSU_MGMT_NO
+       ,A.SVC_MGMT_NO
+       ,A.SVC_SCRB_DT
+       ,A.SVC_TERM_DT
+       ,A.INSU_SCUR_NO
+       ,A.INSU_INV_DT
+       ,A.INSU_INV_AMT
+       ,A.INSU_RECV_DT
+       ,A.INSU_RECV_AMT
+       ,A.ST_CD
+       ,A.INSURE_CL_CD
+       ,B.SGI_INSU_NO
+       ,C.INSU_INV_NO		/*보증보험청구번호*/
+  FROM  TF_INSU_INV_RSLT_APRV A
+       ,TB_INSU_SGI B
+       ,TB_INSU_INV C
+ WHERE  (A.INSU_MGMT_NO = B.SGI_INSURE_MGMT_NO AND A.SVC_MGMT_NO = B.SGI_SVC_MGMT_NO AND B.OP_TYP_CD='A1')
+   AND  B.SGI_INSU_NO = C.UKEY_INSU_NO
+   AND  A.PROC_ST_CD = '09'
+   AND  A.IF_PROC_DT BETWEEN SUBSTR(#PROC_DT#,0,6)||'01' AND SUBSTR(#PROC_DT#,0,6)||'31']]>
+	</select>
+	<update id="UIFInsuInvRsltAprv" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.UIFInsuInvRsltAprv 보증보험청구결과IF상태변경 */
+/* IO: 장미진,2015-12-16T11:01:19(장미진,2015-12-14T10:46:01) */
+UPDATE  TF_INSU_INV_RSLT_APRV
+   SET  PROC_ST_CD      = '01'
+       ,LS_CHG_USER_ID  = 'BAT'
+       ,LS_CHG_DTM      = SYSDATE
+ WHERE  INSU_MGMT_NO    = #INSU_MGMT_NO#
+       ,IF_PROC_DT      = #IF_PROC_DT#
+       ,IF_FILE_NM      = #IF_FILE_NM# 
+       ,IF_SEQ          = #IF_SEQ#]]>
+	</update>
+	<update id="UInsuInvStAprv" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.UInsuInvStAprv 보증보험청구완료처리 */
+/* IO: 장미진,2016-01-13T09:51:08(장미진,2015-12-14T11:17:05) */
+UPDATE  TB_INSU_INV
+   SET  INV_ST_CD = '07'					 		/* 청구확정*/
+       ,INV_PROC_DT = TO_CHAR(SYSDATE,'YYYYMMDD') 	/* 청구처리일자*/
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  INSU_INV_NO = #INSU_INV_NO# 				/* 보증보험청구번호*/]]>
+	</update>
+	<insert id="IInsuInvRslt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.IInsuInvRslt 보증보험청구결과입력 */
+/* IO: 장미진,2015-12-17T10:10:14(장미진,2015-12-15T17:43:04) */
+INSERT INTO  TB_INSU_INV_RSLT
+            (INSU_INV_RSLT_SEQ			/*보증보험청구결과순번*/
+            ,SGI_INSU_NO				/*SGI보증보험번호*/
+            ,INV_RSLT_CO_CD				/*청구결과회사코드*/
+            ,INV_RSLT_INSURE_CL			/*청구결과보험구분*/
+            ,INV_RSLT_SVC_NO			/*청구결과서비스번호*/
+            ,INV_RSLT_SVC_NO_ENPT		/*청구결과서비스번호암호화*/
+            ,INV_RSLT_INSURE_MGMT_NO	/*청구결과보험관리번호*/
+            ,INV_RSLT_SVC_MGMT_NO		/*청구결과서비스관리번호*/
+            ,INV_RSLT_SVC_SCRB_YMD		/*청구결과서비스가입년월일*/
+            ,INV_RSLT_SVC_TERM_DT		/*청구결과서비스해지일자*/
+            ,INV_RSLT_INSURE_SCUR_NO	/*청구결과보험증권번호*/
+            ,INV_RSLT_INSUM_INV_DT		/*청구결과보험금청구일자*/
+            ,INV_RSLT_INSUM_INV_AMT		/*청구결과보험금청구금액*/
+            ,INV_RSLT_INSUM_RECV_DT		/*청구결과보험금수납일자*/
+            ,INV_RSLT_INSUM_RECV_AMT	/*청구결과보험금수납금액*/
+            ,INV_RSLT_ST_CD				/*청구결과상태코드*/
+)
+SELECT  (SELECT NVL(MAX(INSU_INV_RSLT_SEQ),0)+1 FROM TB_INSU_INV_RSLT WHERE SGI_INSU_NO=#SGI_INSU_NO#)
+       ,#SGI_INSU_NO#
+       ,#CO_CL_CD#
+       ,#INSURE_CL_CD#
+       ,#SVC_NO#
+       ,#SVC_NO_ENPT#
+       ,#INSU_MGMT_NO#
+       ,#SVC_MGMT_NO#
+       ,#SVC_SCRB_DT#
+       ,#SVC_TERM_DT#
+       ,#INSU_SCUR_NO#
+       ,#INSU_INV_DT#
+       ,#INSU_INV_AMT#
+       ,#INSU_RECV_DT#
+       ,#INSU_RECV_AMT#
+       ,#ST_CD#
+  FROM  DUAL]]>
+	</insert>
+	<insert id="IInsuInvHst" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.IInsuInvHst 보증보험청구이력입력 */
+/* IO: 장미진,2016-01-13T08:58:55(장미진,2016-01-13T08:53:58) */
+]]><selectKey resultClass="String" keyProperty="INV_HST_SEQ" type="pre"><![CDATA[
+SELECT  NVL(MAX(INV_HST_SEQ),0)+1 AS INV_HST_SEQ 
+  FROM  TH_INSU_INV_HST 
+ WHERE  INSU_INV_NO=#INSU_INV_NO# 
+ ]]></selectKey><![CDATA[
+INSERT  INTO TH_INSU_INV_HST
+            (
+             INSU_INV_NO
+            ,INV_HST_SEQ 
+            ,UKEY_INSU_NO
+            ,UKEY_INSURE_MGMT_NO
+            ,INV_ST_CD
+            ,UKEY_INV_DT
+            ,UKEY_INV_AMT
+            ,DMS_INV_DT
+            ,DMS_INV_AMT
+            ,UNPD_RENTAL_FEE
+            ,DMG_CMP_UNRTN_AMT
+            ,ARR_ADD_AMT
+            ,MID_TERM_PEN_AMT
+            ,RTN_DELAY_PEN_AMT
+            ,DMG_CMP_BKAG_AMT
+            ,RECV_ST_CD
+            ,UKEY_RECV_DT
+            ,UKEY_RECV_AMT
+            ,RSN_CD
+            ,INV_PROC_DT
+            ,CONF_INV_CNCL_DT
+            ,COLS_REQS_DT
+            ,COLS_CO_CD
+            ,INSU_COLS_SLIP_NO
+            ,INSU_INV_MEMO
+            ,INSU_SCUR_NO
+            ,SVC_MGMT_NO
+            ,CUST_TYP_CD
+            ,CTZ_COPREG_NO
+            ,CTZ_COPREG_NO_ENPT
+            ,CUST_NM
+            ,CUST_NM_ENPT
+            ,INSU_BIZ_REG_NO
+            ,INSU_RENTAL_SER_NO
+            ,INSU_RENTAL_SCRB_DT
+            ,INSU_RENTAL_TERM_DT
+            ,ATHO_TERM_DT
+            ,INSPAY_TERM_YN
+            ,TTUL_CHG_DT
+            ,SVC_SCRB_DT
+            ,INSU_STA_DT
+            ,INSU_END_DT
+            ,ALLOT_TOT_FREQ
+            ,ALLOT_PAYIN_FREQ
+            ,INSU_SCRB_AMT
+            ,GROSS_INV_AMT
+            ,FST_ARR_DT
+            ,FST_ARR_TTR
+            ,RESD_TEL_NO
+            ,RESD_TEL_NO_ENPT
+            ,RESD_ZIPCD
+            ,BADDR_TEL_NO
+            ,BADDR_TEL_NO_ENPT
+            ,BADDR_ZIPCD
+            ,RESD_ADDR_CL_CD
+            ,RESD_BAS_ADDR
+            ,RESD_DTL_ADDR
+            ,RESD_DTL_ADDR_ENPT
+            ,BADDR_ADDR_CL_CD
+            ,BADDR_BAS_ADDR
+            ,BADDR_DTL_ADDR
+            ,BADDR_DTL_ADDR_ENPT
+            ,TEEN_NM
+            ,TEEN_NM_ENPT
+            ,TEEN_CTZ_REG_NO
+            ,TEEN_CTZ_REG_NO_ENPT
+            ,DRT_CALC_YN
+            ,PSNL_RGEN_YN
+            ,PSNL_RGEN_STEP
+            ,PSNL_RGEN_RIBR_YN
+            ,PSNL_RGEN_RIBR_AMT
+            ,BRC_EXM_YN 
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM
+)
+     SELECT  INSU_INV_NO
+            ,#INV_HST_SEQ#
+            ,UKEY_INSU_NO
+            ,UKEY_INSURE_MGMT_NO
+            ,INV_ST_CD
+            ,UKEY_INV_DT
+            ,UKEY_INV_AMT
+            ,DMS_INV_DT
+            ,DMS_INV_AMT
+            ,UNPD_RENTAL_FEE
+            ,DMG_CMP_UNRTN_AMT
+            ,ARR_ADD_AMT
+            ,MID_TERM_PEN_AMT
+            ,RTN_DELAY_PEN_AMT
+            ,DMG_CMP_BKAG_AMT
+            ,RECV_ST_CD
+            ,UKEY_RECV_DT
+            ,UKEY_RECV_AMT
+            ,RSN_CD
+            ,TO_CHAR(SYSDATE,'YYYYMMDD')
+            ,CONF_INV_CNCL_DT
+            ,COLS_REQS_DT
+            ,COLS_CO_CD
+            ,INSU_COLS_SLIP_NO
+            ,INSU_INV_MEMO
+            ,INSU_SCUR_NO
+            ,SVC_MGMT_NO
+            ,CUST_TYP_CD
+            ,CTZ_COPREG_NO
+            ,CTZ_COPREG_NO_ENPT
+            ,CUST_NM
+            ,CUST_NM_ENPT
+            ,INSU_BIZ_REG_NO
+            ,INSU_RENTAL_SER_NO
+            ,INSU_RENTAL_SCRB_DT
+            ,INSU_RENTAL_TERM_DT
+            ,ATHO_TERM_DT
+            ,INSPAY_TERM_YN
+            ,TTUL_CHG_DT
+            ,SVC_SCRB_DT
+            ,INSU_STA_DT
+            ,INSU_END_DT
+            ,ALLOT_TOT_FREQ
+            ,ALLOT_PAYIN_FREQ
+            ,INSU_SCRB_AMT
+            ,GROSS_INV_AMT
+            ,FST_ARR_DT
+            ,FST_ARR_TTR
+            ,RESD_TEL_NO
+            ,RESD_TEL_NO_ENPT
+            ,RESD_ZIPCD
+            ,BADDR_TEL_NO
+            ,BADDR_TEL_NO_ENPT
+            ,BADDR_ZIPCD
+            ,RESD_ADDR_CL_CD
+            ,RESD_BAS_ADDR
+            ,RESD_DTL_ADDR
+            ,RESD_DTL_ADDR_ENPT
+            ,BADDR_ADDR_CL_CD
+            ,BADDR_BAS_ADDR
+            ,BADDR_DTL_ADDR
+            ,BADDR_DTL_ADDR_ENPT
+            ,TEEN_NM
+            ,TEEN_NM_ENPT
+            ,TEEN_CTZ_REG_NO
+            ,TEEN_CTZ_REG_NO_ENPT
+            ,DRT_CALC_YN
+            ,PSNL_RGEN_YN
+            ,PSNL_RGEN_STEP
+            ,PSNL_RGEN_RIBR_YN
+            ,PSNL_RGEN_RIBR_AMT
+            ,BRC_EXM_YN 
+            ,#USER_NO#
+            ,SYSDATE
+            ,#USER_NO#
+            ,SYSDATE
+       FROM  TB_INSU_INV
+      WHERE  INSU_INV_NO=#INSU_INV_NO#]]>
+	</insert>
+</sqlMap>

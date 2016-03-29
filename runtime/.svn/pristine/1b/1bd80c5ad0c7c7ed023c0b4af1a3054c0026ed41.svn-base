@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 센터컷 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+    <!-- ################################################################## -->
+    <!--  센터컷  컴포넌트                                                  -->
+    <!-- ################################################################## -->
+    
+    <!-- 센터컷 코어 테이블 조회, 로깅 -->
+    <bean id="nc.bat.cc.DataSource.was" class="org.springframework.jndi.JndiObjectFactoryBean" lazy-init="true">
+        <property name="jndiName"         value="java:/jdbc/NexcoreDS_NonXA"/>
+    </bean>
+    
+    <!-- 예외처리용 거래로그 조회 -->
+    <bean id="nc.bat.cc.ceh.DataSource.was" class="org.springframework.jndi.JndiObjectFactoryBean" lazy-init="true">
+        <property name="jndiName"         value="java:/jdbc/NexcoreDS_NonXA"/>
+    </bean>
+
+    <!-- 센터컷 코어 테이블 access 용 -->
+    <bean id="nc.bat.cc.SqlMapClient" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="configLocation"           value="config/sql/cc-sql-config.xml"/>
+		<property name="transactionConfigClass"   value="com.ibatis.sqlmap.engine.transaction.jdbc.JdbcTransactionConfig"/>
+		<property name="dataSource"               ref  ="nc.bat.cc.DataSource.was"/>
+    </bean>
+
+    <bean id="nc.bat.cc.CCConfiguration" class="nexcore.framework.bat.cc.CCConfiguration"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[CC 설정 정보]]></description>
+        <property name="callExceptionHandler">
+            <bean class="nexcore.framework.bat.cc.DefaultCallExceptionHandler" init-method="init" destroy-method="destroy">
+                <description><![CDATA[센터컷에서 Exception 발생시 호출되는 handler]]></description>
+                <property name="dataSource"            ref  ="nc.bat.cc.ceh.DataSource.was"/>
+                <property name="retryCount"            value="20"/>
+                <property name="retryIntervalSeconds"  value="5"/>
+            </bean>
+        </property>
+        <property name="daoFactory">
+            <bean class="nexbank.fwk.batch.cc.CCDaoFactory">
+                <description><![CDATA[입력데이타 테이블 DAO Factory]]></description>
+            </bean>
+        </property>
+        <property name="dataTransformerFactory">
+            <bean class="nexbank.fwk.batch.cc.CCDataTransformerFactory">
+                <description><![CDATA[입력 전문 생성, 출력전문 파싱]]></description>
+            </bean>
+        </property>
+        <property name="serviceCallerFactory">
+            <bean class="nexbank.fwk.batch.cc.CCServiceCallerFactory">
+                <description><![CDATA[온라인 서비스 호출]]></description>
+				<property name="urlTemplate" value="${nexcore.bat.cc.online.server.url.${system.id}}"/>
+				<property name="callTimeout" value="60"/>
+            </bean>
+        </property>
+		
+		
+    </bean>
+</beans>
+
+

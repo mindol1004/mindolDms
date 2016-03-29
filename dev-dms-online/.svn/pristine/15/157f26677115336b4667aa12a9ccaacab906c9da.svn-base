@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRFpaSaleJdgMgmt">
+	<select id="SSaleJdgLstCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaSaleJdgMgmt.SSaleJdgLstCnt 판매감정 총 건수 */
+/* IO: 안진갑,2016-01-26T11:30:46(안진갑,2016-01-26T11:30:46) */]]>
+	</select>
+	<select id="SSaleJdgLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaSaleJdgMgmt.SSaleJdgLst 판매감정 조회 */
+/* IO: 안진갑,2016-01-26T11:31:06(안진갑,2016-01-26T11:31:06) */]]>
+	</select>
+	<select id="SSaleJdgDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaSaleJdgMgmt.SSaleJdgDtlLst 판매감정상세 조회 */
+/* IO: 장미진,2016-01-27T13:56:16(안진갑,2016-01-26T11:31:23) */
+SELECT  A.SVC_MGMT_NO                                     /*서비스관리번호*/
+       ,B.SELL_GRADE_SEQ	                                /*판매등급순번*/
+       ,A.CNTRT_NO	                                      /*계약번호*/
+       ,NVL(B.PWR_ST,'11')          AS PWR_ST             /*전원상태*/
+       ,NVL(B.USIM_ST,'11')         AS USIM_ST            /*USIM상태*/
+       ,NVL(B.RECG_ST,'11')         AS RECG_ST            /*충전상태*/
+       ,NVL(B.SBELL_ST,'11')        AS SBELL_ST	          /*벨소리상태*/
+       ,NVL(B.VIBR_ST,'11')         AS VIBR_ST            /*진동상태*/
+       ,NVL(B.SPK_ST,'11')          AS SPK_ST             /*스피커상태*/
+       ,NVL(B.ILRM_SENSOR_ST,'11')  AS ILRM_SENSOR_ST	    /*조도센서상태*/
+       ,NVL(B.GRCP_ST,'11')         AS GRCP_ST	          /*자이로스코프상태*/
+       ,NVL(B.APRC_SENSOR_ST,'11')  AS APRC_SENSOR_ST	    /*근접센서상태*/
+       ,NVL(B.CAMR_ST,'11')         AS CAMR_ST            /*카메라상태*/
+       ,NVL(B.BATER_ST,'11')        AS BATER_ST	          /*베터리상태*/
+       ,NVL(B.AFIMG_ST,'11')        AS AFIMG_ST	          /*잔상상태*/
+       ,NVL(B.TOUCH_ST,'11')        AS TOUCH_ST	          /*터치상태*/
+       ,NVL(B.WIFI_ST,'11')         AS WIFI_ST            /*WIFI상태*/
+       ,NVL(B.STAIN_ST,'11')        AS STAIN_ST           /*얼룩상태*/
+       ,NVL(B.BRUI_ST,'11')         AS BRUI_ST            /*멍상태*/
+       ,NVL(B.SQUS_ST,'11')         AS SQUS_ST            /*눌림상태*/
+       ,NVL(B.LQFD_INFLO_ST,'11')   AS LQFD_INFLO_ST      /*액상유입상태*/
+       ,NVL(B.LED_ST,'11')          AS LED_ST             /*LED상태*/
+       ,NVL(B.BUTN_ST,'11')         AS BUTN_ST            /*버튼상태*/
+       ,NVL(B.BOTM_TOUCH_ST,'11')   AS BOTM_TOUCH_ST      /*하단터치상태*/
+       ,NVL(B.BODY_ST,'11')         AS BODY_ST            /*몸체상태*/
+       ,NVL(B.DMB_ST,'11')          AS DMB_ST             /*DMB상태*/
+       ,NVL(B.LCGLS_ST,'11')        AS LCGLS_ST           /*액정유리상태*/
+       ,NVL(B.CHIP_ST,'11')         AS CHIP_ST            /*이나감상태*/
+       ,NVL(B.CAMR_WINDO_ST,'11')   AS CAMR_WINDO_ST      /*카메라윈도우상태*/
+       ,NVL(B.EDGE_ST,'11')         AS EDGE_ST            /*테두리상태*/
+       ,NVL(B.BACK_CL,'N')          AS BACK_CL            /*반환구분*/
+       ,NVL(B.BACK_ST,'11')         AS BACK_ST            /*반환상태*/
+       ,NVL(B.SELL_GRADE,'A') 		AS SELL_GRADE         /*판매등급*/
+       ,B.PRCH_GRADE	                                    /*매입등급*/
+       ,NVL(B.FGSC_ST,'11')         AS FGSC_ST            /*지문인식상태*/
+       ,B.EQP_ST_RMK                                      /*단말기상태비고*/
+       ,B.PROC_DT	                                        /*처리일자*/
+       ,C.USED_DSPSL_ST  /*이관처리상태*/
+  FROM  TB_NR_CNTRT A
+       ,TB_NR_SELL_GRADE B
+       ,TB_EQP_USED_DSPSL C
+ WHERE  A.CNTRT_NO = B.CNTRT_NO(+)
+   AND  B.CNTRT_NO = C.CNTRT_NO(+)
+   AND  B.SELL_GRADE_SEQ = C.SELL_GRADE_SEQ(+)
+   AND  A.CNTRT_NO = #CNTRT_NO# 
+   AND  B.SELL_GRADE_SEQ = (SELECT NVL(MAX(SELL_GRADE_SEQ),1) 
+                              FROM TB_NR_SELL_GRADE 
+                             WHERE CNTRT_NO = #CNTRT_NO#)]]>
+	</select>
+	<insert id="ISaveSaleJdgDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaSaleJdgMgmt.ISaveSaleJdgDtl 판매감정상세정보 저장 */
+/* IO: 장미진,2016-01-27T13:27:17(장미진,2016-01-27T12:39:03) */
+INSERT INTO TB_NR_SELL_GRADE
+            (SELL_GRADE_SEQ
+            ,CNTRT_NO
+            ,PWR_ST
+            ,USIM_ST
+            ,RECG_ST
+            ,SBELL_ST
+            ,VIBR_ST
+            ,SPK_ST
+            ,ILRM_SENSOR_ST
+            ,GRCP_ST
+            ,APRC_SENSOR_ST
+            ,CAMR_ST
+            ,BATER_ST
+            ,AFIMG_ST
+            ,TOUCH_ST
+            ,WIFI_ST
+            ,STAIN_ST
+            ,BRUI_ST
+            ,SQUS_ST
+            ,LQFD_INFLO_ST
+            ,LED_ST
+            ,BUTN_ST
+            ,BOTM_TOUCH_ST
+            ,BODY_ST
+            ,DMB_ST
+            ,LCGLS_ST
+            ,CHIP_ST
+            ,CAMR_WINDO_ST
+            ,EDGE_ST
+            ,BACK_CL
+            ,BACK_ST
+            ,SELL_GRADE
+            ,PRCH_GRADE
+            ,FGSC_ST
+            ,EQP_ST_RMK
+            ,PROC_DT
+            ,DEL_YN
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM)
+   VALUES  ((SELECT NVL(MAX(SELL_GRADE_SEQ),0)+1 FROM TB_NR_SELL_GRADE WHERE CNTRT_NO=#CNTRT_NO#)
+            ,#CNTRT_NO#
+            ,#PWR_ST#
+            ,#USIM_ST#
+            ,#RECG_ST#
+            ,#SBELL_ST#
+            ,#VIBR_ST#
+            ,#SPK_ST#
+            ,#ILRM_SENSOR_ST#
+            ,#GRCP_ST#
+            ,#APRC_SENSOR_ST#
+            ,#CAMR_ST#
+            ,#BATER_ST#
+            ,#AFIMG_ST#
+            ,#TOUCH_ST#
+            ,#WIFI_ST#
+            ,#STAIN_ST#
+            ,#BRUI_ST#
+            ,#SQUS_ST#
+            ,#LQFD_INFLO_ST#
+            ,#LED_ST#
+            ,#BUTN_ST#
+            ,#BOTM_TOUCH_ST#
+            ,#BODY_ST#
+            ,#DMB_ST#
+            ,#LCGLS_ST#
+            ,#CHIP_ST#
+            ,#CAMR_WINDO_ST#
+            ,#EDGE_ST#
+            ,#BACK_CL#
+            ,#BACK_ST#
+            ,#SELL_GRADE#
+            ,#PRCH_GRADE#
+            ,#FGSC_ST#
+            ,#EQP_ST_RMK#
+            ,TO_CHAR(SYSDATE,'YYYYMMDD')
+            ,'N'
+            ,#USER_NO#
+            ,SYSDATE
+            ,#USER_NO#
+            ,SYSDATE)]]>
+	</insert>
+	<insert id="IEqpUsedDspsl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaSaleJdgMgmt.IEqpUsedDspsl 이관대상정보등록 */
+/* IO: 장미진,2016-01-27T12:57:05(장미진,2016-01-27T12:49:01) */
+INSERT INTO  TB_EQP_USED_DSPSL
+             (CNTRT_NO
+             ,SELL_GRADE_SEQ
+             ,USED_DSPSL_DT
+             ,USED_DSPSL_ST
+             ,FPA_GRADE
+             ,FS_REG_USER_ID
+             ,FS_REG_DTM
+             ,LS_CHG_USER_ID
+             ,LS_CHG_DTM)
+      SELECT  CNTRT_NO
+             ,SELL_GRADE_SEQ
+             ,PROC_DT
+             ,'01'
+             ,SELL_GRADE
+             ,#USER_NO#
+             ,SYSDATE
+             ,#USER_NO#
+             ,SYSDATE
+        FROM  TB_NR_SELL_GRADE
+       WHERE  CNTRT_NO=#CNTRT_NO#
+         AND  SELL_GRADE_SEQ = (SELECT MAX(SELL_GRADE_SEQ) 
+                                  FROM TB_NR_SELL_GRADE 
+                                 WHERE CNTRT_NO=#CNTRT_NO#)]]>
+	</insert>
+</sqlMap>

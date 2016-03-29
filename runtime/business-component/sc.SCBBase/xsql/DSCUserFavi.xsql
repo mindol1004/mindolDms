@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCUserFavi">
+	<select id="SUserFaviLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserFavi.SUserFaviLst 사용자즐겨찾기목록조회 */
+/* IO: 심상준,2014-12-17T10:23:26(심상준,2014-12-17T10:23:26) */
+SELECT  
+         MENU_ID              /* 메뉴ID */
+        ,MENU_NM              /* 메뉴명 */
+        ,MENU_DESC            /* 메뉴설명 */
+        ,MENU_LV              /* 메뉴레벨 */
+        ,MENU_SORT_ORD        /* 메뉴정렬순서 */
+        ,SUBSTR(SYS_CONNECT_BY_PATH(MENU_NM, '>') , 2)  AS FULL_PATH_NM  /* 메뉴경로 */ 
+        ,FRM_ID               /* 화면ID */
+        ,FRM_NM               /* 화면명 */
+        ,FRM_URL              /* 화면URL */
+        ,FRM_CL_CD            /* 화면구분코드 */
+        ,SUP_MENU_ID          /* 상위메뉴ID */
+        ,FAVI_NO              /* 즐겨찾기번호 */
+   FROM (
+         SELECT  
+       DISTINCT
+                 A.MENU_ID              /* 메뉴ID */
+                ,A.MENU_NM              /* 메뉴명 */
+                ,A.MENU_DESC            /* 메뉴설명 */
+                ,A.MENU_LV              /* 메뉴레벨 */
+                ,A.MENU_SORT_ORD        /* 메뉴정렬순서 */
+                ,A.FRM_ID               /* 화면ID */
+                ,B.FRM_NM               /* 화면명 */
+                ,B.FRM_URL              /* 화면URL */
+                ,B.FRM_CL_CD            /* 화면구분코드 */
+                ,A.SUP_MENU_ID          /* 상위메뉴ID */
+                ,B.FAVI_NO              /* 즐겨찾기번호 */
+           FROM  TB_MENU A              /* SC_메뉴 */ 
+               ,(SELECT
+                         IE.MENU_ID              /* 메뉴ID */
+                        ,IE.MENU_NM              /* 메뉴명 */
+                        ,IE.MENU_DESC            /* 메뉴설명 */
+                        ,IE.MENU_LV              /* 메뉴레벨 */
+                        ,IE.MENU_SORT_ORD        /* 메뉴정렬순서 */
+                        ,IE.FRM_ID               /* 화면ID */
+                        ,IC.FRM_NM               /* 화면명 */
+                        ,IC.FRM_URL              /* 화면URL */
+                        ,IC.FRM_CL_CD            /* 화면구분코드 */
+                        ,IE.SUP_MENU_ID          /* 상위메뉴ID */
+                        ,IA.FAVI_NO              /* 즐겨찾기번호 */
+                   FROM  TB_USER_FAVI IA
+                        ,TB_USER_AUTR_ROL IB
+                        ,TB_FRM IC 
+                        ,TB_FRM_AUTR_ROL ID 
+                        ,TB_MENU IE 
+                        ,TB_AUTR_ROL IF
+                  WHERE  IA.USER_NO = IB.USER_NO
+                    AND  IA.FRM_ID = ID.FRM_ID
+                    AND  IB.AUTR_ROL_ID = IF.AUTR_ROL_ID 
+                    AND  IF.AUTR_ROL_ID = ID.AUTR_ROL_ID 
+                    AND  ID.FRM_ID = IC.FRM_ID 
+                    AND  IE.FRM_ID = IC.FRM_ID 
+                    AND  IB.USER_NO = #USER_NO#
+                    AND  IB.APLY_STA_DT <= TO_CHAR(SYSDATE,'YYYYMMDD') 
+                    AND  IB.APLY_END_DT > TO_CHAR(SYSDATE-1,'YYYYMMDD')
+                    AND  IB.USE_YN = 'Y'
+                    AND  ID.USE_YN = 'Y'
+                    AND  IF.USE_YN = 'Y'
+                 ) B
+          WHERE  A.FRM_ID = B.FRM_ID(+)
+          START  WITH  B.FRM_ID IS NOT NULL
+        CONNECT  BY PRIOR A.SUP_MENU_ID = A.MENU_ID
+          ORDER  SIBLINGS BY  MENU_SORT_ORD
+         )
+  WHERE  FRM_ID IS NOT NULL
+  START  WITH MENU_LV = 0 
+CONNECT  BY PRIOR MENU_ID = SUP_MENU_ID
+  ORDER  BY  FAVI_NO ASC]]>
+	</select>
+	<insert id="IUserFavi" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DTB_USER_FAVI01.IUserFavi 사용자즐겨찾기등록 */
+/* IO: 심상준,2014-09-29T13:14:24(심상준,2014-08-07T11:23:40) */
+INSERT
+  INTO  TB_USER_FAVI                /*SC_사용자즐겨찾기 */
+       ( 
+        FAVI_NO                     /* 즐겨찾기 번호 */
+       ,USER_NO                     /* 사용자번호 */
+       ,FRM_ID                      /* 화면ID */
+       ,FS_REG_USER_ID              /* 최초등록사용자ID */  
+       ,FS_REG_DTM                  /* 최초등록일시 */ 
+       ,LS_CHG_USER_ID              /* 최종변경사용자ID */
+       ,LS_CHG_DTM                  /* 최종변경일시 */ 
+       )	
+VALUES 
+       (
+        SQ01_TB_USER_FAVI.NEXTVAL   /* 증겨찾기번호(시퀀스) */
+       ,#USER_NO#                   /* 사용자번호 */
+       ,#FRM_ID#                    /* 화면ID */
+       ,#USER_NO#                   /* 최초등록사용자ID */  
+       ,SYSDATE                     /* 최초등록일시 */  
+       ,#USER_NO#                   /* 최종변경사용자ID */
+       ,SYSDATE                     /* 최종변경일시 */ 
+        )]]>
+	</insert>
+	<delete id="DUserFavi" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DTB_USER_FAVI01.DUserFavi 사용자즐겨찾기삭제 */
+/* IO: 심상준,2014-09-29T13:14:35(심상준,2014-08-07T11:25:00) */
+DELETE
+  FROM  TB_USER_FAVI          /* SC_사용자즐겨찾기 */
+ WHERE  USER_NO = #USER_NO#   /* 사용자번호 */
+   AND  FRM_ID = #FRM_ID#     /* 화면 ID */]]>
+	</delete>
+</sqlMap>

@@ -1,0 +1,345 @@
+package dms.nr.nrbxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+import org.apache.commons.lang.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]대리점단말기정산정보관리</li>
+ * <li>설  명 : <pre>대리점단말기정산정보관리PU</pre></li>
+ * <li>작성일 : 2015-08-18 10:06:09</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PNRAgnEqpStlMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRAgnEqpStlMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>대리점단말기정산정보조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [매입일자]
+	 *	- field : DEBT_PRCH_TS [매입차수]
+	 *	- field : AGN_CD [대리점코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : DEBT_DEALCO_CD [대리점코드]
+	 *		- field : ORG_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : DEBT_PRCH_TS [매입차수]
+	 *		- field : XCL_ITM_CL [정산구분]
+	 *		- field : DEBT_AMT [출고가]
+	 *		- field : DEBT_ITM_AMT [매입가]
+	 *		- field : DEBT_SURTAX [부가세]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : DEBT_SLIP_DT [전표일자]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : TAX_BILL_NO [세금계산서번호]
+	 *		- field : PROXY_DEALCO_CD [대행거래처코드]
+	 *		- field : SUM_TOT [총합계]
+	 *		- field : YYYY [년]
+	 *		- field : TAX_BILL_ST_CD [세금계산서상태코드]
+	 *		- field : ORGL_SLIP_NO [역발행전표번호]
+	 *		- field : DEBT_AGN_CD [필드1]
+	 *		- field : DEALCO_FISCL_ST_CD [ERP거래처상태코드]
+	 *	- record : RS_SUM_LIST
+	 *		- field : M_CNT [건수]
+	 *		- field : M_PRC [가격]
+	 *	- record : RS_SUM_LIST2
+	 *		- field : M_CNT [건수]
+	 *		- field : M_PRC [가격]
+	 *	- record : RS_SUM_LIST3
+	 *		- field : M_CNT [건수]
+	 *		- field : M_PRC [가격]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnEqpStlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnEqpStlLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산정보상세</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DEBT_XCL_YM [정산월]
+	 *	- field : DEBT_DEALCO_CD [대리점코드]
+	 *	- field : DEBT_PRCH_TS [매입차수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_DTL
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : PRCH_DT [매입일자]
+	 *		- field : PRCH_AMT [매입금액]
+	 *	- record : RS_SUM_LIST
+	 *		- field : M_CNT [총건수]
+	 *		- field : M_PRC [총금액]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnEqpStlDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnEqpStlDtl", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산전표생성</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : DEBT_DEALCO_CD [대리점코드]
+	 *		- field : ORG_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : XCL_ITM_CL [정산구분]
+	 *		- field : DEBT_PRCH_TS [매입차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : DEBT_SLIP_DT [전표처리일]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : TAX_BILL_NO [세금계산서번호]
+	 *		- field : PROXY_DEALCO_CD [대행거래처코드]
+	 *		- field : SUM_TOT [총합계]
+	 *		- field : DEBT_AMT [출고가]
+	 *		- field : DEBT_ITM_AMT [매입가]
+	 *		- field : DEBT_SURTAX [부가세]
+	 *		- field : DEBT_XCL_YM [정산년월]
+	 *		- field : M_CNT [필드1]
+	 *		- field : M_PRC [필드1]
+	 *		- field : YYYYMM [필드1]
+	 *		- field : DEBT_AGN_CD [필드1]
+	 *		- field : DEALCO_FISCL_ST_CD [ERP거래처상태코드]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : YDATE [년월]
+	 *	- field : DEBT_PRCH_TS [회차]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveAgnEqpStlSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fRegAgnEqpStlSlip", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        //responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        
+        return responseData;
+    }
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_DELETE
+	 *		- field : DEBT_DEALCO_CD [대리점코드]
+	 *		- field : ORG_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : XCL_ITM_CL [정산구분]
+	 *		- field : DEBT_PRCH_TS [매입차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : DEBT_SLIP_DT [전표처리일]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : TAX_BILL_NO [세금계산서번호]
+	 *		- field : PROXY_DEALCO_CD [대행거래처코드]
+	 *		- field : SUM_TOT [총합계]
+	 *		- field : DEBT_AMT [출고가]
+	 *		- field : DEBT_ITM_AMT [매입가]
+	 *		- field : DEBT_SURTAX [부가세]
+	 *		- field : DEBT_XCL_YM [정산년월]
+	 *		- field : YYYYMM [년]
+	 *		- field : ORGL_SLIP_NO [역발행전표번호]
+	 *		- field : M_CNT [필드1]
+	 *		- field : M_PRC [필드1]
+	 *		- field : YYYY [필드1]
+	 *		- field : DEBT_AGN_CD [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveAgnEqpStlSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+		
+	    IDataSet responseData = new DataSet();
+	    
+	    try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fSaveAgnEqpStlSlipDel", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+	
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqAgnReBatch(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+           // 1. FM 호출
+           responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnReBatch", requestData, onlineCtx);
+       } catch ( BizRuntimeException e ) {
+           throw e;
+       } catch ( Exception e ) {
+           throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+       }
+       // 3. 결과값 리턴
+       responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+   
+       return responseData;
+	}
+	
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqEqpStlAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    
+	    try {
+	           // 1. FM 호출
+	           responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqEqpStlAllExcel", requestData, onlineCtx);
+	       } catch ( BizRuntimeException e ) {
+	           throw e;
+	       } catch ( Exception e ) {
+	           throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	       }
+	       // 3. 결과값 리턴
+	       responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	   
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqAgnTaxBillSearch(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	           // 1. FM 호출
+	           responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnTaxBillSearch", requestData, onlineCtx);
+	       } catch ( BizRuntimeException e ) {
+	           throw e;
+	       } catch ( Exception e ) {
+	           throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	       }
+	       // 3. 결과값 리턴
+	       responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+	
+
+	
+  
+}

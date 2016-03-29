@@ -1,0 +1,214 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="noticeDBasic" classname="noticeD" inheritanceid="" position="absolute 0 0 360 160" titletext="공지사항_기본" onload="Form_onload" style="background:transparent;" onsize="noticeDBasic_onsize">
+    <Layouts>
+      <Layout>
+        <Grid id="grd_Notice" class="grd_MF_Notice" taborder="2" binddataset="ds_main" useinputpanel="false" autofittype="col" oncellclick="grd_Notice_oncellclick" position="absolute 0 34 360 159" anchor="left top">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="10"/>
+                <Column size="275"/>
+                <Column size="70"/>
+              </Columns>
+              <Rows>
+                <Row size="24"/>
+              </Rows>
+              <Band id="body">
+                <Cell displaytype="image" text="theme://Img/ico_MF_bullet.png"/>
+                <Cell col="1" displaytype="normal" style="cursor:hand;" class="Link" text="bind:TITL"/>
+                <Cell col="2" displaytype="normal" text="bind:FS_REG_DTM" mask="####-##-##"/>
+              </Band>
+            </Format>
+          </Formats>
+        </Grid>
+        <Static id="st_title" text="공지사항" class="sta_MF_BoardTitle" position="absolute 0 0 357 25" anchor="left top right" style="align:left top;"/>
+        <Button id="btn_openMoreNotice" taborder="3" onclick="btn_openMoreNotice_onclick" class="btn_MF_More" position="absolute 343 4 355 16" anchor="left top"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_main" firefirstcount="0" firenextcount="0" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ANNCE_NUM" type="STRING" size="256"/>
+          <Column id="ANNCE_TYPE" type="STRING" size="256"/>
+          <Column id="TITL" type="STRING" size="256"/>
+          <Column id="BLTN_FR_DT" type="STRING" size="256"/>
+          <Column id="BLTN_TO_DT" type="STRING" size="256"/>
+          <Column id="CTT" type="STRING" size="256"/>
+          <Column id="UPLD_FILE_NO" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="BRWS_CNT" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_NM" type="STRING" size="256"/>
+          <Column id="POPUP_YN" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_condNotice" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ANNCE_TYPE" type="STRING" size="256"/>
+          <Column id="TITL" type="STRING" size="256"/>
+          <Column id="CTT" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="ANNCE_TYPE">10</Col>
+            <Col id="USE_YN">10</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+    </Objects>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : noticeD.xfdl
+ * 03. 화면 설명 : 공지사항
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 임지후
+ * 06. 작성일 : 2015.10.27
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.10.27    임지후    최초 작성
+ ************************************************************************************************
+ */
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/ 
+include "LIB::common.xjs"; //공통함수 호출
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/  
+
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onload
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+ 	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "FSC029D");
+ 	//Form 초기 개발자 셋팅
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+}
+
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+	fn_searchMain();
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchMain()
+{
+	page = 1;
+	page_size = 5;
+	var sSvcID	 = "searchMain";
+	var sTrID		 = "PSCAnncBrdMgmt_pInqAnncBrdLst";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_condNotice";
+	var sOutputDs	 = "ds_main=RS_ANNCE_LIST";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+	if(sSvcID = "searchMain"){
+		if ( iErrorCode == 0 ) {
+		} 
+	}
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Event Function ( Main Button )
+================================================================================================*/
+/*-----------------------------------------------------------------------------------------------
+ * Notice : 공지사항 그리드 클릭시 이벤트
+ *----------------------------------------------------------------------------------------------*/ 
+function grd_Notice_oncellclick(obj:Grid, e:GridClickEventInfo)
+{
+	var arrArgs = {argCallProgram:"AnncBrdMgmtM", mode:"notice"};
+	var sRtnVal = gfn_dialog("FSC022P", arrArgs);
+
+	if ( gfn_isNull(sRtnVal) || sRtnVal == "cancel" ) {
+		//취소시
+	} else {	//저장시	
+		btn_search_onclick();
+	}
+}
+/*-----------------------------------------------------------------------------------------------
+ * Notice : 공지사항 플러스버튼 클릭시 이벤트
+ *----------------------------------------------------------------------------------------------*/ 
+function btn_openMoreNotice_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_openFrm("FSC021M");
+}
+
+/*===============================================================================================
+ * [ PART 8 ] Event Function ( Others )
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+var fv_istaticW = grd_Notice.position.width;
+function noticeDBasic_onsize(obj:Form, e:SizeEventInfo)
+{
+	var iTotalW = e.cx;
+	var istaticW = st_title.position.width; 
+	var iTempW;
+	
+	//최초 지정된 가로사이즈보다 작을 때 각 컴포넌트의 사이즈 줄이기 
+	if(fv_istaticW > iTotalW){
+		grd_Notice.position.width = iTotalW;
+		iTempW = btn_openMoreNotice.position.width;
+		btn_openMoreNotice.position.left = iTotalW-iTempW-5;
+		btn_openMoreNotice.position.width = iTempW;
+	} else {
+	//그외에는 최초지정사이즈로 되돌리기
+		grd_Notice.position.width = fv_istaticW;
+		iTempW = btn_openMoreNotice.position.width;
+		btn_openMoreNotice.position.left = fv_istaticW-iTempW-5;
+		btn_openMoreNotice.position.width = iTempW;
+	}
+	
+} 
+]]></Script>
+  </Form>
+</FDL>

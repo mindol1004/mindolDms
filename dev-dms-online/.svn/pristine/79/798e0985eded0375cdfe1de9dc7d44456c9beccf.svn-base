@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPAgnCmmsMgmt">
+	<select id="SAgnCmmsPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPAgnCmmsMgmt.SAgnCmmsPaging 대리점수수료목록조회 */
+/* IO: 김윤환,2015-10-22T17:38:19(김윤환,2015-10-22T10:35:49) */
+SELECT 
+		PA.*
+FROM (
+		SELECT 
+		        ROW_NUMBER() OVER(ORDER BY A.INCEN_XCL_NO ) AS ROWNO				
+		        ,A.INCEN_XCL_NO								/* 인센티브 정산 번호 */
+		        ,A.INCEN_STRD_YM							/* 인센티브 기준 년월 */
+		        ,A.INCEN_BIZ_REG_NO							/* 인센티브 사업자 등록 번호 */
+		        ,A.INCEN_CORP_NM							/* 인센티브 법인 명 */
+		        ,A.INCEN_AMT								/* 인센티브 금액 */
+		        ,A.INCEN_SLIP_DT							/* 인센티브 전표 일자 */
+		        ,A.INCEN_SLIP_NO							/* 인센티브 전표 번호 */
+		        ,A.INCEN_SLIP_ST							/* 인센티브 전표 상태 */
+		        ,B.SLIP_NO									/* 전표번호 */
+		        ,NVL(B.SLIP_ST_CD,'00') AS SLIP_ST_CD  		/* 전표상태코드 */
+		   FROM TB_EP_INCEN_XCL A
+                ,TB_SLIP B
+          WHERE A.INCEN_SLIP_NO = B.SLIP_NO(+)
+            AND A.DEL_YN = 'N'
+            AND A.INCEN_STRD_YM = #INCEN_STRD_YM#
+          ORDER BY A.INCEN_BIZ_REG_NO	
+     ) PA
+WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAgnCmmsTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPAgnCmmsMgmt.SAgnCmmsTotCnt 대리점수수료총건수조회 */
+/* IO: 김윤환,2015-10-22T17:38:24(김윤환,2015-10-22T10:40:17) */
+SELECT 
+	   COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM TB_EP_INCEN_XCL A
+       ,TB_SLIP B
+ WHERE A.INCEN_SLIP_NO = B.SLIP_NO(+)
+   AND A.DEL_YN = 'N'
+   AND A.INCEN_STRD_YM = #INCEN_STRD_YM#]]>
+	</select>
+	<insert id="ITbEpIncenXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPAgnCmmsMgmt.ITbEpIncenXcl 인센티브정산등록 */
+/* IO: 김윤환,2015-10-22T16:26:52(김윤환,2015-10-22T15:35:22) */
+INSERT 
+  INTO TB_EP_INCEN_XCL
+  (
+    INCEN_XCL_NO				/* 인센티브 정산 번호 */
+    ,INCEN_STRD_YM				/* 인센티브 기준 년월 */
+    ,INCEN_BIZ_REG_NO			/* 인센티브 사업자 등록 번호 */
+    ,INCEN_CORP_NM				/* 인센티브 법인 명 */
+    ,INCEN_AMT					/* 인센티브 금액 */
+    ,DEL_YN						/* 삭제 여부 */
+    ,FS_REG_USER_ID				/* 최초등록사용자ID */
+    ,FS_REG_DTM					/* 최초등록일시 */
+    ,LS_CHG_USER_ID				/* 최종변경사용자ID */
+    ,LS_CHG_DTM					/* 최종변경일시 */
+  ) VALUES (
+    SQ01_TB_EP_INCEN_XCL.NEXTVAL	
+    ,#INCEN_STRD_YM#
+    ,#INCEN_BIZ_REG_NO#
+    ,#INCEN_CORP_NM#
+    ,#INCEN_AMT#
+    ,'N'
+    ,#USER_ID#
+    ,SYSDATE
+    ,#USER_ID#
+    ,SYSDATE
+  )]]>
+	</insert>
+	<select id="SAgnRpetErrExmn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPAgnCmmsMgmt.SAgnRpetErrExmn 대리점중복오류검사 */
+/* IO: 김윤환,2015-10-23T15:40:30(김윤환,2015-10-23T15:40:30) */
+SELECT 
+       DECODE(COUNT(*),0,'N','Y') AS RPET_YN
+  FROM TB_EP_INCEN_XCL
+ WHERE INCEN_STRD_YM = #INCEN_STRD_YM#
+   AND INCEN_BIZ_REG_NO = #INCEN_BIZ_REG_NO#
+   AND DEL_YN = 'N']]>
+	</select>
+</sqlMap>

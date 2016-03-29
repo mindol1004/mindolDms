@@ -1,0 +1,342 @@
+package dms.nr.nrbisbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]보증보험청구조회및요청</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-10-08 10:59:55</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class PNRInsuInvMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRInsuInvMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-10-08 10:59:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DMS_INV_STA_DT [DMS청구시작]
+	 *	- field : DMS_INV_END_DT [DMS청구종료]
+	 *	- field : UKEY_RECV_STA_DT [UKEY수납시작]
+	 *	- field : UKEY_RECV_END_DT [UKEY수납종료]
+	 *	- field : UKEY_INV_STA_DT [UKEY청구시작]
+	 *	- field : UKEY_INV_END_DT [UKEY청구종료]
+	 *	- field : UKEY_INSURE_MGMT_NO [UKEY보험관리번호]
+	 *	- field : INV_ST_CD [청구상태]
+	 *	- field : RECV_ST_CD [수납상태]
+	 *	- field : INVE_MATCHED [청구일치여부]
+	 *	- field : RSN_CD [사유코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INSU_INV_LIST
+	 *		- field : INSU_INV_NO [보증보험청구번호]
+	 *		- field : UKEY_INSU_NO [UKEY보증보험번호]
+	 *		- field : UKEY_INSURE_MGMT_NO [UKEY보험관리번호]
+	 *		- field : INV_ST_CD [청구상태코드]
+	 *		- field : UKEY_INV_DT [UKEY청구일자]
+	 *		- field : UKEY_INV_AMT [UKEY청구금액]
+	 *		- field : DMS_INV_DT [DMS청구일자]
+	 *		- field : DMS_INV_AMT [DMS청구금액]
+	 *		- field : UNPD_RENTAL_FEE [미납렌탈요금]
+	 *		- field : DMG_CMP_UNRTN_AMT [손해배상미반납금액]
+	 *		- field : ARR_ADD_AMT [연체가산금액]
+	 *		- field : MID_TERM_PEN_AMT [중도해지위약금금액]
+	 *		- field : RTN_DELAY_PEN_AMT [반납지연위약금금액]
+	 *		- field : DMG_CMP_BKAG_AMT [손해배상파손금액]
+	 *		- field : RECV_ST_CD [수납상태코드]
+	 *		- field : UKEY_RECV_DT [UKEY수납일자]
+	 *		- field : UKEY_RECV_AMT [UKEY수납금액]
+	 *		- field : RSN_CD [사유코드]
+	 *		- field : INV_PROC_DT [청구처리일자]
+	 *		- field : CONF_INV_CNCL_DT [확정청구취소일자]
+	 *		- field : COLS_REQS_DT [추심요청일자]
+	 *		- field : COLS_CO_CD [추심회사코드]
+	 *		- field : INSU_COLS_SLIP_NO [보증보험추심전표번호]
+	 *		- field : INSU_INV_MEMO [보증보험청구메모]
+	 *		- field : INSU_SCUR_NO [보증보험증권번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : CUST_TYP_CD [고객유형코드]
+	 *		- field : CTZ_COPREG_NO [주민법인등록번호]
+	 *		- field : CTZ_COPREG_NO_ENPT [주민법인등록번호암호화]
+	 *		- field : CUST_NM [고객명]
+	 *		- field : CUST_NM_ENPT [고객명암호화]
+	 *		- field : INSU_BIZ_REG_NO [보증보험사업자등록번호]
+	 *		- field : INSU_RENTAL_SER_NO [보증보험렌탈일련번호]
+	 *		- field : INSU_RENTAL_SCRB_DT [보증보험렌탈가입일자]
+	 *		- field : INSU_RENTAL_TERM_DT [보증보험렌탈해지일자]
+	 *		- field : ATHO_TERM_DT [직권해지일자]
+	 *		- field : INSPAY_TERM_YN [분납해지여부]
+	 *		- field : TTUL_CHG_DT [명의변경일자]
+	 *		- field : SVC_SCRB_DT [서비스가입일자]
+	 *		- field : INSU_STA_DT [보증보험시작일자]
+	 *		- field : INSU_END_DT [보증보험종료일자]
+	 *		- field : ALLOT_TOT_FREQ [할부총횟수]
+	 *		- field : ALLOT_PAYIN_FREQ [할부납입횟수]
+	 *		- field : INSU_SCRB_AMT [보증보험가입금액]
+	 *		- field : GROSS_INV_AMT [총청구금액]
+	 *		- field : FST_ARR_DT [최초연체일자]
+	 *		- field : FST_ARR_TTR [최초연체회차]
+	 *		- field : RESD_TEL_NO [거주지전화번호]
+	 *		- field : RESD_TEL_NO_ENPT [거주지전화번호암호화]
+	 *		- field : RESD_ZIPCD [거주지우편번호]
+	 *		- field : BADDR_TEL_NO [청구지전화번호]
+	 *		- field : BADDR_TEL_NO_ENPT [청구지전화번호암호화]
+	 *		- field : BADDR_ZIPCD [청구지우편번호]
+	 *		- field : RESD_ADDR_CL_CD [거주지주소구분코드]
+	 *		- field : RESD_BAS_ADDR [거주지기본주소]
+	 *		- field : RESD_DTL_ADDR [거주지상세주소]
+	 *		- field : RESD_DTL_ADDR_ENPT [거주지상세주소암호화]
+	 *		- field : BADDR_ADDR_CL_CD [청구지주소구분코드]
+	 *		- field : BADDR_BAS_ADDR [청구지기본주소]
+	 *		- field : BADDR_DTL_ADDR [청구지상세주소]
+	 *		- field : BADDR_DTL_ADDR_ENPT [청구지상세주소암호화]
+	 *		- field : TEEN_NM [미성년명]
+	 *		- field : TEEN_NM_ENPT [미성년명암호화]
+	 *		- field : TEEN_CTZ_REG_NO [미성년주민등록번호]
+	 *		- field : TEEN_CTZ_REG_NO_ENPT [미성년주민등록번호암호화]
+	 *		- field : DRT_CALC_YN [일할계산여부]
+	 *		- field : PSNL_RGEN_YN [개인회생여부]
+	 *		- field : PSNL_RGEN_STEP [개인회생단계]
+	 *		- field : PSNL_RGEN_RIBR_YN [개인회생변제여부]
+	 *		- field : PSNL_RGEN_RIBR_AMT [개인회생변제금액]
+	 *		- field : BRC_EXM_YN [파산면책여부]
+	 *		- field : CHK [체크여부]
+	 *		- field : INVE_MATCHED [청구금액일치여부]
+	 * </pre>
+	 */
+	public IDataSet pInqInsuInvInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuInvInfoLst", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-10-08 10:59:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INSU_INV_NO [보증보험청구번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqInsuInvInfoLstDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	    	// 1. FM 호출
+	    	responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuInvInfoLstDtl", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	    	throw e;
+	    } catch ( Exception e ) {
+	    	throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-10-08 10:59:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INSU_INV_DTL_LIST
+	 *		- field : INSU_INV_NO [보증보험청구번호]
+	 *		- field : UKEY_INSU_NO [UKEY보증보험번호]
+	 *		- field : UKEY_INSURE_MGMT_NO [UKEY보험관리번호]
+	 *		- field : INV_ST_CD [청구상태코드]
+	 *		- field : UKEY_INV_DT [UKEY청구일자]
+	 *		- field : UKEY_INV_AMT [UKEY청구금액]
+	 *		- field : DMS_INV_DT [DMS청구일자]
+	 *		- field : DMS_INV_AMT [DMS청구금액]
+	 *		- field : UNPD_RENTAL_FEE [미납렌탈요금]
+	 *		- field : DMG_CMP_UNRTN_AMT [손해배상금미반납금액]
+	 *		- field : ARR_ADD_AMT [연체가산금액]
+	 *		- field : RECV_ST_CD [수납상태]
+	 *		- field : UKEY_RECV_DT [UKEY수납일자]
+	 *		- field : UKEY_RECV_AMT [UKEY수납금액]
+	 *		- field : RSN_CD [사유코드]
+	 *		- field : INSU_INV_MEMO [보증보험청구비고]
+	 *		- field : MID_TERM_PEN_AMT [중도해지위약금금액]
+	 *		- field : RTN_DELAY_PEN_AMT [반납지연위약금금액]
+	 *		- field : DMG_CMP_BKAG_AMT [손해배상파손금액]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pUpdateInsuInvRsv(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	    	// 1. FM 호출
+	    	responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fUpdateInsuInvRsv", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	    	throw e;
+	    } catch ( Exception e ) {
+	    	throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-10-08 10:59:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INSU_INV_LIST
+	 *		- field : INSU_INV_NO [보증보험청구번호]
+	 *		- field : UKEY_INSU_NO [UKEY보증보험번호]
+	 *		- field : UKEY_INSURE_MGMT_NO [UKEY보험관리번호]
+	 *		- field : INV_ST_CD [청구상태코드]
+	 *		- field : UKEY_INV_DT [UKEY청구일자]
+	 *		- field : UKEY_INV_AMT [UKEY청구금액]
+	 *		- field : DMS_INV_DT [DMS청구일자]
+	 *		- field : DMS_INV_AMT [DMS청구금액]
+	 *		- field : UNPD_RENTAL_FEE [미납렌탈요금]
+	 *		- field : DMG_CMP_UNRTN_AMT [손해배상미반납금액]
+	 *		- field : ARR_ADD_AMT [연체가산금액]
+	 *		- field : MID_TERM_PEN_AMT [중도해지위약금금액]
+	 *		- field : RTN_DELAY_PEN_AMT [반납지연위약금금액]
+	 *		- field : DMG_CMP_BKAG_AMT [손해배상파손금액]
+	 *		- field : RECV_ST_CD [수납상태코드]
+	 *		- field : UKEY_RECV_DT [UKEY수납일자]
+	 *		- field : UKEY_RECV_AMT [UKEY수납금액]
+	 *		- field : RSN_CD [사유코드]
+	 *		- field : INV_PROC_DT [청구처리일자]
+	 *		- field : CONF_INV_CNCL_DT [확정청구취소일자]
+	 *		- field : COLS_REQS_DT [추심요청일자]
+	 *		- field : COLS_CO_CD [추심회사코드]
+	 *		- field : INSU_COLS_SLIP_NO [보증보험추심전표번호]
+	 *		- field : INSU_INV_MEMO [보증보험청구메모]
+	 *		- field : INSU_SCUR_NO [보증보험증권번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : CUST_TYP_CD [고객유형코드]
+	 *		- field : CTZ_COPREG_NO [주민법인등록번호]
+	 *		- field : CTZ_COPREG_NO_ENPT [주민법인등록번호암호화]
+	 *		- field : CUST_NM [고객명]
+	 *		- field : CUST_NM_ENPT [고객명암호화]
+	 *		- field : INSU_BIZ_REG_NO [보증보험사업자등록번호]
+	 *		- field : INSU_RENTAL_SER_NO [보증보험렌탈일련번호]
+	 *		- field : INSU_RENTAL_SCRB_DT [보증보험렌탈가입일자]
+	 *		- field : INSU_RENTAL_TERM_DT [보증보험렌탈해지일자]
+	 *		- field : ATHO_TERM_DT [직권해지일자]
+	 *		- field : INSPAY_TERM_YN [분납해지여부]
+	 *		- field : TTUL_CHG_DT [명의변경일자]
+	 *		- field : SVC_SCRB_DT [서비스가입일자]
+	 *		- field : INSU_STA_DT [보증보험시작일자]
+	 *		- field : INSU_END_DT [보증보험종료일자]
+	 *		- field : ALLOT_TOT_FREQ [할부총횟수]
+	 *		- field : ALLOT_PAYIN_FREQ [할부납입횟수]
+	 *		- field : INSU_SCRB_AMT [보증보험가입금액]
+	 *		- field : GROSS_INV_AMT [총청구금액]
+	 *		- field : FST_ARR_DT [최초연체일자]
+	 *		- field : FST_ARR_TTR [최초연체회차]
+	 *		- field : RESD_TEL_NO [거주지전화번호]
+	 *		- field : RESD_TEL_NO_ENPT [거주지전화번호암호화]
+	 *		- field : RESD_ZIPCD [거주지우편번호]
+	 *		- field : BADDR_TEL_NO [청구지전화번호]
+	 *		- field : BADDR_TEL_NO_ENPT [청구지전화번호암호화]
+	 *		- field : BADDR_ZIPCD [청구지우편번호]
+	 *		- field : RESD_ADDR_CL_CD [거주지주소구분코드]
+	 *		- field : RESD_BAS_ADDR [거주지기본주소]
+	 *		- field : RESD_DTL_ADDR [거주지상세주소]
+	 *		- field : RESD_DTL_ADDR_ENPT [거주지상세주소암호화]
+	 *		- field : BADDR_ADDR_CL_CD [청구지주소구분코드]
+	 *		- field : BADDR_BAS_ADDR [청구지기본주소]
+	 *		- field : BADDR_DTL_ADDR [청구지상세주소]
+	 *		- field : BADDR_DTL_ADDR_ENPT [청구지상세주소암호화]
+	 *		- field : TEEN_NM [미성년명]
+	 *		- field : TEEN_NM_ENPT [미성년명암호화]
+	 *		- field : TEEN_CTZ_REG_NO [미성년주민등록번호]
+	 *		- field : TEEN_CTZ_REG_NO_ENPT [미성년주민등록번호암호화]
+	 *		- field : DRT_CALC_YN [일할계산여부]
+	 *		- field : PSNL_RGEN_YN [개인회생여부]
+	 *		- field : PSNL_RGEN_STEP [개인회생단계]
+	 *		- field : PSNL_RGEN_RIBR_YN [개인회생변제여부]
+	 *		- field : PSNL_RGEN_RIBR_AMT [개인회생변제금액]
+	 *		- field : BRC_EXM_YN [파산면책여부]
+	 *		- field : CHK [체크여부]
+	 *		- field : INVE_MATCHED [청구금액일치여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pUpdateInsuInvInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	    	IRecordSet irs = requestData.getRecordSet("RS_INSU_INV_LIST");
+	    	
+	    	if("Y".equals(irs.get(0,"CASE_WHEN"))){
+	    		// 1. FM 호출 청구 일때
+	    		responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fUpdateInsuInvclaim", requestData, onlineCtx);
+	    	} else{
+	    		// 1.FM 호출 청구취소일때
+	    		responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fUpdateInsuInvclaimCancle", requestData, onlineCtx);
+	    	}
+	    	
+	    } catch ( BizRuntimeException e ) {
+	    	throw e;
+	    } catch ( Exception e ) {
+	    	throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	
+	    return responseData;
+	}
+  
+}
+

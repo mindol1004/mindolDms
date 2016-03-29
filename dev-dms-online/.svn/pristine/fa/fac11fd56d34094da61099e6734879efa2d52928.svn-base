@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPRtnMgmt">
+	<select id="SJdgRtnObjListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SJdgRtnObjListTotCnt 검수반송대상총건수 */
+/* IO: 박민정,2015-09-15T19:03:37(박민정,2015-09-11T10:31:06) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_EP_CST_CONSULT_MGMT A                  /*EP_상담관리*/ 
+  	  ,TB_DEALCO B 
+  	  ,TB_EP_BAS_DEAL_CO_MARKETING C  	 
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+   AND A.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#     /*접수일자*/
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.PRCH_CL = 'R'  	                     /*매입구분*/ 
+   AND B.AGN_ORG_CD  = C.UKEY_AGN_CD(+) 	     /*대리점 조직 코드*/
+   AND C.DEL_YN(+) = 'N' 
+   AND NVL(C.STA_DT,A.CNSL_DT) <= A.CNSL_DT
+   AND NVL(C.END_DT,A.CNSL_DT) >= A.CNSL_DT 
+   AND A.SKN_CL = 'N'
+]]><isNotEmpty property="AFFIL_AGN"><![CDATA[  	             /*소속 대리점 */
+   AND B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty property="CNSL_DEALCO_CD"><![CDATA[           /*상담거래처코드*/
+   AND A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#    
+]]></isNotEmpty><![CDATA[	       
+]]><isEqual property="RETUR_RSLT" compareValue="Y"><![CDATA[ /*처리구분*/
+   AND A.RETUR_RSLT = 'Y'
+]]></isEqual><![CDATA[   
+]]><isEqual property="RETUR_RSLT" compareValue="N"><![CDATA[ 
+   AND NVL(A.RETUR_RSLT,'N') = 'N'
+]]></isEqual><![CDATA[   
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[   
+   AND A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[      
+   AND A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND"  property="DPSTR_ENPT"><![CDATA[                    /*예금주*/    
+      A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SJdgRtnObjListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SJdgRtnObjListPaging 검수반송대상조회 */
+/* IO: 박민정,2015-10-30T14:01:10(박민정,2015-09-11T10:46:12) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_MGMT_NO DESC) AS ROWNO  
+                 ,'' AS CHEKED
+                 ,A.CNSL_MGMT_NO                                /*상담 관리 번호  */
+                 ,A.EQP_MDL_CD                                  /*단말기 모델 코드*/
+                 ,A.EQP_SER_NO                                  /*일련 번호       */
+                 ,A.CNSL_DT                                     /*상담 일자       */
+                 ,A.EQP_COLOR_CD                                /*색상 코드       */
+                 ,B.AFFIL_ORG_ID                                /*소속 조직       */
+                 ,(SELECT ORG_NM 
+                     FROM TB_EP_BAS_ORG_MGMT 
+                    WHERE DEL_YN = 'N' 
+                      AND ORG_ID = B.AFFIL_ORG_ID) ORG_NM    /*조직 명*/
+                 ,B.AGN_ORG_CD                                  /*대리점 조직 코드*/
+                 ,C.HEADQ_NM                                    /*본부명*/
+                 ,C.MKT_TEAM_CD                                 /*마케팅팀코드*/
+                 ,C.MKT_TEAM_NM                                 /*마케팅팀명*/      
+                 ,B.UKEY_SUB_CD                                 /*UKEY 서브 코드  */  
+                 ,(SELECT DEALCO_NM 
+                     FROM TB_DEALCO 
+                    WHERE DEL_YN = 'N' 
+                      AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM /*대리점명*/            
+                 ,DEALCO_NM AS CNSL_DEALCO_NM                   /*상담 거래처*/
+                 ,A.CNSL_DEALCO_CD                              /*상담 거래처 코드*/
+                 ,D.EQP_MDL_NM                                  /*단말기 모델명*/
+                 ,A.ACCO_NO                                     /*계좌 번호       */
+                 ,A.DPSTR                                       /*예금주          */
+                 ,A.DPSTR_ENPT                                  /*예금주암호화    */
+                 ,A.EQP_ST                                      /*단말기 상태     */
+                 ,A.PROGR_ST                                    /*진행상태*/
+                 ,A.RETUR_SUGG                                  /*반송 의견  */
+                 ,A.RETUR_RSLT                                  /*반송 결과 */
+                 ,A.RETUR_DT                                    /*반송일 */
+                 ,B.DEALCO_ZIPCD                                /*우편번호 */
+                 ,B.DEALCO_ADDR                                 /*거래처 주소*/
+                 ,B.DEALCO_ADDR_ENPT                            /*거래처 주소 암호화*/
+                 ,B.DEALCO_TEL_NO                               /*거래처 전화번호*/
+                 ,B.DEALCO_TEL_NO_ENPT                          /*거래처 전화번호 암호화*/
+            FROM TB_EP_CST_CONSULT_MGMT A      /*EP_상담관리*/ 
+            	,TB_DEALCO B  
+            	,TB_EP_BAS_DEAL_CO_MARKETING C
+                ,TB_EQP_MDL D                  /*단말기모델*/  	 
+           WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+             AND A.EQP_MDL_CD = D.EQP_MDL_CD (+)
+             AND B.EFF_STA_DT <= A.CNSL_DT||'235959'
+             AND B.EFF_END_DT >= A.CNSL_DT||'235959'
+             AND A.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#           /*접수일자*/
+             AND A.DEL_YN = 'N'
+             AND B.DEL_YN = 'N'
+             AND A.PRCH_CL = 'R'  	                             /*매입구분*/ 
+             AND SUBSTR(B.AGN_ORG_CD, 0, 6) = C.UKEY_AGN_CD(+) 	             /*대리점 조직 코드*/
+             AND C.DEL_YN(+) = 'N' 
+             AND NVL(C.STA_DT,A.CNSL_DT) <= A.CNSL_DT
+             AND NVL(C.END_DT,A.CNSL_DT) >= A.CNSL_DT 
+             AND A.SKN_CL = 'N'
+]]><isNotEmpty property="AFFIL_AGN"><![CDATA[  	                             /*소속 대리점 */
+             AND B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty property="CNSL_DEALCO_CD"><![CDATA[                           /*상담거래처코드*/
+             AND A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#    
+]]></isNotEmpty><![CDATA[	       
+]]><isEqual property="RETUR_RSLT" compareValue="Y"><![CDATA[                 /*처리구분*/
+             AND A.RETUR_RSLT = 'Y'
+]]></isEqual><![CDATA[   
+]]><isEqual property="RETUR_RSLT" compareValue="N"><![CDATA[ 
+             AND NVL(A.RETUR_RSLT,'N') = 'N'
+]]></isEqual><![CDATA[   
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[   
+             AND A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[      
+             AND A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND"  property="DPSTR_ENPT"><![CDATA[                                    /*예금주*/    
+           A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+ )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<update id="UJdgRtn" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UJdgRtn 검수반송등록 */
+/* IO: 박민정,2015-09-17T13:16:45(박민정,2015-09-11T10:50:58) */
+UPDATE TB_EP_CST_CONSULT_MGMT                        /*EP_상담관리*/
+   SET RETUR_RSLT = DECODE(RETUR_RSLT,'Y','N','Y')
+      ,RETUR_DT = DECODE(RETUR_RSLT,'Y','',#RETUR_DT#)
+      ,RETUR_SUGG = #RETUR_SUGG#
+      ,LS_CHG_USER_ID = #LS_CHG_USER_ID# 	         /*최종변경사용자ID*/
+      ,LS_CHG_DTM = SYSDATE	                         /*최종변경일시*/
+WHERE CNSL_MGMT_NO= #CNSL_MGMT_NO#]]>
+	</update>
+	<select id="SCustRtnObjListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SCustRtnObjListTotCnt 고객반송대상총건수 */
+/* IO: 박민정,2015-09-17T14:30:53(박민정,2015-09-11T11:03:33) */
+SELECT COUNT(*) AS TOTAL_CNT
+ FROM  TB_EP_CST_PRCHS_MGMT A                 /*EP_매입관리*/
+      ,TB_DEALCO B 	
+ WHERE A.PROGR_ST IN ('24','27','28') 
+   AND A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND B.EFF_STA_DT <= A.CNSL_DT||'235959'
+   AND B.EFF_END_DT >= A.CNSL_DT||'235959'
+   AND A.DEL_YN = 'N' 
+   AND A.RETUR_DEALCO_CL = '0'                /*반송 거래처 구분*/
+   AND A.RETUR_RSLT = 'Y'                     /*반송 결과       */
+   AND A.SKN_CL = 'N'                         /*SKN 구분        */
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[  /*접수일자*/
+   AND A.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  /*상담 일자*/
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[  /*출고일자*/ 
+   AND A.RETUR_OUT_DT BETWEEN #FR_DT# AND #TO_DT# /*반송일*/
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="AFFIL_AGN"><![CDATA[   
+   AND B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+   AND A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[   
+   AND A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[ 	   
+]]><isNotEmpty property="CNSL_DEALCO_CD"><![CDATA[   
+   AND A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	      
+  ]]><isNotEmpty property="DPSTR_ENPT"><![CDATA[                   /*예금주*/    
+   AND A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SCustRtnObjListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SCustRtnObjListPaging 고객반송대상조회 */
+/* IO: 박민정,2015-10-29T16:25:29(박민정,2015-09-11T11:05:41) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.PRCH_MGMT_NO DESC) AS ROWNO 
+                 ,'' AS CHEKED
+                 ,A.PRCH_MGMT_NO AS CNSL_MGMT_NO                  
+                 ,D.EQP_MDL_NM
+                 ,A.EQP_SER_NO                         /*일련 번호     */
+                 ,A.DPSTR                              /*예금주        */
+                 ,A.DPSTR_ENPT                         /*예금주암호화    */
+                 ,A.TEL_NO                             /*전화 번호     */
+                 ,A.TEL_NO_ENPT                        /*전화 번호 암호화*/
+                 ,A.ZIPCD /*우편번호    */
+                 ,A.ADDR || ' ' ||A.ETC_ADDR AS ADDR    /*주소        */
+                 ,A.ETC_ADDR_ENPT 
+                 ,PROGR_ST                             /*진행 상태     */
+                 ,PRCH_MGMT_NO                         /*매입 관리 번호*/
+                 ,RETUR_OUT_DT AS RETUR_DT             /*반송일 */
+                 ,RETUR_SUGG                           /*반송 의견     */
+                 ,(SELECT DEALCO_NM 
+                     FROM TB_DEALCO 
+                    WHERE DEL_YN = 'N' 
+                      AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM /*대리점명*/  
+                 ,A.CNSL_DEALCO_CD
+                 ,DEALCO_NM AS CNSL_DEALCO_NM  /*상담 거래처*/
+           FROM  TB_EP_CST_PRCHS_MGMT A                /*EP_매입관리*/
+                ,TB_DEALCO B
+                ,TB_EQP_MDL D                          /*단말기모델*/  	
+          WHERE A.PROGR_ST IN ('24','27','28') 
+            AND A.CNSL_DEALCO_CD = B.DEALCO_CD
+            AND A.EQP_MDL_CD = D.EQP_MDL_CD (+)
+            AND B.EFF_STA_DT <= A.CNSL_DT||'235959'
+            AND B.EFF_END_DT >= A.CNSL_DT||'235959'
+            AND A.DEL_YN = 'N' 
+            AND A.RETUR_DEALCO_CL = '0'                /*반송 거래처 구분*/
+            AND A.RETUR_RSLT = 'Y'                     /*반송 결과       */
+            AND A.SKN_CL = 'N'                         /*SKN 구분        */
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일자*/
+            AND A.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  /*상담 일자*/
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*출고일자*/ 
+            AND A.RETUR_OUT_DT BETWEEN #FR_DT# AND #TO_DT# /*반송일*/
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="AFFIL_AGN"><![CDATA[   
+            AND B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+            AND A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[   
+            AND A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[ 	   
+]]><isNotEmpty property="CNSL_DEALCO_CD"><![CDATA[   
+            AND A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	      
+]]><isNotEmpty property="DPSTR_ENPT"><![CDATA[                         /*예금주*/    
+            AND A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+ )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<update id="UCustRtnReg" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UCustRtnReg 고객반송등록 */
+/* IO: 박민정,2015-09-17T15:18:09(박민정,2015-09-11T11:08:28) */
+UPDATE TB_EP_CST_PRCHS_MGMT          /*EP_매입관리*/
+   SET RETUR_OUT_DT = #RETUR_DT#     /*반송출고일자*/
+      ,RETUR_SUGG = #RETUR_SUGG#     /*반송의견*/ 
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO# /*매입관리번호*/]]>
+	</update>
+	<update id="UCustRtnUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UCustRtnUpd 고객반송등록취소 */
+/* IO: 박민정,2015-09-17T15:18:29(박민정,2015-09-11T11:09:04) */
+UPDATE TB_EP_CST_PRCHS_MGMT /*EP_매입관리*/     
+   SET RETUR_OUT_DT = ''    /*반송출고일자*/
+      ,RETUR_SUGG = ''      /*반송 의견*/
+      ,RETUR_RSLT = 'N'     /*반송 결과*/
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</update>
+	<select id="SAgnRtnObjListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SAgnRtnObjListTotCnt 대리점반송대상총건수 */
+/* IO: 박민정,2015-09-21T09:52:01(박민정,2015-09-11T13:49:47) */
+SELECT COUNT(*) AS TOTAL_CNT
+FROM (
+        SELECT EQP_MDL_CD
+              ,EQP_SER_NO            
+              ,CNSL_DEALCO_CD
+              ,CNSL_DT
+              ,PRCH_MGMT_NO	               /*매입 관리 번호*/
+              ,'' AS CNSL_MGMT_NO	       /*상담 관리 번호*/ 
+              ,PROGR_ST            
+              ,DPSTR
+              ,RETUR_OUT_DT AS RETUR_DT    /*반송 출고 일자*/
+              ,RETUR_SUGG
+              ,'P' AS DATA_GB
+          FROM TB_EP_CST_PRCHS_MGMT
+         WHERE DEL_YN = 'N' 
+           AND RETUR_DEALCO_CL = '1'       /*반송 거래처 구분*/
+           AND RETUR_RSLT = 'Y'            /*반송 결과       */
+           AND SKN_CL = 'N'                /*SKN 구분        */
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[ 
+           AND CNSL_DT BETWEEN #FR_DT# AND #TO_DT#
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[ 
+           AND RETUR_OUT_DT BETWEEN #FR_DT# AND #TO_DT#    
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="CNSL_DEALCO_CD"><![CDATA[   
+           AND CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	      
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[   
+           AND EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="DPSTR_ENPT"><![CDATA[      
+           AND DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+UNION ALL 
+        SELECT EQP_MDL_CD
+              ,EQP_SER_NO 
+              ,CNSL_DEALCO_CD
+              ,CNSL_DT
+              ,'' AS PRCH_MGMT_NO 
+              ,CNSL_MGMT_NO
+              ,PROGR_ST            
+              ,DPSTR
+              ,RETUR_DT 
+              ,RETUR_SUGG
+              ,'C' AS DATA_GB
+          FROM TB_EP_CST_CONSULT_MGMT          /*상담관리*/
+         WHERE DEL_YN = 'N' 
+           AND RETUR_RSLT = 'Y'
+           AND SKN_CL = 'N'
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[ 
+           AND CNSL_DT BETWEEN #FR_DT# AND #TO_DT#
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[ 
+           AND RETUR_DT BETWEEN #FR_DT# AND #TO_DT#    
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="CNSL_DEALCO_CD"><![CDATA[   
+           AND CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	      
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[   
+           AND EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="DPSTR_ENPT"><![CDATA[      
+          AND DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+      ) A
+     ,TB_DEALCO B
+WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+  AND B.EFF_STA_DT <= A.CNSL_DT||'235959'
+  AND B.EFF_END_DT >= A.CNSL_DT||'235959'
+]]><isNotEmpty property="AFFIL_AGN"><![CDATA[   
+  AND B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SAgnRtnObjListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SAgnRtnObjListPaging 대리점반송대상조회 */
+/* IO: 박민정,2015-10-29T17:02:43(박민정,2015-09-11T13:50:08) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.PRCH_MGMT_NO ASC) AS ROWNO 
+                ,'' AS CHEKED 
+                ,D.EQP_MDL_NM
+                ,A.EQP_SER_NO 
+                ,B.AGN_ORG_CD 
+                ,B.UKEY_AGN_CD
+                ,DEALCO_NM AS CNSL_DEALCO_NM                       /*상담 거래처*/
+                ,(SELECT DEALCO_NM 
+                    FROM TB_DEALCO 
+                   WHERE DEL_YN = 'N' 
+                     AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM     /*대리점명*/    
+                ,B.UKEY_SUB_CD   
+                ,B.DEALCO_ZIPCD 
+                ,B.DEALCO_ADDR                                     /*거래처 주소*/
+                ,B.DEALCO_ADDR_ENPT                                /*거래처 주소 암호화*/
+                ,B.DEALCO_TEL_NO                                   /*거래처 전화번호*/
+                ,B.DEALCO_TEL_NO_ENPT                              /*거래처 전화번호 암호화*/
+                ,PROGR_ST                                          /*진행상태*/
+                ,A.DPSTR
+                ,A.DPSTR_ENPT                                      /*예금주암호화    */
+                ,A.RETUR_DT 
+                ,A.RETUR_SUGG
+                ,A.PRCH_MGMT_NO 
+                ,A.CNSL_MGMT_NO
+                ,A.DATA_GB
+                ,TO_CHAR(sysdate , 'yyyymmdd') as RETUR_OUT_DT
+          FROM (
+                SELECT EQP_MDL_CD
+                      ,EQP_SER_NO            
+                      ,CNSL_DEALCO_CD
+                      ,CNSL_DT
+                      ,PRCH_MGMT_NO	                                /*매입 관리 번호*/
+                      ,'' AS CNSL_MGMT_NO	                        /*상담 관리 번호*/ 
+                      ,PROGR_ST            
+                      ,DPSTR
+                      ,DPSTR_ENPT
+                      ,RETUR_OUT_DT AS RETUR_DT                     /*반송 출고 일자*/
+                      ,RETUR_SUGG
+                      ,'P' AS DATA_GB
+                  FROM TB_EP_CST_PRCHS_MGMT
+                 WHERE DEL_YN = 'N' 
+                   AND RETUR_DEALCO_CL = '1'                        /*반송 거래처 구분*/
+                   AND RETUR_RSLT = 'Y'                             /*반송 결과       */
+                   AND SKN_CL = 'N'                                 /*SKN 구분        */
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[ 
+                   AND CNSL_DT BETWEEN #FR_DT# AND #TO_DT#
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[ 
+                   AND RETUR_OUT_DT BETWEEN #FR_DT# AND #TO_DT#    
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="CNSL_DEALCO_CD"><![CDATA[   
+                   AND CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	      
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[   
+                   AND EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+                   AND EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="DPSTR_ENPT"><![CDATA[      
+                   AND DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+        UNION ALL 
+                SELECT EQP_MDL_CD
+                      ,EQP_SER_NO 
+                      ,CNSL_DEALCO_CD
+                      ,CNSL_DT
+                      ,'' AS PRCH_MGMT_NO 
+                      ,CNSL_MGMT_NO
+                      ,PROGR_ST            
+                      ,DPSTR
+                      ,DPSTR_ENPT
+                      ,RETUR_DT 
+                      ,RETUR_SUGG
+                      ,'C' AS DATA_GB
+                  FROM TB_EP_CST_CONSULT_MGMT /*상담관리*/
+                 WHERE DEL_YN = 'N' 
+                   AND RETUR_RSLT = 'Y'
+                   AND SKN_CL = 'N'
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[ 
+                   AND CNSL_DT BETWEEN #FR_DT# AND #TO_DT#
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[ 
+                   AND RETUR_DT BETWEEN #FR_DT# AND #TO_DT#    
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="CNSL_DEALCO_CD"><![CDATA[   
+                   AND CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	      
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[   
+                   AND EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+                   AND EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="DPSTR_ENPT"><![CDATA[      
+                  AND DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+        ) A
+      ,TB_DEALCO B
+      ,TB_EQP_MDL D            /*단말기모델*/
+WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+  AND A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+  AND B.EFF_STA_DT <= A.CNSL_DT||'235959'
+  AND B.EFF_END_DT >= A.CNSL_DT||'235959'
+]]><isNotEmpty property="AFFIL_AGN"><![CDATA[   
+  AND B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[
+ )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<update id="UAgnRtnReg" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UAgnRtnReg 대리점반송등록 */
+/* IO: 박민정,2015-09-16T15:15:22(박민정,2015-09-11T13:52:44) */
+UPDATE TB_EP_CST_PRCHS_MGMT  /*EP_매입관리*/
+   SET RETUR_OUT_DT = #RETUR_DT#
+      ,RETUR_SUGG = #RETUR_SUGG#
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</update>
+	<update id="UAgnRtnUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UAgnRtnUpd 대리점반송등록취소 */
+/* IO: 박민정,2015-09-16T15:15:30(박민정,2015-09-11T13:53:38) */
+UPDATE TB_EP_CST_PRCHS_MGMT /*EP_매입관리*/
+   SET RETUR_OUT_DT   = ''
+      ,RETUR_SUGG = ''     /*반송 의견*/
+      ,RETUR_RSLT = 'N'    /*반송 결과*/
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</update>
+	<update id="UAgnRtnConReg" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UAgnRtnConReg 대리점반송상담등록 */
+/* IO: 박민정,2015-09-21T11:23:40(박민정,2015-09-21T11:22:43) */
+UPDATE TB_EP_CST_CONSULT_MGMT   /*상담관리*/
+   SET RETUR_DT = #RETUR_DT#
+      ,RETUR_SUGG = #RETUR_SUGG#
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UAgnRtnConUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UAgnRtnConUpd 대리점반송상담등록취소 */
+/* IO: 박민정,2015-09-21T11:24:36(박민정,2015-09-21T11:24:10) */
+UPDATE TB_EP_CST_CONSULT_MGMT  /*상담관리*/
+   SET RETUR_DT   = ''
+      ,RETUR_SUGG = ''         /*반송 의견*/
+      ,RETUR_RSLT = 'N'  
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<select id="SgetBoxLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SgetBoxLst 반송등록대리점박스조회 */
+/* IO: 박민정,2015-11-03T14:28:57(김상오,2015-09-22T19:01:41) */
+SELECT '' AS CHK                             
+       ,A.EQP_MDL_CD    
+       ,(SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = A.EQP_MDL_CD ) EQP_MDL_NM
+       ,A.EQP_SER_NO                         
+       ,B.AGN_ORG_CD                         
+       ,B.DEALCO_NM /*상담처명*/
+       ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEALCO_CD = B.AFFIL_AGN AND DEL_YN = 'N') AFFIL_AGN  /*소속 대리점*/
+       ,B.UKEY_SUB_CD                        
+       ,B.DEALCO_ZIPCD
+       ,B.DEALCO_ADDR                                     /*거래처 주소*/
+       ,B.DEALCO_ADDR_ENPT                                /*거래처 주소 암호화*/
+       ,B.DEALCO_TEL_NO                                   /*거래처 전화번호*/
+       ,B.DEALCO_TEL_NO_ENPT                              /*거래처 전화번호 암호화*/ 
+       ,A.PROGR_ST    
+       ,A.DPSTR    
+       ,A.DPSTR_ENPT   
+       ,A.PRCH_MGMT_NO
+       ,A.CNSL_MGMT_NO
+       ,A.DATA_GB
+       ,A.RETUR_SUGG
+       ,TO_CHAR(sysdate , 'yyyymmdd') as RETUR_OUT_DT
+  FROM (
+        SELECT EQP_MDL_CD    
+             , EQP_SER_NO    
+             , CNSL_DEALCO_CD
+             , CNSL_DT       
+             , PRCH_MGMT_NO  
+             , '' AS CNSL_MGMT_NO
+             , PROGR_ST  
+             , DPSTR 
+             , DPSTR_ENPT                 /*예금주암호화    */        
+             , 'P' AS DATA_GB
+             , '' AS RETUR_SUGG
+          FROM TB_EP_CST_PRCHS_MGMT
+         WHERE BOX_NO = #BOX_NO#
+           AND DEL_YN = 'N'
+           AND SKN_CL = 'N'
+        UNION ALL 
+        SELECT EQP_MDL_CD    
+             , EQP_SER_NO        
+             , CNSL_DEALCO_CD
+             , CNSL_DT       
+             , '' AS PRCH_MGMT_NO         
+             , CNSL_MGMT_NO  
+             , PROGR_ST      
+             , DPSTR  
+             , DPSTR_ENPT                 /*예금주암호화    */         
+             , 'C' AS DATA_GB              
+             , IN_PROC_RSN   AS RETUR_SUGG
+          FROM TB_EP_CST_CONSULT_MGMT
+         WHERE BOX_NO = #BOX_NO#
+           AND DEL_YN = 'N'
+           AND SKN_CL = 'N'
+) A, TB_DEALCO B
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+  AND B.EFF_STA_DT <= A.CNSL_DT
+  AND B.EFF_END_DT >= A.CNSL_DT]]>
+	</select>
+	<select id="SgetBoxPrchsLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SgetBoxPrchsLst 반송등록고객박스조회 */
+/* IO: 박민정,2015-11-03T16:24:58(김상오,2015-09-22T18:14:44) */
+SELECT '' AS CHK  
+       ,EQP_MDL_CD
+       ,(SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = A.EQP_MDL_CD ) EQP_MDL_NM 
+       ,EQP_SER_NO
+       ,DPSTR
+       ,DPSTR_ENPT  
+       ,TEL_NO
+       ,TEL_NO_ENPT
+       ,ZIPCD
+       ,ADDR||' '||ETC_ADDR AS ADDR
+       ,ETC_ADDR_ENPT 
+       ,PROGR_ST
+       ,PRCH_MGMT_NO
+       ,TO_CHAR(sysdate , 'yyyymmdd') as RETUR_OUT_DT 
+       , '' AS RETUR_SUGG
+  FROM TB_EP_CST_PRCHS_MGMT A
+ WHERE BOX_NO = #BOX_NO#
+   AND DEL_YN = 'N'
+   AND SKN_CL = 'N']]>
+	</select>
+	<select id="SRtnRegCustObjList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SRtnRegCustObjList 반송등록고객대상조회 */
+/* IO: 박민정,2015-10-29T17:55:15(김상오,2015-09-23T18:15:28) */
+SELECT '' AS CHK  
+       ,EQP_MDL_CD
+       ,(SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = A.EQP_MDL_CD ) EQP_MDL_NM 
+       ,EQP_SER_NO
+       ,DPSTR
+       ,DPSTR_ENPT                         /*예금주암호화    */
+       ,TEL_NO
+       ,TEL_NO_ENPT 
+       ,ZIPCD
+       ,ADDR||' '||ETC_ADDR AS ADDR
+       ,ETC_ADDR_ENPT 
+       ,PROGR_ST
+       ,PRCH_MGMT_NO
+       ,CNSL_MGMT_NO
+       ,TO_CHAR(sysdate , 'yyyymmdd') as RETUR_OUT_DT 
+       , '' AS RETUR_SUGG
+  FROM TB_EP_CST_PRCHS_MGMT A
+    ,  TB_DEALCO B
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+   AND A.PROGR_ST IN ('24','27','28') 
+   AND A.DEL_YN = 'N' 
+   AND A.RETUR_DEALCO_CL = '0'
+   AND A.SKN_CL = 'N'
+]]><isEqual prepend="AND" property="DT_GB" compareValue="1"><![CDATA[ 
+       A.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#
+]]></isEqual><![CDATA[ 
+]]><isEqual prepend="AND" property="DT_GB" compareValue="2"><![CDATA[ 
+       A.CUST_CHK_DT BETWEEN #FR_DT# AND #TO_DT#
+]]></isEqual><![CDATA[
+
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+	   B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+       A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+       A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SRtnRegAgnObjList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.SRtnRegAgnObjList 반송등록대리점대상조회 */
+/* IO: 박민정,2015-10-29T17:56:49(김상오,2015-09-24T13:24:22) */
+SELECT '' AS CHK                             
+       ,A.EQP_MDL_CD  
+       ,(SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = A.EQP_MDL_CD ) EQP_MDL_NM                        
+       ,A.EQP_SER_NO                         
+       ,B.AGN_ORG_CD                         
+       ,B.DEALCO_NM /*상담처명*/
+       ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEALCO_CD = B.AFFIL_AGN AND DEL_YN = 'N') AFFIL_AGN  /*소속 대리점*/
+       ,B.UKEY_SUB_CD                        
+       ,B.DEALCO_ZIPCD 
+       ,B.DEALCO_ADDR                                     /*거래처 주소*/
+       ,B.DEALCO_ADDR_ENPT                                /*거래처 주소 암호화*/
+       ,B.DEALCO_TEL_NO                                   /*거래처 전화번호*/
+       ,B.DEALCO_TEL_NO_ENPT                              /*거래처 전화번호 암호화*/   
+       ,A.PROGR_ST    
+       ,A.DPSTR 
+       ,A.DPSTR_ENPT     /*예금주암호화    */      
+       ,A.PRCH_MGMT_NO
+       ,A.CNSL_MGMT_NO
+       ,A.DATA_GB
+       ,A.RETUR_SUGG
+       ,TO_CHAR(sysdate , 'yyyymmdd') as RETUR_OUT_DT 
+  FROM (
+        SELECT EQP_MDL_CD    
+             , EQP_SER_NO    
+             , CNSL_DEALCO_CD
+             , CNSL_DT       
+             , PRCH_MGMT_NO  
+             , '' AS CNSL_MGMT_NO
+             , CNSL_MGMT_NO BARCODE
+             , PROGR_ST  
+             , DPSTR   
+             , DPSTR_ENPT      /*예금주암호화    */      
+             , 'P' AS DATA_GB
+             , '' AS RETUR_SUGG
+          FROM TB_EP_CST_PRCHS_MGMT
+         WHERE DEL_YN = 'N' 
+           AND RETUR_DEALCO_CL = '1' 
+           AND PROGR_ST IN ('24','27','28') 
+           AND SKN_CL = 'N'
+           AND CNSL_DT BETWEEN #FR_DT# AND #TO_DT#
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+       EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+       DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+           
+        UNION ALL 
+        SELECT EQP_MDL_CD    
+             , EQP_SER_NO        
+             , CNSL_DEALCO_CD
+             , CNSL_DT       
+             , '' AS PRCH_MGMT_NO         
+             , CNSL_MGMT_NO  
+             , CNSL_MGMT_NO BARCODE
+             , PROGR_ST      
+             , DPSTR 
+             , DPSTR_ENPT      /*예금주암호화    */        
+             , 'C' AS DATA_GB              
+             , IN_PROC_RSN   AS RETUR_SUGG
+          FROM TB_EP_CST_CONSULT_MGMT
+         WHERE DEL_YN = 'N' 
+           AND PROGR_ST = '12'
+           AND SKN_CL = 'N'
+           AND CNSL_DT BETWEEN #FR_DT# AND #TO_DT#
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+       EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+       DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+
+          ) A,  TB_DEALCO B
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+	   B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	      
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+	   B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       A.BARCODE = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<update id="UConsultRtn" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UConsultRtn 반송등록상담관리저장 */
+/* IO: 김상오,2015-09-24T19:09:48(김상오,2015-09-24T18:47:18) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET RETUR_DT = #RETUR_OUT_DT#
+     , RETUR_SUGG = #RETUR_SUGG#
+     , RETUR_RSLT = 'Y'
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UPrchsMgmtRtn" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRtnMgmt.UPrchsMgmtRtn 반송등록매입관리저장 */
+/* IO: 김상오,2015-09-24T18:50:08(김상오,2015-09-24T18:50:08) */
+ UPDATE TB_EP_CST_PRCHS_MGMT
+   SET RETUR_OUT_DT = #RETUR_OUT_DT#
+     , RETUR_SUGG = #RETUR_SUGG#
+     , RETUR_RSLT = 'Y'
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</update>
+</sqlMap>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR009">
+	<select id="SClaimSumLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR009.SClaimSumLst Ukey 청구 집계 데이터 조회 */
+/* IO: 진병수,2015-11-18T17:57:15(진병수,2015-08-04T15:01:21) */
+SELECT E.ASSET_NO
+     , C.CNTRT_NO
+     , NVL(#SALE_DEPT_CD#, '501802')  AS SALE_DEPT_CD
+     , MAX(A.INV_DT)          AS SALE_DT
+     , 'RENT'            AS SALE_ITM_CD    /*매출항목코드*/
+     , SUM(A.INV_AMT)         AS SALE_AMT
+     , SUM(ROUND(A.INV_AMT * 100/110,0))  AS SPLY_PRC
+     , SUM(A.INV_AMT - ROUND(A.INV_AMT * 100/110,0))   AS SURTAX_AMT
+     , MAX(A.INV_DT)    AS  INV_DT
+     , SUM(A.INV_AMT)   AS  INV_AMT
+     , SUBSTR(A.INV_DT,1,6)   AS RENT_YM
+     , F.DCP_NO
+     , R.PEN_POLY_NO
+     , SUM(A.INV_AMT)   AS  UKEY_DMG_CMP_AMT
+     , MAX(A.INV_DT)    AS  DMG_CMP_INV_DT
+     , A.SVC_MGMT_NO
+     , A.RENTAL_SER_NO
+     , 'N'               AS DEL_YN
+     , SUBSTR(INV_DT,1,6) AS   RENT_YM
+  FROM TF_INV_DTL        A
+     , TB_NR_CNTRT       C
+     , TB_RENTAL_CNTRT   R
+     , TB_EQP_CNTRT      E
+     , TB_RENTAL_DCP     F
+ WHERE SUBSTR(A.IF_PROC_DT,1,6) = TO_CHAR(TO_DATE(#PROC_DT#,'YYYYMMDD'),'YYYYMM')
+   AND A.PROC_ST_CD = '09' 
+   AND A.SALE_ITM_CD    = NVL(#SALE_ITM_CD#, 'CRRNTUS')
+   AND C.SVC_MGMT_NO   = TO_CHAR(A.SVC_MGMT_NO  )
+   AND C.RENTAL_SER_NO = TO_CHAR(A.RENTAL_SER_NO)
+   AND R.CNTRT_NO      = C.CNTRT_NO
+   AND E.CNTRT_NO      = R.CNTRT_NO
+   AND E.CNTRT_NO      = F.CNTRT_NO (+)
+ GROUP BY E.ASSET_NO, C.CNTRT_NO, SUBSTR(A.INV_DT,1,6), A.SVC_MGMT_NO, A.RENTAL_SER_NO, F.DCP_NO, R.PEN_POLY_NO]]>
+	</select>
+	<insert id="ISaleInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.ISaleInfo 청구렌탈료매출등록 */
+/* IO: 진병수,2015-09-03T09:23:40(진병수,2015-08-04T15:05:26) */
+INSERT INTO TB_SALE
+            (
+              SALE_NO
+            , ASSET_NO
+            , CNTRT_NO
+            , SALE_DEPT_CD
+            , SALE_DT
+            , SALE_ITM_CD
+            , SALE_AMT
+            , SPLY_PRC
+            , SURTAX_AMT
+            , SALE_ADJ_BF_AMT
+            , SALE_ADJ_DAMT	
+            , DEL_YN
+            , FS_REG_USER_ID
+            , FS_REG_DTM
+            , LS_CHG_USER_ID
+            , LS_CHG_DTM
+            )
+            VALUES
+            (
+              SQ01_TB_SALE.NEXTVAL
+            , #ASSET_NO#
+            , #CNTRT_NO#
+            , #SALE_DEPT_CD#
+            , #SALE_DT#
+            , #SALE_ITM_CD#
+            , #SALE_AMT#
+            , #SPLY_PRC#
+            , #SURTAX_AMT#
+            , NVL(#SALE_ADJ_BF_AMT#,0)
+            , NVL(#SALE_ADJ_DAMT#  ,0)
+            , 'N'    
+            , 'BAT'  
+            , SYSDATE
+            , 'BAT'  
+            , SYSDATE            
+            )]]>
+	</insert>
+	<update id="URentMonthAmt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR009.URentMonthAmt 월렌탈료테이블청구필드업데이트 */
+/* IO: 안진갑,2015-11-13T11:06:25(진병수,2015-09-01T20:37:36) */
+UPDATE TB_EQP_CNTRT_DTL 
+   SET INV_DT  = #INV_DT#
+     , INV_AMT = #INV_AMT#
+     , INV_SPLY_PRC = ROUND(TO_NUMBER(#INV_AMT#)*100/110,0)
+     , INV_SURTAX_AMT = TO_NUMBER(#INV_AMT#) - ROUND(TO_NUMBER(#INV_AMT#)*100/110,0)   
+     , LS_CHG_USER_ID = NVL(#LS_CHG_USER_ID#, 'BAT'   )
+     , LS_CHG_DTM     = NVL(#LS_CHG_DTM#,     SYSDATE)
+ WHERE ASSET_NO = #ASSET_NO#
+   AND RENT_YM  = #RENT_YM#]]>
+	</update>
+	<update id="URentalPenAmt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR009.URentalPenAmt 위약금테이블Ukey금액필드업데이트 */
+/* IO: 진병수,2015-11-18T16:13:43(진병수,2015-09-02T13:06:59) */
+UPDATE TB_RENTAL_PEN 
+   SET UKEY_PEN_AMT   = NVL(UKEY_PEN_AMT,0) + NVL(#INV_AMT#,0)
+     , PEN_INV_DT     = #INV_DT#
+     , LS_CHG_USER_ID = NVL(#LS_CHG_USER_ID#, 'BAT'   )
+     , LS_CHG_DTM     = NVL(#LS_CHG_DTM#,     SYSDATE)
+ WHERE PEN_POLY_CL  = #PEN_POLY_CL# 
+   AND CNTRT_NO     = #CNTRT_NO#]]>
+	</update>
+	<update id="UEtcXclAmt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.UEtcXclAmt 기타정산테이블청구필드업데이트(위약금,손배) */
+/* IO: 진병수,2015-09-03T09:24:12(진병수,2015-09-02T13:18:00) */
+UPDATE TB_ETC_XCL
+   SET XCL_UKEY_INV_AMT = NVL(XCL_UKEY_INV_AMT,0) + NVL(#INV_AMT#,0)
+     , XCL_UKEY_INV_DT  = #INV_DT#
+     , LS_CHG_USER_ID = NVL(#LS_CHG_USER_ID#, 'BAT'   )
+     , LS_CHG_DTM     = NVL(#LS_CHG_DTM#,     SYSDATE)
+ WHERE XCL_ITM_CD   = #XCL_ITM_CD# 
+   AND CNTRT_NO     = #CNTRT_NO#]]>
+	</update>
+	<update id="UIFCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR009.UIFCntrt 인터페이스테이블상태 변경 */
+/* IO: 진병수,2015-09-25T12:55:52(안진갑,2015-08-28T19:07:59) */
+UPDATE TF_INV_DTL
+    SET PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+        AND IF_FILE_NM = #IF_FILE_NM#
+        AND IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<select id="SClaimLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR009.SClaimLst Ukey 청구 데이터 조회 */
+/* IO: 진병수,2015-11-18T17:58:09(진병수,2015-08-04T15:01:21) */
+SELECT E.ASSET_NO
+     , C.CNTRT_NO
+     , NVL(#SALE_DEPT_CD#, '501802')  AS SALE_DEPT_CD
+     , A.INV_DT          AS SALE_DT
+     , 'RENT'            AS SALE_ITM_CD    /*매출항목코드*/
+     , A.INV_AMT         AS SALE_AMT
+     , TRUNC(A.INV_AMT * 0.91,-1)  AS SPLY_PRC
+     , A.INV_AMT - TRUNC(A.INV_AMT * 0.91,-1)   AS SURTAX_AMT
+     , A.SVC_MGMT_NO
+     , A.RENTAL_SER_NO
+     , 'N'               AS DEL_YN
+     , A.INV_DT          
+     , A.INV_AMT      
+     , SUBSTR(INV_DT,1,6) AS   RENT_YM
+     , A.IF_PROC_DT
+     , A.IF_FILE_NM
+     , A.IF_SEQ     
+     , F.DCP_NO
+     , R.PEN_POLY_NO
+  FROM TF_INV_DTL        A
+     , TB_NR_CNTRT       C
+     , TB_RENTAL_CNTRT   R
+     , TB_EQP_CNTRT      E
+     , TB_RENTAL_DCP     F
+ WHERE SUBSTR(A.IF_PROC_DT,1,6) = TO_CHAR(TO_DATE(#PROC_DT#,'YYYYMMDD'),'YYYYMM')
+   AND A.PROC_ST_CD = '09' 
+   AND A.SALE_ITM_CD    = NVL(#SALE_ITM_CD#, 'CRRNTUS')
+   AND C.SVC_MGMT_NO   = TO_CHAR(A.SVC_MGMT_NO  )
+   AND C.RENTAL_SER_NO = TO_CHAR(A.RENTAL_SER_NO)
+   AND R.CNTRT_NO      = C.CNTRT_NO
+   AND E.CNTRT_NO      = R.CNTRT_NO
+   AND E.CNTRT_NO      = F.CNTRT_NO (+)]]>
+	</select>
+	<update id="URentalDcp" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR009.URentalDcp 손해배상금Ukey금액업데이트 */
+/* IO: 진병수,2015-09-25T13:39:57(안진갑,2015-09-17T17:22:18) */
+UPDATE TB_RENTAL_DCP
+   SET UKEY_DMG_CMP_AMT = #UKEY_DMG_CMP_AMT#
+     , DMG_CMP_INV_DT   = #DMG_CMP_INV_DT#
+     , LS_CHG_USER_ID   = NVL(#USER_NO#, 'BAT')
+     , LS_CHG_DTM       = SYSDATE
+ WHERE CNTRT_NO         = #CNTRT_NO#
+   AND DCP_CL           = #DCP_CL#
+   AND DCP_NO           = #DCP_NO#]]>
+	</update>
+</sqlMap>

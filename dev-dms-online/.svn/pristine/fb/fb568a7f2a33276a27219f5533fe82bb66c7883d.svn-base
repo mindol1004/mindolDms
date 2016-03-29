@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRReqpJdgMgmt">
+	<select id="SReqpJdgLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpJdgMgmt.SReqpJdgLstTotCnt 임대폰감정목록총건수 */
+/* IO: 양재석,2015-09-02T12:54:56(이영진,2015-07-21T17:14:11) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  TB_EQP_ASSET A
+        , TB_EQP_IN B
+        , TB_EQP_JDG C
+        , TB_EQP_MDL E
+        , TB_DEALCO D
+        , TB_USER U
+ WHERE  A.ASSET_NO = B.ASSET_NO
+        AND  A.OP_CL_CD = 'PR'
+        AND  B.IN_DTL_CD IN ('20','30','40')
+        AND  B.ASSET_NO = C.ASSET_NO(+)
+        AND  B.EQP_IN_DT = C.EQP_IN_DT(+)
+        AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+        AND  C.JDG_CHRGR_NO = U.USER_NO(+)
+        AND  B.IN_DEALCO_CD = D.DEALCO_CD
+        AND  A.DEL_YN = 'N'
+        AND  B.DEL_YN = 'N'
+        AND  C.DEL_YN(+) = 'N'
+        AND  B.EQP_IN_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+            AND  A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+            AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="EQP_JDG_RSLT_CD" compareValue="%"><![CDATA[
+]]><isNotEqual property="EQP_JDG_RSLT_CD" compareValue="00"><![CDATA[
+            AND  C.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[            
+]]><isEqual property="EQP_JDG_RSLT_CD" compareValue="00"><![CDATA[
+            AND  C.EQP_JDG_RSLT_CD IS NULL
+]]></isEqual><![CDATA[            
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SReqpJdgLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpJdgMgmt.SReqpJdgLstPaging 임대폰감정목록조회 */
+/* IO: 김상오,2015-09-11T14:58:12(이영진,2015-07-21T17:15:21) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.ASSET_NO DESC) AS ROWNO
+               , B.EQP_IN_DT AS IN_DT
+               , A.ASSET_NO
+               , A.EQP_MDL_CD
+               , E.EQP_MDL_NM
+               , A.EQP_COLOR_CD
+               , A.EQP_SER_NO
+               , A.EQP_IMEI_NO
+               , A.BOX_NO
+               , A.EQP_PRCH_AMT AS PRCH_AMT
+               , C.EQP_JDG_DT
+               , C.EQP_JDG_RSLT_CD
+               , C.JDG_APRV_YN
+               , C.JDG_CHRGR_NO
+               , U.USER_NM AS JDG_CHRGR_NM
+               , B.IN_DEALCO_CD
+               , D.DEALCO_NM
+               , (DECODE(NVL(F.CMPHS_CNTRT_NM,''),'','',
+                                F.CMPHS_CNTRT_NM || ' (' || SUBSTR(F.CMPHS_CNTRT_STA_DT,0,4) || '년' || SUBSTR(F.CMPHS_CNTRT_STA_DT,5,2) || '월' || SUBSTR(F.CMPHS_CNTRT_STA_DT,7,2) || '일 ~ ' 
+                                || SUBSTR(F.CMPHS_CNTRT_END_DT,0,4) || '년' || SUBSTR(F.CMPHS_CNTRT_END_DT,5,2) || '월' || SUBSTR(F.CMPHS_CNTRT_END_DT,7,2) || '일)')
+                 ) AS CMPHS_CNTRT_NM
+               /*, F.CMPHS_CNTRT_NM */
+               , F.CMPHS_CNTRT_STA_DT
+               , F.CMPHS_CNTRT_END_DT
+               , G.IN_OBJ_DTL_CD										/*회수구분코드*/
+               , F.REMPRC  /*잔존가 */
+               , C.CMPT_INDF_BACK_AMT          /*구성품변상반환금액*/
+           FROM  TB_EQP_ASSET A
+               , TB_EQP_IN B
+               , TB_EQP_JDG C
+               , TB_EQP_MDL E
+               , TB_DEALCO D
+               , TB_USER U
+               , (SELECT IX.ASSET_NO
+                         ,IZ.CMPHS_CNTRT_NM
+                         ,(SELECT REMPRC 
+                             FROM TB_EQP_CNTRT_DTL 
+                            WHERE CNTRT_NO = IX.CNTRT_NO  AND ASSET_NO = IX.ASSET_NO
+                             AND RENT_YM = TO_CHAR(SYSDATE, 'yyyymm'  ) ) REMPRC
+                         ,IZ.CMPHS_CNTRT_STA_DT
+                         ,IZ.CMPHS_CNTRT_END_DT
+                    FROM TB_EQP_CNTRT IX
+                         , TB_RENTAL_CNTRT IY
+                         , TB_RENTPHON_CMPHS_CNTRT IZ
+                   WHERE IX.CNTRT_NO = IY.CNTRT_NO
+                     AND IY.CMPHS_CNTRT_NO = IZ.CMPHS_CNTRT_NO
+                     AND IX.DEL_YN = 'N'
+                     AND IY.DEL_YN = 'N'
+                     AND IZ.DEL_YN = 'N'
+               ) F
+               , TB_EQP_CLCT_OBJ G
+          WHERE  A.ASSET_NO = B.ASSET_NO
+            AND  A.OP_CL_CD = 'PR'
+            AND  B.IN_DTL_CD IN ('20','30','40')
+            AND  B.ASSET_NO = C.ASSET_NO(+)
+            AND  B.EQP_IN_DT = C.EQP_IN_DT(+)
+            AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+            AND  C.JDG_CHRGR_NO = U.USER_NO(+)
+            AND  B.IN_DEALCO_CD = D.DEALCO_CD
+            AND  A.ASSET_NO = F.ASSET_NO(+)
+            AND  A.EQP_MDL_CD = G.EQP_MDL_CD(+)
+            AND  A.EQP_SER_NO = G.EQP_SER_NO(+)
+            AND  A.DEL_YN = 'N'
+            AND  B.DEL_YN = 'N'
+            AND  C.DEL_YN(+) = 'N'
+            AND  G.DEL_YN(+) = 'N'
+            AND  B.EQP_IN_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+            AND  A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+            AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="EQP_JDG_RSLT_CD" compareValue="%"><![CDATA[
+]]><isNotEqual property="EQP_JDG_RSLT_CD" compareValue="00"><![CDATA[
+            AND  C.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[            
+]]><isEqual property="EQP_JDG_RSLT_CD" compareValue="00"><![CDATA[
+            AND  C.EQP_JDG_RSLT_CD IS NULL
+]]></isEqual><![CDATA[            
+]]></isNotEqual><![CDATA[
+            ORDER BY B.EQP_IN_DT DESC, A.EQP_MDL_CD, A.EQP_SER_NO
+        )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

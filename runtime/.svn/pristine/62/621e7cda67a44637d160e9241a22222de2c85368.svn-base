@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 프레임워크관리콘솔에서 프레임워크를 제어 및 모니터링하기 위한 JMX관련 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+    <bean id="nc.jmx.mbeanserver.props" class="nexcore.framework.core.jmx.NexcoreMBeanServerProperties" depends-on="nc.core.IWasInstanceManager" init-method="init" >
+        <property name="wasInstanceManager"     ref="nc.core.IWasInstanceManager" />
+        <property name="rmiRegistryDefaultPort" value="11099" />
+        <property name="connectorName"          value="nexcoreconnector" />
+    </bean>
+
+	<bean id="nc.jmx.mbeanserver.props.rmiRegistryPort" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetObject"><ref local="nc.jmx.mbeanserver.props"/></property>
+		<property name="targetMethod"><value>getRmiRegistryPort</value></property>
+	</bean>
+
+	<bean id="nc.jmx.mbeanserver.props.connectorServerServiceUrl" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetObject"><ref local="nc.jmx.mbeanserver.props"/></property>
+		<property name="targetMethod"><value>getConnectorServerServiceUrl</value></property>
+	</bean>
+
+    <bean id="nc.jmx.mbeanserver" class="org.springframework.jmx.support.MBeanServerFactoryBean">   
+        <property name="locateExistingServerIfPossible" value="false"/>   
+        <property name="defaultDomain"                  value="Nexcore"/>
+    </bean>
+    
+    <bean id="nc.jmx.mbeanserver.registry" class="org.springframework.remoting.rmi.RmiRegistryFactoryBean">  
+   	 	<property name="alwaysCreate" value="true"/>
+        <property name="port"         ref="nc.jmx.mbeanserver.props.rmiRegistryPort"/>
+    </bean>   
+      
+    <bean id="nc.jmx.mbeanserver.connector" class="org.springframework.jmx.support.ConnectorServerFactoryBean" depends-on="nc.jmx.mbeanserver.registry" lazy-init="false">   
+        <property name="objectName" value="connector:name=rmi"/>   
+        <property name="serviceUrl" ref="nc.jmx.mbeanserver.props.connectorServerServiceUrl"/>   
+        <property name="server">   
+            <ref local="nc.jmx.mbeanserver"/>
+        </property>   
+    </bean>
+    
+	<bean id="nc.jmx.CacheManagerExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=CacheManager" value-ref="nc.core.ICacheManager"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getCacheNames,removeCache,refresh</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+          
+    <bean id="nc.jmx.CacheDataViewManager" class="nexcore.framework.core.cache.internal.DefaultCacheDataViewManager">
+        <description><![CDATA[캐시 내용 조회. cacheViewers에 등록되지 않은 캐시는 cache.getElementCount()를 사용하여 건수를 계산한다.]]></description>
+    	<property name="cacheManager" ref="nc.core.ICacheManager" />
+    	<property name="defaultCacheViewer"><bean class="nexcore.framework.core.cache.internal.DefaultCacheDataViewer"/></property>
+    	<property name="cacheViewers">
+    		<map>
+    			<entry key="code"               ><bean class="nexcore.framework.core.code.internal.CodeCacheDataViewer"/></entry>
+    			<entry key="configuration"      ><bean class="nexcore.framework.core.parameter.internal.ConfigurationCacheDataViewer"/></entry>
+    			<entry key="message"            ><bean class="nexcore.framework.core.message.internal.MessageCacheDataViewer"/></entry>
+    			<entry key="parameter"          ><bean class="nexcore.framework.core.parameter.internal.ParameterCacheDataViewer"/></entry>
+    			<entry key="was-instance"       ><bean class="nexcore.framework.core.parameter.internal.WasInstanceCacheDataViewer"/></entry>
+    			<entry key="componentMeta"      ><bean class="nexcore.framework.core.component.internal.ComponentMetaDataCacheDataViewer"/></entry>
+    			<entry key="methodMeta"         ><bean class="nexcore.framework.core.component.internal.MethodMetaDataCacheDataViewer"/></entry>
+    			<entry key="txcontrol"          ><bean class="nexcore.framework.core.service.txcontrol.internal.ExpressionTxControlCacheDataViewer"/></entry>
+    			<entry key="devloglevel"        ><bean class="nexcore.framework.core.cache.internal.DefaultCacheDataViewer"/></entry>
+    			<entry key="deferred"           ><bean class="nexcore.framework.deferred.cache.DeferredCacheDataViewer"/></entry>
+    			<entry key="txprofile"          ><bean class="nexcore.framework.core.service.txprofile.internal.TxProfileCacheDataViewer"/></entry>
+    			<entry key="notificationConfig" ><bean class="nexcore.framework.core.notification.internal.NotificationConfigCacheDataViewer"/></entry>
+    			<entry key="txFilterMapping"    ><bean class="nexcore.framework.coreext.pojo.filter.internal.DynamicMappingServiceFilterMetadataCacheDataViewer"/></entry>
+    			<entry key="label"              ><bean class="nexcore.framework.core.label.internal.LabelCacheDataViewer"/></entry>
+    		</map>
+    	</property>
+    </bean>
+	<bean id="nc.jmx.CacheDataViewerExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=CacheDataViewer" value-ref="nc.jmx.CacheDataViewManager"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getSummaryAll,getSummary,readData</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+    
+	<bean id="nc.jmx.LogManagerExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=LogManager" value-ref="nc.core.ILog4jManager"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getLoggers,getLoggersPatternInclude,getLoggersPatternExclude,updateLogLevel</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+
+	<bean id="nc.jmx.TimedResourceWatcherExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=TimedResourceWatcher" value-ref="nc.core.ITimedResourceWatcher"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getInformation</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+
+	<bean id="nc.jmx.ComponentMetaRegistryViewerExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=ComponentMetaRegistryViewer" value-ref="nc.core.ComponentMetaRegistryViewer"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getComponents,getComponentTransactions,getTransactions,getTransactionFields,getIoLayoutComponents,getIoLayouts,getIoLayoutFields</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+	
+    <bean id="nc.jmx.SqlManagerFactoryViewer" class="nexcore.framework.integration.db.internal.SqlManagerFactoryMetaViewer">
+    	<property name="sqlManagerFactory" ref="nc.db.ISqlManagerFactory" />
+    </bean>
+	<bean id="nc.jmx.SqlManagerFactoryExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=SqlManagerFactory" value-ref="nc.jmx.SqlManagerFactoryViewer"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getInformation</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+
+	<bean id="nc.jmx.ThreadManagerExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=ThreadManager" value-ref="nc.core.monitor.IThreadManager"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getInformation,getThroughputInformation,getStackTrace,getAllStackTraces,interrupt</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+
+    <bean id="nc.jmx.PlatformMBeanViewer" class="nexcore.framework.core.jmx.PlatformMBeanViewer" > 
+    </bean>
+	<bean id="nc.jmx.PlatformMBeanExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=PlatformMBeanManager" value-ref="nc.jmx.PlatformMBeanViewer"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getMBeanInfo,getMBeanOperationInfo</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+
+    <bean id="nc.jmx.LogFileViewer" class="nexcore.framework.core.log.impl.LogFileViewer" > 
+    	<property name="logHome" value="${NEXCORE_LOG_HOME}" />
+    </bean>
+	<bean id="nc.jmx.LogFileViewerExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=LogFileViewer" value-ref="nc.jmx.LogFileViewer"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getLogFileList,readLogFile</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+
+  <!--
+	<bean id="nc.jmx.DeferredExporter" class="org.springframework.jmx.export.MBeanExporter">
+    	<property name="beans">
+      		<map>
+        		<entry key="Nexcore:Service=DeferredManager" value-ref="nc.deferred.DeferredManager"/>
+      		</map>
+    	</property>
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">  
+	        <property name="managedMethods"><value>getInformation,startProcessor,initProcessor,stopProcessor,isRunnable,isActive</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+  	</bean> 
+  	-->
+  	
+  <!--
+	<bean id="nc.jmx.DelayAsyncManagerExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=DelayAsyncManager" value-ref="nc.core.DelayAsyncManager"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getInformation,getRemainServices</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+  	-->
+  	         
+  <!--
+	<bean id="nc.jmx.TCPConnectionManagerExporter" class="org.springframework.jmx.export.MBeanExporter">   
+	    <property name="beans">   
+	      <map>   
+	        <entry key="Nexcore:Service=TCPConnectionManager" value-ref="nc.integration.TCPConnectionManager"/>   
+	      </map>   
+	    </property>   
+	    <property name="assembler">   
+	      <bean class="org.springframework.jmx.export.assembler.MethodNameBasedMBeanInfoAssembler">   
+	        <property name="managedMethods"><value>getInformation</value></property>   
+	      </bean>   
+	    </property>   
+        <property name="server"><ref local="nc.jmx.mbeanserver"/></property>   
+	</bean>  
+  	-->
+  
+</beans>

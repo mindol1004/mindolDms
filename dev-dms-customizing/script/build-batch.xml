@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Nexcore Build Batch - Samples" default="all">
+
+	<property environment="env" />
+
+	<!-- ################################################################## -->
+	<!-- ## [NEXCORE_HOME] common build property ########################## -->
+	<!-- ################################################################## -->
+	<!-- custombuild build.properties -->
+	<property file="${NEXCORE_HOME_ANT}/script/build/${project.name}.build.properties" />
+	<!-- default build.properties -->
+	<property file="${NEXCORE_HOME_ANT}/script/build/nexcore.build.properties" />
+	<!-- custombuild for CI tool (Continuous Integration : quickBuild etc) -->
+	<property file="${ant.home}/${project.name}.build.properties" />
+	<!-- default for CI tool (Continuous Integration : quickBuild etc) -->
+	<property file="${ant.home}/nexcore.build.properties" />
+	<target name="check.nexcore.property" unless="NEXCORE_HOME">
+		<echo message=" find ANT_HOME ..." />
+		<available file="${ant.home}/nexcore.build.properties" property="check.property.ant" />
+		<antcall target="check.nexcore.property.anthome" />
+	</target>
+	<target name="check.nexcore.property.anthome" unless="check.property.ant">
+		<echo message="ERROR: " />
+		<echo message="      define property 'NEXCORE_HOME_ANT' first " />
+		<echo message="      in your Eclipse Preferences [Ant-Runtime-properties]" />
+		<echo message="      before depoying" />
+		<fail message="ERROR: Ant runtime property 에 'NEXCORE_HOME_ANT'을 등록하세요. " />
+	</target>
+
+	<!--
+    <property name="NEXCORE_HOME"      value="C:\\projects\\nexbank\\project-workspace\\runtime" />
+    -->
+
+	<tstamp>
+		<format property="datetime" pattern="yyyyMMddHHmmssSSS" locale="ko,KR"/>
+	</tstamp>
+
+	<property name="target"             value="${NEXCORE_HOME}/batch" />
+	<property name="target.bin"         value="${target}/job/classes" />
+	<property name="target.shell"       value="${target}/job/shell" />
+
+	<property name="tmp.dir"            value="${WORKSPACE_HOME}/tempbin" />
+	<property name="component.id"       value="N/A" />
+	<property file=".NexbuildProject" />
+
+	<condition property="isComponentAll">
+		<equals arg1="N/A" arg2="${component.id}" />
+	</condition>
+	<condition property="isComponentSelected">
+		<not>
+			<equals arg1="N/A" arg2="${component.id}" />
+		</not>
+	</condition>
+
+	<!-- USE ANT LIB ant-contrib.jar -->
+	<!-- ANT CONTRIBUTE OPTIONAL TASK -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" classpath="${NEXCORE_HOME_ANT}/lib/ant-contrib.jar"/>
+
+	<target name="all" depends="check.nexcore.property">
+		<antcall target="prepare" />
+		<!-- antcall target="compile.componentSelectedAll" / -->
+		<antcall target="compile.componentAll" />
+		<antcall target="copy.fioAll" />
+		<antcall target="copy.exeAll" />
+		<ant antfile="${PROPERTY_HOME}/build-biz-sftp.xml" target="putBat" />
+	</target>
+
+	<target name="prepare">
+		<mkdir dir="${target.bin}" />
+	</target>
+
+
+	<!-- ################################################################## -->
+	<!-- #########          Java Source Compile             ############### -->
+	<!-- ################################################################## -->
+	<target name="compile.componentSelectedAll" if="isComponentSelected">
+		<delete dir="${tmp.dir}"/>
+		<mkdir  dir="${tmp.dir}"/>
+
+		<loadresource property="sourcefiles">
+			<propertyresource name="component.id"/>
+			<filterchain>
+				<tokenfilter>
+					<filetokenizer/>
+					<replacestring from="." to="/"/>
+				</tokenfilter>
+			</filterchain>
+		</loadresource>
+
+		<for list="${sourcefiles}" param="sourcefile" delimiter="," >
+			<sequential>
+				<trycatch reference="exception_ref">
+					<try>
+						<echo>=============================================================================</echo>
+						<echo>[@{sourcefile}] start.</echo>
+						<echo>=============================================================================</echo>
+						<ant target="compile.componentSingle" >
+							<property name="component.path" value="@{sourcefile}"/>
+						</ant>
+					</try>
+					<catch>
+						<property name="exception_@{sourcefile}" refid="exception_ref" />
+						<echo>##################################################################</echo>
+						<echo>[@{sourcefile}] error. ${line.separator}${exception_@{sourcefile}}</echo>
+						<echo>##################################################################</echo>
+						<property name="exception_occurd" value="true" />
+					</catch>
+					<finally>
+						<echo>[@{sourcefile}] finish.</echo>
+						<echo>=============================================================================</echo>
+					</finally>
+				</trycatch>
+			</sequential>
+		</for>
+
+
+		<delete dir="${tmp.dir}"/>
+
+		<condition property="isExceptionOccurd">
+			<equals arg1="true" arg2="${exception_occurd}" />
+		</condition>
+
+		<antcall target="_build.fail" />
+
+	</target>
+
+	<target name="compile.componentSingle">
+		<!-- compile java -->
+		<javac srcdir="${WORKSPACE_HOME}/src/java" destdir="${tmp.dir}" encoding="utf-8" debug="true" includeantruntime="false" source="1.5">
+			<compilerarg value="-Xlint:unchecked"/>
+			<classpath>
+				<fileset dir="${NEXCORE_HOME}/lib" includes="*.jar" />
+				<fileset dir="${NEXCORE_HOME}/EarContent/APP-INF/lib" includes="*.jar" />
+			</classpath>
+			<include name="${component.path}.java"/>
+		</javac>
+
+		<!-- copy class file -->
+		<copy todir="${target.bin}" preservelastmodified="true" verbose="true">
+			<fileset dir="${tmp.dir}" defaultexcludes="false">
+				<include name="**/*.class" />
+			</fileset>
+		</copy>
+
+		<!-- copy xsql -->
+		<copy todir="${target.bin}" preservelastmodified="true" verbose="true">
+			<fileset dir="${WORKSPACE_HOME}/src/java" defaultexcludes="false">
+				<include name="${component.path}.xsql" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="compile.componentAll" if="isComponentAll">
+		<delete dir="${tmp.dir}"/>
+		<mkdir  dir="${tmp.dir}"/>
+
+		<!-- compile java -->
+		<echo>Compile java files.</echo>
+		<javac srcdir="${WORKSPACE_HOME}/src/java" destdir="${tmp.dir}" encoding="utf-8" debug="true" includeantruntime="false" source="1.5">
+			<compilerarg value="-Xlint:unchecked"/>
+			<classpath>
+				<fileset dir="${NEXCORE_HOME}/lib" includes="*.jar" />
+				<fileset dir="${NEXCORE_HOME}/EarContent/APP-INF/lib" includes="*.jar" />
+			</classpath>
+			<include name="**/*.java" />
+		</javac>
+
+		<!-- copy class file -->
+		<echo>Copy class files.</echo>
+		<copy todir="${target.bin}" preservelastmodified="true" verbose="true">
+			<fileset dir="${tmp.dir}" defaultexcludes="false">
+				<include name="**/*.class" />
+			</fileset>
+		</copy>
+
+		<!-- copy xsql -->
+		<echo>Copy xsql files.</echo>
+		<copy todir="${target.bin}" preservelastmodified="true" verbose="true">
+			<fileset dir="${WORKSPACE_HOME}/src/java" defaultexcludes="false">
+				<include name="**/*.xsql" />
+			</fileset>
+		</copy>
+
+		<delete dir="${tmp.dir}"/>
+	</target>
+
+	<target name="copy.fioAll">
+		<echo>Copy fio resources. </echo>
+		<copy todir="${target.bin}" preservelastmodified="true" verbose="true">
+			<fileset dir="${WORKSPACE_HOME}/src/java" defaultexcludes="false">
+				<include name="**/*.fio" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="copy.exeAll">
+		<echo>Copy cmd/sh resources. </echo>
+		<copy todir="${target.bin}" preservelastmodified="true" failonerror="false" verbose="true">
+			<fileset dir="${WORKSPACE_HOME}/src/java" defaultexcludes="false" >
+				<include name="**/*.cmd" />
+				<include name="**/*.sh" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="_build.fail" if="isExceptionOccurd">
+		<fail message="처리 중 1개이상의 컴포넌트에서 에러가 발생했습니다." />
+	</target>
+</project>
+

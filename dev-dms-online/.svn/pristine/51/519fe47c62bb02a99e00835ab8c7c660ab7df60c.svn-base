@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPTransitMgmt">
+	<select id="STransitListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPTransitMgmt.STransitListPaging 미착내역조회 */
+/* IO: 김상오,2015-12-07T17:59:49(김상오,2015-12-07T13:37:26) */
+WITH 
+TMP_A AS (
+SELECT 
+        ROWNUM  AS  ROWNO        
+       ,CASE WHEN D.XCL_SLIP_DT IS NOT NULL THEN  D.XCL_SLIP_DT                    /*AR 기산일*/
+             WHEN N_INVE_CNCL_SLIP_DT IS NOT NULL THEN  N_INVE_CNCL_SLIP_DT        /*반제AP 기산일*/
+             WHEN  B.C_INVE_SLIP_DT IS NOT NULL THEN  B.C_INVE_SLIP_DT             /*확정AP기산일*/
+             WHEN  A.INVE_SLIP_DT IS NOT NULL THEN A.INVE_SLIP_DT                  /*미착AP기산일*/
+         END AS CON_DT                                                              /*처리일자*/
+       ,'에코폰' AS GUBUN 
+       ,A.CNSL_MGMT_NO                                                             /*상담관리번호*/
+       ,A.CNSL_DT                                                                  /*접수일자*/
+       ,A.CLCT_DT                                                                  /*회수일자(반영일자)*/
+       ,A.EQP_MDL_NM                                                               /*모델명*/
+       ,A.EQP_SER_NO                                                               /*단말기 일련번호*/
+       ,A.SKN_EQP_ST                                                               /*미착AP등급*/
+       ,A.XCL_AMT                                                                  /*상담금액(미착AP매입금액)*/
+       ,DECODE(A.DEDC_TYP_CD,'01','계좌송금','02','선할인','03','요금선납','04','클럽T',A.DEDC_TYP_CD) AS DEDC_TYP_CD /*공제유형코드 (미착AP유형)*/
+       ,A.INVE_SLIP_NO                                                             /*미착AP번호*/
+       ,A.INVE_SLIP_DT                                                             /*미착AP기산일*/
+       ,A.INVE_TYP_CD                                                              /*AP처리구분*/
+       ,B.C_SKN_EQP_ST                                                             /*확정AP 등급*/
+       ,B.C_XCL_AMT                                                                /*확정AP매입가*/
+       ,B.SKN_SMPL_JDG_DAMT                                                        /*확정AP평가손실금액 */
+       ,DECODE(B.C_DEDC_TYP_CD,'01','계좌송금','02','선할인','03','요금선납','04','클럽T',B.C_DEDC_TYP_CD) AS C_DEDC_TYP_CD  /*공제유형코드 ( 확정AP유형)*/
+       ,B.C_INVE_SLIP_NO                                                           /*확정AP번호*/
+       ,B.C_INVE_SLIP_DT                                                           /*확정AP기산일*/
+       ,C.N_XCL_AMT                                                                /*반제 반환금액*/
+       ,DECODE(C.INVE_TYP_CD, '20', C.N_INVE_CNCL_SLIP_NO ) AS M_INVE_CNCL_SLIP_NO /*미착반제 AP번호*/
+       ,DECODE(C.INVE_TYP_CD, '10', C.N_INVE_CNCL_SLIP_NO ) AS C_INVE_CNCL_SLIP_NO /*확정반제 AP번호*/
+       ,N_INVE_CNCL_SLIP_DT                                                        /*반제AP 기산일*/
+       ,D.SALE_AMT AS AR_SALE_AMT                                                  /*AR 매출가*/
+       ,D.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+       ,D.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                            /*AR 기산일*/
+       ,D.SELL_DEALCO_NM AS AR_SELL_DEALCO_NM                                      /*AR 매출처*/
+       ,DECODE(B.C_INVE_SLIP_NO,NULL,'','Y') AS DIS_YN                             /*재고여부*/
+       ,DECODE(A.INVE_SLIP_NO,NULL,'','Y') AS TS_YN                                /*미착*/
+       ,DECODE(D.XCL_SLIP_NO,NULL,'','Y') AS SELL_YN                               /*판매여부*/
+FROM 
+/* ■■CASE 미착 RAW_DATA 산출 (검색년월에 해당하는 미착전표) ■■ */  
+(
+ SELECT B.INVE_XCL_NO                                                                    /* 재고 정산 번호      */
+       ,B.INVE_XCL_DTL_SEQ                                                               /* 재고 정산 상세 순번 */
+       ,B.CNSL_MGMT_NO                                                                   /*상담 관리 번호*/
+       ,C.CNSL_DT                                                                        /*접수일자*/
+       ,C.CLCT_DT                                                                        /*회수일자(반영일자)*/
+       ,D.EQP_MDL_NM   /*모델명*/
+       ,C.EQP_SER_NO                                                                     /*단말기 일련번호*/
+       ,C.SKN_EQP_ST                                                                     /*등급*/
+       ,B.XCL_AMT                                                                        /*상담금액(미착AP매입금액)*/
+       ,A.DEDC_TYP_CD                                                                    /*공제유형코드 ( AP유형)*/
+       ,B.INVE_SLIP_NO                                                                   /*미착AP번호*/
+       ,B.INVE_SLIP_DT                                                                   /*미착AP기산일*/
+       ,A.INVE_TYP_CD                                                                    /*AP처리구분*/
+  FROM  TB_EP_INVE_XCL A 
+       ,TB_EP_INVE_XCL_DTL B
+       ,TB_EP_CST_CONSULT_MGMT C
+       ,TB_EQP_MDL D
+ WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+   AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND INVE_TYP_CD = '20'
+   AND (SUBSTR(A.XCL_STRD_DT,0,6) = #SELL_DTM#  )
+   AND A.CNCL_SLIP_YN = 'N'
+   AND D.EQP_MDL_CD(+) = C.EQP_MDL_CD
+   UNION ALL
+/* ■■CASE 2 확정 산출 (검색년월에 해당하는 미착 검색 검색년월 이전이면서 확정일자 null 확정일자가 검색년월 이전인건 ) ■■ */  
+ SELECT B.INVE_XCL_NO                                                                   /*재고 정산 번호      */
+       ,B.INVE_XCL_DTL_SEQ                                                              /*재고 정산 상세 순번 */
+       ,B.CNSL_MGMT_NO                                                                  /*상담 관리 번호*/
+       ,C.CNSL_DT                                                                       /*접수일자*/
+       ,C.CLCT_DT                                                                       /*회수일자(반영일자)*/
+       ,E.EQP_MDL_NM                                                                    /*모델명*/
+       ,C.EQP_SER_NO                                                                    /*단말기 일련번호*/
+       ,C.SKN_EQP_ST                                                                    /*등급*/
+       ,B.XCL_AMT                                                                       /*상담금액(미착AP매입금액)*/
+       ,A.DEDC_TYP_CD                                                                   /*공제유형코드 ( AP유형)*/
+       ,B.INVE_SLIP_NO                                                                  /*미착AP번호*/
+       ,B.INVE_SLIP_DT                                                                  /*미착AP기산일*/
+       ,A.INVE_TYP_CD                                                                   /*AP처리구분*/
+  FROM TB_EP_INVE_XCL A 
+       ,TB_EP_INVE_XCL_DTL B
+       ,TB_EP_CST_CONSULT_MGMT C
+       ,( SELECT B.CNSL_MGMT_NO   /*상담 관리 번호*/
+                             FROM TB_EP_INVE_XCL A 
+                                 ,TB_EP_INVE_XCL_DTL B
+                            WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+                              AND A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                              AND A.INVE_TYP_CD   = '10'  /*확정재고*/
+                              AND (A.INVE_SLIP_DT is null OR A.INVE_SLIP_DT >= #SELL_DTM#||'01'  )
+                              AND A.CNCL_SLIP_YN = 'N'
+        ) D
+        ,TB_EQP_MDL E
+ WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+   AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND INVE_TYP_CD = '20' /*미착재고*/
+   AND (A.XCL_STRD_DT <= #SELL_DTM# ||'01'  )
+   AND B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+   AND E.EQP_MDL_CD(+) = C.EQP_MDL_CD
+) A     
+     /* ■■CASE 4 확정 AP  ■■ */  
+     ,(SELECT B.CNSL_MGMT_NO                                                       /*상담 관리 번호*/                                                    
+              ,A.DEDC_TYP_CD AS C_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+              ,B.XCL_AMT AS C_XCL_AMT                                              /*(확정AP매입가)*/
+              ,C.SKN_EQP_ST AS C_SKN_EQP_ST                                        /*상태*/
+              ,C.SKN_SMPL_JDG_DAMT                                                 /*평가손실금액 */
+              ,B.INVE_SLIP_NO AS C_INVE_SLIP_NO                                    /*확정AP번호*/
+              ,B.INVE_SLIP_DT AS C_INVE_SLIP_DT                                    /*확정AP기산일*/
+              ,B.INVE_CNCL_SLIP_NO AS C_INVE_CNCL_SLIP_NO                          /*재고 취소 전표 번호*/
+              ,B.INVE_CNCL_SLIP_DT AS C_INVE_CNCL_SLIP_DT                          /*재고 취소 전표 일자*/
+              ,A.CNCL_SLIP_YN AS C_CNCL_SLIP_YN                                    /*취소 전표 여부*/   
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+              ,TB_EP_CST_PRCHS_MGMT C
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'          
+          AND A.INVE_TYP_CD           = '10'  /*확정재고*/
+          AND A.CNCL_SLIP_YN = 'N' /*취소전표여부*/
+          AND SUBSTR(A.INVE_SLIP_DT,0,6) = #SELL_DTM#
+      ) B
+      /* ■■CASE 5 반제 AP  ■■ */  
+      ,(SELECT B.CNSL_MGMT_NO                                                      /*상담 관리 번호*/
+              ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+              ,B.XCL_AMT AS N_XCL_AMT                                              /*(반제AP 반환금액)*/
+              ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                          /*반제AP번호*/
+              ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                          /*반제AP기산일*/
+              ,INVE_TYP_CD
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND SUBSTR(A.INVE_SLIP_DT,0,6) = #SELL_DTM#
+          AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+      ) C
+      /* ■■CASE 6 AR  ■■ */  
+      ,(SELECT  /* ORDERED */ A.GNRL_SELL_NO   
+               ,A.GNRL_SELL_CHG_SEQ
+               ,A.SALE_AMT
+               ,A.XCL_SLIP_NO
+               ,A.XCL_SLIP_DT
+               ,C.CNSL_MGMT_NO
+               ,E.DEALCO_NM AS SELL_DEALCO_NM
+          FROM TB_EP_EQP_SALE A
+               ,TB_EP_SAL_EQUIPMENT_SALE B
+               ,TB_EP_CST_CONSULT_MGMT C
+               ,TB_EP_SAL_GNRL_SALE D
+               ,TB_DEALCO E
+         WHERE A.GNRL_SELL_NO = B.GNRL_SELL_NO
+           AND A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+           AND A.GNRL_SELL_NO = D.GNRL_SELL_NO
+           AND A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+           AND B.EQP_SER_NO = C.EQP_SER_NO
+           AND B.EQP_MDL_CD = C.EQP_MDL_CD
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND C.DEL_YN = 'N'
+           AND D.DEL_YN = 'N'
+           AND SUBSTR(A.XCL_SLIP_DT,0,6) = #SELL_DTM#
+           AND E.DEALCO_CD(+) = D.SELL_DEALCO_CD 
+      )D
+WHERE A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)      
+  AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)      
+  AND A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+)
+SELECT * FROM TMP_A
+WHERE  ROWNO  BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="STransitListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPTransitMgmt.STransitListTotCnt 미착내역조회총건수 */
+/* IO: 김상오,2015-12-07T18:48:40(김상오,2015-12-07T18:48:40) */
+WITH 
+TMP_A AS (
+SELECT 
+        ROWNUM  AS  ROWNO        
+       ,CASE WHEN D.XCL_SLIP_DT IS NOT NULL THEN  D.XCL_SLIP_DT                    /*AR 기산일*/
+             WHEN N_INVE_CNCL_SLIP_DT IS NOT NULL THEN  N_INVE_CNCL_SLIP_DT        /*반제AP 기산일*/
+             WHEN  B.C_INVE_SLIP_DT IS NOT NULL THEN  B.C_INVE_SLIP_DT             /*확정AP기산일*/
+             WHEN  A.INVE_SLIP_DT IS NOT NULL THEN A.INVE_SLIP_DT                  /*미착AP기산일*/
+         END AS CON_DT                                                              /*처리일자*/
+       ,'에코폰' AS GUBUN 
+       ,A.CNSL_MGMT_NO                                                             /*상담관리번호*/
+       ,A.CNSL_DT                                                                  /*접수일자*/
+       ,A.CLCT_DT                                                                  /*회수일자(반영일자)*/
+       ,A.EQP_MDL_NM                                                               /*모델명*/
+       ,A.EQP_SER_NO                                                               /*단말기 일련번호*/
+       ,A.SKN_EQP_ST                                                               /*미착AP등급*/
+       ,A.XCL_AMT                                                                  /*상담금액(미착AP매입금액)*/
+       ,A.DEDC_TYP_CD                                                              /*공제유형코드 ( 미착AP유형)*/
+       ,A.INVE_SLIP_NO                                                             /*미착AP번호*/
+       ,A.INVE_SLIP_DT                                                             /*미착AP기산일*/
+       ,A.INVE_TYP_CD                                                              /*AP처리구분*/
+       ,B.C_SKN_EQP_ST                                                             /*확정AP 등급*/
+       ,B.C_XCL_AMT                                                                /*확정AP매입가*/
+       ,B.SKN_SMPL_JDG_DAMT                                                        /*확정AP평가손실금액 */
+       ,B.C_DEDC_TYP_CD                                                            /*공제유형코드 ( 확정AP유형)*/
+       ,B.C_INVE_SLIP_NO                                                           /*확정AP번호*/
+       ,B.C_INVE_SLIP_DT                                                           /*확정AP기산일*/
+       ,C.N_XCL_AMT                                                                /*반제 반환금액*/
+       ,DECODE(C.INVE_TYP_CD, '20', C.N_INVE_CNCL_SLIP_NO ) AS M_INVE_CNCL_SLIP_NO /*미착반제 AP번호*/
+       ,DECODE(C.INVE_TYP_CD, '10', C.N_INVE_CNCL_SLIP_NO ) AS C_INVE_CNCL_SLIP_NO /*확정반제 AP번호*/
+       ,N_INVE_CNCL_SLIP_DT                                                        /*반제AP 기산일*/
+       ,D.SALE_AMT AS AR_SALE_AMT                                                  /*AR 매출가*/
+       ,D.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+       ,D.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                            /*AR 기산일*/
+       ,D.SELL_DEALCO_NM AS AR_SELL_DEALCO_NM                                      /*AR 매출처*/
+       ,DECODE(B.C_INVE_SLIP_NO,NULL,'','Y') AS DIS_YN                             /*재고여부*/
+       ,DECODE(A.INVE_SLIP_NO,NULL,'','Y') AS TS_YN                                /*미착*/
+       ,DECODE(D.XCL_SLIP_NO,NULL,'','Y') AS SELL_YN                               /*판매여부*/
+FROM 
+/* ■■CASE 미착 RAW_DATA 산출 (검색년월에 해당하는 미착전표) ■■ */  
+(
+ SELECT B.INVE_XCL_NO                                                                    /* 재고 정산 번호      */
+       ,B.INVE_XCL_DTL_SEQ                                                               /* 재고 정산 상세 순번 */
+       ,B.CNSL_MGMT_NO                                                                   /*상담 관리 번호*/
+       ,C.CNSL_DT                                                                        /*접수일자*/
+       ,C.CLCT_DT                                                                        /*회수일자(반영일자)*/
+       ,D.EQP_MDL_NM   /*모델명*/
+       ,C.EQP_SER_NO                                                                     /*단말기 일련번호*/
+       ,C.SKN_EQP_ST                                                                     /*등급*/
+       ,B.XCL_AMT                                                                        /*상담금액(미착AP매입금액)*/
+       ,A.DEDC_TYP_CD                                                                    /*공제유형코드 ( AP유형)*/
+       ,B.INVE_SLIP_NO                                                                   /*미착AP번호*/
+       ,B.INVE_SLIP_DT                                                                   /*미착AP기산일*/
+       ,A.INVE_TYP_CD                                                                    /*AP처리구분*/
+  FROM  TB_EP_INVE_XCL A 
+       ,TB_EP_INVE_XCL_DTL B
+       ,TB_EP_CST_CONSULT_MGMT C
+       ,TB_EQP_MDL D
+ WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+   AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND INVE_TYP_CD = '20'
+   AND (SUBSTR(A.XCL_STRD_DT,0,6) = #SELL_DTM#  )
+   AND A.CNCL_SLIP_YN = 'N'
+   AND D.EQP_MDL_CD(+) = C.EQP_MDL_CD
+   UNION ALL
+/* ■■CASE 2 확정 산출 (검색년월에 해당하는 미착 검색 검색년월 이전이면서 확정일자 null 확정일자가 검색년월 이전인건 ) ■■ */  
+ SELECT B.INVE_XCL_NO                                                                   /*재고 정산 번호      */
+       ,B.INVE_XCL_DTL_SEQ                                                              /*재고 정산 상세 순번 */
+       ,B.CNSL_MGMT_NO                                                                  /*상담 관리 번호*/
+       ,C.CNSL_DT                                                                       /*접수일자*/
+       ,C.CLCT_DT                                                                       /*회수일자(반영일자)*/
+       ,E.EQP_MDL_NM                                                                    /*모델명*/
+       ,C.EQP_SER_NO                                                                    /*단말기 일련번호*/
+       ,C.SKN_EQP_ST                                                                    /*등급*/
+       ,B.XCL_AMT                                                                       /*상담금액(미착AP매입금액)*/
+       ,A.DEDC_TYP_CD                                                                   /*공제유형코드 ( AP유형)*/
+       ,B.INVE_SLIP_NO                                                                  /*미착AP번호*/
+       ,B.INVE_SLIP_DT                                                                  /*미착AP기산일*/
+       ,A.INVE_TYP_CD                                                                   /*AP처리구분*/
+  FROM TB_EP_INVE_XCL A 
+       ,TB_EP_INVE_XCL_DTL B
+       ,TB_EP_CST_CONSULT_MGMT C
+       ,( SELECT B.CNSL_MGMT_NO   /*상담 관리 번호*/
+                             FROM TB_EP_INVE_XCL A 
+                                 ,TB_EP_INVE_XCL_DTL B
+                            WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+                              AND A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                              AND A.INVE_TYP_CD   = '10'  /*확정재고*/
+                              AND (A.INVE_SLIP_DT is null OR A.INVE_SLIP_DT >= #SELL_DTM#||'01'  )
+                              AND A.CNCL_SLIP_YN = 'N'
+        ) D
+        ,TB_EQP_MDL E
+ WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+   AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND INVE_TYP_CD = '20' /*미착재고*/
+   AND (A.XCL_STRD_DT <= #SELL_DTM# ||'01'  )
+   AND B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+   AND E.EQP_MDL_CD(+) = C.EQP_MDL_CD
+) A     
+     /* ■■CASE 4 확정 AP  ■■ */  
+     ,(SELECT B.CNSL_MGMT_NO                                                       /*상담 관리 번호*/                                                    
+              ,A.DEDC_TYP_CD AS C_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+              ,B.XCL_AMT AS C_XCL_AMT                                              /*(확정AP매입가)*/
+              ,C.SKN_EQP_ST AS C_SKN_EQP_ST                                        /*상태*/
+              ,C.SKN_SMPL_JDG_DAMT                                                 /*평가손실금액 */
+              ,B.INVE_SLIP_NO AS C_INVE_SLIP_NO                                    /*확정AP번호*/
+              ,B.INVE_SLIP_DT AS C_INVE_SLIP_DT                                    /*확정AP기산일*/
+              ,B.INVE_CNCL_SLIP_NO AS C_INVE_CNCL_SLIP_NO                          /*재고 취소 전표 번호*/
+              ,B.INVE_CNCL_SLIP_DT AS C_INVE_CNCL_SLIP_DT                          /*재고 취소 전표 일자*/
+              ,A.CNCL_SLIP_YN AS C_CNCL_SLIP_YN                                    /*취소 전표 여부*/   
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+              ,TB_EP_CST_PRCHS_MGMT C
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'          
+          AND A.INVE_TYP_CD           = '10'  /*확정재고*/
+          AND A.CNCL_SLIP_YN = 'N' /*취소전표여부*/
+          AND SUBSTR(A.INVE_SLIP_DT,0,6) = #SELL_DTM#
+      ) B
+      /* ■■CASE 5 반제 AP  ■■ */  
+      ,(SELECT B.CNSL_MGMT_NO                                                      /*상담 관리 번호*/
+              ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+              ,B.XCL_AMT AS N_XCL_AMT                                              /*(반제AP 반환금액)*/
+              ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                          /*반제AP번호*/
+              ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                          /*반제AP기산일*/
+              ,INVE_TYP_CD
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND SUBSTR(A.INVE_SLIP_DT,0,6) = #SELL_DTM#
+          AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+      ) C
+      /* ■■CASE 6 AR  ■■ */  
+      ,(SELECT  /* ORDERED */ A.GNRL_SELL_NO   
+               ,A.GNRL_SELL_CHG_SEQ
+               ,A.SALE_AMT
+               ,A.XCL_SLIP_NO
+               ,A.XCL_SLIP_DT
+               ,C.CNSL_MGMT_NO
+               ,E.DEALCO_NM AS SELL_DEALCO_NM
+          FROM TB_EP_EQP_SALE A
+               ,TB_EP_SAL_EQUIPMENT_SALE B
+               ,TB_EP_CST_CONSULT_MGMT C
+               ,TB_EP_SAL_GNRL_SALE D
+               ,TB_DEALCO E
+         WHERE A.GNRL_SELL_NO = B.GNRL_SELL_NO
+           AND A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+           AND A.GNRL_SELL_NO = D.GNRL_SELL_NO
+           AND A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+           AND B.EQP_SER_NO = C.EQP_SER_NO
+           AND B.EQP_MDL_CD = C.EQP_MDL_CD
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND C.DEL_YN = 'N'
+           AND D.DEL_YN = 'N'
+           AND SUBSTR(A.XCL_SLIP_DT,0,6) = #SELL_DTM#
+           AND E.DEALCO_CD(+) = D.SELL_DEALCO_CD 
+      )D
+WHERE A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)      
+  AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)      
+  AND A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+)
+SELECT count(*) TOTAL_CNT FROM TMP_A]]>
+	</select>
+</sqlMap>

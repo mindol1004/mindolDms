@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRFpaCmmsXclMgmt">
+	<select id="SFpaCmmsXclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaCmmsXclMgmt.SFpaCmmsXclTotCnt FPA수수료정산합계 */
+/* IO: 문재웅,2015-11-02T18:31:36(문재웅,2015-10-13T13:04:12) */
+SELECT  TOTAL_CNT
+       ,FPA_CMMS_AMT
+       ,SLIP_NO
+       ,YYYY
+       ,YYYYMM
+       ,(SELECT DEALCO_BLICENS_NO FROM TB_DEALCO WHERE DEALCO_CD = '1000000008') AS DEALCO_BLICENS_NO
+FROM(
+      SELECT  COUNT(1) AS TOTAL_CNT
+             ,NVL(SUM(D.MID_TERM_CMMS),0)+NVL(SUM(D.NORM_END_CMMS),0)+NVL(SUM(D.EXTNS_CMMS),0) AS FPA_CMMS_AMT  /* FPA 수수료합계 */
+             ,MAX(E.SLIP_NO) AS SLIP_NO
+             ,SUBSTR(#XCL_YM#,1,4) AS YYYY
+             ,#XCL_YM# AS YYYYMM
+        FROM  TB_NR_CNTRT     A /* NR_신규R계약 */
+             ,TB_RENTAL_CNTRT B /* PR_렌탈계약  */
+             ,TB_RENTAL_POLY  C /* NR_렌탈정책  */
+             ,TB_FPA_CMMS     D /* NR_FPA수수료 */
+             ,TB_SLIP         E /* NR_전표 */
+       WHERE  A.CNTRT_NO       = B.CNTRT_NO
+         AND  B.RENTAL_POLY_NO = C.RENTAL_POLY_NO  
+         AND  A.CNTRT_NO       = D.CNTRT_NO
+         AND  D.SLIP_NO        = E.SLIP_NO(+)
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+              D.XCL_YM         = #XCL_YM#  /* 정산년월 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+              A.SVC_MGMT_NO    = #SVC_MGMT_NO# /* 서비스관리번호 */        
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+              B.EQP_MDL_CD = #EQP_MDL_CD#   /* 모델번호 */      
+]]></isNotEmpty><![CDATA[
+) PA]]>
+	</select>
+	<select id="SFpaCmmsXclLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaCmmsXclMgmt.SFpaCmmsXclLstPaging FPA수수료정산조회 */
+/* IO: 문재웅,2015-11-16T11:15:43(문재웅,2015-10-13T13:05:10) */
+SELECT  *      
+  FROM (SELECT ROW_NUMBER() OVER(ORDER BY A.SVC_MGMT_NO, A.EQP_SER_NO) AS ROWNO
+               ,A.SVC_MGMT_NO	  /* 서비스관리번호 */
+			   ,A.RENTAL_SER_NO   /* 렌탈일련번호 */
+               ,A.EQP_SER_NO	  /* 단말기일련번호 */
+               ,A.NEW_CNTRTR_NM	  /* 신규계약자명 */
+               ,A.SVC_NO 	      /* 서비스번호 */
+               ,B.EQP_MDL_CD      /* 모델번호 */
+               ,C.EQP_MDL_NM      /* 모델명 */
+               ,C.OUT_PRC	      /* 출고가격 */
+               ,D.MID_TERM_CMMS   /* 중도해지수수료 */
+               ,D.NORM_END_CMMS   /* 정상종료수수료 */
+               ,NVL(D.MID_TERM_CMMS,0)+NVL(D.NORM_END_CMMS,0) AS CMMS_AMT /* 수수료 */
+               ,D.EXTNS_CMMS      /* 연장수수료 */
+               ,B.RENTAL_CNTRT_STA_DT  /* 렌탈계약시작일자 */
+               ,B.RENTAL_CNTRT_END_DT  /* 렌탈계약종료일자 */
+               ,E.SLIP_NO        /* 전표번호 */
+               ,E.SLIP_DT        /* 전표일자 */
+               ,E.SLIP_ST_CD     /* 전표상태코드  DMS153*/
+               ,E.TAX_BILL_NO    /* 세금계산서번호 */
+               ,E.TAX_BILL_ST_CD /* 세금계산서상태코드 DMS240 */
+               ,A.CNTRT_NO       /* 계약번호 */ 
+               ,A.NEW_CNTRT_DT   /* 계약일자 */ 
+               ,CASE WHEN TO_NUMBER(SUBSTR(B.RENTAL_CNTRT_STA_DT,7,2)) <  15 THEN 1 ELSE 0 END    				  /* FROM MONTH  */
+                + MONTHS_BETWEEN(TO_DATE(#XCL_YM#,'YYYYMM'), TO_DATE(SUBSTR(B.RENTAL_CNTRT_STA_DT,1,6),'YYYYMM')) /* FROM~TO MONTH  */
+                AS MONTH_TS		 /* 차수 */
+               ,A.OP_TYP_CD 	 /* 계약상태 */
+          FROM  TB_NR_CNTRT     A /* NR_신규R계약 */
+               ,TB_RENTAL_CNTRT B /* PR_렌탈계약  */
+               ,TB_RENTAL_POLY  C /* NR_렌탈정책  */
+               ,TB_FPA_CMMS     D /* NR_FPA수수료 */
+               ,TB_SLIP         E /* NR_전표 */
+         WHERE  A.CNTRT_NO       = B.CNTRT_NO
+           AND  B.RENTAL_POLY_NO = C.RENTAL_POLY_NO  
+           AND  A.CNTRT_NO       = D.CNTRT_NO
+           AND  D.SLIP_NO        = E.SLIP_NO(+)
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                D.XCL_YM         = #XCL_YM# 	/* 정산년월 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                A.SVC_MGMT_NO    = #SVC_MGMT_NO# /* 서비스관리번호 */        
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                B.EQP_MDL_CD = #EQP_MDL_CD#   	/* 모델번호 */      
+]]></isNotEmpty><![CDATA[
+       )PA
+WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SFpaCmmsXclAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaCmmsXclMgmt.SFpaCmmsXclAllExcel FPA수수료정산전체엑셀다운로드 */
+/* IO: 장미진,2016-01-04T15:34:08(문재웅,2015-11-16T18:16:04) */
+SELECT  ASSET_NO        AS "DeviceTransactionID" /*서비스관리번호*/
+       /*,SVC_MGMT_NO	    AS "DeviceTransactionID" 서비스관리번호*/
+       ,EQP_SER_NO	    AS "단말기일련번호" 
+       ,''              AS "IMEI"
+       ,EQP_MDL_NM ||' '||(SELECT  CM_CD_NM 
+                             FROM  TB_CM_CD 
+                            WHERE  CM_GRP_CD_ID = 'DMS110' 
+                              AND  CM_CD_ID = CAPA_CD )     AS "Model Name"  /* 모델명*/
+       ,(SELECT MDL_NO FROM TB_EQP_STRD_INFO WHERE EQP_MDL_CD = PA.EQP_MDL_CD) AS "Model Number"  /* 모델넘버*/
+       ,TO_CHAR(TO_DATE(RENTAL_CNTRT_STA_DT), 'DD-Mon-YYYY','NLS_DATE_LANGUAGE=ENGLISH')  AS "DateOfEligiblePlan"  /* 계약시작일자 */
+       ,(SELECT MGMT_ITEM_CD1 TS_NM FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS252' 
+            AND CM_CD_ID LIKE'NORMEND%' 
+            AND USE_YN ='Y' 
+            AND CM_CD_NM = TO_CHAR(PA.CMMS_AMT)
+        )				AS "Campain"	          /* FPA 정상종료 금액 차수 */
+       ,OUT_PRC	        AS "RRP"                /* 출고가격 */
+       /* 9/1오픈가정 >> FPA계약시작일부여: 20151005  */
+       /* 12/1오픈시 >> FPA계약시작일부여: 20160105  */
+       ,'SKCC'||REPLACE(TO_CHAR(MONTHS_BETWEEN( TO_DATE(D_O_F_P_S), TO_DATE('20151005','YYYYMMDD') ) +1,'000'),' ','') AS "ForwardPurchaseScheduleNumber"
+       /* ,'SKCC'||REPLACE(TO_CHAR(MONTHS_BETWEEN( TO_DATE(D_O_F_P_S), TO_DATE('20160105','YYYYMMDD') ) +1,'000'),' ','') AS "ForwardPurchaseScheduleNumber" */
+       /* ,RENTAL_CNTRT_STA_DT */
+       ,TO_CHAR(D_O_F_P_S,'DD-Mon-YYYY','NLS_DATE_LANGUAGE=ENGLISH')     AS "DateOfForwardPurchaseSchedule"
+       /* ,TO_CHAR(D_O_F_P_S,'YYYY-MM-DD') AS "DateOfForwardPurchaseSchedule2" */
+       ,TO_CHAR(ADD_MONTHS(D_O_F_P_S, -1),'Mon-YY','NLS_DATE_LANGUAGE=ENGLISH') AS "OriginationMonth"   /* FPS체결일의 전월 */
+       ,''              AS "SubstituteDeviceModelName"
+       ,S_D_M_N         AS "SubstituteDeviceModelNumber"    /* 변경된 단말기일련번호 */
+       ,CASE WHEN S_D_M_N IS NOT NULL THEN TO_CHAR(TO_DATE(OP_PROC_DT), 'DD-Mon-YYYY','NLS_DATE_LANGUAGE=ENGLISH') 
+             ELSE  '' 
+         END AS "Substitution Date"  /* 업무처리일 */  
+       ,CASE WHEN OP_TYP_CD = '07' THEN 'Yes' 
+             ELSE 'No' 
+         END  AS "Early Terminated Device"               /* 중도해지정보 */
+       ,'' AS "Resale Ready Date"
+       ,TO_CHAR(TO_DATE(XCL_YM||'01'), 'Mon-YYYY','NLS_DATE_LANGUAGE=ENGLISH')  AS "Month Received"     /* 단말매각월(Eco팀 이관월) */
+       ,CONDITION AS "Condition"
+       ,'' AS "Purchase Price"	
+       ,'' AS "Lessor Offer Price"
+       ,'' AS "LessorOfferOrThirdPartyOffer"
+       ,'' AS "Offer Price"
+       ,'' AS "Currency of Offer Price"
+       ,'' AS "Gross Sales Proceeds"
+       ,'' AS "Sales Cost"
+       ,'' AS "Net Sale Proceeds"
+       ,'' AS "Incentive Fee"
+       ,CNTRT_NO        AS "계약번호" 
+       ,NEW_CNTRTR_NM	AS "신규계약자명"
+       ,SVC_NO 	        AS "서비스번호"
+       ,EQP_MDL_CD      AS "모델코드"
+       ,CMMS_AMT        AS "수수료"
+       ,EXTNS_CMMS      AS "연장수수료"
+       ,(SELECT CM_CD_NM
+           FROM TB_CM_CD
+          WHERE CM_GRP_CD_ID = 'DMS115' /* 계약상태 */
+            AND CM_CD_ID = PA.OP_TYP_CD)               AS "계약상태"
+       ,MONTH_TS		/* 차수 */
+       ,TO_CHAR(TO_DATE(NEW_CNTRT_DT,'YYYYMMDD'),'YYYY-MM-DD')   	AS "계약일자"
+       ,TO_CHAR(TO_DATE(RENTAL_CNTRT_END_DT,'YYYYMMDD'),'YYYY-MM-DD')   	AS "계약종료일자"
+FROM(
+  SELECT  A.SVC_MGMT_NO	    /*서비스관리번호 */
+         ,A.EQP_SER_NO	    /* 단말기일련번호*/
+         ,C.EQP_MDL_NM      /* 모델명 */
+         ,C.CAPA_CD         /* 용량 */
+         ,B.RENTAL_CNTRT_STA_DT /* 계약시작일자 */
+         ,C.OUT_PRC	        /* 출고가격 */
+         ,CASE WHEN TO_NUMBER(SUBSTR(B.RENTAL_CNTRT_STA_DT,7,2)) <  15 THEN 
+                ADD_MONTHS(TO_DATE(SUBSTR(B.RENTAL_CNTRT_STA_DT,0,6)||'05'), 1)
+              ELSE ADD_MONTHS(TO_DATE(SUBSTR(B.RENTAL_CNTRT_STA_DT,0,6)||'05'), 2)
+              END AS D_O_F_P_S  /* DateOfForwardPurchaseSchedule:FPA 계약일자 */
+         ,CASE WHEN EQP_CHG_YN = 'Y' OR A.OP_TYP_CD = '03' THEN        /* 단말기변경여부 OR  교품시 */
+           A.EQP_SER_NO ELSE '' END AS S_D_M_N  /* SubstituteDeviceModelNumber 변경된 단말기일련번호 */
+         ,A.OP_PROC_DT    /* 업무처리일 */
+         ,A.OP_TYP_CD     /* 계약상태 */
+         ,D.XCL_YM        /* 단말매각월(Eco팀 이관월) */
+         ,CASE  (SELECT  TB.EQP_JDG_RSLT_CD   /* 단말기감정결과코드 */
+                   FROM  TB_EQP_CNTRT TA, TB_EQP_JDG TB
+                  WHERE  TA.ASSET_NO  = TB.ASSET_NO
+                    AND  TB.EQP_JDG_SEQ = 1
+                    AND  A.CNTRT_NO =  TA.CNTRT_NO) WHEN '01' THEN 'WORKING'
+                                                    ELSE 'NOT WORKING' 
+          END AS Condition
+         ,A.CNTRT_NO        AS CNTRT_NO /* 계약번호 */
+         ,A.NEW_CNTRTR_NM	  AS /* 신규계약자명 */
+         ,A.SVC_NO 	        AS /* 서비스번호*/ 
+         ,B.EQP_MDL_CD      AS /* 모델코드 */
+         ,NVL(D.MID_TERM_CMMS,0)+NVL(D.NORM_END_CMMS,0) AS CMMS_AMT /* 수수료 */
+         /* ,D.MID_TERM_CMMS   AS "중도해지수수료" */
+         /* ,D.NORM_END_CMMS   AS "정상종료수수료" */
+         ,D.EXTNS_CMMS      AS EXTNS_CMMS /* 연장수수료 */
+         ,CASE WHEN TO_NUMBER(SUBSTR(B.RENTAL_CNTRT_STA_DT,7,2)) <  15 THEN 1 ELSE 0 END    			/* FROM MONTH    */
+          +MONTHS_BETWEEN(TO_DATE(#XCL_YM#,'YYYYMM'), TO_DATE(SUBSTR(B.RENTAL_CNTRT_STA_DT,1,6),'YYYYMM')) /* FROM~TO MONTH */
+          ||'차' AS MONTH_TS		  /* 차수 */
+         ,A.NEW_CNTRT_DT          /* 계약일자 */
+         ,B.RENTAL_CNTRT_END_DT   /* 계약종료일자*/
+         ,E.ASSET_NO
+    FROM  TB_NR_CNTRT     A 					/* NR_신규R계약 */
+         ,TB_RENTAL_CNTRT B 					/* PR_렌탈계약  */
+         ,TB_RENTAL_POLY  C 					/* NR_렌탈정책  */
+         ,TB_FPA_CMMS     D 					/* NR_FPA수수료 */
+         ,TB_EQP_CNTRT    E 					/* 단말기계약 */
+   WHERE  A.CNTRT_NO       = B.CNTRT_NO
+     AND  B.RENTAL_POLY_NO = C.RENTAL_POLY_NO  
+     AND  A.CNTRT_NO       = D.CNTRT_NO
+     AND  A.CNTRT_NO       = E.CNTRT_NO
+     AND  D.XCL_YM         = #XCL_YM#  			/* 정산년월 */
+) PA ORDER BY SVC_MGMT_NO, EQP_SER_NO]]>
+	</select>
+</sqlMap>

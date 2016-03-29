@@ -1,0 +1,86 @@
+package dms.ep.epbsxbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]재고정산관리</li>
+ * <li>설  명 : <pre>[PU]재고정산관리</pre></li>
+ * <li>작성일 : 2015-10-14 10:56:45</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class PEPInveXclMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPInveXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]중고단말기재고정산관리</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:56:45
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STRD_MTH [기준년월]
+	 *	- field : OP_GB_CD [재고업무구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INVE_XCL_LIST
+	 *		- field : INVE_XCL_NO [재고 정산 번호]
+	 *		- field : XCL_STRD_DT [정산 기준 일자]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : INVE_XCL_CNT [재고 정산 건수]
+	 *		- field : INVE_SLIP_DT [재고 전표 일자]
+	 *		- field : INVE_SLIP_NO [재고 전표 번호]
+	 *		- field : INVE_SLIP_ST [재고 전표 상태]
+	 *		- field : INVE_CNCL_SLIP_DT [재고 취소 전표 일자]
+	 *		- field : INVE_CNCL_SLIP_NO [재고 취소 전표 번호]
+	 *		- field : CHECKED [CHECKED]
+	 * </pre>
+	 */
+	public IDataSet pSInqEpEqpInveXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSInqEpEqpInveXclList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+  
+}

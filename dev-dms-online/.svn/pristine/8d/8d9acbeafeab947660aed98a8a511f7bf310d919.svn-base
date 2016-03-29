@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCSysPolyMgmt">
+	<select id="SSysPolyLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyMgmt.SSysPolyLstPaging 시스템정책목록조회 */
+/* IO: 이유미,2014-12-08T11:01:44(심상준,2014-07-30T11:32:08) */
+SELECT	
+        *                                                                             
+  FROM (                                                                                 
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY SYS_POLY_NO ASC) AS ROWNO                         
+               ,SYS_POLY_NO                                            /* 시스템정책번호 */  
+               ,SYS_POLY_NM                                            /* 시스탬정책명 */
+               ,DECODE(USE_YN,'Y','1','N','0') AS USE_YN               /* 사용여부 */ 
+               ,IPUT_CON_DESC1                                         /* 입력조건설명1 */   
+               ,IPUT_CON_DESC2                                         /* 입력조건설명2 */   
+               ,IPUT_CON_DESC3                                         /* 입력조건설명3 */   
+               ,IPUT_CON_DESC4                                         /* 입력조건설명4 */   
+               ,IPUT_CON_DESC5                                         /* 입력조건설명5 */   
+               ,IPUT_CON_DESC6                                         /* 입력조건설명6 */   
+               ,IPUT_CON_DESC7                                         /* 입력조건설명7 */   
+               ,IPUT_CON_DESC8                                         /* 입력조건설명8 */   
+               ,IPUT_CON_DESC9                                         /* 입력조건설명9 */   
+               ,OP_RULE_DESC1                                          /* 처리규칙설명1 */   
+               ,OP_RULE_DESC2                                          /* 처리규칙설명2 */   
+               ,OP_RULE_DESC3                                          /* 처리규칙설명3 */   
+               ,OP_RULE_DESC4                                          /* 처리규칙설명4 */   
+               ,OP_RULE_DESC5                                          /* 처리규칙설명5 */   
+               ,OP_RULE_DESC6                                          /* 처리규칙설명6 */   
+               ,OP_RULE_DESC7                                          /* 처리규칙설명7 */   
+               ,OP_RULE_DESC8                                          /* 처리규칙설명8 */   
+               ,OP_RULE_DESC9                                          /* 처리규칙설명9 */   
+               ,FS_REG_USER_ID                                         /* 최초등록사용자ID */
+               ,TO_CHAR(FS_REG_DTM, 'YYYYMMDDHH24MISS') AS FS_REG_DTM  /* 최초등록일시 */    
+               ,LS_CHG_USER_ID                                         /* 최종등록사용자ID */
+               ,TO_CHAR(LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM   /* 최종등록일시 */    
+          FROM  TB_SYS_POLY   /* SC_시스템정책 */
+         ]]><dynamic prepend="WHERE"><![CDATA[
+         ]]><isNotEmpty prepend="AND" property="SYS_POLY_NO"><![CDATA[
+                SYS_POLY_NO LIKE '%'||#SYS_POLY_NO#||'%'                              
+         ]]></isNotEmpty><![CDATA[
+         ]]><isNotEmpty prepend="AND" property="SYS_POLY_NM"><![CDATA[                                    
+                SYS_POLY_NM LIKE '%'||#SYS_POLY_NM#||'%'                              
+         ]]></isNotEmpty><![CDATA[]]></dynamic><![CDATA[
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="ISysPoly" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyMgmt.ISysPoly 시스템정책등록 */
+/* IO: 이유미,2014-12-08T11:18:35(심상준,2014-07-30T11:32:23) */
+INSERT                                                               
+  INTO  TB_SYS_POLY             /* SC_시스템정책 */                                            
+       (                                                             
+        SYS_POLY_NO             /* 시스템정책번호 */                 
+       ,SYS_POLY_NM             /* 시스탬정책명 */
+       ,USE_YN                  /* 사용여부     */                   
+       ,IPUT_CON_DESC1          /* 입력조건설명1 */                  
+       ,IPUT_CON_DESC2          /* 입력조건설명2 */                  
+       ,IPUT_CON_DESC3          /* 입력조건설명3 */                  
+       ,IPUT_CON_DESC4          /* 입력조건설명4 */                  
+       ,IPUT_CON_DESC5          /* 입력조건설명5 */                  
+       ,IPUT_CON_DESC6          /* 입력조건설명6 */                  
+       ,IPUT_CON_DESC7          /* 입력조건설명7 */                  
+       ,IPUT_CON_DESC8          /* 입력조건설명8 */                  
+       ,IPUT_CON_DESC9          /* 입력조건설명9 */                  
+       ,OP_RULE_DESC1           /* 처리규칙설명1 */                  
+       ,OP_RULE_DESC2           /* 처리규칙설명2 */                  
+       ,OP_RULE_DESC3           /* 처리규칙설명3 */                  
+       ,OP_RULE_DESC4           /* 처리규칙설명4 */                  
+       ,OP_RULE_DESC5           /* 처리규칙설명5 */                  
+       ,OP_RULE_DESC6           /* 처리규칙설명6 */                  
+       ,OP_RULE_DESC7           /* 처리규칙설명7 */                  
+       ,OP_RULE_DESC8           /* 처리규칙설명8 */                  
+       ,OP_RULE_DESC9           /* 처리규칙설명9 */                  
+       ,FS_REG_USER_ID          /* 최초등록사용자ID */               
+       ,FS_REG_DTM              /* 최초등록일시 */                   
+       ,LS_CHG_USER_ID          /* 최종등록사용자ID */               
+       ,LS_CHG_DTM              /* 최종등록일시 */                   
+        )                                                             
+VALUES                                                               
+       (                                                             
+        #SYS_POLY_NO#           /* 시스템정책번호 */                 
+       ,#SYS_POLY_NM#           /* 시스탬정책명 */
+       ,DECODE(#USE_YN#,'1','Y','0','N')   /* 사용여부 */                   
+       ,#IPUT_CON_DESC1#        /* 입력조건설명1 */                  
+       ,#IPUT_CON_DESC2#        /* 입력조건설명2 */                  
+       ,#IPUT_CON_DESC3#        /* 입력조건설명3 */                  
+       ,#IPUT_CON_DESC4#        /* 입력조건설명4 */                  
+       ,#IPUT_CON_DESC5#        /* 입력조건설명5 */                  
+       ,#IPUT_CON_DESC6#        /* 입력조건설명6 */                  
+       ,#IPUT_CON_DESC7#        /* 입력조건설명7 */                  
+       ,#IPUT_CON_DESC8#        /* 입력조건설명8 */                  
+       ,#IPUT_CON_DESC9#        /* 입력조건설명9 */                  
+       ,#OP_RULE_DESC1#         /* 처리규칙설명1 */                  
+       ,#OP_RULE_DESC2#         /* 처리규칙설명2 */                  
+       ,#OP_RULE_DESC3#         /* 처리규칙설명3 */                  
+       ,#OP_RULE_DESC4#         /* 처리규칙설명4 */                  
+       ,#OP_RULE_DESC5#         /* 처리규칙설명5 */                  
+       ,#OP_RULE_DESC6#         /* 처리규칙설명6 */                  
+       ,#OP_RULE_DESC7#         /* 처리규칙설명7 */                  
+       ,#OP_RULE_DESC8#         /* 처리규칙설명8 */                  
+       ,#OP_RULE_DESC9#         /* 처리규칙설명9 */                  
+       ,#USERNO#                /* 최초등록사용자ID */               
+       ,SYSDATE                 /* 최초등록일시 */                   
+       ,#USERNO#                /* 최종등록사용자ID */               
+       ,SYSDATE                 /* 최종등록일시 */                   
+        )]]>
+	</insert>
+	<update id="USysPoly" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyMgmt.USysPoly 시스템정책수정 */
+/* IO: 이유미,2014-12-08T11:20:55(심상준,2014-07-30T11:33:17) */
+UPDATE                                     
+        TB_SYS_POLY                            /* SC_시스템정책 */                   
+   SET  SYS_POLY_NM = #SYS_POLY_NM#            /* 시스탬정책명 */
+       ,USE_YN = DECODE(#USE_YN#,'1','Y','0','N') /* 사용여부 */      
+       ,IPUT_CON_DESC1 = #IPUT_CON_DESC1#      /* 입력조건설명1 */      
+       ,IPUT_CON_DESC2 = #IPUT_CON_DESC2#      /* 입력조건설명2 */      
+       ,IPUT_CON_DESC3 = #IPUT_CON_DESC3#      /* 입력조건설명3 */      
+       ,IPUT_CON_DESC4 = #IPUT_CON_DESC4#      /* 입력조건설명4 */      
+       ,IPUT_CON_DESC5 = #IPUT_CON_DESC5#      /* 입력조건설명5 */      
+       ,IPUT_CON_DESC6 = #IPUT_CON_DESC6#      /* 입력조건설명6 */      
+       ,IPUT_CON_DESC7 = #IPUT_CON_DESC7#      /* 입력조건설명7 */      
+       ,IPUT_CON_DESC8 = #IPUT_CON_DESC8#      /* 입력조건설명8 */      
+       ,IPUT_CON_DESC9 = #IPUT_CON_DESC9#      /* 입력조건설명9 */      
+       ,OP_RULE_DESC1 = #OP_RULE_DESC1#        /* 처리규칙설명1 */      
+       ,OP_RULE_DESC2 = #OP_RULE_DESC2#        /* 처리규칙설명2 */      
+       ,OP_RULE_DESC3 = #OP_RULE_DESC3#        /* 처리규칙설명3 */      
+       ,OP_RULE_DESC4 = #OP_RULE_DESC4#        /* 처리규칙설명4 */      
+       ,OP_RULE_DESC5 = #OP_RULE_DESC5#        /* 처리규칙설명5 */      
+       ,OP_RULE_DESC6 = #OP_RULE_DESC6#        /* 처리규칙설명6 */      
+       ,OP_RULE_DESC7 = #OP_RULE_DESC7#        /* 처리규칙설명7 */      
+       ,OP_RULE_DESC8 = #OP_RULE_DESC8#        /* 처리규칙설명8 */      
+       ,OP_RULE_DESC9 = #OP_RULE_DESC9#        /* 처리규칙설명9 */      
+       ,LS_CHG_USER_ID = #USERNO#              /* 최종등록사용자ID */          
+       ,LS_CHG_DTM = SYSDATE                   /* 최종등록일시 */              
+ WHERE  SYS_POLY_NO = #SYS_POLY_NO#]]>
+	</update>
+	<select id="SSysPolyLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyMgmt.SSysPolyLstTotCnt 시스템정책전체건수조회 */
+/* IO: 심상준,2014-10-02T17:36:19(심상준,2014-09-03T17:10:28) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_SYS_POLY   /* SC_시스템정책 */ 
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="SYS_POLY_NO"><![CDATA[
+        SYS_POLY_NO LIKE '%'||#SYS_POLY_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SYS_POLY_NM"><![CDATA[
+        SYS_POLY_NM LIKE '%'||#SYS_POLY_NM#||'%'
+]]></isNotEmpty><![CDATA[]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SSysPolyLstValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyMgmt.SSysPolyLstValidate 시스템정책저장사전체크 */
+/* IO: 심상준,2014-09-26T23:51:46(심상준,2014-09-03T17:10:42) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_SYS_POLY   /* SC_시스템정책 */ 
+ WHERE  SYS_POLY_NO = #SYS_POLY_NO#]]>
+	</select>
+</sqlMap>

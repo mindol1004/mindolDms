@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRRentalFeeCctlMgmt">
+	<select id="SRentalFeeLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeLstPaging 렌탈비정산정보조회 */
+/* IO: 장미진,2015-11-13T11:20:04(장미진,2015-09-07T19:22:39) */
+SELECT  A.SVC_MGMT_NO                    					/*서비스관리번호*/ 
+       ,NVL(SUM(D.RENTAL_FEE),0) AS RENTAL_FEE       		/*렌탈료 = DMS금액*/
+       ,NVL(SUM(D.INV_SPLY_PRC),0) AS INV_AMT			        /*청구금액 = UKEY금액*/
+       ,NVL(SUM(D.RECV_SPLY_PRC),0) AS RECV_AMT                    /*수납금액 */
+       ,A.CNTRT_NO
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_CNTRT C
+       ,TB_EQP_CNTRT_DTL D
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  C.ASSET_NO = D.ASSET_NO
+]]><isNotEmpty prepend="AND" property="RENTAL_YM"><![CDATA[
+        D.RENT_YM BETWEEN SUBSTR(C.RENT_STA_DT,0,6) AND #RENTAL_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+	    A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+        A.CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+        A.CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[
+GROUP BY A.SVC_MGMT_NO,A.CNTRT_NO
+ORDER BY A.SVC_MGMT_NO]]>
+	</select>
+	<select id="SRentalFeeLstPagingDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeLstPagingDtl 렌탈비정산정보조회Dtl */
+/* IO: 장미진,2015-11-13T11:21:04(장미진,2015-09-07T19:33:53) */
+SELECT  A.SVC_MGMT_NO                    				    /*서비스관리번호*/ 
+       ,C.RENT_STA_DT                     				    /*계약시작일*/ 
+       ,C.RENT_END_SCHD_DT             					    /*계약종료일*/
+       ,C.RENT_END_DT           				            /* 실종료일 */
+       ,NVL(D.RENTAL_FEE,0) AS RENTAL_FEE    				/*렌탈료 = DMS금액*/
+       ,NVL(D.INV_SPLY_PRC,0) AS INV_AMT			                /*청구금액 = UKEY금액*/
+       ,NVL(D.RECV_SPLY_PRC,0) AS RECV_AMT                      	/*수납금액 */
+       ,(NVL(D.INV_SPLY_PRC,0) - NVL(D.RECV_SPLY_PRC,0)) AS ARREAR_PRC /*미납금액 */
+       ,MONTHS_BETWEEN( TO_DATE(#RENTAL_YM#,'YYYYMM'),TO_DATE(SUBSTR(C.RENT_STA_DT,0,6),'YYYYMM') )+1||'회' AS CNT	/*회차*/
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_CNTRT C
+       ,TB_EQP_CNTRT_DTL D
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  C.ASSET_NO = D.ASSET_NO
+]]><isNotEmpty property="SVC_MGMT_NO_LIST"><![CDATA[
+   AND A.SVC_MGMT_NO IN    
+	]]><iterate open="(" close=")" conjunction="," property="SVC_MGMT_NO_LIST"><![CDATA[
+        #SVC_MGMT_NO_LIST[]#
+	]]></iterate><![CDATA[
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty prepend="AND" property="RENTAL_YM"><![CDATA[
+        D.RENT_YM = #RENTAL_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+	    A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+        A.CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+        A.CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[
+ORDER BY A.SVC_MGMT_NO]]>
+	</select>
+	<select id="SRentalFeeLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeLstTotCnt 렌탈비정산정보조회총건수 */
+/* IO: 장미진,2015-11-02T16:59:23(장미진,2015-09-07T19:38:43) */
+SELECT  COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.RECV_AMT),0) AS M_PRC
+  FROM  (SELECT  A.SVC_MGMT_NO                    					/*서비스관리번호*/ 
+                ,NVL(SUM(D.RENTAL_FEE),0) AS RENTAL_FEE       		/*렌탈료 = DMS금액*/
+                ,NVL(SUM(D.INV_AMT),0) AS INV_AMT			        /*청구금액 = UKEY금액*/
+                ,NVL(SUM(D.RECV_AMT),0) AS RECV_AMT                    /*수납금액 */
+           FROM  TB_NR_CNTRT A
+                ,TB_RENTAL_CNTRT B
+                ,TB_EQP_CNTRT C
+                ,TB_EQP_CNTRT_DTL D
+          WHERE  A.CNTRT_NO = B.CNTRT_NO
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  C.ASSET_NO = D.ASSET_NO
+]]><isNotEmpty prepend="AND" property="RENTAL_YM"><![CDATA[
+        D.RENT_YM BETWEEN SUBSTR(C.RENT_STA_DT,0,6) AND #RENTAL_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+	    A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+        A.CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+        A.CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[
+GROUP BY  A.SVC_MGMT_NO ,A.CNTRT_NO) PA
+ORDER BY PA.SVC_MGMT_NO]]>
+	</select>
+	<select id="SRentalFeeLstDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeLstDtlTotCnt 렌탈비정산조회Dtl총건수 */
+/* IO: 장미진,2015-11-13T11:27:54(장미진,2015-09-09T10:30:15) */
+SELECT  COUNT(*) AS S_CNT
+       ,NVL(SUM(PA.RECV_DT),0) AS S_PRC
+  FROM  (SELECT  A.SVC_MGMT_NO                    				    /*서비스관리번호*/ 
+                ,C.RENT_STA_DT                     				    /*계약시작일*/ 
+                ,C.RENT_END_SCHD_DT             					    /*계약종료일*/
+                ,C.RENT_END_DT           				            /* 실종료일 */
+                ,NVL(D.RENTAL_FEE,0) AS RENTAL_FEE    				/*렌탈료 = DMS금액*/
+                ,NVL(D.INV_SPLY_PRC,0) AS INV_AMT			                /*청구금액 = UKEY금액*/
+                ,NVL(D.RECV_SPLY_PRC,0) AS RECV_DT                      	/*수납금액 */
+                ,(NVL(D.RENTAL_FEE,0) - NVL(D.RECV_SPLY_PRC,0)) AS ARREAR_PRC /*미납금액 */
+                ,MONTHS_BETWEEN( TO_DATE(#RENTAL_YM#,'YYYYMM'),TO_DATE(SUBSTR(C.RENT_STA_DT,0,6),'YYYYMM') )+1||'회' AS CNT	/*회차*/
+           FROM  TB_NR_CNTRT A
+                ,TB_RENTAL_CNTRT B
+                ,TB_EQP_CNTRT C
+                ,TB_EQP_CNTRT_DTL D
+          WHERE  A.CNTRT_NO = B.CNTRT_NO
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  C.ASSET_NO = D.ASSET_NO
+]]><isNotEmpty property="SVC_MGMT_NO_LIST"><![CDATA[
+   AND A.SVC_MGMT_NO IN    
+	]]><iterate open="(" close=")" conjunction="," property="SVC_MGMT_NO_LIST"><![CDATA[
+        #SVC_MGMT_NO_LIST[]#
+	]]></iterate><![CDATA[
+]]></isNotEmpty><![CDATA[            
+]]><isNotEmpty prepend="AND" property="RENTAL_YM"><![CDATA[
+        D.RENT_YM = #RENTAL_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+	    A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+        A.CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+        A.CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[
+) PA
+ORDER BY PA.SVC_MGMT_NO]]>
+	</select>
+	<select id="SRentalFeeCctlInfoLstDtlM" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeCctlInfoLstDtlM 렌탈비정산정보상세조회M */
+/* IO: 장미진,2015-10-07T15:21:21(장미진,2015-09-09T15:37:31) */
+SELECT 
+        A.SVC_MGMT_NO    	    /*서비스관리번호*/ 
+       ,A.NEW_CNTRTR_NM  		/*고객명*/ 
+       ,A.SVC_NO				/*전화번호*/
+       ,D.EQP_MDL_CD			/*모델코드*/
+       ,D.EQP_MDL_NM			/*모델명*/
+       ,D.RENTAL_PRN			/*렌탈원금*/  
+       ,A.OP_TYP_CD   			/*계약상태*/
+       ,(SELECT COUNT(1) 
+           FROM TB_EQP_CNTRT_DTL 
+          WHERE A.CNTRT_NO = CNTRT_NO 
+            AND C.ASSET_NO = ASSET_NO 
+            AND RENT_YM <= TO_CHAR(SYSDATE,'YYYYMM'))||'회차' AS CNT /*최종회차*/
+       ,C.RENT_STA_DT 			/*계약시작일*/                     				   
+       ,C.RENT_END_SCHD_DT  	/*계약종료일*/           					  
+       ,C.RENT_END_DT   		/*실계약종료일*/         				       
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_CNTRT C
+       ,TB_RENTAL_POLY D
+ WHERE  A.CNTRT_NO   = B.CNTRT_NO
+   AND  A.CNTRT_NO   = C.CNTRT_NO
+   AND  B.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+   AND  A.CNTRT_NO =#CNTRT_NO#]]>
+	</select>
+	<select id="SRentalFeeCctlInfoLstDtlG" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeCctlInfoLstDtlG 렌탈비정산정보상세조회G */
+/* IO: 장미진,2015-11-13T10:55:49(장미진,2015-09-09T15:40:18) */
+SELECT  NVL(D.RENTAL_FEE,0) AS RENTAL_FEE					/*렌탈료 = DMS금액*/
+       ,NVL(D.INV_SPLY_PRC,0) AS INV_AMT					/*청구공급가액= UKEY금액*/
+       ,NVL(D.RECV_SPLY_PRC,0) AS RECV_AMT					/*수납공급가액 */
+       ,(NVL(D.INV_SPLY_PRC,0) - NVL(D.RECV_SPLY_PRC,0)) AS ARREAR_PRC	/*미납금액 */
+       ,D.RENT_YM											/*렌트년월 */
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_CNTRT C
+       ,TB_EQP_CNTRT_DTL D
+ WHERE  A.CNTRT_NO   = B.CNTRT_NO
+   AND  B.CNTRT_NO     = C.CNTRT_NO
+   AND  C.ASSET_NO     = D.ASSET_NO
+   AND  A.CNTRT_NO =#CNTRT_NO#
+ORDER BY D.RENT_YM]]>
+	</select>
+	<select id="SRentalFeeTotalLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeTotalLstPaging 렌탈비정산정보전표용조회 */
+/* IO: 장미진,2015-10-07T15:10:40(장미진,2015-09-15T13:31:51) */
+SELECT * 
+  FROM (WITH BASE AS (SELECT '01' AS CL
+                            ,A.BOND_ITM_AMT                 /* 채권항목금액 = MR항목금액 = 수납 */
+                            ,B.DEALCO_NM	                  /* 조직 명 */
+                            ,B.DEALCO_BLICENS_NO	          /* 거래처 사업자등록증 번호 */
+                            ,C.CUST_TYP	                    /* 고객유형 */
+                            ,C.OP_TYP_CD                    /* 업무유형코드 */
+                       FROM  TB_XCL_BOND A,
+                             TB_DEALCO B,
+                             TB_NR_CNTRT C
+                      WHERE  A.BOND_DEALCO_CD = B.DEALCO_CD(+)
+                        AND  A.BOND_DEALCO_CD  = C.NEW_CNTRTR_CORP_REG_NO(+)
+                        AND  A.OP_CL_CD='NR'
+                        AND  (A.BOND_XCL_YM = #RENTAL_YM#  AND XCL_CL='MR')
+                        AND  C.CUST_TYP IN ('01','04')
+                  UNION ALL 
+                     SELECT  '02' AS CL
+                            ,A.BOND_ITM_AMT                   /* 채권항목금액 = MR항목금액 = 수납 */
+                            ,B.DEALCO_NM	                    /* 조직 명 */
+                            ,B.DEALCO_BLICENS_NO              /* 거래처 사업자등록증 번호 */
+                            ,C.CUST_TYP                       /* 고객유형 */
+                            ,C.OP_TYP_CD                      /* 업무유형코드 */
+                       FROM  TB_XCL_BOND A,
+                             TB_DEALCO B,
+                             TB_NR_CNTRT C
+                      WHERE  A.BOND_DEALCO_CD = B.DEALCO_CD(+)
+                        AND  B.DEALCO_BLICENS_NO = C.NEW_CNTRTR_CORP_REG_NO
+                        AND  A.OP_CL_CD='NR'
+                        AND  (A.BOND_XCL_YM = #RENTAL_YM# AND XCL_CL='MR')
+                        AND  C.CUST_TYP IN ('02','03','05')
+                     )
+           SELECT  '개인' AS SELEC 
+                 ,'' AS DEALCO_BLICENS_NO
+                 ,'개인' AS DEALCO_NM
+                 ,NVL(SUM(BOND_ITM_AMT),0) AS RECV_AMT              /*수납금액 */
+                 ,CUST_TYP
+                 ,OP_TYP_CD 
+            FROM  BASE
+           WHERE  CL = '01'
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+                  OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+                  CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+                  CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[
+ GROUP BY DEALCO_BLICENS_NO,DEALCO_NM ,CUST_TYP,OP_TYP_CD 
+      UNION ALL  
+          SELECT  '법인' AS SELEC
+                 ,DEALCO_BLICENS_NO
+                 ,DEALCO_NM
+                 ,NVL(SUM(BOND_ITM_AMT),0) AS RECV_AMT                      /*수납금액 */
+                 ,CUST_TYP
+                 ,OP_TYP_CD 
+            FROM  BASE
+           WHERE  CL = '02'
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+                  OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+                  CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+                  CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[
+GROUP BY DEALCO_BLICENS_NO,DEALCO_NM ,CUST_TYP,OP_TYP_CD   )PA
+
+ ORDER BY DEALCO_BLICENS_NO]]>
+	</select>
+	<select id="SRentalFeeTotalLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeTotalLstTotCnt 렌탈비정산정보전표용총건수 */
+/* IO: 장미진,2015-10-07T17:10:43(장미진,2015-09-15T17:50:54) */
+SELECT  COUNT(*) AS ST_CNT
+       ,NVL(SUM(RECV_AMT),0) AS ST_PRC
+  FROM (WITH BASE AS (SELECT '01' AS CL
+                            ,A.BOND_ITM_AMT                 /* 채권항목금액 = MR항목금액 = 수납 */
+                            ,B.DEALCO_NM	                  /* 조직 명 */
+                            ,B.DEALCO_BLICENS_NO	          /* 거래처 사업자등록증 번호 */
+                            ,C.CUST_TYP	                    /* 고객유형 */
+                            ,C.OP_TYP_CD                    /* 업무유형코드 */
+                       FROM  TB_XCL_BOND A,
+                             TB_DEALCO B,
+                             TB_NR_CNTRT C
+                      WHERE  A.BOND_DEALCO_CD = B.DEALCO_CD(+)
+                        AND  B.DEALCO_BLICENS_NO = C.NEW_CNTRTR_CORP_REG_NO
+                        AND  A.OP_CL_CD='NR'
+                        AND  (A.BOND_XCL_YM = #RENTAL_YM#  AND XCL_CL='MR')
+                        AND  C.CUST_TYP IN ('01','04')
+                  UNION ALL 
+                     SELECT  '02' AS CL
+                            ,A.BOND_ITM_AMT                   /* 채권항목금액 = MR항목금액 = 수납 */
+                            ,B.DEALCO_NM	                    /* 조직 명 */
+                            ,B.DEALCO_BLICENS_NO              /* 거래처 사업자등록증 번호 */
+                            ,C.CUST_TYP                       /* 고객유형 */
+                            ,C.OP_TYP_CD                      /* 업무유형코드 */
+                       FROM  TB_XCL_BOND A,
+                             TB_DEALCO B,
+                             TB_NR_CNTRT C
+                      WHERE  A.BOND_DEALCO_CD = B.DEALCO_CD(+)
+                        AND  B.DEALCO_BLICENS_NO = C.NEW_CNTRTR_CORP_REG_NO
+                        AND  A.OP_CL_CD='NR'
+                        AND  (A.BOND_XCL_YM = #RENTAL_YM# AND XCL_CL='MR')
+                        AND  C.CUST_TYP IN ('02','03','05')
+                     )
+              
+          SELECT  '개인' AS SELEC 
+                 ,'' AS DEALCO_BLICENS_NO
+                 ,'개인' AS DEALCO_NM
+                 ,NVL(SUM(BOND_ITM_AMT),0) AS RECV_AMT              /*수납금액 */
+                 ,CUST_TYP
+                 ,OP_TYP_CD 
+            FROM  BASE
+           WHERE  CL = '01'
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+                  OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+                  CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+                  CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[
+          GROUP BY DEALCO_BLICENS_NO,DEALCO_NM ,CUST_TYP,OP_TYP_CD 
+      UNION ALL  
+          SELECT  '법인' AS SELEC
+                 ,DEALCO_BLICENS_NO
+                 ,DEALCO_NM
+                 ,NVL(SUM(BOND_ITM_AMT),0) AS RECV_AMT                      /*수납금액 */
+                 ,CUST_TYP
+                 ,OP_TYP_CD 
+            FROM  BASE
+           WHERE  CL = '02'
+          
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+                  OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+                  CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+                  CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[  
+GROUP BY DEALCO_BLICENS_NO,DEALCO_NM ,CUST_TYP,OP_TYP_CD )PA]]>
+	</select>
+	<select id="SRentalFeeAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeAllExcel 렌탈비정산월별전체다운로드 */
+/* IO: 장미진,2015-11-19T11:23:29(문재웅,2015-09-24T18:03:44) */
+SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) 				  AS "NO"
+       ,CASE WHEN A.CUST_TYP IN ('01','04') THEN '개인'
+            WHEN A.CUST_TYP IN ('02','03','05') THEN '법인'
+            ELSE '기타' END 											  	AS "고객유형"
+       ,A.SVC_MGMT_NO        		            					  	AS "서비스관리번호"
+       ,A.EQP_SER_NO		                    					  	AS "단말일련번호"
+       ,C.ASSET_NO          										  	AS "자산번호"
+       ,B.EQP_MDL_CD        										  	AS "모델코드"
+       ,E.EQP_MDL_NM 												  	AS "모델명"
+       ,TO_CHAR(TO_DATE(C.RENT_STA_DT,'YYYYMMDD'),'YYYY-MM-DD')       	AS "계약시작일"
+       ,TO_CHAR(TO_DATE(C.RENT_END_SCHD_DT,'YYYYMMDD'),'YYYY-MM-DD')  	AS "계약종료일"
+       ,TO_CHAR(TO_DATE(C.RENT_END_DT,'YYYYMMDD'),'YYYY-MM-DD')       	AS "실종료일"
+       ,NVL(D.RENTAL_FEE,0) 											AS "DMS금액"          /*렌탈료 = DMS금액*/        
+       ,NVL(D.INV_SPLY_PRC,0)    										AS "Ukey금액"         /*청구금액 = UKEY금액*/        
+       ,NVL(D.RECV_SPLY_PRC,0)   										AS "수납금액"         /*수납금액 */        
+       ,(NVL(D.INV_SPLY_PRC,0) - NVL(D.RECV_SPLY_PRC,0)) 				AS "미납금액" /* ARREAR_PRC 미납금액 */        
+       ,MONTHS_BETWEEN( TO_DATE(#RENTAL_YM#,'YYYYMM'),TO_DATE(SUBSTR(C.RENT_STA_DT,0,6),'YYYYMM') )+1||'회' AS "회차"
+       ,F.CNTRT_PRD||'개월'                                                     AS "계약기간"
+       ,F.POLY_NM	                                                    AS "정책명"
+       ,F.OUT_PRC	                                                    AS "출고가격"
+       ,F.RENTAL_PRN	                                                AS "렌탈원금"
+       ,F.RENTAL_FEE	                                                AS "렌탈요금"
+  FROM  TB_NR_CNTRT      A
+       ,TB_RENTAL_CNTRT  B
+       ,TB_EQP_CNTRT     C        
+       ,TB_EQP_CNTRT_DTL D
+       ,TB_EQP_MDL       E
+       ,TB_RENTAL_POLY   F
+WHERE  A.CNTRT_NO = B.CNTRT_NO
+  AND  B.CNTRT_NO = C.CNTRT_NO
+  AND  C.ASSET_NO = D.ASSET_NO     
+  AND  B.EQP_MDL_CD  = E.EQP_MDL_CD
+  AND  B.RENTAL_POLY_NO = F.RENTAL_POLY_NO
+  AND  D.RENT_YM = #RENTAL_YM#
+]]><isNotEmpty property="SVC_MGMT_NO_LIST"><![CDATA[
+   AND A.SVC_MGMT_NO IN    
+	]]><iterate open="(" close=")" conjunction="," property="SVC_MGMT_NO_LIST"><![CDATA[
+        #SVC_MGMT_NO_LIST[]#
+	]]></iterate><![CDATA[
+]]></isNotEmpty><![CDATA[   
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+	    A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CL" compareValue="%"><![CDATA[
+]]><isEqual property="CL" compareValue="01"><![CDATA[             
+        A.CUST_TYP IN ('02','03','05')
+]]></isEqual><![CDATA[
+]]><isEqual property="CL" compareValue="02"><![CDATA[             
+        A.CUST_TYP IN ('01','04')
+]]></isEqual><![CDATA[          
+]]></isNotEqual><![CDATA[
+ORDER BY A.SVC_MGMT_NO]]>
+	</select>
+</sqlMap>

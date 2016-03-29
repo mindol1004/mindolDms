@@ -1,0 +1,713 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="MsgMgmtM" classname="ProgramReg" inheritanceid="" position="absolute 0 0 1038 528" titletext="메시지 관리" style="font:arial,11;" onload="Form_onload">
+    <Layouts>
+      <Layout>
+        <UserGrid id="grd_msglist" taborder="1" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" nodataimage="URL('theme://Img/ico_WFDA_nodata.png')" position="absolute 0 73 634 528" tooltiptype="hover" _number="false" _status="true" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _required="" _requiredimage="true" _sort="true" _tooltip="true" binddataset="ds_msg" autofittype="col" usecontrolkey="true" anchor="all" onvtracklast="grd_msglist_onvtracklast" style="background:#ffffffff;color:#000000ff;cursor:hand;" readonly="true">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="80"/>
+                <Column size="250"/>
+                <Column size="87"/>
+                <Column size="0"/>
+                <Column size="0"/>
+                <Column size="0"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="메시지 ID"/>
+                <Cell col="1" text="메시지 내용"/>
+                <Cell col="2" text="메시지 타입"/>
+                <Cell col="3" text="POS응답코드"/>
+                <Cell col="4" text="제휴응답코드"/>
+                <Cell col="5" text="제휴응답상세코드"/>
+              </Band>
+              <Band id="body">
+                <Cell displaytype="text" edittype="none" text="bind:MESSAGE_ID"/>
+                <Cell col="1" displaytype="text" edittype="none" style="align:left;" text="bind:MESSAGE_NAME"/>
+                <Cell col="2" displaytype="combo" edittype="text" text="bind:MESSAGE_TYPE_XD" combodataset="ds_SCC009" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="3" displaytype="combo" edittype="text" style="align:left;" text="bind:posRespCd" combodataset="ds_PTC023" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="4" displaytype="combo" edittype="text" style="align:left;" text="bind:coRespCd" combodataset="ds_PTC013" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="5" displaytype="text" edittype="text" style="align: ;" text="bind:coRespDtlCd"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Static id="Static06" text="w&#13;&#10;20" class="tip_guide" visible="false" position2="absolute l:1018 w:20 t:11 h:274" positiontype="position2"/>
+        <Div id="div_search" anchor="left top right" taborder="0" text="Div00" class="bg_search" position="absolute 0 0 1018 40">
+          <Layouts>
+            <Layout>
+              <Static id="stc_msgNm" text="메시지내용" class="sta_WFSA_Label" position="absolute 210 9 313 29"/>
+              <Static id="Static03" text="w&#13;30" class="tip_guide" visible="false" position2="absolute l:180 w:30 t:10 h:42" positiontype="position2"/>
+              <Static id="Static08" text="w&#13;&#10;&#13;10" class="tip_guide" visible="false" position2="absolute l:70 w:10 t:10 h:42" positiontype="position2" onclick="div_search_Static08_onclick"/>
+              <Static id="Static09" text="w&#13;&#10;&#13;10" class="tip_guide" visible="false" position2="absolute l:276 w:10 t:10 h:42" positiontype="position2"/>
+              <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:0 w:15 t:0 h:42" positiontype="position2"/>
+              <Edit id="edt_msgId" taborder="4" onkeydown="div_Search_edt_id_onkeydown" position="absolute 80 9 180 29" maxlength="8" inputmode="upper" inputtype="digit,alpha" validate="title:메시지ID,maxlengthB:30" class="Code" imemode="alpha"/>
+              <Edit id="edt_msgNm" taborder="5" onkeydown="div_Search_edt_id_onkeydown" position="absolute 286 9 657 29" maxlength="2000" imemode="hangul" validate="title:메시지명,maxlengthB:2000"/>
+              <Static id="Static00" text="w&#13;30" class="tip_guide" visible="false" position2="absolute l:656 w:30 t:10 h:42" positiontype="position2"/>
+              <Static id="stc_msgNm00" text="메시지타입" class="sta_WFSA_Label" position="absolute 686 9 760 29"/>
+              <Static id="Static01" text="w&#13;&#10;&#13;10" class="tip_guide" visible="false" position2="absolute l:751 w:10 t:10 h:42" positiontype="position2"/>
+              <Combo id="cbo_msgType" taborder="6" innerdataset="@ds_SCC009" codecolumn="CM_CD_ID" datacolumn="CM_CD_NM" position="absolute 761 9 841 29" index="-1" onkeydown="div_search_cbo_msgType_onkeydown"/>
+              <Static id="stc_msgId" text="메시지ID" class="sta_WFSA_Label" position="absolute 15 9 99 29"/>
+            </Layout>
+          </Layouts>
+          <InitValue>
+            <Combo id="cbo_msgType" index="0"/>
+          </InitValue>
+        </Div>
+        <Static id="Static13" text="h33" class="tip_guide" visible="false" position2="absolute l:309 w:42 t:40 h:33" positiontype="position2"/>
+        <Static id="stc_subTitle01" text="화면항목" class="sub_title" position="absolute 0 50 299 70"/>
+        <Static id="Static00" text="h10" class="tip_guide" visible="false" position2="absolute l:101 w:42 t:0 h:10" positiontype="position2"/>
+        <Static id="Static14" text="h10" class="tip_guide" visible="false" position2="absolute l:101 w:42 t:30 h:10" positiontype="position2"/>
+        <Static id="Static11" text="h10" class="tip_guide" visible="false" position2="absolute l:883 w:42 t:40 h:10" positiontype="position2"/>
+        <Static id="Static01" text="h3" class="tip_guide" visible="false" position2="absolute l:852 w:42 t:70 h:3" positiontype="position2"/>
+        <Static id="Static02" text="h14" class="tip_guide" visible="false" position2="absolute l:4 w:42 t:40 h:14" positiontype="position2"/>
+        <Static id="Static04" text="h8" class="tip_guide" visible="false" position2="absolute l:4 w:42 t:65 h:8" positiontype="position2"/>
+        <Button id="btn_reset" taborder="4" onclick="btn_reset_onclick" class="btn_common_resetTxt" position="absolute 866 50 916 70" anchor="top right" tooltiptext="초기화" text="리셋"/>
+        <Button id="btn_excel" taborder="8" onclick="btn_excel_onclick" class="btn_common_excel" position="absolute 611 50 633 70" anchor="top right" tooltiptext="액셀출력"/>
+        <Button id="btn_filter" taborder="9" onclick="btn_filter_onclick" class="btn_common_filter" position="absolute 588 50 610 70" anchor="top right" tooltiptext="필터"/>
+        <Div id="Div01" anchor="top right bottom" taborder="13" class="bg_detail" position="absolute 644 73 1018 528">
+          <Layouts>
+            <Layout width="374" height="455">
+              <Edit id="edt_msgId" taborder="41" position="absolute 99 9 352 29" validate="" enable="true" anchor="default" readonly="true" useime="global" displaynulltext="자동 입력됩니다." enableevent="false"/>
+              <Static id="Static02" text="W10" class="guideTip" visible="false" position2="absolute l:89 w:10 t:14 h:211" positiontype="position2"/>
+              <Static id="stc_msgNm" text="메시지내용" class="sta_WFDA_detail_Label_P" position="absolute 20 33 96 53" anchor="default"/>
+              <Static id="stc_msgNm00" text="메시지타입" class="sta_WFDA_detail_Label_P" position="absolute 20 117 97 137" anchor="default"/>
+              <Static id="Static16" text="w20" class="guideTip" visible="false" position2="absolute l:0 w:20 t:2 h:307" positiontype="position2"/>
+              <Static id="Static08" text="v10" class="guideTip" visible="false" position2="absolute l:169 w:30 t:-1 h:10" positiontype="position2"/>
+              <Static id="Static07" text="v4" class="guideTip" visible="false" position2="absolute l:132 w:30 t:29 h:4" positiontype="position2"/>
+              <Static id="Static09" text="w20" class="guideTip" visible="false" position2="absolute l:352 w:20 t:3 h:307" positiontype="position2"/>
+              <Static id="stc_msgId" text="메시지ID" class="sta_WFDA_detail_Label_P" position="absolute 20 9 95 29" anchor="default"/>
+              <Combo id="cbo_msgType" taborder="43" position="absolute 99 117 325 137" index="-1" innerdataset="@ds_SCC009B" codecolumn="CM_CD_ID" datacolumn="CM_CD_NM" anchor="default" validate="title:메시지타입,required:true"/>
+              <TextArea id="TextArea00" taborder="44" position="absolute 99 33 352 113" oneditclick="Div01_TextArea00_oneditclick" scrollbars="none" wordwrap="word" validate="title:메시지내용,required:true,maxlengthB:2000" imemode="hangul" anchor="default"/>
+              <Static id="Static03" text="메시지타입은 기본값이며 메시지 호출시 별도로 설정이 가능합니다." class="sta_des_iconBlue" position="absolute 99 145 329 180" anchor="default"/>
+            </Layout>
+          </Layouts>
+        </Div>
+        <Button id="btn_save" taborder="14" onclick="btn_save_onclick" class="btn_common_saveTxt" position="absolute 968 50 1018 70" anchor="top right" text="저장"/>
+        <Button id="btn_new" taborder="15" text="신규" onclick="btn_new_onclick" class="btn_common_addTxt" position="absolute 917 50 967 70" anchor="top right"/>
+        <Button id="btn_delete" taborder="16" text="삭제" onclick="btn_delete_onclick" class="btn_common_delTxt" position="absolute 735 50 785 70" anchor="top right" visible="false"/>
+        <Button id="btn_aplyMsg" taborder="17" text="메시지반영" class="btn_common" position="absolute 506 50 587 70" anchor="top right" onclick="btn_aplyMsg_onclick"/>
+        <Button id="btn_search" taborder="18" text="조회" onclick="btn_search_onclick" class="btn_WFSA_Search_M" position="absolute 959 12 1017 39" anchor="top right" style="align:center middle;"/>
+        <Static id="Static03" text="W10" class="guideTip" visible="false" position2="absolute l:634 w:10 t:72 h:211" positiontype="position2"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_msg" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false" canrowposchange="ds_msg_canrowposchange">
+        <ColumnInfo>
+          <Column id="MESSAGE_ID" type="STRING" size="256"/>
+          <Column id="MESSAGE_NAME" type="STRING" size="256"/>
+          <Column id="MESSAGE_REASON" type="STRING" size="256"/>
+          <Column id="MESSAGE_TYPE_XD" type="STRING" size="256"/>
+          <Column id="MESSAGE_REMARK" type="STRING" size="256"/>
+          <Column id="BIZ_GROUP_XD" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="50"/>
+          <Column id="FS_REG_DTM" type="STRING" size="50"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="50"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="50"/>
+          <Column id="POS_RESP_CD" type="STRING" size="256"/>
+          <Column id="CO_RESP_CD" type="STRING" size="256"/>
+          <Column id="CO_RESP_DTL_CD" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_ncFieldMap" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="MESSAGE_ID" type="STRING" size="256"/>
+          <Column id="MESSAGE_NAME" type="STRING" size="256"/>
+          <Column id="MESSAGE_TYPE_XD" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_SCC009" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_msgTempPage" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="MESSAGE_ID" type="STRING" size="256"/>
+          <Column id="MESSAGE_NAME" type="STRING" size="256"/>
+          <Column id="MESSAGE_REASON" type="STRING" size="256"/>
+          <Column id="MESSAGE_TYPE_XD" type="STRING" size="256"/>
+          <Column id="MESSAGE_REMARK" type="STRING" size="256"/>
+          <Column id="BIZ_GROUP_XD" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="50"/>
+          <Column id="FS_REG_DTM" type="STRING" size="50"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="50"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="50"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_SCC009B" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_gridMenuList" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="MENU_LEVEL" type="STRING" size="256"/>
+          <Column id="MENU_NM" type="STRING" size="256"/>
+          <Column id="MENU_ID" type="STRING" size="256"/>
+          <Column id="FUNCTION_ID" type="STRING" size="256"/>
+          <Column id="ENABLE_YN" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="MENU_NM">메시지반영</Col>
+            <Col id="MENU_LEVEL">0</Col>
+            <Col id="MENU_ID">btn_aplyMsg</Col>
+            <Col id="FUNCTION_ID">btn_aplyMsg_onclick</Col>
+            <Col id="ENABLE_YN">Y</Col>
+          </Row>
+          <Row>
+            <Col id="MENU_NM">리셋</Col>
+            <Col id="MENU_LEVEL">0</Col>
+            <Col id="MENU_ID">btn_reset</Col>
+            <Col id="FUNCTION_ID">btn_reset_onclick</Col>
+            <Col id="ENABLE_YN">Y</Col>
+          </Row>
+          <Row>
+            <Col id="MENU_NM">신규</Col>
+            <Col id="MENU_LEVEL">0</Col>
+            <Col id="MENU_ID">btn_new</Col>
+            <Col id="FUNCTION_ID">btn_new_onclick</Col>
+            <Col id="ENABLE_YN">Y</Col>
+          </Row>
+          <Row>
+            <Col id="MENU_LEVEL">0</Col>
+            <Col id="MENU_NM">삭제</Col>
+            <Col id="MENU_ID">btn_delete</Col>
+            <Col id="FUNCTION_ID">btn_delete_onclick</Col>
+            <Col id="ENABLE_YN">Y</Col>
+          </Row>
+          <Row>
+            <Col id="MENU_LEVEL">0</Col>
+            <Col id="MENU_NM">저장</Col>
+            <Col id="MENU_ID">btn_save</Col>
+            <Col id="FUNCTION_ID">btn_save_onclick</Col>
+            <Col id="ENABLE_YN">Y</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_msgDel" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false" canrowposchange="ds_msg_canrowposchange">
+        <ColumnInfo>
+          <Column id="MESSAGE_ID" type="STRING" size="256"/>
+          <Column id="MESSAGE_NAME" type="STRING" size="256"/>
+          <Column id="MESSAGE_REASON" type="STRING" size="256"/>
+          <Column id="MESSAGE_TYPE_XD" type="STRING" size="256"/>
+          <Column id="MESSAGE_REMARK" type="STRING" size="256"/>
+          <Column id="BIZ_GROUP_XD" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="50"/>
+          <Column id="FS_REG_DTM" type="STRING" size="50"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="50"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="50"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_PTC013" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_PTC023" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_PTC013B" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_PTC023B" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="div_search.cbo_msgType" propid="value" datasetid="ds_ncFieldMap" columnid="MESSAGE_TYPE_XD"/>
+      <BindItem id="item1" compid="div_search.edt_msgId" propid="value" datasetid="ds_ncFieldMap" columnid="MESSAGE_ID"/>
+      <BindItem id="item2" compid="div_search.edt_msgNm" propid="value" datasetid="ds_ncFieldMap" columnid="MESSAGE_NAME"/>
+      <BindItem id="item5" compid="Div01.cbo_msgType" propid="value" datasetid="ds_msg" columnid="MESSAGE_TYPE_XD"/>
+      <BindItem id="item4" compid="Div01.TextArea00" propid="value" datasetid="ds_msg" columnid="MESSAGE_NAME"/>
+      <BindItem id="item3" compid="Div01.edt_msgId" propid="value" datasetid="ds_msg" columnid="MESSAGE_ID"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : MsgMgmtM.xfdl
+ * 03. 화면 설명 : 메시지관리
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 05. 작성일 : 2015-06-17
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015-06-17    심상준    최초 작성
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+
+ var pv_sPtrn = "";
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "FRM0005M")
+
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+ 	
+ 	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form 종료전 Check 함수(공통)
+-----------------------------------------------------------------------------------------------*/
+function Form_checkBeforeClose()
+{
+	//변경된 Dataset검증
+	if ( gfn_formBeforeOnClose(this, "ds_msg") ) {
+			return true;
+	} else {
+		return false;
+	}
+}
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+	var strCode = "DMS001=ds_SCC009=A";
+		strCode += ",DMS001=ds_SCC009B=S";  
+	gfn_getCodeDs( this
+				  , strCode
+				  ,"fn_afterCodeCallBack");				//결과 받을 function	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{		  	
+	div_search.cbo_msgType.index = 0;
+	//필터된 데이터셋 복제방법
+	//ds_SCC010.filter("CM_CD_ID!='%'");
+	//ds_SCC010_cp.copyData(ds_SCC010,true);
+	//ds_SCC010.reset();
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+	// 그리드 초기화 
+	//gfn_initGrid(grd_main, bReadonly, bSortable, bTooltip, sSelectType, innerDs);
+	gfn_initGrid(grd_msglist, true, true, true, "row", "ds_gridMenuList");
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+	div_search.edt_msgId.setFocus();
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchMain()
+{
+	var sSvcID		 = "searchMain";
+	var sTrID		 = "PSCMsgMgmt_pInqMsgList";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_ncFieldMap";
+	var sOutputDs	 = "ds_msgTempPage=RS_MSG_LIST";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인저장 (insert, update)
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_saveMain()
+{	
+	var sSvcID		 = "saveMain";
+	var sTrID		 = "PSCMsgMgmt_pSaveMsg";
+	var sPtrn		 = ds_msg.getRowType(ds_msg.rowposition) == Dataset.ROWTYPE_INSERT? "I" : "U";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_MSG_LIST=ds_msg:u";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	pv_sPtrn         = sPtrn;  // 저장Type을 전역변수로 저장
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인저장(delete)
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_delMain()
+{
+	ds_msgDel.clearData();
+	ds_msgDel.copyRow(ds_msgDel.addRow(), ds_msg, ds_msg.rowposition);
+
+	var sSvcID		 = "delMain";
+	var sTrID		 = "PSCMsgMgmt_pSaveMsg";
+	var sPtrn		 = "D";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_MSG_LIST=ds_msgDel";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메시지 반영
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_ApplyMsg()
+{
+	var sSvcID		 = "ApplyMsg";
+	var sTrID		 = "PSCMsgMgmt_pAplyMsg";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+ 	switch(sSvcID) {
+		case "searchMain" : 
+			//페이징 관련셋팅
+			ds_msg.appendData(ds_msgTempPage, true);	
+			//조회된 첫번째row로 setFocus 
+			ds_msg.rowposition = (page-1) * page_size ;
+			
+			if(gfn_isEmpty(ds_msgTempPage.getColumn(ds_msgTempPage.rowposition, 'MESSAGE_ID'))){
+				gfn_setGridTitleCountPaging(stc_subTitle01, 0);
+			}else{
+				gfn_setGridTitleCountPaging(stc_subTitle01, total_record_cnt);
+			}
+			div_search.edt_msgId.setFocus();
+			break;
+			
+		case "saveMain" : 
+			if ( iErrorCode == 0 ) {
+				gfn_message("A","DMS00000","I");	//MSGI0001 : 정상 처리되었습니다.
+				if (pv_sPtrn == "I") {		// 신규등록일 경우에만 재조회
+					ds_ncFieldMap.setColumn(0,"MESSAGE_ID", ds_msg.getColumn(ds_msg.rowposition,"MESSAGE_ID"));
+					ds_ncFieldMap.setColumn(0,"MESSAGE_NAME", ds_msg.getColumn(ds_msg.rowposition,"MESSAGE_NAME"));
+					ds_ncFieldMap.setColumn(0,"MESSAGE_TYPE_XD", ds_msg.getColumn(ds_msg.rowposition,"MESSAGE_TYPE_XD"));
+					btn_search_onclick();
+				} else if (pv_sPtrn == "D") {
+					btn_search_onclick();
+				}
+				//Div01.edt_msgId.readonly = true;
+			}
+			break;
+			
+		case "delMain" : 
+			if ( iErrorCode == 0 ) {
+				gfn_message("A","DMS00000","I");	//MSGI0001 : 정상 처리되었습니다.
+				ds_ncFieldMap.setColumn(0,"MESSAGE_ID", "");
+				ds_ncFieldMap.setColumn(0,"MESSAGE_NAME", "");
+				ds_ncFieldMap.setColumn(0,"MESSAGE_TYPE_XD", "%");
+				btn_search_onclick();
+			}
+			break;
+						
+		case "ApplyMsg" :
+			if ( iErrorCode == 0 ) {
+				gfn_message("A","DMS00000","I");	//MSGI0001 : 정상 처리되었습니다.
+				btn_search_onclick();
+				return true;
+			}
+			break;
+			
+		default :
+			break;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : search
+-----------------------------------------------------------------------------------------------*/
+function btn_search_onclick(obj:Button,  e:ClickEventInfo)
+{
+	// 입력 항목 Validate Check
+	if (!gfn_getValidateCompList(div_search)) {	
+		return false;
+	}
+	
+	ds_msg.clearData();
+	page = 1;
+	fn_searchMain();
+	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : reset
+-----------------------------------------------------------------------------------------------*/
+function btn_reset_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if ( ds_msg.rowposition != -1 && ds_msg.getRowType(ds_msg.rowposition) != Dataset.ROWTYPE_NORMAL) {		
+		if (gfn_message("C","DMS00024","Q")){ //편집중인 데이터가 있습니다. 계속하시겠습니까?
+			ds_msg.reset();
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : new
+-----------------------------------------------------------------------------------------------*/
+function btn_new_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if ( ds_msg.rowposition != -1 && ds_msg.getRowType(ds_msg.rowposition) != Dataset.ROWTYPE_NORMAL) {		
+		if (gfn_message("C","DMS00024","Q")){ //편집중인 데이터가 있습니다. 계속하시겠습니까?
+			ds_msg.reset();
+			var row = ds_msg.addRow();
+			fn_chk_msgId();
+			ds_msg.rowposition = row;
+			Div01.TextArea00.setFocus();			
+		}
+	} else {
+		var row = ds_msg.addRow();
+		fn_chk_msgId();
+		ds_msg.rowposition = row;
+		Div01.TextArea00.setFocus();	
+	}
+	
+	
+}
+
+function fn_chk_msgId()
+{
+	if ( ds_msg.getRowType(grd_msglist.currentrow) != Dataset.ROWTYPE_NORMAL ){		
+		//Div01.edt_msgId.enable = true;
+		//Div01.edt_msgId.readonly = false;
+		Div01.cbo_msgType.index = 0;
+	}	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : print
+-----------------------------------------------------------------------------------------------*/
+function btn_print_onclick(obj:Button,  e:ClickEventInfo)
+{
+	//사용안함 alert("Report 출력");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : save
+-----------------------------------------------------------------------------------------------*/
+function btn_save_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if ( fn_chkBeforeSave() ) fn_saveMain();
+}
+
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : delete
+-----------------------------------------------------------------------------------------------*/
+
+function btn_delete_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if ( ds_msg.rowposition != -1 && ds_msg.getRowType(ds_msg.rowposition) == Dataset.ROWTYPE_INSERT) {		
+		gfn_message("A","DMS00025","E"); //삭제할 수 없는 데이터 입니다.
+		return;
+	}
+	
+	if (gfn_message("C","DMS00026","Q")){ //데이터를 삭제합니다. 계속하시겠습니까?
+		fn_delMain();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Apply CmCd (공통코드반영)
+-----------------------------------------------------------------------------------------------*/
+function btn_aplyMsg_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if (gfn_message("C","DMS00050","Q")){ //서버캐시에 반영하면 일부 서비스 순단현상이 발생할 수 있습니다. 계속 진행하시겠습니까?
+		fn_ApplyMsg();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid filter
+-----------------------------------------------------------------------------------------------*/
+function btn_filter_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_toggleGridFilter(grd_msglist);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid excel
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if (grd_msglist.rowcount == 0){
+		gfn_message("A","DMS00021","I"); //조회된 정보가 없습니다.
+	} else {
+		gfn_baseExcelExpert(grd_msglist,"메시지목록","메시지목록");
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid expand
+-----------------------------------------------------------------------------------------------*/
+function btn_expand_onclick(obj:Button,  e:ClickEventInfo)
+{
+	//사용안함 alert("그리드 확장");
+}
+
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 조회조건에서 엔터키가 눌러졌을때 조회
+-----------------------------------------------------------------------------------------------*/
+function div_Search_edt_id_onkeydown(obj:Edit, e:KeyEventInfo)
+{
+	if (e.keycode == KEYCODE_ENTER) {
+		btn_search.setFocus();
+		btn_search_onclick();
+	}	
+}
+function div_search_cbo_msgType_onkeydown(obj:Combo, e:KeyEventInfo)
+{
+	if (e.keycode == KEYCODE_ENTER) {
+		btn_search.setFocus();
+		btn_search_onclick();
+	}
+}
+
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 저장전 유효성 검사
+ * param   : 
+ * return  : true/false
+-----------------------------------------------------------------------------------------------*/
+function fn_chkBeforeSave()	
+{
+	//저장전 수정,신규입력데이터의 trim처리 
+	gfn_dsTrim(ds_msg);
+
+	if(!gfn_isUpdated(ds_msg))//저장할 테이타셋 ds_Save
+	{
+		gfn_message("A","DMS00022","I");	//변경된 정보가 없습니다.
+		return false;
+	}
+	
+	if (!gfn_getValidateCompList(Div01)) {	
+		return false;
+	}
+	
+	return true;
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 수직 스크롤바가 마지막에 도달했을때 페이지 조회 이벤트
+ * param   : obj - Grid Object
+ * param   : e  - ScrollEventInfo
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function grd_msglist_onvtracklast(obj:Grid, e:ScrollEventInfo)
+{
+	if ( gfn_isUpdated(ds_msg) ) {
+		gfn_message("A","DMS00027"); //변경중인 데이터가 있어 페이지 조회를 사용 할 수 없습니다.
+		return;
+	}
+	
+	if ( total_record_cnt <=  page * page_size ) {
+		gfn_message("B","DMS00028","I"); //조회 마지막 페이지 입니다.
+		return;		
+	} else {
+		//다음페이지 조회
+		page++;
+		fn_searchMain();		
+	} 
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Row Change 이벤트
+ * param   : obj - Dataset
+ * param   : e  - DSRowPosChangeEventInfo
+ * return  : true/false
+-----------------------------------------------------------------------------------------------*/
+function ds_msg_canrowposchange(obj:Dataset, e:DSRowPosChangeEventInfo)
+{
+	if ( e.oldrow != -1 && obj.getRowType(e.oldrow) != Dataset.ROWTYPE_NORMAL ) {		
+		if (gfn_message("C","DMS00024","Q")){ //편집중인 데이터가 있습니다. 계속하시겠습니까?
+			obj.reset();
+			//Div01.edt_msgId.readonly = true;
+		} else {
+			return false;
+		}
+	}
+}
+
+]]></Script>
+  </Form>
+</FDL>

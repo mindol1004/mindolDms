@@ -1,0 +1,731 @@
+package dms.ep.epbcsbase.biz;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.utils.HpcUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordHeader;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]입금관리</li>
+ * <li>설  명 : <pre>입금관리</pre></li>
+ * <li>작성일 : 2015-09-15 19:32:21</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class PEPDpstMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPDpstMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]송금대상목록조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회시작일자]
+	 *	- field : IN_TO_DT [조회종료일자]
+	 *	- field : AFFIL_AGN [대리점거래처코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR [예금주]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : DT_GB_CD [일자구분]
+	 *	- field : ECO_FU_YN [에코4U여부]
+	 *	- field : PRE_DC_CL [선할인여부]
+	 *	- field : IN_AMT_YN [입금여부]
+	 *	- field : DIR_PRCH_YN [직매입여부]
+	 *	- field : EXCEL_ALL_YN [전체엑셀여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : SEND_AMT_OBJ_LIST
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : PRCH_DT [매입 일자]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : HEADQ_NM [본부 명]
+	 *		- field : MKT_TEAM_CD [마케팅 팀 코드]
+	 *		- field : MKT_TEAM_NM [마케팅 팀 명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : UKEY_SUB_CD [UKEY 서브 코드]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주]
+	 *		- field : AMT_RMT_YN [금액 송금 여부]
+	 *		- field : RMT_DT [송금 일자]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : AFFIL_AGN [소속 대리점]
+	 *		- field : PRE_DC_CL [선 할인 구분]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : CUST_GRP [고객 그룹]
+	 *		- field : CHECKED [CHECKED]
+	 *		- field : ACCO_NO_ENPT [계좌번호_암호화]
+	 *		- field : DPSTR_ENPT [예금주_암호화]
+	 * </pre>
+	 */
+	public IDataSet pInqSendAmtObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FU lookup
+            //FPRReqpClctInRgst fPRReqpClctInRgst = (FPRReqpClctInRgst) lookupFunctionUnit(FPRReqpClctInRgst.class);
+            // 2. FM 호출
+            if(requestData != null && requestData.getField("DPSTR") != null && !"".equals(requestData.getField("DPSTR").toString())){
+                requestData.putField("DPSTR_ENPT", HpcUtils.encodeByAES(requestData.getField("DPSTR")));
+            }
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqSendAmtObjList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]송금대상목록에러체크조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_SEND_AMT_OBJ_EQP_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : DPSTR [고객명]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CON_PLC_NM [상담처명]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : EQP_ST [단말기등급]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : LOSS_EQP_YN [분실단말기여부]
+	 *		- field : RWD_RTN_OBJ_YN [보상반납대상여부]
+	 *		- field : RENTP_YN [임대폰여부]
+	 *		- field : USIM_EQPCHG_YN [USIM기변여부]
+	 *		- field : OTHRCO_FORGN_EQP_YN [타사/해외단말기여부]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : FEE_DEDC_YN [요금공제여부]
+	 *		- field : SKN_JDG_AMT [매입금액]
+	 *		- field : PRCH_CL [검수구분]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : CUST_IDEA [고객의사]
+	 *		- field : CUST_CHK_DT [고객확인일자]
+	 *		- field : ACC_NM [예금주]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : BANK_NM [은행명]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : ZIPCD [우편번호]
+	 *		- field : ADDR [주소]
+	 *		- field : ETC_ADDR [기타주소]
+	 *		- field : SUGG [의견]
+	 *		- field : T_MGMT_NO [T_관리번호]
+	 *		- field : BATTERY [배터리]
+	 *		- field : CHARGER [충전기]
+	 *		- field : ZENDER [젠더]
+	 *		- field : EARPHONES [이어폰]
+	 *		- field : CASE [충전 Case]
+	 *		- field : USB [USB CABLE]
+	 *		- field : MEMORY [메모리카드]
+	 *		- field : DTL_1 [구성품_1]
+	 *		- field : DTL_2 [구성품_2]
+	 *		- field : DTL_3 [구성품_3]
+	 *		- field : OTHER [기타구성품]
+	 *		- field : SELL_GRADE [판매등급]
+	 *		- field : ERR_DESC [ERROR]
+	 *		- field : SKN_CL [SKN구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SEND_AMT_OBJ_EQP_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : DPSTR [고객명]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CON_PLC_NM [상담처명]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : EQP_ST [단말기등급]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : LOSS_EQP_YN [분실단말기여부]
+	 *		- field : RWD_RTN_OBJ_YN [보상반납대상여부]
+	 *		- field : RENTP_YN [임대폰여부]
+	 *		- field : USIM_EQPCHG_YN [USIM기변여부]
+	 *		- field : OTHRCO_FORGN_EQP_YN [타사/해외단말기여부]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : FEE_DEDC_YN [요금공제여부]
+	 *		- field : SKN_JDG_AMT [매입금액]
+	 *		- field : PRCH_CL [검수구분]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : CUST_IDEA [고객의사]
+	 *		- field : CUST_CHK_DT [고객확인일자]
+	 *		- field : ACC_NM [예금주]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : BANK_NM [은행명]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : ZIPCD [우편번호]
+	 *		- field : ADDR [주소]
+	 *		- field : ETC_ADDR [기타주소]
+	 *		- field : SUGG [의견]
+	 *		- field : T_MGMT_NO [T_관리번호]
+	 *		- field : BATTERY [배터리]
+	 *		- field : CHARGER [충전기]
+	 *		- field : ZENDER [젠더]
+	 *		- field : EARPHONES [이어폰]
+	 *		- field : CASE [충전 Case]
+	 *		- field : USB [USB CABLE]
+	 *		- field : MEMORY [메모리카드]
+	 *		- field : DTL_1 [구성품_1]
+	 *		- field : DTL_2 [구성품_2]
+	 *		- field : DTL_3 [구성품_3]
+	 *		- field : OTHER [기타구성품]
+	 *		- field : SELL_GRADE [판매등급]
+	 *		- field : ERR_DESC [ERROR]
+	 *		- field : SKN_CL [SKN구분]
+	 * </pre>
+	 */
+	public IDataSet pInqSendAmtObjErrChkList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FU lookup
+            //FPRReqpClctInRgst fPRReqpClctInRgst = (FPRReqpClctInRgst) lookupFunctionUnit(FPRReqpClctInRgst.class);
+            // 2. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqSendAmtObjErrChkList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]입금관리송금단말기등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_SEND_AMT_OBJ_EQP_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : DPSTR [고객명]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CON_PLC_NM [상담처명]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : EQP_ST [단말기등급]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : LOSS_EQP_YN [분실단말기여부]
+	 *		- field : RWD_RTN_OBJ_YN [보상반납대상여부]
+	 *		- field : RENTP_YN [임대폰여부]
+	 *		- field : USIM_EQPCHG_YN [USIM기변여부]
+	 *		- field : OTHRCO_FORGN_EQP_YN [타사/해외단말기여부]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : FEE_DEDC_YN [요금공제여부]
+	 *		- field : SKN_JDG_AMT [매입금액]
+	 *		- field : PRCH_CL [검수구분]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : CUST_IDEA [고객의사]
+	 *		- field : CUST_CHK_DT [고객확인일자]
+	 *		- field : ACC_NM [예금주]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : BANK_NM [은행명]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : ZIPCD [우편번호]
+	 *		- field : ADDR [주소]
+	 *		- field : ETC_ADDR [기타주소]
+	 *		- field : SUGG [의견]
+	 *		- field : T_MGMT_NO [T_관리번호]
+	 *		- field : BATTERY [배터리]
+	 *		- field : CHARGER [충전기]
+	 *		- field : ZENDER [젠더]
+	 *		- field : EARPHONES [이어폰]
+	 *		- field : CASE [충전 Case]
+	 *		- field : USB [USB CABLE]
+	 *		- field : MEMORY [메모리카드]
+	 *		- field : DTL_1 [구성품_1]
+	 *		- field : DTL_2 [구성품_2]
+	 *		- field : DTL_3 [구성품_3]
+	 *		- field : OTHER [기타구성품]
+	 *		- field : SELL_GRADE [판매등급]
+	 *		- field : ERR_DESC [ERROR]
+	 *		- field : SKN_CL [SKN구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pRegDpstMgmtSendAmtEqp(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fRegDpstMgmtSendAmtEqp", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]요금공제대상목록조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회시작일자]
+	 *	- field : IN_TO_DT [조회종료일자]
+	 *	- field : AFFIL_AGN [대리점거래처코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR [예금주]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : DT_GB_CD [일자구분]
+	 *	- field : ECO_FU_YN [에코4U여부]
+	 *	- field : IN_AMT_YN [입금여부]
+	 *	- field : EXCEL_ALL_YN [전체엑셀여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : FEE_DEDC_OBJ_LIST
+	 *	- record : FEE_DEDC_OBJ_DTL_LIST
+	 * </pre>
+	 */
+	public IDataSet pInqFeeDedcObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            if(requestData != null && requestData.getField("DPSTR") != null && !"".equals(requestData.getField("DPSTR").toString())){
+                requestData.putField("DPSTR_ENPT", HpcUtils.encodeByAES(requestData.getField("DPSTR")));
+            }
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqFeeDedcObjList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>입금관리처리등록수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : REG_OBJ_LIST
+	 *		- field : OP_GB [업무구분]
+	 *		- field : OP_SUB_GB [서브업무구분]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : PRCH_DT [매입일자]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : HEADQ_NM [본부 명]
+	 *		- field : MKT_TEAM_CD [마케팅 팀 코드]
+	 *		- field : MKT_TEAM_NM [마케팅 팀 명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : UKEY_SUB_CD [UKEY_SUB_CD]
+	 *		- field : CNSL_DEALCO_NM [상담거래처명]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_CD [상담거래처코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주]
+	 *		- field : AMT_RMT_YN [송금여부]
+	 *		- field : RMT_DT [송금일자]
+	 *		- field : EQP_ST [등급]
+	 *		- field : EQP_ST_DTAIL [등급SUB]
+	 *		- field : AFFIL_AGN [소속대리점코드]
+	 *		- field : PRE_DC_CL [필드1]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : CUST_GRP [고객 그룹]
+	 *		- field : CHECKED [CHECKED]
+	 *		- field : ACCO_NO_ENPT [계좌번호암호화]
+	 *		- field : DPSTR_ENPT [예금주암호화]
+	 *		- field : FEE_DEDC_PROC_YN [요금공제여부]
+	 *		- field : FEE_DEDC_PROC_DT [요금공제일자]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : CUST_CHK_DT [고객 확인 일자]
+	 *		- field : FORCING_PRCH_PROC_YN [강제매입처리여부]
+	 *		- field : FORCING_PRCH_PROC_DT [강제매입처리일자]
+	 *		- field : PPAY_PROC_TS [선납 처리 차수]
+	 *	- record : REG_OBJ_DTL_LIST
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : IN_QTY [매입수량]
+	 *		- field : IN_AMT [매입금액]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pUDpstMgmtProcRegUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUDpstMgmtProcRegUpd", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>강제매입대상조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회시작일자]
+	 *	- field : IN_TO_DT [조회종료일자]
+	 *	- field : AFFIL_AGN [대리점거래처코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR [예금주]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : DT_GB_CD [일자구분]
+	 *	- field : ECO_FU_YN [에코4U여부]
+	 *	- field : EXCEL_ALL_YN [전체엑셀여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : FORCING_PRCH_OBJ_LIST
+	 *	- record : FORCING_PRCH_OBJ_DTL_LIST
+	 * </pre>
+	 */
+	public IDataSet pInqForcingPrchObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            if(requestData != null && requestData.getField("DPSTR") != null && !"".equals(requestData.getField("DPSTR").toString())){
+                requestData.putField("DPSTR_ENPT", HpcUtils.encodeByAES(requestData.getField("DPSTR")));
+            }
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqForcingPrchObjList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재감정송금대상목록조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회시작일자]
+	 *	- field : IN_TO_DT [조회종료일자]
+	 *	- field : AFFIL_AGN [대리점거래처코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR [예금주]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : DT_GB_CD [일자구분]
+	 *	- field : ECO_FU_YN [에코4U여부]
+	 *	- field : PRE_DC_CL [선할인여부]
+	 *	- field : IN_AMT_YN [입금여부]
+	 *	- field : EXCEL_ALL_YN [전체엑셀여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : SEND_AMT_OBJ_LIST
+	 * </pre>
+	 */
+	public IDataSet pInqRJdgSendAmtObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            if(requestData != null && requestData.getField("DPSTR") != null && !"".equals(requestData.getField("DPSTR").toString())){
+                requestData.putField("DPSTR_ENPT", HpcUtils.encodeByAES(requestData.getField("DPSTR")));
+            }
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqRJdgSendAmtObjList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]입금관리재감정송금등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_REG_OBJ_LIST
+	 *		- field : OP_GB [업무구분]
+	 *		- field : OP_SUB_GB [서브업무구분]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PAY_MTHD_YN [지급여부]
+	 *		- field : PAY_MTHD [지급방법]
+	 *		- field : PAY_DT [지급일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pUDpstMgmtRJdgSendAmtReg(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUDpstMgmtRJdgSendAmtReg", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>입금관리재감정송금취소</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-25 09:15:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_REG_OBJ_LIST
+	 *		- field : OP_GB [업무구분]
+	 *		- field : OP_SUB_GB [서브업무구분]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PAY_MTHD_YN [지급여부]
+	 *		- field : PAY_MTHD [지급방법]
+	 *		- field : PAY_DT [지급일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pUDpstMgmtRJdgSendAmtCncl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUDpstMgmtRJdgSendAmtCncl", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재감정요금공제대상조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회시작일자]
+	 *	- field : IN_TO_DT [조회종료일자]
+	 *	- field : AFFIL_AGN [대리점거래처코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR [예금주]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : DT_GB_CD [일자구분]
+	 *	- field : ECO_FU_YN [에코4U여부]
+	 *	- field : PRE_DC_CL [선할인여부]
+	 *	- field : SCRB_MTHD [클럽T여부]
+	 *	- field : IN_AMT_YN [입금여부]
+	 *	- field : EXCEL_ALL_YN [전체엑셀여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : FEE_DEDC_OBJ_LIST
+	 * </pre>
+	 */
+	public IDataSet pInqRJdgFeeDedcObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            if(requestData != null && requestData.getField("DPSTR") != null && !"".equals(requestData.getField("DPSTR").toString())){
+                requestData.putField("DPSTR_ENPT", HpcUtils.encodeByAES(requestData.getField("DPSTR")));
+            }
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqRJdgFeeDedcObjList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]입금관리재감정요금공제등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_REG_OBJ_LIST
+	 *		- field : OP_GB [업무구분]
+	 *		- field : OP_SUB_GB [서브업무구분]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PAY_MTHD_YN [지급여부]
+	 *		- field : PAY_MTHD [지급방법]
+	 *		- field : PAY_DT [지급일자]
+	 *		- field : PPAY_PROC_TS [선납 처리 차수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pUDpstMgmtRJdgFeeDedcReg(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUDpstMgmtRJdgFeeDedcReg", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]입금관리재고임시처리</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 19:32:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : DPST_TEMP_PROC
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : GUBUN [구분]
+	 *		- field : ERROR [에러]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : DPST_TEMP_PROC
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : GUBUN [구분]
+	 *		- field : ERROR [에러]
+	 * </pre>
+	 */
+	public IDataSet pUDpstTempProc(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUDpstTempProc", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+        return responseData;
+    }
+  
+}

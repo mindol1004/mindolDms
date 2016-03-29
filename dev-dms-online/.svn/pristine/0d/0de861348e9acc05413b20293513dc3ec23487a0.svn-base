@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRREqpClctMgmt">
+	<select id="SREqpClctLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRREqpClctMgmt.SREqpClctLstPaging R센터입고조회 */
+/* IO: 장미진,2015-11-09T14:59:54(장미진,2015-08-11T19:27:30) */
+SELECT *
+  FROM (SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD , A.EQP_SER_NO ) AS ROWNO
+			   ,A.ASSET_NO   										/*자산번호*/
+			   ,A.EQP_MDL_CD										/*모델코드*/	
+		       ,B.EQP_MDL_NM									    /*모델명*/
+		       ,C.EQP_COLOR_CD   									/*모델색상*/
+		       ,C.EQP_SER_NO    									/*단말기일련번호*/
+		       ,C.EQP_IMEI_NO  										/*IME*/
+		       ,A.INVE_ST_CD	   								    /*상태구분코드*/
+		       ,C.AGN_CD											/*대리점코드*/
+		       ,C.EQP_IN_DT											/*입고일자*/
+               ,C.SKN_CLCT_DT										/* 회수일자 */
+               ,C.IN_OBJ_DTL_CD 									/* 회수구분코드 */	
+               ,C.RTN_REG_DT               	
+               ,C.EQP_CLCT_OBJ_NO /*회수대상번호*/
+               ,'' AS INVE_DEL_YN
+               ,E.SVC_MGMT_NO										/*서비스관리번호*/
+		  FROM  TB_EQP_ASSET A
+		  	   ,TB_EQP_MDL B
+		       ,TB_EQP_CLCT_OBJ C
+		       ,TB_EQP_CNTRT D
+               ,TB_NR_CNTRT E
+		 WHERE  A.EQP_MDL_CD = C.EQP_MDL_CD
+		   AND  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+		   AND  A.EQP_SER_NO = C.EQP_SER_NO
+		   AND  A.ASSET_NO = D.ASSET_NO
+           AND  D.CNTRT_NO = E.CNTRT_NO
+		   AND  A.OP_CL_CD = 'NR'
+           AND  C.IN_OBJ_DTL_CD IN ('02','03','04')					/*회수구분코드*/
+           AND  A.INVE_ST_CD IN ('10','20','40','61','71')					/*상태구분코드*/
+]]><isNotEmpty prepend="AND" property="ST_DT"><![CDATA[
+                C.SKN_CLCT_DT  BETWEEN #ST_DT# AND #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ST_DT_IN"><![CDATA[
+                C.EQP_IN_DT  BETWEEN #ST_DT_IN# AND #ED_DT_IN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ASSET_NO"><![CDATA[
+                A.ASSET_NO = #ASSET_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                C.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+                C.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_IMEI_NO"><![CDATA[
+                C.EQP_IMEI_NO = #EQP_IMEI_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                E.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="INVE_ST_CD" compareValue="%"><![CDATA[
+                A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[)PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SREqpClctLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRREqpClctMgmt.SREqpClctLstTotCnt R센터입고조회총건수 */
+/* IO: 장미진,2015-11-09T15:00:05(장미진,2015-08-11T19:28:06) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_MDL B
+       ,TB_EQP_CLCT_OBJ C
+       ,TB_EQP_CNTRT D
+       ,TB_NR_CNTRT E
+ WHERE  A.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+   AND  A.EQP_SER_NO = C.EQP_SER_NO
+   AND  A.ASSET_NO = D.ASSET_NO
+   AND  D.CNTRT_NO = E.CNTRT_NO
+   AND  A.OP_CL_CD = 'NR'
+   AND  C.IN_OBJ_DTL_CD IN('02','03','04')
+   AND  A.INVE_ST_CD IN ('10','20','40','61','71')					/*상태구분코드*/
+]]><isNotEmpty prepend="AND" property="ST_DT"><![CDATA[
+                C.SKN_CLCT_DT  BETWEEN #ST_DT# AND #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ST_DT_IN"><![CDATA[
+                C.EQP_IN_DT  BETWEEN #ST_DT_IN# AND #ED_DT_IN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                C.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+                C.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_IMEI_NO"><![CDATA[
+                C.EQP_IMEI_NO = #EQP_IMEI_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                E.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="INVE_ST_CD" compareValue="%"><![CDATA[
+                A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<update id="UREqpClct" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRREqpClctMgmt.UREqpClct R센터입고처리 */
+/* IO: 장미진,2015-09-02T20:24:12(장미진,2015-08-18T16:03:03) */
+UPDATE  TB_EQP_CLCT_OBJ                    				  /* 수정화면 */
+   SET  EQP_IN_DT= #EQP_IN_DT#
+       ,IN_OBJ_DTL_CD = #IN_OBJ_DTL_CD#
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  EQP_CLCT_OBJ_NO = #EQP_CLCT_OBJ_NO#
+   AND  OP_CL_CD = 'NR']]>
+	</update>
+	<update id="UREqpClctST" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRREqpClctMgmt.UREqpClctST R센터입고상태변경 */
+/* IO: 장미진,2015-09-02T20:24:27(장미진,2015-08-19T11:32:56) */
+UPDATE  TB_EQP_ASSET                    				  /* 수정화면 */
+   SET  INVE_ST_CD = #INVE_ST_CD#
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  ASSET_NO = #ASSET_NO#
+   AND  OP_CL_CD = 'NR'
+   AND  EQP_SER_NO = #EQP_SER_NO#]]>
+	</update>
+	<delete id="DJdgDEL" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRREqpClctMgmt.DJdgDEL 입고취소시감정데이터삭제 */
+/* IO: 장미진,2015-08-21T11:30:58(장미진,2015-08-21T11:29:30) */
+DELETE
+  FROM TB_EQP_JDG
+ WHERE ASSET_NO = #ASSET_NO#]]>
+	</delete>
+	<delete id="DJdgDtlDEL" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRREqpClctMgmt.DJdgDtlDEL 입고취소시감정상세삭제 */
+/* IO: 장미진,2015-09-02T20:38:01(장미진,2015-09-02T20:37:36) */
+DELETE
+  FROM TB_EQP_JDG_DTL
+ WHERE ASSET_NO = #ASSET_NO#]]>
+	</delete>
+</sqlMap>

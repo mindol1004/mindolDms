@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInsuTermPrstMgmt">
+	<select id="SInsuTermPrstLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuTermPrstMgmt.SInsuTermPrstLstPaging 보증보험해지현황 조회 */
+/* IO: 안진갑,2015-11-27T18:01:29(안진갑,2015-10-13T10:38:12) */
+SELECT  PA.*
+  FROM (
+		SELECT  ROW_NUMBER() OVER(ORDER BY A.OP_PROC_DT DESC) AS ROWNO
+		       ,A.*
+       		   ,DECODE(A.SGI_INSURE_MGMT_NO, NULL, A.UKEY_INSURE_MGMT_NO, A.SGI_INSURE_MGMT_NO) AS INSURE_MGMT_NO
+  		  FROM  (
+          		  SELECT  B.OP_PROC_DT
+                 		 ,B.SVC_MGMT_NO
+                 		 ,C.UKEY_INSURE_MGMT_NO
+                 		 ,D.SGI_INSURE_MGMT_NO
+                 		 ,A.EQP_MDL_CD
+                 		 ,E.EQP_MDL_NM
+                 		 ,CASE WHEN C.UKEY_INSURE_END_DT = D.SGI_INSURE_END_DT AND 0=D.SGI_CBACK_INSURE_FEE THEN 'Y'
+                       		   ELSE 'N'
+                  		  END AS OP_FNSH_YN
+                 		 ,C.UKEY_INSURE_END_DT
+                 		 ,C.UKEY_CBACK_INSURE_FEE AS DMS_CBACK_INSURE_FEE
+                 		 ,D.SGI_INSURE_END_DT
+                 		 ,D.SGI_CBACK_INSURE_FEE
+            		FROM  TB_RENTAL_CNTRT A
+                         ,TH_NR_CNTRT_HST B
+                         ,TB_INSU_UKEY C
+                 		 ,TB_INSU_SGI D
+                 		 ,TB_EQP_MDL E
+           		   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  A.CNTRT_NO = C.CNTRT_NO(+)
+                     AND  A.CNTRT_NO = D.CNTRT_NO(+)
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD(+)
+                     AND  C.OP_TYP_CD (+) = '03' /* 해지 */
+                     AND  D.OP_TYP_CD (+) IN ('Z1','Z2','Z5')
+                     AND  B.OP_TYP_CD IN ('02', '06', '07','08')
+AND ((D.SGI_INSURE_MGMT_NO IS NOT NULL AND D.SGI_INSURE_MGMT_NO NOT IN ( SELECT SGI_INSURE_MGMT_NO FROM TB_INSU_SGI WHERE OP_TYP_CD IN('Z6','Z9') ) ) OR D.SGI_INSURE_MGMT_NO IS NULL)
+			    ]]><isNotEmpty property="RENTAL_END_STA_DT"><![CDATA[
+           			 AND  B.OP_PROC_DT BETWEEN #RENTAL_END_STA_DT# AND #RENTAL_END_END_DT#
+				]]></isNotEmpty><![CDATA[                       
+			    ]]><isNotEmpty property="SVC_MGMT_NO"><![CDATA[
+           			 AND  B.SVC_MGMT_NO = #SVC_MGMT_NO#            		           
+				]]></isNotEmpty><![CDATA[                     
+			    ]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+           			 AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+				]]></isNotEmpty><![CDATA[     
+			    ]]><isNotEmpty property="INSURE_MGMT_NO"><![CDATA[
+           			 AND  (C.UKEY_INSURE_MGMT_NO = #INSURE_MGMT_NO# 
+           			       OR D.SGI_INSURE_MGMT_NO = #INSURE_MGMT_NO#)
+				]]></isNotEmpty><![CDATA[     				                     
+                ) A  
+        ]]><dynamic prepend="WHERE"><![CDATA[  
+        	]]><isNotEqual property="OP_FNSH_YN" prepend="AND" compareValue="%"><![CDATA[
+         		A.OP_FNSH_YN = #OP_FNSH_YN#
+            ]]></isNotEqual><![CDATA[
+        	]]><isNotEqual property="INCMP_ITM" prepend="AND" compareValue="%"><![CDATA[
+			 ]]><isEqual property="INCMP_ITM" compareValue="01"><![CDATA[        	
+         		A.UKEY_INSURE_MGMT_NO IS NULL
+         	 ]]></isEqual><![CDATA[
+         	 ]]><isEqual property="INCMP_ITM" compareValue="02"><![CDATA[        	
+         		A.SGI_INSURE_MGMT_NO IS NULL
+         	 ]]></isEqual><![CDATA[
+            ]]></isNotEqual><![CDATA[
+        ]]></dynamic><![CDATA[
+        ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInsuTermPrstLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuTermPrstMgmt.SInsuTermPrstLstTotCnt 보증보험해지현황 총 건수 */
+/* IO: 안진갑,2015-11-27T18:01:56(안진갑,2015-10-13T10:38:43) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  (
+   		  SELECT  C.UKEY_INSURE_MGMT_NO
+   		         ,D.SGI_INSURE_MGMT_NO
+                 ,CASE WHEN C.UKEY_INSURE_END_DT = D.SGI_INSURE_END_DT AND 0=D.SGI_CBACK_INSURE_FEE THEN 'Y'
+                 	   ELSE 'N'
+                  END AS OP_FNSH_YN   		         
+            FROM  TB_RENTAL_CNTRT A
+                 ,TH_NR_CNTRT_HST B
+                 ,TB_INSU_UKEY C
+            	 ,TB_INSU_SGI D
+            	 ,TB_EQP_MDL E
+           WHERE  A.CNTRT_NO = B.CNTRT_NO
+             AND  A.CNTRT_NO = C.CNTRT_NO(+)
+             AND  A.CNTRT_NO = D.CNTRT_NO(+)
+             AND  A.EQP_MDL_CD = E.EQP_MDL_CD(+)
+             AND  C.OP_TYP_CD (+)= '03' /* 해지 */
+             AND  D.OP_TYP_CD (+)= 'Z1'
+             AND  B.OP_TYP_CD IN ('02', '06', '07','08')
+AND ((D.SGI_INSURE_MGMT_NO IS NOT NULL AND D.SGI_INSURE_MGMT_NO NOT IN ( SELECT SGI_INSURE_MGMT_NO FROM TB_INSU_SGI WHERE OP_TYP_CD IN('Z6','Z9') ) ) OR D.SGI_INSURE_MGMT_NO IS NULL)             
+	]]><isNotEmpty property="RENTAL_END_STA_DT"><![CDATA[
+           	 AND  B.OP_PROC_DT BETWEEN #RENTAL_END_STA_DT# AND #RENTAL_END_END_DT#
+	]]></isNotEmpty><![CDATA[                       
+	]]><isNotEmpty property="SVC_MGMT_NO"><![CDATA[
+           	 AND  B.SVC_MGMT_NO = #SVC_MGMT_NO#            		           
+	]]></isNotEmpty><![CDATA[                     
+	]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+           	 AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+	]]></isNotEmpty><![CDATA[     
+	]]><isNotEmpty property="INSURE_MGMT_NO"><![CDATA[
+           	 AND  (C.UKEY_INSURE_MGMT_NO = #INSURE_MGMT_NO# 
+           		   OR D.SGI_INSURE_MGMT_NO = #INSURE_MGMT_NO#)
+	]]></isNotEmpty><![CDATA[     				                     
+        ) A  
+]]><dynamic prepend="WHERE"><![CDATA[  
+]]><isNotEqual property="OP_FNSH_YN" prepend="AND" compareValue="%"><![CDATA[
+        A.OP_FNSH_YN = #OP_FNSH_YN#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="INCMP_ITM" prepend="AND" compareValue="%"><![CDATA[
+	]]><isEqual property="INCMP_ITM" compareValue="01"><![CDATA[        	
+        A.UKEY_INSURE_MGMT_NO IS NULL
+    ]]></isEqual><![CDATA[
+    ]]><isEqual property="INCMP_ITM" compareValue="02"><![CDATA[        	
+        A.SGI_INSURE_MGMT_NO IS NULL
+    ]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SCBackInsureSum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuTermPrstMgmt.SCBackInsureSum 보증보험 해지건수, DMS환급보험료합계, SGI환급보험료합계 */
+/* IO: 안진갑,2015-10-14T16:44:45(안진갑,2015-10-14T16:30:43) */
+SELECT  COUNT(1) AS TERM_CNT
+       ,SUM(0) AS DSM_CBACK_INSURE_SUM /*DMS합계금액확정필요*/
+       ,NVL(SUM(SGI_CBACK_INSURE_FEE),0) AS SGI_CBACK_INSURE_SUM
+  FROM  TH_NR_CNTRT_HST A
+       ,TB_INSU_UKEY B
+       ,TB_INSU_SGI C
+ WHERE  A.CNTRT_NO   = B.CNTRT_NO(+)
+   AND  A.CNTRT_NO   = C.CNTRT_NO(+) 
+   AND  B.OP_TYP_CD (+)= '03' /* 해지 */
+   AND  C.OP_TYP_CD (+)= 'Z1'   
+   AND  A.OP_TYP_CD   IN ('02', '06', '07','08')   
+]]><isNotEmpty property="RENTAL_END_STA_DT"><![CDATA[
+   AND  A.OP_PROC_DT BETWEEN #RENTAL_END_STA_DT# AND #RENTAL_END_END_DT#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

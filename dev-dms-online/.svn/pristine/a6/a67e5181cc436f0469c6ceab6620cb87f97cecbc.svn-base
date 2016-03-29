@@ -1,0 +1,273 @@
+package dms.nr.nrbxmbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+
+import org.apache.commons.logging.Log;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]대리점단말기정산정보관리</li>
+ * <li>설  명 : <pre>대리점단말기정산정보관리PU</pre></li>
+ * <li>작성일 : 2015-08-18 10:06:09</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PNRAgnEqpStlMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRAgnEqpStlMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>대리점단말기정산정보조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [매입일자]
+	 *	- field : DEBT_PRCH_TS [매입차수]
+	 *	- field : AGN_CD [대리점코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : DEBT_DEALCO_CD [대리점코드]
+	 *		- field : ORG_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : DEBT_PRCH_TS [매입차수]
+	 *		- field : XCL_CL [정산구분]
+	 *		- field : DEBT_AMT [출고가]
+	 *		- field : DEBT_ITM_AMT [매입가]
+	 *		- field : DEBT_SURTAX [부가세]
+	 *		- field : DEBT_SLIP_NO [전표번호]
+	 *		- field : DEBT_SLIP_DT [전표일자]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : TAX_BILL_NO [세금계산서번호]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnEqpStlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnEqpStlLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산정보상세</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_PROC_DT [정산월]
+	 *	- field : PRCHCO_CD [대리점코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_DTL
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : PRCH_DT [매입일자]
+	 *		- field : PRCH_AMT [매입금액]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnEqpStlDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnEqpStlDtl", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산전표생성</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : PRCHCO_CD [대리점코드]
+	 *		- field : PRCHCO_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : XCL_PROC_DT [정산월]
+	 *		- field : SLIP_TS [전표차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_DT [전표처리일]
+	 *		- field : PRCH_AMT [정산금액]
+	 *		- field : PAY_YM [지급년월]
+	 *		- field : AGN_CRD_AMT [대리점여신금액]
+	 *		- field : AGN_SALE_AMT [대리점매출금액]
+	 *		- field : CRD_SALE_DAMT [여신매출차액]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveAgnEqpStlSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        Log log = getLog(onlineCtx);
+        boolean isOnline = false;
+
+        try {
+            // 1. 입력 RS설정
+            requestData.putField("USERNO", ca.getUserNo());
+            requestData.putField("SLIP_TYPE", "AGENCY_AMT_AP");
+            
+        	if(isOnline)
+        	{
+	            // 2. 레코드셋 상태에 따른 분기
+	            if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // 전표생성
+	                responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fRegSlip", requestData, onlineCtx);
+	            } else if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // 전표취소
+	                
+	            }
+	            
+	            responseData.putField("USERNO", ca.getUserNo());
+	            callSharedBizComponentByDirect("nr.NRSXMBase", "fRegAgnEqpStlSlip", responseData, onlineCtx);
+	                
+	            // 3. 결과값 리턴
+	            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+        	}
+        	else
+	    	{
+				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR010");
+			    params.put("TASK_NM", "전표발행");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+			    
+			    
+				log.debug("(((((((((((((((((((((((((((((((fSlipInveInfoHandl() result :"+ result);
+
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+
+	    	}
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_DELETE
+	 *		- field : PRCHCO_CD [대리점코드]
+	 *		- field : PRCHCO_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : XCL_PROC_DT [정산월]
+	 *		- field : SLIP_TS [전표차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_DT [전표처리일]
+	 *		- field : PRCH_AMT [정산금액]
+	 *		- field : PAY_YM [지급년월]
+	 *		- field : AGN_CRD_AMT [대리점여신금액]
+	 *		- field : AGN_SALE_AMT [대리점매출금액]
+	 *		- field : CRD_SALE_DAMT [여신매출차액]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveAgnEqpStlSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+	    IRecordSet rs = requestData.getRecordSet("RS_SLIP_DELETE");
+	    
+	    try{
+	    	//전표요청중(10) 이 아니면 exception처리
+	    	for(int i=0; i < rs.getRecordCount(); i++){
+	    		if(!rs.get(i, "SLIP_ST_CD").equals("10")){
+	    			
+	    			throw new BizRuntimeException("XYZE0000", new String[] {"전표취소처리 "}); //{0} 중 오류가 발생하였습니다.
+	    		}
+	    	}
+	    	
+	    	// ERP용 전표번호 추가
+	    	IRecord rc = null;
+	    	for(int i=0; i < rs.getRecordCount(); ++i){
+	    		rc = rs.getRecord(i);
+	    		rc.set("SLIP_NO", rc.get("SLIP_NO"));
+	    	}
+	    	
+	    	//FM 호출
+	    	callSharedBizComponentByDirect("nr.NRSXMBase", "fSaveAgnEqpStlSlipDel", requestData, onlineCtx); 
+	    }catch(BizRuntimeException e){
+	    	
+	    } catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    return responseData;
+	}
+  
+}

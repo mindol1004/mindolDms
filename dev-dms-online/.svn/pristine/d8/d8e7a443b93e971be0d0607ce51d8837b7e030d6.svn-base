@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCmpXclMgmt">
+	<select id="SCmpXclLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclLstPaging 손해배상금정산정보조회 */
+/* IO: 김혁범,2015-08-31T20:27:42(정동현,2015-08-18T13:51:43) */
+SELECT *
+  FROM(SELECT  ROW_NUMBER() OVER (ORDER BY A.EQP_MDL_CD ASC) AS ROWNO
+              ,A.*
+         FROM  (SELECT  F.EQP_MDL_CD/*모델코드*/
+                       ,E.EQP_MDL_NM/*모델명*/
+                        /*손해배상금유형*/       
+                       ,SUM(A.XCL_AMT) AS DMS_PEN_AMT/*DMS금액*/
+                       ,SUM(A.XCL_UKEY_INV_AMT) AS UKEY_PEN_AMT/*UKEY금액*/
+                       ,SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT) AS DIV_PEN /*차액*/
+                       ,SUM(A.XCL_UKEY_RECV_AMT) AS PEN_RECV_AMT/*수납액*/
+                       /*미납액*/
+                       ,CASE WHEN   A.XCL_CL_CD = 'JD'  THEN   '손해배상금 단말파손' /*단말파손*/
+                             WHEN   A.XCL_CL_CD = 'JN'  THEN   '손해배상금 단말미반납' /*단말미반납*/
+                        ELSE ''
+                        END   AS  PP_XCL_CL_CD
+                        ,TO_CHAR(TO_DATE(G.OP_PROC_DT),'YYYYMM') AS OP_PROC_DT 
+                        ,A.XCL_CL_CD                      
+                  FROM  TB_ETC_XCL A /*기타정산T*/
+                       ,TB_RENTAL_CNTRT F
+                       ,TB_EQP_MDL E
+                       ,TB_NR_CNTRT G
+                 WHERE  A.CNTRT_NO   = F.CNTRT_NO
+                   AND  A.CNTRT_NO = G.CNTRT_NO   
+                   AND  F.EQP_MDL_CD = E.EQP_MDL_CD(+)
+                   AND  G.OP_TYP_CD IN ('02','07')
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                        G.OP_PROC_DT BETWEEN #XCL_YM#||'01' AND #XCL_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                        F.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+                        E.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PP_XCL_CL_CD" compareValue="%"><![CDATA[              
+	                    A.XCL_CL_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[ 
+                 GROUP BY F.EQP_MDL_CD,  E.EQP_MDL_NM, A.XCL_CL_CD, G.OP_PROC_DT
+              ) A
+       ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCmpXclLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclLstTotCnt 손해배상금정산정보조회총건수 */
+/* IO: 김혁범,2015-08-31T20:53:19(정동현,2015-08-11T13:16:22) */
+SELECT  COUNT(*) AS TOTAL_CNT
+FROM(
+     SELECT  F.EQP_MDL_CD
+       FROM  TB_ETC_XCL A /*기타정산T*/
+            ,TB_RENTAL_CNTRT F
+            ,TB_EQP_MDL E
+            ,TB_NR_CNTRT G
+      WHERE  A.CNTRT_NO   = F.CNTRT_NO
+        AND  A.CNTRT_NO = G.CNTRT_NO   
+        AND  F.EQP_MDL_CD = E.EQP_MDL_CD(+)
+        AND  G.OP_TYP_CD IN ('02','07')
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                        G.OP_PROC_DT BETWEEN #XCL_YM#||'01' AND #XCL_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                        F.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+                        E.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PP_XCL_CL_CD" compareValue="%"><![CDATA[              
+	                    A.XCL_CL_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[
+     GROUP BY F.EQP_MDL_CD,  E.EQP_MDL_NM, A.XCL_CL_CD, G.OP_PROC_DT
+     )]]>
+	</select>
+	<select id="SCmpXclDtlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclDtlPaging 손해배상금정산정보상세 */
+/* IO: 김혁범,2015-09-01T20:45:53(정동현,2015-08-11T14:11:16) */
+SELECT  G.RENTAL_SER_NO /*일련번호*/
+       ,G.SVC_MGMT_NO/*서비스관리번호*/
+       ,F.EQP_MDL_CD/*모델코드*/
+       ,E.EQP_MDL_NM/*모델명*/
+       ,G.SVC_NO
+       ,F.RENTAL_CNTRT_STA_DT /*계약시작일자*/
+       ,F.RENTAL_CNTRT_END_DT /*계약종료일자*/
+       /*,H.EQP_IN_DT */
+       /*,D.JDG_APRV_DT*/
+       ,CASE WHEN   A.XCL_CL_CD = 'JD'  THEN   '손해배상금단말파손' /*단말파손*/
+             WHEN   A.XCL_CL_CD = 'JN'  THEN   '손해배상금단말미반납' /*단말미반납*/
+        ELSE ''
+        END   AS  PP_XCL_CL_CD       
+       ,A.XCL_AMT AS DMS_PEN_AMT/*DMS금액*/
+       ,A.XCL_UKEY_INV_AMT AS UKEY_PEN_AMT/*UKEY금액*/
+       ,A.XCL_AMT - A.XCL_UKEY_INV_AMT AS DIV_PEN /*차액*/
+       ,A.XCL_UKEY_RECV_AMT AS PEN_RECV_AMT/*수납액*/
+  FROM  TB_ETC_XCL A /*기타정산T*/
+       ,TB_EQP_CNTRT  B
+       /*,TB_EQP_ASSET  C*/
+       /*,TB_EQP_JDG D*/
+       ,TB_NR_CNTRT G
+       ,TB_RENTAL_CNTRT F
+       ,TB_EQP_MDL E
+       /*,TB_EQP_CLCT_OBJ H*/
+ WHERE  A.CNTRT_NO = B.CNTRT_NO 
+   /*AND  A.ASSET_NO = C.ASSET_NO*/
+   /*AND  C.ASSET_NO = D.ASSET_NO*/
+   AND  A.CNTRT_NO = F.CNTRT_NO
+   AND  A.CNTRT_NO = G.CNTRT_NO
+   /*AND  G.SVC_MGMT_NO = H.SVC_MGMT_NO*/
+   AND  F.EQP_MDL_CD = E.EQP_MDL_CD(+)
+   AND  G.OP_TYP_CD IN ('02','07')                         
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+               G.OP_PROC_DT BETWEEN #XCL_YM#||'01' AND #XCL_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+               F.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+               E.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PP_XCL_CL_CD" compareValue="%"><![CDATA[              
+	           A.XCL_CL_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SCmpXclDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclDtlTotCnt 손해배상금정상정보상세총건수 */
+/* IO: 김혁범,2015-08-31T15:49:08(정동현,2015-08-11T10:05:28) */
+SELECT  COUNT(*)  AS TOTAL_CNT
+  FROM  TB_ETC_XCL A /*기타정산T*/
+       ,TB_EQP_CNTRT  B
+       ,TB_EQP_ASSET  C
+       ,TB_EQP_JDG D
+       ,TB_NR_CNTRT G
+       ,TB_RENTAL_CNTRT F
+       ,TB_EQP_MDL E
+ WHERE  A.CNTRT_NO = B.CNTRT_NO 
+   AND  A.ASSET_NO = C.ASSET_NO
+   AND  C.ASSET_NO = D.ASSET_NO
+   AND  A.CNTRT_NO = F.CNTRT_NO
+   AND  A.CNTRT_NO = G.CNTRT_NO
+   AND  F.EQP_MDL_CD = E.EQP_MDL_CD(+)
+   AND  G.OP_TYP_CD IN ('02','07')
+   AND  C.INVE_ST_CD = '40'                                  /* 재고상태코드 40:감정완료 */        
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+               G.OP_PROC_DT BETWEEN #XCL_YM#||'01' AND #XCL_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+               F.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+               E.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_JDG_RSLT_CD"><![CDATA[
+               D.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

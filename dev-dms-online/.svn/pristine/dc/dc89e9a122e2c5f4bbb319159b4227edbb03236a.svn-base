@@ -1,0 +1,168 @@
+package dms.nr.nrbplbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]손해배상단말관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-15 17:17:55</li>
+ * <li>작성자 : 안진갑 (bella21cjk)</li>
+ * </ul>
+ *
+ * @author 안진갑 (bella21cjk)
+ */
+public class PNRCmpStdMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRCmpStdMgmt(){
+		super();
+	}
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-09-15 17:17:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : MFACT_CD [제조사]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMP_STD_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기보델명]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : MFACT_CD [제조사코드]
+	 * </pre>
+	 */
+	public IDataSet pInqCmpStdLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSPLBase", "fInqCmpStdLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-09-15 17:17:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMP_STD_DTL
+	 *		- field : DCP_STRD_INFO_SEQ [손해배상금정책기준정보순번]
+	 *		- field : INSP_ITM_CD [점검항목]
+	 *		- field : INSP_DTL_ITM_CD [점검세부항목]
+	 * </pre>
+	 */
+	public IDataSet pInqCmpStdDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSPLBase", "fInqCmpStdDtl", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-09-15 17:17:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMP_STD_DTL
+	 *		- field : INSP_ITM_CD [점검항목]
+	 *		- field : INSP_DTL_ITM_CD [세부점검항목]
+	 *		- field : DCP_STRD_INFO_SEQ [손해배상금정책기준정보순번]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveCmpStd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            IRecordSet rs = requestData.getRecordSet("RS_CMP_STD_DTL");
+            IDataSet reqDS = new DataSet();
+            for ( int i = 0 ; i < rs.getRecordCount() ; i++ ) {
+                reqDS.putFieldMap(rs.getRecord(i));
+                reqDS.putField("USER_NO", ca.getUserNo()); //변경사용자컬럼 추가
+                reqDS.putField("EQP_MDL_CD", requestData.getField("EQP_MDL_CD"));
+                if( StringUtils.isEmpty(reqDS.getField("INSP_ITM_CD")) ){  //delete
+                    callSharedBizComponentByDirect("nr.NRSPLBase", "fDelCmpStd", reqDS, onlineCtx);
+                }else if( StringUtils.isEmpty(reqDS.getField("DCP_STRD_INFO_SEQ")) ){  //insert
+                    callSharedBizComponentByDirect("nr.NRSPLBase", "fRegCmpStd", reqDS, onlineCtx);
+                }else if ( StringUtils.isNotEmpty(reqDS.getField("DCP_STRD_INFO_SEQ")) ) { // UPDATE
+                    callSharedBizComponentByDirect("nr.NRSPLBase", "fUpdCmpStd", reqDS, onlineCtx);
+                }
+            }
+            
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        
+        return responseData;
+    }
+  
+}

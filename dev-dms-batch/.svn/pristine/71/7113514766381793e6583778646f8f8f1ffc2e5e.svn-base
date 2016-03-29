@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.BPR003">
+	<insert id="ITfPrEqpCmptReg" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR003.ITfPrEqpCmptReg 단말구성품IF대상등록 */
+/* IO: 김윤환,2015-08-12T14:21:04(김윤환,2015-08-10T10:13:02) */
+INSERT
+  INTO TF_PR_EQP_CMPT_REG
+  (
+	 IF_PROC_DT			/* IF_처리일자 */
+	 ,IF_FILE_NM		/* IF_파일명 */
+	 ,IF_SEQ			/* IF_순번 */
+	 ,EQP_MDL_CD		/* 단말기모델코드 */
+	 ,EQP_EFF_STA_DT	/* 단말기유효시작일자 */
+	 ,EQP_EFF_END_DT	/* 단말기유효종료일자 */
+	 ,CMPT_RPET_CNT		/* 구성품반복건수 */
+	 ,EQP_CMPT_CD		/* 단말기구성품코드 */
+	 ,EQP_CMPT_NM		/* 단말기구성품명 */
+	 ,EQP_CMPT_AMT		/* 단말기구성품금액 */
+	 ,PROC_ST_CD		/* 처리상태코드 */
+	 ,FS_REG_USER_ID	/* 최초등록사용자ID */
+	 ,FS_REG_DTM		/* 최초등록일시 */
+	 ,LS_CHG_USER_ID	/* 최종변경사용자ID */
+	 ,LS_CHG_DTM		/* 최종변경일시 */
+  )
+  VALUES
+  (
+	 #IF_PROC_DT#		/* IF_처리일자 */
+	 ,#IF_FILE_NM#		/* IF_파일명 */
+	 ,#IF_SEQ#			/* IF_순번 */
+	 ,#EQP_MDL_CD#		/* 단말기모델코드 */
+	 ,#EQP_EFF_STA_DT#	/* 단말기유효시작일자 */
+	 ,#EQP_EFF_END_DT#	/* 단말기유효종료일자 */
+	 ,#CMPT_RPET_CNT#	/* 구성품반복건수 */
+	 ,#EQP_CMPT_CD#		/* 단말기구성품코드 */
+	 ,#EQP_CMPT_NM#		/* 단말기구성품명 */
+	 ,#EQP_CMPT_AMT#	/* 단말기구성품금액 */
+	 ,'09'				/* 처리상태코드 */
+	 ,'BAT'				/* 최초등록사용자ID */
+	 ,SYSDATE			/* 최초등록일시 */
+	 ,'BAT'				/* 최종변경사용자ID */
+	 ,SYSDATE			/* 최종변경일시 */
+  )]]>
+	</insert>
+	<select id="SPrEqpCmtReg" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR003.SPrEqpCmtReg 단말구성품정보조회 */
+/* IO: 김윤환,2015-08-11T11:20:12(김윤환,2015-08-10T10:52:57) */
+SELECT 
+		A.CNTRT_NO
+		,B.EQP_MDL_CD           /* 단말기모델코드 */
+		,C.CMPHS_CNTRT_STA_DT   /* 포괄계약시작일자 */
+		,C.CMPHS_CNTRT_END_DT   /* 포괄계약정료일자 */   
+		,COUNT(*) OVER (PARTITION BY A.CNTRT_NO ) AS RPET_CNT /* 반복건수 */
+		,A.CMPT_CD  			   /* 구성품코드 */
+		,(SELECT CM_CD_NM 
+			FROM TB_CM_CD 
+		   WHERE CM_GRP_CD_ID = 'DMS111' 
+			 AND USE_YN='Y' 
+			 AND CM_CD_ID = A.CMPT_CD) AS CMPT_NM	/* 구성품명 */
+		,A.CMPT_UPRC  		  /* 구성품단가 */
+  FROM TB_CMPT_UPRC A 
+	 , TB_RENTAL_CNTRT B   
+	 , TB_RENTPHON_CMPHS_CNTRT C   
+ WHERE A.CNTRT_NO = B.CNTRT_NO
+   AND B.CMPHS_CNTRT_NO = C.CMPHS_CNTRT_NO
+   AND B.OP_CL_CD = 'PR'
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+  AND TO_CHAR(A.FS_REG_DTM,'YYYYMMDD') = #PROC_DT#]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpInsuMgmt">
+	<select id="SEqpInsuLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNREqpInsuMgmt.SEqpInsuLstPaging 단말보험료 조회 */
+/* IO: 안진갑,2016-02-16T17:36:36(안진갑,2015-07-10T09:51:42) */
+SELECT  *
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_INSURE_NO DESC) AS ROWNO
+               ,A.EQP_INSURE_NO
+               ,A.EQP_MDL_CD
+               ,B.EQP_MDL_NM
+               ,C.OUT_PRC
+               ,A.EQP_INSURE_FEE
+               ,D.LAUNC_DT
+               ,D.OP_CL_CD
+               ,D.CAPA_CD
+               ,TO_CHAR(A.FS_REG_DTM,'YYYYMMDD') AS REG_DT
+               ,A.EQP_INSURE_RMK
+               ,A.EFF_PRD_STA_DT
+               ,A.EFF_PRD_END_DT
+               ,A.POLY_USE_YN
+          FROM  TB_EQP_INSURE A
+               ,TB_EQP_MDL B
+               ,TB_RENTAL_POLY C
+               ,TB_EQP_STRD_INFO D
+               ,
+               (
+                SELECT  
+                        EQP_MDL_CD
+                       ,MAX(RENTAL_POLY_NO) AS RENTAL_POLY_NO
+                  FROM  TB_RENTAL_POLY
+                 GROUP  BY EQP_MDL_CD
+               ) E
+         WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+           AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+           AND  A.EQP_MDL_CD = D.EQP_MDL_CD
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+		        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EFF_PRD_STA_DT"><![CDATA[
+  ]]><isNotEmpty property="EFF_PRD_END_DT"><![CDATA[	
+                  #EFF_PRD_STA_DT# <= A.EFF_PRD_END_DT 
+  ]]></isNotEmpty><![CDATA[
+  ]]><isEmpty property="EFF_PRD_END_DT"><![CDATA[
+                  #EFF_PRD_STA_DT# <= A.EFF_PRD_END_DT 
+  ]]></isEmpty><![CDATA[
+]]></isNotEmpty><![CDATA[
+]]><isEmpty prepend="AND" property="EFF_PRD_STA_DT"><![CDATA[
+  ]]><isNotEmpty property="EFF_PRD_END_DT"><![CDATA[
+                  (A.EFF_PRD_END_DT  >= #EFF_PRD_END_DT# 
+                  OR A.EFF_PRD_STA_DT <= #EFF_PRD_END_DT# )
+  ]]></isNotEmpty><![CDATA[             
+]]></isEmpty><![CDATA[
+        ) PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpInsuTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNREqpInsuMgmt.SEqpInsuTotCnt 단말보험료 총 건수 */
+/* IO: 안진갑,2016-02-16T17:36:52(안진갑,2015-07-10T09:52:16) */
+SELECT  COUNT(EQP_INSURE_NO) AS TOTAL_CNT
+  FROM (
+        SELECT  A.EQP_INSURE_NO
+          FROM  TB_EQP_INSURE A
+               ,TB_EQP_MDL B
+               ,TB_RENTAL_POLY C
+               ,TB_EQP_STRD_INFO D
+               ,
+               (
+                SELECT  
+                        EQP_MDL_CD
+                       ,MAX(RENTAL_POLY_NO) AS RENTAL_POLY_NO
+                  FROM  TB_RENTAL_POLY
+                 GROUP  BY EQP_MDL_CD
+               ) E
+         WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+           AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+           AND  A.EQP_MDL_CD = D.EQP_MDL_CD
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+		        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EFF_PRD_STA_DT"><![CDATA[
+  ]]><isNotEmpty property="EFF_PRD_END_DT"><![CDATA[	
+                  #EFF_PRD_STA_DT# <= A.EFF_PRD_END_DT 
+  ]]></isNotEmpty><![CDATA[
+  ]]><isEmpty property="EFF_PRD_END_DT"><![CDATA[
+                  #EFF_PRD_STA_DT# <= A.EFF_PRD_END_DT 
+  ]]></isEmpty><![CDATA[
+]]></isNotEmpty><![CDATA[
+]]><isEmpty prepend="AND" property="EFF_PRD_STA_DT"><![CDATA[
+  ]]><isNotEmpty property="EFF_PRD_END_DT"><![CDATA[
+                  (A.EFF_PRD_END_DT  >= #EFF_PRD_END_DT# 
+                  OR A.EFF_PRD_STA_DT <= #EFF_PRD_END_DT# )
+  ]]></isNotEmpty><![CDATA[             
+]]></isEmpty><![CDATA[
+       )]]>
+	</select>
+	<insert id="IEqpInsu" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNREqpInsuMgmt.IEqpInsu 단말보험료 등록 */
+/* IO: 안진갑,2016-02-16T17:39:02(안진갑,2015-07-10T09:53:00) */
+INSERT  INTO TB_EQP_INSURE
+(
+  EQP_INSURE_NO
+  ,EQP_MDL_CD
+  ,OP_CL_CD
+  ,CAPA_CD
+  ,EQP_INSURE_FEE
+  ,EQP_INSURE_RMK
+  ,EFF_PRD_STA_DT
+  ,EFF_PRD_END_DT
+  ,POLY_USE_YN  
+  ,FS_REG_USER_ID
+  ,LS_CHG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_DTM
+)
+VALUES
+(
+  #EQP_INSURE_NO#
+  ,#EQP_MDL_CD#
+  ,#OP_CL_CD#
+  ,#CAPA_CD#
+  ,#EQP_INSURE_FEE#
+  ,#EQP_INSURE_RMK#
+  ,#EFF_PRD_STA_DT#
+  ,#EFF_PRD_END_DT#
+  ,#POLY_USE_YN#
+  ,#USER_NO#
+  ,#USER_NO#
+  ,SYSDATE
+  ,SYSDATE
+)]]>
+	</insert>
+	<update id="UEqpInsu" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNREqpInsuMgmt.UEqpInsu 단말보험료 수정 */
+/* IO: 안진갑,2016-02-16T17:44:38(안진갑,2015-07-10T09:53:25) */
+UPDATE  TB_EQP_INSURE
+   SET  EQP_INSURE_FEE = #EQP_INSURE_FEE#
+       ,EQP_INSURE_RMK = #EQP_INSURE_RMK#
+       ,EFF_PRD_STA_DT = #EFF_PRD_STA_DT#
+       ,EFF_PRD_END_DT = #EFF_PRD_END_DT#
+       ,POLY_USE_YN = #POLY_USE_YN#
+       ,LS_CHG_USER_ID = #USER_NO#
+	   ,LS_CHG_DTM     = SYSDATE           
+ WHERE  EQP_INSURE_NO= #EQP_INSURE_NO#]]>
+	</update>
+	<select id="SEqpInsuNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNREqpInsuMgmt.SEqpInsuNo 단말기보험번호 채번 */
+/* IO: 이영진,2015-10-14T14:52:56(안진갑,2015-07-14T16:04:32) */
+SELECT  'EI'||LPAD(SQ01_TB_EQP_INSURE.NEXTVAL,10,0) AS EQP_INSURE_NO
+  FROM  DUAL]]>
+	</select>
+	<select id="SChkDupFrDt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNREqpInsuMgmt.SChkDupFrDt 유효시작일 중복체크(등록) */
+/* IO: 안진갑,2016-02-16T17:55:37(안진갑,2016-02-16T17:53:14) */
+SELECT  COUNT(1) AS DUP_CNT
+  FROM  TB_EQP_INSURE
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EFF_PRD_STA_DT >= #EFF_PRD_STA_DT#]]>
+	</select>
+	<select id="SChkDupFrDt2" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNREqpInsuMgmt.SChkDupFrDt2 유효시작일 중복체크(수정) */
+/* IO: 안진갑,2016-02-16T17:59:44(안진갑,2016-02-16T17:58:52) */
+SELECT  COUNT(1) AS DUP_CNT
+  FROM  TB_EQP_INSURE
+ WHERE  EQP_INSURE_NO < #EQP_INSURE_NO#
+   AND  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EFF_PRD_STA_DT >= #EFF_PRD_STA_DT#]]>
+	</select>
+	<update id="UPreEquInsu" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNREqpInsuMgmt.UPreEquInsu 이전정책종료일 변경 */
+/* IO: 안진갑,2016-02-17T10:57:39(안진갑,2016-02-17T09:52:26) */
+UPDATE  TB_EQP_INSURE
+   SET  EFF_PRD_END_DT = TO_CHAR(TO_DATE(#EFF_PRD_STA_DT#, 'YYYYMMDD')-1, 'YYYYMMDD')
+       ,POLY_USE_YN = 'N'
+ WHERE  EQP_INSURE_NO = (SELECT  MAX(EQP_INSURE_NO)
+                           FROM  TB_EQP_INSURE
+                          WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+                            AND  EQP_INSURE_NO < #EQP_INSURE_NO#)]]>
+	</update>
+</sqlMap>

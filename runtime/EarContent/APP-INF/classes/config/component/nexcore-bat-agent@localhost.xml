@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 배치 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <!-- ################################################################## -->
+    <!-- WAS 배치 Agent 용 컴포넌트                                         -->
+    <!-- ################################################################## -->
+    
+<!--  아래 Bean 을 nexcore-core.xml 에 설정함.     
+    <bean id="propertyConfigurer" class="nexcore.framework.core.ioc.SpringPropertyPlaceholderConfigurer">
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+        <property name="placeholderPrefix"              value="$"/>
+        <property name="locations">
+            <list>
+                <value>config/parameter/*.properties</value>
+            </list>
+        </property>
+    </bean>
+-->    
+    <bean id="nc.bat.agent.AgentMain"
+        class="nexcore.framework.bat.agent.internal.AgentMain"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[Batch Agent 컴포넌트]]></description>
+        <property name="enabled"                 value = "${nexcore.bat.agent.enable.${system.id}}"/>
+        <property name="jobRunnerCallBack"       ref   = "nc.bat.agent.JobRunnerCallBack"/>
+        <property name="jobExecutionBoard"       ref   = "nc.bat.agent.JobExecutionBoard"/>
+        <property name="batchLogManager"         ref   = "nc.bat.agent.BatchLogManager"/>
+        <property name="fwkConfiguration"        ref   = "nc.bat.agent.FwkConfiguration"/>
+        <property name="batchRunLogDao"          ref   = "nc.bat.agent.log.BatchRunLogDao"/>
+        <property name="jobRunnerMap"            ref   = "nc.bat.agent.jobRunnerMap"/>
+    </bean>
+    
+    <bean id="nc.bat.agent.JobExecutionBoard"
+        class="nexcore.framework.bat.agent.internal.JobExecutionBoard"
+        init-method="init" destroy-method="destroy">
+    </bean>
+    
+    <util:map id="nc.bat.agent.jobRunnerMap">
+		<entry key="EJB">
+			<bean class="nexcore.framework.bat.agent.internal.EjbJobRunner" init-method="init" destroy-method="destroy"/>
+		</entry>
+		<entry key="POJO">
+			<bean class="nexcore.framework.bat.agent.internal.PojoJobRunner" init-method="init" destroy-method="destroy"/>
+		</entry>
+		<entry key="PROC">
+			<bean class="nexcore.framework.bat.agent.internal.ProcJobRunner" init-method="init" destroy-method="destroy">
+				<property name="useParameterFile"   value = "true"/>
+				<property name="processManager">
+					<bean class="nexcore.framework.bat.agent.internal.ProcessManager" init-method="init" destroy-method="destroy">
+						<property name="processHelperMap">
+							<map>
+								<entry key="unix"    value-ref="nc.bat.agent.proc.UnixProcessHelperSIGKILL"/>
+								<entry key="windows" value-ref="nc.bat.agent.proc.WindowsProcessHelper" />
+							</map>
+						</property>
+					</bean>
+				</property>
+				<property name="procJobExitHandler" ref   = "nc.bat.agent.proc.ProcJobExitHandler" />
+				<!-- property name="subLogFilenameResolver">
+				</property-->
+			</bean>
+		</entry>
+		<entry key="FILEWATCH">
+			<bean class="nexcore.framework.bat.agent.internal.FileWatchJobRunner" init-method="init" destroy-method="destroy"/>
+		</entry>
+		<entry key="CENTERCUT">
+			<bean class="nexcore.framework.bat.agent.internal.CenterCutJobRunner" init-method="init" destroy-method="destroy"/>
+		</entry>
+		<entry key="SLEEP">
+			<bean class="nexcore.framework.bat.agent.internal.SleepJobRunner" init-method="init" destroy-method="destroy"/>
+		</entry>
+		<entry key="EJBSO">
+			<bean class="nexcore.framework.bat.agent.internal.EjbStartOnlyJobRunner" init-method="init" destroy-method="destroy"/>
+		</entry>
+		<entry key="DBPROC">
+			<bean class="nexcore.framework.bat.agent.internal.DBProcedureJobRunner" init-method="init" destroy-method="destroy"/>
+		</entry>
+    </util:map>
+
+    <bean id="nc.bat.agent.proc.WindowsProcessHelper" class="nexcore.framework.bat.agent.internal.WindowsProcessHelperImpl">
+    </bean>
+
+    <bean id="nc.bat.agent.proc.UnixProcessHelperSIGKILL" class="nexcore.framework.bat.agent.internal.UnixProcessHelperImpl">
+        <property name="psAllCommand" value="ps -ef"/>
+        <property name="killCommand"  value="kill -9"/>
+        <property name="shellName"    value="/bin/sh"/>
+        <property name="pidIndex"     value="1"/>
+        <property name="ppidIndex"    value="2"/>
+    </bean>
+
+    <bean id="nc.bat.agent.proc.UnixProcessHelperSIGTERM" class="nexcore.framework.bat.agent.internal.UnixProcessHelperImpl">
+        <property name="psAllCommand" value="ps -ef"/>
+        <property name="killCommand"  value="kill"/>
+        <property name="shellName"    value="/bin/sh"/>
+        <property name="pidIndex"     value="1"/>
+        <property name="ppidIndex"    value="2"/>
+    </bean>
+
+    <bean id="nc.bat.agent.proc.ProcessRecoveryOnStart" class="nexcore.framework.bat.agent.internal.ProcessRecoveryOnStart"
+    	init-method="init" destroy-method="destroy" depends-on="nc.bat.agent.AgentMain">
+		<property name="enabled"             value = "${nexcore.bat.agent.process.recoveryonstart.${system.id}}"/>
+        <property name="jobExecutionBoard"   ref   = "nc.bat.agent.JobExecutionBoard"/>
+        <property name="processHelperMap">
+            <map>
+                <entry key="unix"    value-ref="nc.bat.agent.proc.UnixProcessHelperSIGKILL"/>
+                <entry key="windows" value-ref="nc.bat.agent.proc.WindowsProcessHelper" />
+            </map>
+        </property>
+		<property name="jobRunnerMap">
+			<bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+				<property name="targetBeanName" value="nc.bat.agent.AgentMain"/>
+				<property name="propertyPath"   value="jobRunnerMap"/>
+			</bean>
+		</property>
+		<property name="batchLogManager"     ref   = "nc.bat.agent.BatchLogManager" />
+		<property name="procJobExitHandler"  ref   = "nc.bat.agent.proc.ProcJobExitHandler" />
+    </bean>
+
+	<bean id="nc.bat.agent.proc.ProcJobExitHandler" class="nexcore.framework.bat.agent.internal.ProcJobExitHandler"
+    	init-method="init" destroy-method="destroy">
+        <property name="jobRunnerCallBack"   ref   = "nc.bat.agent.JobRunnerCallBack"/>
+    </bean>
+
+    <bean id="nc.bat.agent.AgentRMIExporter" class="nexcore.framework.bat.agent.internal.AgentRmiServiceExporter">
+        <property name = "enable"            value = "${nexcore.bat.agent.enable.${system.id}}"/>
+        <property name = "serviceName"       value = "BatchAgent"/>
+        <property name = "service"           ref   = "nc.bat.agent.AgentService"/>
+        <property name = "serviceInterface"  value = "nexcore.framework.bat.IAgentService"/>
+        <property name = "registryPort"      value = "${nexcore.bat.agent.rmi.server.port.${system.id}}"/>
+        <property name = "servicePort"       value = "${nexcore.bat.agent.rmi.server.port.${system.id}}"/>
+        <!--property name="registryClientSocketFactory">
+			<bean class="nexcore.framework.bat.util.NRMIClientSocketFactory">
+				<constructor-arg type="int" value="5000"/>  <!- - connect timeout - ->
+				<constructor-arg type="int" value="30000"/> <!- - read timeout - ->
+			</bean>
+		</property>
+		<property name="registryServerSocketFactory">
+			<bean class="nexcore.framework.bat.util.NRMIServerSocketFactory">
+				<constructor-arg type="int" value="0"/> <!- - read timeout. 0 : no limit. - ->
+			</bean>
+		</property-->
+    </bean>
+    
+    <bean id="nc.bat.agent.AgentService"
+        class="nexcore.framework.bat.agent.internal.AgentServiceImpl"
+        init-method="init" destroy-method="destroy" depends-on="nc.bat.agent.proc.ProcessRecoveryOnStart">
+        <description><![CDATA[Batch Agent Service]]></description>
+        <property name="agentMain"           ref   = "nc.bat.agent.AgentMain"/>
+    </bean>
+
+    <bean id="nc.bat.agent.BatchSqlManagerFactory"
+        class="nexcore.framework.bat.agent.internal.BatchSqlManagerFactory"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[배치용 SqlManagerFactory ]]></description>
+        <property name="dsFactory"                      ref="nc.bat.dsFactory-JNDI"/>
+        <property name="datasourceMap"                  ref="nc.bat.agent.BatchSqlManagerFactory.datasourceMap"/>
+        <property name="replaceNullResultToEmptyString" value="${sqlmanager.replaceNullResultToEmptyString}"/>
+        <property name="txManagerFactories">
+            <map>
+                <entry key="__DEFAULT__"   value-ref="nc.bat.txManagerFactory-EXTERNAL"/>
+                <entry key=".*NonXA$"      value-ref="nc.bat.txManagerFactory-JDBC"/>
+            </map>
+        </property>
+    </bean>
+
+<!-- non was 용. 
+    <bean id="nc.bat.agent.BatchSqlManagerFactory"
+        class="nexcore.framework.bat.agent.internal.BatchSqlManagerFactory"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[배치용 SqlManagerFactory ]]></description>
+        <property name="dsFactory"             ref="nc.bat.dsFactory-DBCP"/>
+        <property name="datasourceMap"         ref="nc.bat.agent.BatchSqlManagerFactory.datasourceMap"/>
+        <property name="txManagerFactories">
+            <map>
+                <entry key=".*"            value-ref="nc.bat.txManagerFactory-JDBC"/>
+            </map>
+        </property>
+    </bean>
+ -->
+
+    <!-- WAS 타입 Only -->
+    <bean id="nc.bat.dsFactory-JNDI"
+        class="nexcore.framework.integration.db.DsFactory" lazy-init="true">
+        <description><![CDATA[DataSource 객체 Factory]]></description>
+        <property name="type"             value="NC_JNDI" />
+    </bean>
+
+    <!-- Non-WAS 타입 Only -->
+    <bean id="nc.bat.dsFactory-DBCP"
+        class="nexcore.framework.integration.db.DsFactory" lazy-init="true">
+        <description><![CDATA[NonWAS 버전일 경우 에이전트 자제척으로 DataSource 생성]]></description>
+        <property name="type"             value="NC_DBCP" />
+        <property name="propertiesPerDataSource">
+            <bean class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+                <description><![CDATA[NonWAS 타입일 경우 DataSource 생성에 필요한 JDBC 접속정보]]></description>
+                <property name="location" value="classpath:config/parameter/bat-agent-datasources.properties.nonwas"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="nc.bat.txManagerFactory-EXTERNAL"
+        class="nexcore.framework.integration.db.TxManagerFactory">
+        <property name="transactionType" value="EXTERNAL" />
+        <property name="transactionProperties">
+            <props>
+                <prop key="SetAutoCommitAllowed">false</prop>
+                <prop key="DefaultAutoCommit">false</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="nc.bat.txManagerFactory-JDBC"
+        class="nexcore.framework.integration.db.TxManagerFactory">
+        <property name="transactionType" value="JDBC" />
+        <property name="commitRequired"  value="true" />
+    </bean>
+
+    <bean id="nc.bat.agent.BatchSqlManagerFactory.datasourceMap" class="nexcore.framework.core.ioc.SpringOptionalMapFactoryBean">
+        <description><![CDATA[데이타소스 매핑 정보.]]></description>    
+        <property name="option" value="${nexcore.bat.agent.stage.code.${system.id}}"/>
+        <property name="optionSourceMap">
+            <map>
+                <entry key="L"> <!-- 로컬용 -->
+                    <map>
+                    	<entry key="JEDU.*NonXA"   value="jdbc/NexcoreDS_NonXA"/>
+                    	<entry key="JEDU.*"   value="jdbc/NexcoreDS"/>
+                        <entry key=".*NonXA"  value="jdbc/BizDS_NonXA"/>
+                        <entry key=".*"       value="jdbc/BizDS"/>
+                    </map>
+                </entry>
+                <entry key="D"> <!-- 개발용 -->
+                    <map>
+                        <entry key=".*NonXA"  value="jdbc/BizDS_NonXA"/>
+                        <entry key=".*"       value="jdbc/BizDS"/>
+                    </map>
+                </entry>
+                <entry key="T"> <!-- 테스트용 -->
+                    <map>
+                        <entry key=".*NonXA"  value="jdbc/BizDS_NonXA"/>
+                        <entry key=".*"       value="jdbc/BizDS"/>
+                    </map>
+                </entry>
+                <entry key="R"> <!-- 운영용 -->
+                    <map>
+                        <entry key=".*NonXA"  value="jdbc/BizDS_NonXA"/>
+                        <entry key=".*"       value="jdbc/BizDS"/>
+                    </map>
+                </entry>
+            </map>
+        </property>
+    </bean>  
+
+    <bean id="nc.bat.agent.BatchClassLoadManager"
+        class="nexcore.framework.bat.agent.internal.BatchClassLoadManager"
+        init-method="init" destroy-method="destroy">
+        <description>
+        <![CDATA[Batch 프로그램 클래스를 로드하는 컴포넌트]]>
+        </description>
+        <property name="classBaseDirectory"  value ="${NEXCORE_HOME}/batch/job/classes" />
+    </bean>  
+
+    <bean id="nc.bat.agent.IControllerClient"
+        class="nexcore.framework.bat.controller.client.ControllerClientByRmi"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[Batch Controler 에 접속하는 Client. RMI 방식 ]]></description>
+        <property name="schedulerAddress"    value="${nexcore.bat.agent.scheduler.address.${system.id}}"/>
+    </bean>
+
+    <bean id="nc.bat.agent.JobRunnerCallBack"
+        class="nexcore.framework.bat.agent.internal.RunResultCallBack"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[Job 의 실행 결과를 스케줄러로 callback ]]></description>
+        <property name="controllerClient"    ref  ="nc.bat.agent.IControllerClient"/>
+        <property name="clientConcurrentMax" value="5"/>
+    </bean>
+
+    <bean id="nc.bat.agent.JobEndCallbackRecovery"
+        class="nexcore.framework.bat.agent.internal.JobEndCallbackRecovery"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[Job End Callback 장애시 재처리 데몬]]></description>
+        <property name="enabled"             value="true"/>
+        <property name="agentMain"           ref  ="nc.bat.agent.AgentMain"/>
+        <property name="controllerClient"    ref  ="nc.bat.agent.IControllerClient"/>
+        <property name="jobRunnerCallBack"   ref  ="nc.bat.agent.JobRunnerCallBack"/>
+    </bean>
+
+    <bean id="nc.bat.agent.FileLoggerFactory"
+        class="nexcore.framework.bat.agent.log.FileLoggerFactory"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[Job File Log 생성기]]></description>
+        <property name="baseDir"           value="${nexcore.bat.agent.logdir.${system.id}}"/>
+        <property name="separatePerDay"    value="true"/>
+        <property name="separatePerJobId"  value="true"/>
+        <!-- property name="encoding"          value="MS949"/ -->
+    </bean>
+
+    <bean id="nc.bat.agent.BatchLogManager"
+        class="nexcore.framework.bat.agent.log.BatchLogManager"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[Batch Log Manager]]></description>
+        <property name="factories">
+            <list>
+                <ref bean="nc.bat.agent.FileLoggerFactory"/>
+            </list>
+        </property>
+        <property name="logLevel"  value="${nexcore.bat.agent.loglevel.${system.id}}"/> <!-- debug, info, warn, error, fatal, off -->
+    </bean>
+    
+    <bean id="nc.bat.agent.OldFileCleaner"
+        class="nexcore.framework.bat.agent.internal.OldFileCleaner"
+        init-method="init" destroy-method="destroy">
+        <property name="autoDeleteOldFile" value="${nexcore.bat.agent.oldjoblogclean.enable.${system.id}}"/>
+        <property name="executionTime"     value="${nexcore.bat.agent.oldjoblogclean.time.${system.id}}"/>
+        <property name="keepPeriod"        value="${nexcore.bat.agent.oldjoblogclean.keep.${system.id}}"/>
+        <property name="targetLocations">
+            <list>
+                <value>${nexcore.bat.agent.logdir.${system.id}}</value>
+                <value>${NEXCORE_HOME}/batch/param</value>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="nc.bat.agent.HeapSharedMemoryManager"
+        class="nexcore.framework.bat.agent.mem.HeapSharedMemoryManager"
+        init-method="init" destroy-method="destroy">
+    </bean>
+
+    <bean id="nc.bat.agent.FwkConfiguration"
+        class="nexcore.framework.bat.base.FwkConfiguration"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[확장 (customize) 기능 관리]]></description>
+        <property name = "enabled"                       value = "${nexcore.bat.agent.enable.${system.id}}"/>
+        <property name = "batchFacadeJndiName"           value = "${nexcore.bat.agent.ejb.facade.jndi.${system.id}}"/>
+        <property name = "permitCallOnlineBizComponent"  value = "false"/>
+        <property name = "permitCallSharedBizComponent"  value = "true"/>
+        
+        <!-- 
+        <property name="dataSourceKeyResolver">
+            <bean class="slm.fwk.batch.SLMBatchDataSourceKeyResolver" init-method="init" destroy-method="destroy">
+                <description><![CDATA[DataSource Key를 만드는 로직]]></description>
+            </bean>
+        </property>
+        <property name="dbInputParameterWrapper">
+            <bean class="slm.fwk.batch.SLMDBInputParameterWrapper"
+                init-method="init" destroy-method="destroy">
+                <description><![CDATA[DB Input Parameter를 가공]]></description>
+            </bean>
+        </property>
+        <property name="dbOutputValueFilter">
+            <bean class="slm.fwk.batch.SLMDBOutputValueFilter"
+                init-method="init" destroy-method="destroy">
+                <description><![CDATA[DB select 결과를 가공]]></description>
+            </bean>
+        </property>
+        <property name="sqlLogWrapper">
+            <bean class="slm.fwk.batch.SLMSqlLoggerWrapper"
+                init-method="init" destroy-method="destroy">
+                <description><![CDATA[SQL 로그 Wrapper]]></description>
+                <property name="contextedSqlLog"   ref="nc.core.IContextedSqlLog"/>
+            </bean>
+        </property>
+        <property name="auditIdMaker">
+            <bean class="slm.fwk.batch.SLMAuditIdMaker"
+                init-method="init" destroy-method="destroy">
+                <description><![CDATA[Audit ID 생성기]]></description>
+            </bean>
+        </property>
+        <property name="onlineContextMaker">
+            <bean class="slm.fwk.batch.SLMOnlineContextMaker"
+                init-method="init" destroy-method="destroy">
+                <description><![CDATA[OnlineContext 생성기]]></description>
+            </bean>
+        </property>
+        <property name="controlReportWriter">
+            <bean class="slm.fwk.batch.SLMControlReportWriter"
+                init-method="init" destroy-method="destroy">
+                <description><![CDATA[Control Report Writer 구현체.]]></description>
+            </bean>
+        </property>
+        -->
+    </bean>
+
+</beans>
+
+
+

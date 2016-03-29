@@ -1,0 +1,273 @@
+package dms.nr.nrseabase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]단말자산현황</li>
+ * <li>설  명 : <pre>단말자산현황FU</pre></li>
+ * <li>작성일 : 2015-07-17 15:54:28</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FNRInveInfoMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRInveInfoMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>단말자산현황조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-07-17 15:54:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : RENTAL_CNTRT_STA_DT [계약기간시작일]
+	 *	- field : RENTAL_CNTRT_END_DT [계약기간종료일]
+	 *	- field : OP_TYP_CD [계약상태코드]
+	 *	- field : INVE_ST_CD [재고상태코드]
+	 *	- field : ASSET_SLIP_ST [전표상태코드]
+	 *	- field : EQP_SER_NO [일련번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_REQ_IN
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : CNTRT_PRD [계약기간코드]
+	 *		- field : NEW_CNTRT_DT [신규계약일]
+	 *		- field : RENTAL_CNTRT_STA_DT [계약기간시작일]
+	 *		- field : RENTAL_CNTRT_END_DT [계약기간종료일]
+	 *		- field : EQP_PRCH_AMT [매입가]
+	 *		- field : FISCL_REMPRC [잔존가]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : ASSET_SLIP_ST [전표상태코드]
+	 *		- field : ASSET_SLIP_NO [전표번호]
+	 *		- field : ASSET_NO [자산번호]
+	 * </pre>
+	 */
+	public IDataSet fInqInveInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet usrListRs = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DNRInveInfoMgmt dNRInveInfoMgmt = (DNRInveInfoMgmt) lookupDataUnit(DNRInveInfoMgmt.class);
+			
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dNRInveInfoMgmt.dSInveInfoTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+			// 3. LISTDM호출
+			responseData = dNRInveInfoMgmt.dSInveInfoLstPaging(reqDs, onlineCtx);
+			usrListRs = responseData.getRecordSet("RS_REQ_IN");
+			PagenateUtils.setPagenatedParamToRecordSet(usrListRs, reqDs, intTotalCnt);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말자산현황상세조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-07-17 15:54:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_REQ_IN_DTL
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : COLOR_CD [색상코드]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : CNTRT_PRD [계약기간코드]
+	 *		- field : RENTAL_CNTRT_STA_DT [계약기간시작일]
+	 *		- field : RENTAL_CNTRT_END_DT [계약기간종료일]
+	 *		- field : EQP_PRCH_AMT [매입가]
+	 *		- field : FISCL_REMPRC [잔존가]
+	 *		- field : OP_TYP_CD [계약상태코드]
+	 *		- field : FISCL_SVCL [내용년수]
+	 *		- field : CAPA_CD [용량코드]
+	 * </pre>
+	 */
+	public IDataSet fInqInveInfoDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	 		try {
+	 			// 1. DU lookup
+	 			DNRInveInfoMgmt dNRInveInfoMgmt = (DNRInveInfoMgmt) lookupDataUnit(DNRInveInfoMgmt.class);
+
+	 			// 2. LISTDM호출
+	 			responseData = dNRInveInfoMgmt.dSInveInfoDtl(requestData, onlineCtx);
+	 			
+	 		} catch ( BizRuntimeException e ) {
+	 			throw e; //시스템 오류가 발생하였습니다.
+	 		}	
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-07-17 15:54:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_INVE_HANDLE
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSlipInveInfoHandl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fRegSlip", requestData, onlineCtx);
+			IRecordSet rs = responseData.getRecordSet("ERP_SLIP_LIST");
+			if( rs == null ){
+				return responseData;
+			}
+			IRecord rd = null;
+			for(int i=0; i<rs.getRecordCount(); ++i){
+				rd = rs.getRecord(i);
+				rd.set("ASSET_SLIP_NO", rd.get("SLIP_NO"));
+				}
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	    
+//	    try {
+// 			// 1. DU lookup
+// 			DNRInveInfoMgmt dNRInveInfoMgmt = (DNRInveInfoMgmt) lookupDataUnit(DNRInveInfoMgmt.class);
+//
+// 			// 2. LISTDM호출
+// 			responseData = dNRInveInfoMgmt.dSlipInveInfoHandl(requestData, onlineCtx);
+// 			
+// 		} catch ( BizRuntimeException e ) {
+// 			throw e; //시스템 오류가 발생하였습니다.
+// 		}	
+		
+		return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-07-17 15:54:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fControllSlipInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    
+	  try {
+	    	requestData.putField("USER_NO", ca.getUserNo());
+ 			// 1. DU lookup
+ 			DNRInveInfoMgmt dNRInveInfoMgmt = (DNRInveInfoMgmt) lookupDataUnit(DNRInveInfoMgmt.class);
+ 			
+
+ 			// 2. LISTDM호출
+ 			responseData = dNRInveInfoMgmt.dIControllSlipInfo(requestData, onlineCtx);
+ 			
+ 		} catch ( BizRuntimeException e ) {
+ 			throw e; //시스템 오류가 발생하였습니다.
+ 		}	
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-07-17 15:54:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSlipInveInfoHandlDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    
+	    try {
+			// 1. FM 호출 --전표번호를 삭제하고,삭제전표번호를 받는다
+	    	responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fRemoveSlip", requestData, onlineCtx);
+	    	responseData.putField("USER_NO",ca.getUserNo());
+	    	
+						
+			// 2. DU lookup -- 전표취소처리 
+ 			DNRInveInfoMgmt dNRInveInfoMgmt = (DNRInveInfoMgmt) lookupDataUnit(DNRInveInfoMgmt.class);
+ 			
+ 			dNRInveInfoMgmt.dUControllSlipInfo(responseData, onlineCtx);
+			
+			
+		
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+			
+	    return responseData;
+	}
+  
+}

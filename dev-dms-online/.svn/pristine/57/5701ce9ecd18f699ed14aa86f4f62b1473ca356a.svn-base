@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRConstInMgmt">
+	<select id="SConstInLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRConstInMgmt.SConstInLstPaging 구성품입고조회 */
+/* IO: 박민정,2015-07-30T17:30:18(박민정,2015-07-10T19:03:55) */
+SELECT  *  
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.CMPT_IN_DT ASC, A.PRCHCO_CD ASC) AS ROWNO
+                ,A.CMPT_CD	    /*구성품코드*/
+                ,A.PRCHCO_CD   /*매입처코드*/
+                ,A.CMPT_IN_DT 	/*구성품입고일자*/
+                ,A.EQP_MDL_CD 	/*단말기모델코드*/
+                ,A.CMPT_PRCH_QTY 	/*구성품매입수량*/
+                ,A.CMPT_PRCH_UPRC	/*구성품매입단가*/
+                ,A.DEL_YN	        /*삭제여부*/
+                ,A.FS_REG_USER_ID	/*최초등록사용자ID*/
+                ,A.FS_REG_DTM	    /*최초등록일시*/
+                ,A.LS_CHG_USER_ID	/*최종변경사용자ID*/
+                ,A.LS_CHG_DTM	    /*최종변경일시*/
+                ,ID.DEALCO_NM AS PRCHCO_NM
+                ,IE.EQP_MDL_NM  /*단말기모델이름*/
+           FROM  TB_CMPT_IN A
+                ,(SELECT DEALCO_NM
+                        ,DEALCO_CD
+                    FROM TB_DEALCO Y
+                   WHERE (DEL_YN = 'N' OR DEL_YN IS NULL ) 
+]]><isNotEmpty property="PRCHCO_NM"><![CDATA[
+                     AND Y.DEALCO_NM LIKE #PRCHCO_NM#||'%'
+]]></isNotEmpty><![CDATA[
+                 ) ID
+                  ,TB_EQP_MDL IE          
+          WHERE  A.DEL_YN = 'N'
+            AND  A.PRCHCO_CD = ID.DEALCO_CD
+            AND  A.EQP_MDL_CD = IE.EQP_MDL_CD 
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+            AND  A.CMPT_IN_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+            AND  A.CMPT_IN_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CMPT_CD" compareValue="%"><![CDATA[
+            AND  A.CMPT_CD = #CMPT_CD#
+]]></isNotEqual><![CDATA[
+        )PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SConstInLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPRConstInMgmt.SConstInLstTotCnt 구성품입고총건수 */
+/* IO: 박민정,2015-07-15T16:39:34(박민정,2015-07-13T17:39:12) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_CMPT_IN A
+       ,(SELECT DEALCO_NM
+               ,DEALCO_CD
+           FROM TB_DEALCO Y
+          WHERE (DEL_YN = 'N' OR DEL_YN IS NULL ) 
+]]><isNotEmpty property="PRCHCO_NM"><![CDATA[
+            AND Y.DEALCO_NM LIKE #PRCHCO_NM#||'%'
+]]></isNotEmpty><![CDATA[
+         ) ID 
+         ,TB_EQP_MDL IE              
+  WHERE  A.DEL_YN = 'N'
+    AND  A.PRCHCO_CD = ID.DEALCO_CD
+    AND  A.EQP_MDL_CD = IE.EQP_MDL_CD
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+    AND  A.CMPT_IN_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+    AND  A.CMPT_IN_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CMPT_CD" compareValue="%"><![CDATA[
+   AND  A.CMPT_CD = #CMPT_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SConstInNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRConstInMgmt.SConstInNum 구성품입고일련번호 */
+/* IO: 박민정,2015-07-17T11:25:16(박민정,2015-07-17T11:25:16) */
+SELECT  'CI'||LPAD(SQ01_TB_CMPT_IN.NEXTVAL,10,'0') AS CMPT_IN_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IConstIn" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRConstInMgmt.IConstIn 구성품입고입력 */
+/* IO: 박민정,2015-07-17T14:24:09(박민정,2015-07-17T14:20:23) */
+INSERT
+  INTO  TB_CMPT_IN       /* 구성품입고 */ 
+     (
+      CMPT_IN_NO        /*구성품입고번호 */ 
+     ,CMPT_IN_DT	     /*구성품입고일자 */ 
+     ,PRCHCO_CD	     /*매입처코드 */ 
+     ,EQP_MDL_CD	     /*단말기모델코드 */ 
+     ,CMPT_CD	         /*구성품코드 */ 
+     ,CMPT_PRCH_QTY	     /*구성품매입수량 */ 
+     ,CMPT_PRCH_UPRC	 /*구성품매입단가 */ 
+     ,DEL_YN	         /*삭제여부 */ 
+     ,FS_REG_USER_ID	 /*최초등록사용자ID */ 
+     ,FS_REG_DTM	     /*최초등록일시 */ 
+     ,LS_CHG_USER_ID	 /*최종변경사용자ID */ 
+     ,LS_CHG_DTM	     /*최종변경일시 */ 
+     )
+  VALUES
+     (
+      #CMPT_IN_NO#      /*구성품입고번호 */ 
+     ,#CMPT_IN_DT#	     /*구성품입고일자 */ 
+     ,#PRCHCO_CD#	     /*매입처코드 */ 
+     ,#EQP_MDL_CD#	     /*단말기모델코드 */ 
+     ,#CMPT_CD#	         /*구성품코드 */ 
+     ,#CMPT_PRCH_QTY#	 /*구성품매입수량 */ 
+     ,#CMPT_PRCH_UPRC#	 /*구성품매입단가 */ 
+     ,'N'	         /*삭제여부 */ 
+     ,#FS_REG_USER_ID#	 /*최초등록사용자ID */ 
+     ,SYSDATE	         /*최초등록일시 */ 
+     ,#LS_CHG_USER_ID#	 /*최종변경사용자ID */ 
+     ,SYSDATE	         /*최종변경일시 */ 
+     )]]>
+	</insert>
+</sqlMap>

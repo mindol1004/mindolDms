@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPTlyMgmt">
+	<select id="SGnrlJdgTlyObjPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyMgmt.SGnrlJdgTlyObjPaging 일반감정검수대상대상목록페이징조회 */
+/* IO: 김윤환,2015-08-26T19:42:44(김윤환,2015-08-25T17:42:52) */
+SELECT 
+		'0' AS CHECKED 	
+		,A.CNSL_MGMT_NO 							/* 상담관리 일련번호*/
+		,A.EQP_MDL_CD 							/* 단말기 모델 코드 */
+    	,D.EQP_MDL_NM
+		,A.CNSL_MGMT_SER_NO 					/* 일련 번호 */
+		,A.CNSL_DT  							/* 상담 일자 */
+		,A.EQP_COLOR_CD 						/* 색상 코드 */
+		,B.AGN_ORG_CD 							/* 대리점조직코드 */
+		/*,FBAS_GET_ORG_NM(B.AFFIL_ORG) ORG_NM */
+		,'' AS AGN_ORG_NM
+		/*,B.UKEY_AGENCY_CD*/
+		,'' AS AGENCY_CD
+		/*,FBAS_GET_AGENCY_NM(B.POS_AGENCY,A.CNSL_DT) AGENCY_NM */      
+		,'' AS AGENCY_NM 						/* 내용모름 */     
+		/*,FBAS_GET_DEAL_NM(A.CNSL_DEALCO_CD,A.CNSL_DT) CON_PLC_NM*/
+		,'' AS CNSL_DEALCO_NM 					/* 상담 거래처명 */     
+		,A.CNSL_DEALCO_CD 						/* 상담 거래처코드 */         		    		
+		,A.DPSTR  								/* 에금주 */
+		,A.CTZ_NO 								/* 주민번호 */
+		,A.EQP_ST_DTAIL 						/* 단말기 상태 세부 */
+		,A.SCRB_MTHD  							/* 가입 방법 */
+   FROM TB_EP_CST_CONSULT_MGMT A 				/* 상담관리 */  
+  	 	,TB_DEALCO B 							/* 거래처 */
+     	,TB_EP_CST_PRCHS_MGMT C 				/* 매입관리*/
+      	,TB_EQP_MDL D
+  WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD(+)
+   	AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+    AND A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   /* AND B.EFF_STA_DT <= A.CNSL_DT||'235959'*/ /* 유효시작일자 */
+   /* AND B.EFF_END_DT >= A.CNSL_DT||'235959'*/ /* 유효종료일자 */
+   /* AND con.CNSL_DT BETWEEN CON_FROM_DT AND CON_TO_DT */     
+   	AND A.DEL_YN = 'Y'
+   	AND B.DEL_YN(+) = 'N'
+   	AND C.DEL_YN(+) = 'N'
+   	AND A.MOV_YN = 'Y' 							/* 이동여부 */
+   	AND (A.PRCH_CL = 'C' OR (A.PRCH_CL = 'R' AND NVL(A.RETUR_RSLT,'N') = 'N') OR C.PROGR_ST = '23' OR C.PROGR_ST = '2C') /* 매입구분, 반송결과, 진행상태*/
+   	AND A.IN_CONF_YN = 'Y' 						/* 입고확정여부 */
+   	AND A.SKN_CL = 'N' 							/* SKN 구분 */
+   	AND C.SKN_CL(+) = 'N'  						/* SKN 구분*/]]>
+	</select>
+	<select id="SGnrlJdgTlyObjTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyMgmt.SGnrlJdgTlyObjTotCnt 일반감정검수대상대상목록총건수 */
+/* IO: 김윤환,2015-08-26T18:48:22(김윤환,2015-08-25T17:44:30) */
+SELECT 
+		COUNT(*) AS TOTAL_CNT /*전체건수*/
+   FROM TB_EP_CST_CONSULT_MGMT A 				/* 상담관리 */  
+  	 	,TB_DEALCO B 							/* 거래처 */
+     	,TB_EP_CST_PRCHS_MGMT C 				/* 매입관리*/
+     	,TB_EQP_MDL D
+  WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD(+)
+   	AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+    AND A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   /* AND B.EFF_STA_DT <= A.CNSL_DT||'235959'*/ /* 유효시작일자 */
+   /* AND B.EFF_END_DT >= A.CNSL_DT||'235959'*/ /* 유효종료일자 */
+   /* AND con.CNSL_DT BETWEEN CON_FROM_DT AND CON_TO_DT */     
+   	AND A.DEL_YN = 'Y'
+   	AND B.DEL_YN(+) = 'N'
+   	AND C.DEL_YN(+) = 'N'
+   	AND A.MOV_YN = 'Y' 							/* 이동여부 */
+   	AND (A.PRCH_CL = 'C' OR (A.PRCH_CL = 'R' AND NVL(A.RETUR_RSLT,'N') = 'N') OR C.PROGR_ST = '23' OR C.PROGR_ST = '2C') /* 매입구분, 반송결과, 진행상태*/
+   	AND A.IN_CONF_YN = 'Y' 						/* 입고확정여부 */
+   	AND A.SKN_CL = 'N' 							/* SKN 구분 */
+   	AND C.SKN_CL(+) = 'N'  						/* SKN 구분*/]]>
+	</select>
+</sqlMap>

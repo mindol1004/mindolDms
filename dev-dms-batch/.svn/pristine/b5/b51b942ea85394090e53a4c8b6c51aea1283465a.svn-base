@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR004">
+	<select id="SDcpItmCmpt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR004.SDcpItmCmpt 손해배상금정책항목구성품조회 */
+/* IO: 안진갑,2015-08-24T18:44:25(안진갑,2015-08-24T14:53:59) */
+SELECT  A.EQP_MDL_CD
+       ,A.DCP_EFF_PRD_STA_DT AS EQP_EFF_STA_DT
+       ,A.DCP_EFF_PRD_END_DT AS EQP_EFF_END_DT
+       ,B.INSP_DTL_ITM_CD    AS EQP_CMPT_CD
+       ,C.CM_CD_NM           AS EQP_CMPT_NM
+       ,B.INDF_AMT           AS EQP_CMPT_AMT
+  FROM  TB_DMG_CMP_POLY A
+       ,TB_DMG_CMP_POLY_DTL_ITM B
+       ,TB_CM_CD C
+ WHERE  A.DCP_NO = B.DCP_NO
+   AND  B.INSP_DTL_ITM_CD = C.CM_CD_ID
+   AND  C.CM_GRP_CD_ID = 'DMS107'
+   AND  B.DCP_ITM_CMPT_USE_YN = 'Y'
+   AND  A.DCP_EFF_PRD_STA_DT = TO_CHAR(TO_DATE(#PROC_DT#,'YYYYMMDD')+1, 'YYYYMMDD')
+   AND  NOT EXISTS (SELECT  EQP_MDL_CD
+                      FROM  TF_NR_EQP_CMPT_REG
+                     WHERE  EQP_MDL_CD = A.EQP_MDL_CD
+                       AND  EQP_EFF_STA_DT = A.DCP_EFF_PRD_STA_DT)]]>
+	</select>
+	<insert id="IIFEqpCmptReg" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR004.IIFEqpCmptReg 단말기구성품등록 */
+/* IO: 안진갑,2015-08-24T15:26:19(안진갑,2015-08-24T15:14:15) */
+INSERT INTO TF_NR_EQP_CMPT_REG
+(
+  IF_PROC_DT
+ ,IF_FILE_NM
+ ,IF_SEQ
+ ,EQP_MDL_CD
+ ,EQP_EFF_STA_DT
+ ,EQP_EFF_END_DT
+ ,EQP_CMPT_CD
+ ,EQP_CMPT_NM
+ ,PROC_ST_CD
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  #IF_PROC_DT#
+ ,#IF_FILE_NM#
+ ,#IF_SEQ#
+ ,#EQP_MDL_CD#
+ ,#EQP_EFF_STA_DT#
+ ,#EQP_EFF_END_DT#
+ ,#EQP_CMPT_CD#
+ ,#EQP_CMPT_NM#
+ ,#PROC_ST_CD#
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+</sqlMap>

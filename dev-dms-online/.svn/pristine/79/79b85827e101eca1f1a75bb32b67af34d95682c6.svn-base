@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCSysPolyDtlMgmt">
+	<select id="SSysPolyDtlLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyDtlMgmt.SSysPolyDtlLstPaging 시스템정책상세목록조회 */
+/* IO: 이유미,2014-11-27T10:42:45(심상준,2014-09-03T19:20:33) */
+SELECT  
+        *                                                                                         
+  FROM  (                                                                                            
+         SELECT  
+                 ROW_NUMBER() OVER (ORDER BY A.SYS_POLY_NO, A.SYS_POLY_SNO ASC) AS ROWNO             
+                ,A.SYS_POLY_NO                                                /* 시스템정책번호 */    
+                ,B.SYS_POLY_NM                                                /* 시스템정책명 */      
+                ,A.SYS_POLY_SNO                                               /* 시스템정책일련번호 */
+                ,TO_CHAR(A.APLY_STA_DTM, 'YYYYMMDD') AS APLY_STA_DT           /* 적용시작일시 */      
+                ,TO_CHAR(A.APLY_END_DTM, 'YYYYMMDD') AS APLY_END_DT           /* 적용종료일시 */      
+                ,A.IPUT_CON_VAL1                                              /* 입력조건값1 */       
+                ,A.IPUT_CON_VAL2                                              /* 입력조건값2 */       
+                ,A.IPUT_CON_VAL3                                              /* 입력조건값3 */       
+                ,A.IPUT_CON_VAL4                                              /* 입력조건값4 */       
+                ,A.IPUT_CON_VAL5                                              /* 입력조건값5 */       
+                ,A.IPUT_CON_VAL6                                              /* 입력조건값6 */       
+                ,A.IPUT_CON_VAL7                                              /* 입력조건값7 */       
+                ,A.IPUT_CON_VAL8                                              /* 입력조건값8 */       
+                ,A.IPUT_CON_VAL9                                              /* 입력조건값9 */       
+                ,A.OP_RULE_VAL1                                               /* 처리규칙값1 */       
+                ,A.OP_RULE_VAL2                                               /* 처리규칙값2 */       
+                ,A.OP_RULE_VAL3                                               /* 처리규칙값3 */       
+                ,A.OP_RULE_VAL4                                               /* 처리규칙값4 */       
+                ,A.OP_RULE_VAL5                                               /* 처리규칙값5 */       
+                ,A.OP_RULE_VAL6                                               /* 처리규칙값6 */       
+                ,A.OP_RULE_VAL7                                               /* 처리규칙값7 */       
+                ,A.OP_RULE_VAL8                                               /* 처리규칙값8 */       
+                ,A.OP_RULE_VAL9                                               /* 처리규칙값9 */       
+                ,A.FS_REG_USER_ID                                             /* 최초등록사용자ID */
+                ,TO_CHAR(A.FS_REG_DTM, 'YYYYMMDDHH24MISS') AS FS_REG_DTM      /* 최초등록일시 */
+                ,A.LS_CHG_USER_ID                                             /* 최종등록사용자ID */
+                ,TO_CHAR(A.LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM      /* 최종등록일시 */
+           FROM  TB_SYS_POLY_DTL A   /* SC_시스템정책상세 */
+                ,TB_SYS_POLY B       /* SC_시스템정책 */                                               
+          WHERE  A.SYS_POLY_NO = B.SYS_POLY_NO                                                          
+            AND  A.SYS_POLY_NO = #SYS_POLY_NO#
+      ]]><isNotEmpty prepend="AND" property="SYS_POLY_SNO"><![CDATA[ 
+                 A.SYS_POLY_SNO = #SYS_POLY_SNO#
+      ]]></isNotEmpty><![CDATA[                                                          
+         ) PA                                                                                        
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="ISysPolyDtl" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyDtlMgmt.ISysPolyDtl 시스템정책상세등록 */
+/* IO: 이유미,2014-11-27T11:04:46(심상준,2014-07-31T15:51:59) */
+INSERT                                                         
+  INTO  TB_SYS_POLY_DTL              /* SC_시스템정책상세 */
+       (
+        SYS_POLY_NO                  /* 시스템정책번호 */
+       ,SYS_POLY_SNO                 /* 시스템정책일련번호 */
+       ,APLY_STA_DTM                 /* 적용시작일시 */      
+       ,APLY_END_DTM                 /* 적용종료일시 */      
+       ,IPUT_CON_VAL1                /* 입력조건값1 */       
+       ,IPUT_CON_VAL2                /* 입력조건값2 */       
+       ,IPUT_CON_VAL3                /* 입력조건값3 */       
+       ,IPUT_CON_VAL4                /* 입력조건값4 */       
+       ,IPUT_CON_VAL5                /* 입력조건값5 */       
+       ,IPUT_CON_VAL6                /* 입력조건값6 */       
+       ,IPUT_CON_VAL7                /* 입력조건값7 */       
+       ,IPUT_CON_VAL8                /* 입력조건값8 */       
+       ,IPUT_CON_VAL9                /* 입력조건값9 */       
+       ,OP_RULE_VAL1                 /* 처리규칙값1 */       
+       ,OP_RULE_VAL2                 /* 처리규칙값2 */       
+       ,OP_RULE_VAL3                 /* 처리규칙값3 */       
+       ,OP_RULE_VAL4                 /* 처리규칙값4 */       
+       ,OP_RULE_VAL5                 /* 처리규칙값5 */       
+       ,OP_RULE_VAL6                 /* 처리규칙값6 */       
+       ,OP_RULE_VAL7                 /* 처리규칙값7 */       
+       ,OP_RULE_VAL8                 /* 처리규칙값8 */       
+       ,OP_RULE_VAL9                 /* 처리규칙값9 */       
+       ,FS_REG_USER_ID               /* 최초등록사용자ID */  
+       ,FS_REG_DTM                   /* 최초등록일시 */      
+       ,LS_CHG_USER_ID               /* 최종등록사용자ID */  
+       ,LS_CHG_DTM                   /* 최종등록일시 */      
+        )
+VALUES
+       (
+        #SYS_POLY_NO#                /* 시스템정책번호 */
+       ,#SYS_POLY_SNO#               /* 시스템정책일련번호 */                              
+       ,TO_DATE(#APLY_STA_DT#||'000000','YYYYMMDDHH24MISS')   /* 적용시작일시 */                                         
+       ,TO_DATE(#APLY_END_DT#||'235959','YYYYMMDDHH24MISS')   /* 적용종료일시 */                                         
+       ,#IPUT_CON_VAL1#              /* 입력조건값1 */                                   
+       ,#IPUT_CON_VAL2#              /* 입력조건값2 */                                   
+       ,#IPUT_CON_VAL3#              /* 입력조건값3 */                                   
+       ,#IPUT_CON_VAL4#              /* 입력조건값4 */                                   
+       ,#IPUT_CON_VAL5#              /* 입력조건값5 */                                   
+       ,#IPUT_CON_VAL6#              /* 입력조건값6 */                                   
+       ,#IPUT_CON_VAL7#              /* 입력조건값7 */                                   
+       ,#IPUT_CON_VAL8#              /* 입력조건값8 */                                   
+       ,#IPUT_CON_VAL9#              /* 입력조건값9 */                                   
+       ,#OP_RULE_VAL1#               /* 처리규칙값1 */                                    
+       ,#OP_RULE_VAL2#               /* 처리규칙값2 */                                    
+       ,#OP_RULE_VAL3#               /* 처리규칙값3 */                                    
+       ,#OP_RULE_VAL4#               /* 처리규칙값4 */                                    
+       ,#OP_RULE_VAL5#               /* 처리규칙값5 */                                    
+       ,#OP_RULE_VAL6#               /* 처리규칙값6 */                                    
+       ,#OP_RULE_VAL7#               /* 처리규칙값7 */                                    
+       ,#OP_RULE_VAL8#               /* 처리규칙값8 */                                    
+       ,#OP_RULE_VAL9#               /* 처리규칙값9 */                                    
+       ,#USERNO#                     /* 최초등록사용자ID */                              
+       ,SYSDATE                      /* 최초등록일시 */                                   
+       ,#USERNO#                     /* 최종등록사용자ID */                               
+       ,SYSDATE                      /* 최종등록일시 */                                    
+        )]]>
+	</insert>
+	<update id="USysPolyDtl" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyDtlMgmt.USysPolyDtl 시스템정책상세수정 */
+/* IO: 이유미,2014-11-27T11:05:02(심상준,2014-07-31T15:52:12) */
+UPDATE                                                           
+        TB_SYS_POLY_DTL                    /* SC_시스템정책상세 */
+   SET  APLY_STA_DTM = TO_DATE(#APLY_STA_DT#||'000000','YYYYMMDDHH24MISS')    /* 적용시작일시 */
+       ,APLY_END_DTM = TO_DATE(#APLY_END_DT#||'235959','YYYYMMDDHH24MISS')    /* 적용종료일시 */
+       ,IPUT_CON_VAL1 = #IPUT_CON_VAL1#    /* 입력조건값1 */      
+       ,IPUT_CON_VAL2 = #IPUT_CON_VAL2#    /* 입력조건값2 */      
+       ,IPUT_CON_VAL3 = #IPUT_CON_VAL3#    /* 입력조건값3 */      
+       ,IPUT_CON_VAL4 = #IPUT_CON_VAL4#    /* 입력조건값4 */      
+       ,IPUT_CON_VAL5 = #IPUT_CON_VAL5#    /* 입력조건값5 */      
+       ,IPUT_CON_VAL6 = #IPUT_CON_VAL6#    /* 입력조건값6 */      
+       ,IPUT_CON_VAL7 = #IPUT_CON_VAL7#    /* 입력조건값7 */      
+       ,IPUT_CON_VAL8 = #IPUT_CON_VAL8#    /* 입력조건값8 */      
+       ,IPUT_CON_VAL9 = #IPUT_CON_VAL9#    /* 입력조건값9 */      
+       ,OP_RULE_VAL1 = #OP_RULE_VAL1#      /* 처리규칙값1 */      
+       ,OP_RULE_VAL2 = #OP_RULE_VAL2#      /* 처리규칙값2 */      
+       ,OP_RULE_VAL3 = #OP_RULE_VAL3#      /* 처리규칙값3 */      
+       ,OP_RULE_VAL4 = #OP_RULE_VAL4#      /* 처리규칙값4 */      
+       ,OP_RULE_VAL5 = #OP_RULE_VAL5#      /* 처리규칙값5 */      
+       ,OP_RULE_VAL6 = #OP_RULE_VAL6#      /* 처리규칙값6 */      
+       ,OP_RULE_VAL7 = #OP_RULE_VAL7#      /* 처리규칙값7 */      
+       ,OP_RULE_VAL8 = #OP_RULE_VAL8#      /* 처리규칙값8 */      
+       ,OP_RULE_VAL9 = #OP_RULE_VAL9#      /* 처리규칙값9 */      
+       ,FS_REG_USER_ID = #USERNO#          /* 최초등록사용자ID */
+       ,FS_REG_DTM = SYSDATE               /* 최초등록일시 */
+       ,LS_CHG_USER_ID = #USERNO#          /* 최종등록사용자ID */
+       ,LS_CHG_DTM = SYSDATE               /* 최종등록일시 */
+ WHERE  SYS_POLY_NO = #SYS_POLY_NO#                                
+   AND  SYS_POLY_SNO = #SYS_POLY_SNO#]]>
+	</update>
+	<select id="SSysPolyDtlLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyDtlMgmt.SSysPolyDtlLstTotCnt 시스템정책상세전체건수조회 */
+/* IO: 심상준,2014-10-28T17:33:22(심상준,2014-09-03T17:49:37) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_SYS_POLY_DTL A  /* SC_시스템정책상세 */
+       ,TB_SYS_POLY B      /* SC_시스템정책 */
+ WHERE  A.SYS_POLY_NO = B.SYS_POLY_NO
+   AND  A.SYS_POLY_NO = #SYS_POLY_NO#
+]]><isNotEmpty prepend="AND" property="SYS_POLY_SNO"><![CDATA[ 
+        A.SYS_POLY_SNO = #SYS_POLY_SNO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SSysPolyDtlLstValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyDtlMgmt.SSysPolyDtlLstValidate 시스템정책상세저장사전체크 */
+/* IO: 심상준,2014-09-26T23:48:34(심상준,2014-09-03T17:50:06) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_SYS_POLY_DTL A  /* SC_시스템정책상세 */
+       ,TB_SYS_POLY B      /* SC_시스템정책 */
+ WHERE  A.SYS_POLY_NO = B.SYS_POLY_NO
+   AND  A.SYS_POLY_NO = #SYS_POLY_NO#
+   AND  A.SYS_POLY_SNO = #SYS_POLY_SNO#]]>
+	</select>
+	<select id="SSyPolyDtlDtmValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyDtlMgmt.SSyPolyDtlDtmValidate 시스템정책상세저장사전체크2 */
+/* IO: 심상준,2015-01-15T15:51:45(심상준,2014-09-30T19:53:16) */
+SELECT  
+        COUNT(1) AS DTM_CNT
+  FROM  TB_SYS_POLY_DTL   /* SC_시스템정책상세 */
+ WHERE  SYS_POLY_NO = #SYS_POLY_NO#
+]]><isEqual prepend="AND" property="NC_REC_STATUS" compareValue="updated"><![CDATA[
+        SYS_POLY_SNO != #SYS_POLY_SNO#
+]]></isEqual><![CDATA[
+   AND (
+        (
+         APLY_STA_DTM <= TO_DATE(#APLY_STA_DT#||'000000','YYYYMMDDHH24MISS')   /* 적용시작일시 */ 
+         AND APLY_END_DTM >= TO_DATE(#APLY_STA_DT#||'000000','YYYYMMDDHH24MISS')   /* 적용시작일시 */ 
+         )
+         OR (
+             APLY_STA_DTM <= TO_DATE(#APLY_END_DT#||'235959','YYYYMMDDHH24MISS')   /* 적용종료일시 */  
+             AND APLY_END_DTM >= TO_DATE(#APLY_END_DT#||'235959','YYYYMMDDHH24MISS')   /* 적용종료일시 */ 
+             ) 
+        )]]>
+	</select>
+	<select id="SSysPolyDtlSnoGtno" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCSysPolyDtlMgmt.SSysPolyDtlSnoGtno 시스템정책상세일련번호채번 */
+/* IO: 심상준,2014-10-28T15:20:41(심상준,2014-10-28T15:19:02) */
+SELECT 
+        NVL(MAX(SYS_POLY_SNO),0)+1  AS SYS_POLY_SNO   /* 시스템정책일련번호 */
+  FROM  TB_SYS_POLY_DTL      /* SC_시스템정책상세 */ 
+ WHERE  SYS_POLY_NO = #SYS_POLY_NO#]]>
+	</select>
+</sqlMap>

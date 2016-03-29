@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCDataMgmt">
+	<select id="SDataLstInq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCDataMgmt.SDataLstInq 데이터권한역할목록조회 */
+/* IO: 임지후,2014-12-19T10:43:26(임지후,2014-12-11T13:48:50) */
+SELECT  
+	    *
+  FROM  (
+	     SELECT  
+			     ROW_NUMBER() OVER (ORDER BY A.AUTR_SNO ASC) AS ROWNO
+				,A.AUTR_ROL_ID	                					   /* 권한역할ID */
+				,A.AUTR_SNO	                    					   /* 권한일련번호 */
+				,A.AUTR_OBJ_CO_CD	            	         	       /* 권한대상회사코드 */
+				,NULL AS AUTR_OBJ_CO_CD_NM		          			   /* 권한대상회사코드명 */
+				,A.AUTR_OBJ_BRND_CD	         	         	           /* 권한대상브랜드코드 */
+				,C.BRND_NM AS AUTR_OBJ_BRND_NM	   					   /* 권한대상브랜드코드명 */
+				,AUTR_OBJ_MCHT_NO                                      /* 권한대상가맹점번호 */
+				,D.MCHT_NM AS AUTR_OBJ_MCHT_NM                         /* 권한대상가맹점명 */
+		   FROM  TB_DATA_AUTR_ROL A   					           /* SC_데이터권한역할_REAL */
+			    ,TB_AUTR_ROL B         		                           /* SC_권한역할  */
+			    ,TB_BRND C						  					   /* AF_브랜드 */
+			    ,TB_MCHT D						 					   /* AF_가맹점 */
+		  WHERE  A.AUTR_ROL_ID      = B.AUTR_ROL_ID
+		    AND  A.AUTR_OBJ_BRND_CD = C.BRND_CD (+)
+		    AND  A.AUTR_OBJ_MCHT_NO = D.MCHT_NO (+)
+		]]><isNotEmpty property="AUTR_ROL_ID" prepend="AND"><![CDATA[
+	             A.AUTR_ROL_ID      = #AUTR_ROL_ID#
+		]]></isNotEmpty><![CDATA[		            
+	    ORDER BY A.AUTR_ROL_ID ASC,
+	             A.AUTR_SNO ASC
+        ) PA]]>
+	</select>
+	<insert id="IDataLstReg" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCDataMgmt.IDataLstReg 데이터권한역할등록 */
+/* IO: 임지후,2014-12-18T16:14:50(임지후,2014-12-12T09:28:47) */
+INSERT
+  INTO  TB_DATA_AUTR_ROL   /* SC_데이터권한역할 */    
+	 (
+	    AUTR_ROL_ID	            /* 권한역할ID */
+	   ,AUTR_SNO	            /* 권한일련번호 */
+	   ,AUTR_OBJ_CO_CD	        /* 권한대상회사코드 */
+       ,AUTR_OBJ_BRND_CD	    /* 권한대상브랜드코드 */
+       ,AUTR_OBJ_MCHT_NO        /* 권한대상가맹점번호 */
+	   ,FS_REG_USER_ID 			/* 최초등록사용자 ID */
+	   ,FS_REG_DTM              /* 최초등록일시 */
+	   ,LS_CHG_USER_ID          /* 최종변경사용자ID */
+	   ,LS_CHG_DTM              /* 최종변경일시 */
+	  )                     
+VALUES
+      (
+        #AUTR_ROL_ID#           /* 권한역할ID */      
+       ,DECODE (
+                (SELECT  
+                         MAX(AUTR_SNO) 
+		           FROM  TB_DATA_AUTR_ROL 
+		          WHERE  AUTR_ROL_ID =#AUTR_ROL_ID#)
+			     ,NULL
+			     ,1001
+			     ,( 
+			        SELECT  
+			                MAX(AUTR_SNO)+1 
+			          FROM  TB_DATA_AUTR_ROL 
+			         WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#))    /* 권한일련번호 */  
+        ,#AUTR_OBJ_CO_CD#	                                 /* 권한대상회사코드 */
+		,#AUTR_OBJ_BRND_CD#	   								 /* 권한대상브랜드코드 */
+		,#AUTR_OBJ_MCHT_NO#     							 /* 권한대상가맹점번호 */
+	    ,#userNo#                                            /* 최초등록사용자 ID */ 
+	    ,SYSDATE                                             /* 최초등록일시 */
+	    ,#userNo#                                            /* 최종변경사용자ID */
+	    ,SYSDATE                                             /* 최종변경일시 */             
+       )]]>
+	</insert>
+	<update id="UDataLstUpd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCDataMgmt.UDataLstUpd 데이터권한역할수정 */
+/* IO: 임지후,2014-12-18T16:17:51(임지후,2014-12-12T09:29:10) */
+UPDATE 
+	    TB_DATA_AUTR_ROL    				/* SC_데이터권한역할 */
+   SET  AUTR_OBJ_CO_CD   = #AUTR_OBJ_CO_CD#     /* 권한대상회사코드 */ 
+       ,AUTR_OBJ_BRND_CD = #AUTR_OBJ_BRND_CD#	/* 권한대상브랜드크드 */
+       ,AUTR_OBJ_MCHT_NO = #AUTR_OBJ_MCHT_NO#	/* 권한대상가맹점코드 */
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#				/* 권한역할ID */
+   AND  AUTR_SNO    = #AUTR_SNO#				/* 권한일련번호 */]]>
+	</update>
+	<delete id="DDataLstDel" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCDataMgmt.DDataLstDel 데이터권한역할삭제 */
+/* IO: 임지후,2014-12-18T16:18:31(임지후,2014-12-12T09:29:28) */
+DELETE 
+  FROM TB_DATA_AUTR_ROL			/* SC_데이터권한역할 */
+ WHERE AUTR_ROL_ID = #AUTR_ROL_ID#		/* 권한역할ID */
+   AND AUTR_SNO    = #AUTR_SNO#			/* 권한일련번호 */]]>
+	</delete>
+	<select id="SDataLstChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCDataMgmt.SDataLstChk 데이터권한역할저장전 사전체크 */
+/* IO: 임지후,2014-12-18T16:07:48(임지후,2014-12-12T09:58:22) */
+SELECT  
+	    COUNT(1) AS ROW_CNT 	 /* VALIDATION COUNT */
+  FROM  TB_DATA_AUTR_ROL    /* SC_데이터권한역할 */ 
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#
+   AND  AUTR_SNO    = #AUTR_SNO#]]>
+	</select>
+</sqlMap>

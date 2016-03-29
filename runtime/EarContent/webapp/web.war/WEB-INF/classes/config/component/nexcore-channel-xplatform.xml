@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+	<bean id="nexcore.XPlatformRequestHandler" class="fwk.channel.handler.internal.HpcXplatformHandler">
+		<property name="description" value="Request parser for XPlatform request" />
+		<property name="trIdVarName" value="ncTrId" />
+		<property name="reqIdVarName"      value="ncReqId" />
+		<property name="linearDatasetName" value="ncFieldMap" />
+		<property name="recordStatusName"  value="ncRecStatus" />
+		<property name="identityGenerator" ref="nc.core.IdentityGenerator"/>
+		<property name="frontDataLog"      ref="nc.core.IXpfFrontDataLog" />
+	</bean>
+
+	<bean id="nexcore.XPlatformApplicationController"
+		class="nexcore.framework.online.channel.core.internal.DefaultApplicationController">
+		<description>application controller for XPlatform client</description>
+		<property name="commandViewMapResolver" ref="nexcore.XPlatformCommandViewMapResolver" />
+		<property name="commandProcessor" ref="nc.channel.web.ICommandProcessor" />
+	</bean>
+
+	<bean id="nexcore.XPlatformView" class="fwk.channel.web.HpcXplatformView">
+		<description>Response builder for XPlatform client</description>
+		<property name="trIdVarName" value="ncTrId" />
+		<property name="reqIdVarName"      value="ncReqId" />
+		<property name="linearDatasetName" value="ncFieldMap" />
+		<property name="startDateVarName" value="ncStartDate" />
+		<property name="endDateVarName" value="ncEndDate" />
+		<property name="msgFlagVarName" value="ncMsgFlag" />
+		<property name="msgIdVarName" value="ncMsgId" />
+		<property name="msgVarName" value="ncMsg" />
+		<property name="frontDataLog"      ref="nc.core.IXpfFrontDataLog" />
+	</bean>
+
+	<bean id="nexcore.XPlatformCommandViewMapResolver"
+		class="nexcore.framework.online.channel.core.internal.DefaultCommandViewMapResolver">
+		<description>command-view-map resolver for XPlatform client</description>
+		<property name="defaultErrorView" ref="nexcore.XPlatformView" />
+		<property name="defaultCommandViewMap">
+			<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				<property name="command">
+					<bean class="nexcore.framework.online.channel.core.command.StdCommand" />
+				</property>
+				<property name="viewMap">
+					<map>
+						<entry key="SUCCESS" value-ref="nexcore.XPlatformView" />
+						<entry key="FAIL" value-ref="nexcore.XPlatformView" />
+					</map>
+				</property>
+			</bean>
+		</property>
+		<property name="commandViewMaps">
+			<map>
+				<entry key="/login.xpf">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[로그인 처리. 
+				        	로그인시 세션이 존재하는 경우 invalidate 해야 하는 경우는 sessionInvalidate를 true 설정
+				        ]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.DelegationLoginCommand" >
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+								<property name="sessionInvalidate"       value="false" />
+								<property name="requestHeaderEnable"     value="false" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nexcore.XPlatformView" />
+								<entry key="FAIL"    value-ref="nexcore.XPlatformView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+				<entry key="/logout.xpf">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[로그아웃 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.DelegationLogoutCommand">
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nexcore.XPlatformView" />
+								<entry key="FAIL"    value-ref="nexcore.XPlatformView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+</beans>

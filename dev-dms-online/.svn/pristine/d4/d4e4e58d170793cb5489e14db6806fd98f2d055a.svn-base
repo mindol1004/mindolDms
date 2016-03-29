@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpPrslMgmt">
+	<select id="SEqpPrslListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpPrslMgmt.SEqpPrslListPaging 중고단말기매입매출현황조회 */
+/* IO: 이민재,2015-09-02T18:04:52(이민재,2015-09-01T12:44:34) */
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_DT DESC, A.CNSL_MGMT_NO) AS ROWNO
+                ,NVL(C.PROGR_ST, A.PROGR_ST) AS PROGR_ST                                       /* 진행상태 */
+                ,A.CNSL_MGMT_NO                                                                /* 접수관리번호 */
+                ,A.CNSL_DT                                                                     /* 접수일자 */
+                ,A.IN_CONF_DT                                                                  /* 입고일자 */
+                ,E.PROD_CHRTIC_1                                                               /* 단말그룹 DMS164 */
+                ,E.MFACT_CD                                                                    /* 제조사 DMS101 */
+                ,(SELECT  EQP_MDL_NM 
+                    FROM  TB_EQP_MDL 
+                   WHERE  EQP_MDL_CD = NVL(C.EQP_MDL_CD,A.EQP_MDL_CD)) AS EQP_MDL_NM           /* 모델명 */
+                ,NVL(C.EQP_SER_NO, A.EQP_SER_NO) AS EQP_SER_NO                                 /* 일련번호 */
+                ,A.EQP_COLOR_CD                                                                /* 색상코드 */
+                ,'' AS HQ_NM                                                                   /* 마케팅본부 */
+                ,'' AS MARKET_CD                                                               /* 마케팅팀코드 */
+                ,'' AS MARKET_NM                                                               /* 마케팅팀명 */
+                ,D.ORG_NM                                                                      /* 조직명 */
+                ,D.AGN_ORG_CD                                                                  /* U.Key 코드(대리점조직코드) */
+                ,D.UKEY_SUB_CD                                                                 /* 매장코드(U.Key 서브코드) */ 
+                ,(SELECT  DEALCO_NM 
+                    FROM  TB_DEALCO 
+                   WHERE  DEALCO_CD = D.AFFIL_AGN 
+                     AND  DEAL_STA_DT <= A.CNSL_DT 
+                     AND  DEAL_END_DT >= A.CNSL_DT
+                     AND  DEL_YN = 'N') AS AFFIL_AGN_NM                                        /* 팀(소속대리점) */
+                ,(SELECT  DEALCO_NM 
+                    FROM  TB_DEALCO 
+                   WHERE  DEALCO_CD = A.CNSL_DEALCO_CD 
+                     AND  DEAL_STA_DT <= A.CNSL_DT 
+                     AND  DEAL_END_DT >= A.CNSL_DT
+                     AND  DEL_YN = 'N') AS CNSL_DEALCO_NM                                      /* 상담처 */
+                ,NVL(C.DPSTR, A.DPSTR) AS DPSTR                                                /* 고객명(예금주) */
+                ,A.ONING_DT                                                                    /* 개통일자 */
+                ,DECODE(A.ONING_DT,NULL,NULL
+                       ,CASE WHEN (SUBSTR(A.CNSL_DT,7,2) - SUBSTR(A.ONING_DT,7,2)) >= 0
+                        THEN TO_CHAR((SUBSTR(A.CNSL_DT,0,4) - SUBSTR(A.ONING_DT,0,4)) * 12 + (SUBSTR(A.CNSL_DT,5,2) - SUBSTR(A.ONING_DT,5,2)) + 1)||'개월'
+                        ELSE TO_CHAR((SUBSTR(A.CNSL_DT,0,4) - SUBSTR(A.ONING_DT,0,4)) * 12 + (SUBSTR(A.CNSL_DT,5,2) - SUBSTR(A.ONING_DT,5,2)))||'개월'
+                        END) AS USE_MONTH
+                ,B.BATT
+                ,B.BATT_CASE
+                ,B.GENDAR
+                ,B.CHARGER
+                ,B.EARPHONE
+                ,C.EQP_ST                                                                      /* 등급(단말기상태) */          
+                ,DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',C.PRCH_AMT - C.ADJ_AMT,DECODE(NVL(C.PRCH_AMT,0),0,C.PRCH_AMT,C.PRCH_AMT + (TRUNC(B.DDCT_AMT,-2)-C.ADJ_AMT))) AS EQP_ST_AMT /* 등급산정가 */             
+                ,DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',0,DECODE(C.PRCH_AMT,NULL,NULL,TRUNC(B.DDCT_AMT,-2))) AS DDCT_AMT /* 차감금액 */
+                ,C.ADJ_AMT                                                                     /* 조정금액 */
+                ,C.PRCH_AMT                                                                    /* 매입금액 */
+                ,DECODE(C.AMT_RMT_YN,'Y',C.RMT_DT,DECODE(C.FEE_DEDC_PROC_YN,'Y' ,C.FEE_DEDC_PROC_DT ,DECODE(C.POLY_OBJ_PROC_YN,'Y',C.POLY_PROC_DT ,DECODE(C.FORCING_PRCH_PROC_YN,'Y',C.FORCING_PRCH_PROC_DT,'')))) AS PRCHS_DT /* 매입일자 */
+                ,DECODE(C.CUST_IDEA,'Y','확정','N','거부') AS CUST_IDEA
+                ,DECODE(C.FEE_DEDC_YN,'1','Y','') AS FEE_DEDC_YN
+                ,DECODE(C.AMT_RMT_YN,'Y','Y',' ') AS AMT_RMT_YN
+                ,C.RMT_DT                                                                      /* 입금처리일자(송금일자) */
+                ,DECODE(C.FEE_DEDC_PROC_YN,'Y','Y',' ') AS FEE_DEDC_PROC_YN
+                ,C.FEE_DEDC_PROC_DT                                                            /* 요금공제처리일자 */
+                ,DECODE(C.FORCING_PRCH_PROC_YN,'Y','Y',' ') AS FORCING_CH_PROC_YN
+                ,C.FORCING_PRCH_PROC_DT                                                        /* 강제매입처리일자 */
+                ,DECODE(C.POLY_OBJ_PROC_YN,'Y','Y',' ') AS POLY_OBJ_PROC_YN
+                ,C.POLY_PROC_DT        
+                ,(SELECT  USER_NM 
+                    FROM  TB_USER 
+                   WHERE  USER_NO = C.INPT) AS CHECK_USER_NM                                   /* 검수자 */
+                ,C.TLY_DT                                                                      /* 검수일자 */
+                ,(SELECT  USER_NM 
+                    FROM  TB_USER 
+                   WHERE  USER_NO = C.CHKR) AS CUST_USER_NM                                    /* 확인자 */
+                ,C.CUST_CHK_DT                                                                 /* 고객확인일자 */
+                ,E.COMC                                                                        /* 통신방식 DMS178 */
+                ,NVL(C.BOX_NO, A.BOX_NO) BOX_NO                                                /* BOX NO */
+                ,C.EQP_ST_DTAIL                                                                /* 등급(SUB) */
+                ,NVL(A.PRE_DC_CL,'N') AS PRE_DC_CL
+                ,DECODE(NVL(C.PRCH_AMT,1),1,0
+                      ,(SELECT  NVL(A.CM_CD_ID,0)          
+                          FROM  TB_CM_CD A
+	                           ,TB_CM_GRP_CD B   
+	                     WHERE  A.CM_GRP_CD_ID = B.CM_GRP_CD_ID            
+                           AND  A.CM_GRP_CD_ID = 'DMS182'
+                           AND  A.MGMT_ITEM_CD1 <= A.CNSL_DT
+	                       AND  A.MGMT_ITEM_CD2 >= A.CNSL_DT)) AS UBO_AMT                      /* 유보금액 */
+                ,C.PRCH_AMT + (SELECT  NVL(A.CM_CD_ID,0)          
+                                 FROM  TB_CM_CD A
+	                                  ,TB_CM_GRP_CD B
+	                            WHERE  A.CM_GRP_CD_ID = B.CM_GRP_CD_ID            
+                                  AND  A.CM_GRP_CD_ID = 'DMS182'
+                                  AND  A.MGMT_ITEM_CD1 <= A.CNSL_DT
+	                              AND  A.MGMT_ITEM_CD2 >= A.CNSL_DT) AS TOT_AMT                /* 총금액 */
+                ,NVL(C.IMEI,A.IMEI) AS IMEI                                                    /* IMEI */
+                ,A.CUST_GRP                                                                    /* 단체명(고객그룹) */
+                ,(SELECT  USER_NM 
+                    FROM  TB_USER 
+                   WHERE  USER_NO = A.IN_PROC_CHRGR_ID) AS IN_PROC_CHRGR_NM                    /* 입고처리자 */
+                ,(SELECT  USER_NM 
+                    FROM  TB_USER 
+                   WHERE  USER_NO = NVL(C.BOX_PROC_CHRGR, A.BOX_PROC_CHRGR)) AS BOX_PROC_CHRGR_NM /* 박스처리자 */
+                ,SUBSTR(NVL(C.BOX_PROC_DT, A.BOX_PROC_DT),0,8) AS BOX_PROC_DT                     /* 박스처리일 */
+                ,SUBSTR(NVL(C.BOX_PROC_DT,A.BOX_PROC_DT),9,2)||':'||substr(nvl(C.BOX_PROC_DT,A.BOX_PROC_DT),11,2) AS BOX_TIME
+                ,DECODE(C.SCRN_AFIMG_YN,'A','강','B','약','') AS SCRN_AFIMG_YN                   /* 잔상여부 */   
+                ,C.EVALCNSLR_SUGG                                                              /* 검수의견 */     
+                ,A.ASIANA_CARD_NO
+                ,DECODE(NVL(A.SCRB_MTHD,'A'),'C','기변','') AS SCRB_MTHD                         /* 가입방법 */
+                ,C.CMCT_CO                                                                     /* 통신사 */
+                ,C.SELL_GRADE                                                                  /* 판매등급 */
+           FROM  TB_EP_CST_CONSULT_MGMT A
+                ,(SELECT  CNSL_MGMT_NO
+                         ,SUM(BATT) BATT
+                         ,NVL(MAX(BATT_CASE),'X') BATT_CASE
+                         ,NVL(MAX(GENDAR),'X') GENDAR
+                         ,NVL(MAX(CHARGER),'X') CHARGER
+                         ,NVL(MAX(EARPHONE),'X') EARPHONE
+                         ,SUM(DDCT_AMT) DDCT_AMT
+                    FROM  (SELECT  CNSL_MGMT_NO
+                                  ,DECODE(DTL_CL,'1',HLD_QTY,'2',HLD_QTY,'3',HLD_QTY,0) BATT
+                                  ,DECODE(DTL_CL,'7','O','') BATT_CASE
+                                  ,DECODE(DTL_CL,'5','O','') GENDAR
+                                  ,DECODE(DTL_CL,'4','O','') CHARGER
+                                  ,DECODE(DTL_CL,'6','O','') EARPHONE
+                                  ,DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N')
+                   GROUP  BY CNSL_MGMT_NO) B
+                ,TB_EP_CST_PRCHS_MGMT C
+                ,TB_DEALCO D
+                ,TB_EQP_MDL E
+             /* ,TBAS_DEAL_CO_MARKETING F */
+          WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+            AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)  
+            AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+            AND  A.CNSL_DT >= D.DEAL_STA_DT
+            AND  A.CNSL_DT <= D.DEAL_END_DT
+            AND  A.EQP_MDL_CD = E.EQP_MDL_CD 
+         /* AND  D.AGN_ORG_CD = F.UKEY_AGENCY_CD(+) */
+            AND  A.DEL_YN = 'N'
+            AND  C.DEL_YN = 'N'
+            AND  D.DEL_YN = 'N'
+            AND  E.DEL_YN = 'N' 
+         /* AND  F.DEL_YN = 'N' */
+         /* AND  NVL(F.STA_DT,A.CNSL_DT) <= A.CNSL_DT */
+         /* AND  NVL(F.END_DT,A.CNSL_DT) >= A.CNSL_DT */
+            AND  A.SKN_CL = 'N'
+            AND  C.SKN_CL = 'N' 
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[ 
+            AND  A.CNSL_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[ 
+            AND  C.TLY_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#    
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="3"><![CDATA[ 
+            AND  C.AMT_RMT_YN = 'Y'
+            AND  C.RMT_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#    
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="4"><![CDATA[
+            AND  C.FEE_DEDC_PROC_YN = 'Y'
+            AND  C.FEE_DEDC_PROC_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#    
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="5"><![CDATA[
+            AND  A.IN_CONF_YN = 'Y'
+            AND  A.IN_CONF_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#    
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="AFFIL_AGN" prepend="AND"><![CDATA[   
+                 D.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty property="CNSL_DEALCO_CD" prepend="AND"><![CDATA[   
+                 A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	      
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[   
+                 NVL(C.EQP_MDL_CD ,A.EQP_MDL_CD) = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+                 NVL(C.EQP_SER_NO, A.EQP_SER_NO) = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="DPSTR" prepend="AND"><![CDATA[      
+                 A.DPSTR LIKE #DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[   
+                 A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="PRE_DC_CL" compareValue="A"><![CDATA[ 
+]]><isEqual property="SRH_GB" compareValue="1"><![CDATA[
+            AND  NVL(A.PRE_DC_CL,'N') = #PRE_DC_CL#
+]]></isEqual><![CDATA[
+]]><isEqual property="SRH_GB" compareValue="2"><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="N"><![CDATA[
+            AND  A.ASIANA_CARD_NO IS NULL
+]]></isEqual><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="Y"><![CDATA[
+            AND  A.ASIANA_CARD_NO IS NOT NULL
+]]></isEqual><![CDATA[   
+]]></isEqual><![CDATA[   
+]]></isNotEqual><![CDATA[
+]]><isEqual property="ECO_YN" compareValue="N"><![CDATA[ 
+            AND  A.CNSL_DEALCO_CD <> '11050'
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_YN" compareValue="Y"><![CDATA[ 
+            AND  A.CNSL_DEALCO_CD = '11050'
+]]></isEqual><![CDATA[
+       )PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpPrslListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpPrslMgmt.SEqpPrslListTotCnt 중고단말기매입매출현황총건수 */
+/* IO: 이민재,2015-09-02T18:05:04(이민재,2015-09-01T12:45:01) */
+SELECT  COUNT(*) AS TOTAL_CNT 
+  FROM  TB_EP_CST_CONSULT_MGMT A
+       ,(SELECT  CNSL_MGMT_NO
+                ,SUM(BATT) BATT
+                ,NVL(MAX(BATT_CASE),'X') BATT_CASE
+                ,NVL(MAX(GENDAR),'X') GENDAR
+                ,NVL(MAX(CHARGER),'X') CHARGER
+                ,NVL(MAX(EARPHONE),'X') EARPHONE
+                ,SUM(DDCT_AMT) DDCT_AMT
+           FROM  (SELECT  CNSL_MGMT_NO
+                         ,DECODE(DTL_CL,'1',HLD_QTY,'2',HLD_QTY,'3',HLD_QTY,0) BATT
+                         ,DECODE(DTL_CL,'7','O','') BATT_CASE
+                         ,DECODE(DTL_CL,'5','O','') GENDAR
+                         ,DECODE(DTL_CL,'4','O','') CHARGER
+                         ,DECODE(DTL_CL,'6','O','') EARPHONE
+                         ,DDCT_AMT
+                    FROM  TB_EP_CST_CONSULT_DTL
+                   WHERE  DEL_YN = 'N')
+                   GROUP  BY CNSL_MGMT_NO) B
+       ,TB_EP_CST_PRCHS_MGMT C
+       ,TB_DEALCO D
+       ,TB_EQP_MDL E
+    /* ,TBAS_DEAL_CO_MARKETING F */
+ WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+   AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)  
+   AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+   AND  A.CNSL_DT >= D.DEAL_STA_DT
+   AND  A.CNSL_DT <= D.DEAL_END_DT
+   AND  A.EQP_MDL_CD = E.EQP_MDL_CD 
+/* AND  D.AGN_ORG_CD = F.UKEY_AGENCY_CD(+) */
+   AND  A.DEL_YN = 'N'
+   AND  C.DEL_YN = 'N'
+   AND  D.DEL_YN = 'N'
+   AND  E.DEL_YN = 'N' 
+/* AND  F.DEL_YN = 'N' */
+/* AND  NVL(F.STA_DT,A.CNSL_DT) <= A.CNSL_DT */
+/* AND  NVL(F.END_DT,A.CNSL_DT) >= A.CNSL_DT */
+   AND  A.SKN_CL = 'N'
+   AND  C.SKN_CL = 'N'
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[ 
+   AND  A.CNSL_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[ 
+   AND  C.TLY_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#    
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="3"><![CDATA[ 
+   AND  C.AMT_RMT_YN = 'Y'
+   AND  C.RMT_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#    
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="4"><![CDATA[
+   AND  C.FEE_DEDC_PROC_YN = 'Y'
+   AND  C.FEE_DEDC_PROC_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#    
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="5"><![CDATA[
+   AND  A.IN_CONF_YN = 'Y'
+   AND  A.IN_CONF_DT BETWEEN #PRSL_STA_DT# AND #PRSL_END_DT#    
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="AFFIL_AGN" prepend="AND"><![CDATA[   
+        D.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty property="CNSL_DEALCO_CD" prepend="AND"><![CDATA[   
+        A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[	      
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[   
+        NVL(C.EQP_MDL_CD ,A.EQP_MDL_CD) = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+        NVL(C.EQP_SER_NO, A.EQP_SER_NO) = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="DPSTR" prepend="AND"><![CDATA[      
+        A.DPSTR LIKE #DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[   
+        A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="PRE_DC_CL" compareValue="A"><![CDATA[ 
+]]><isEqual property="SRH_GB" compareValue="1"><![CDATA[
+   AND  NVL(A.PRE_DC_CL,'N') = #PRE_DC_CL#
+]]></isEqual><![CDATA[
+]]><isEqual property="SRH_GB" compareValue="2"><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="N"><![CDATA[
+   AND  A.ASIANA_CARD_NO IS NULL
+]]></isEqual><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="Y"><![CDATA[
+   AND  A.ASIANA_CARD_NO IS NOT NULL
+]]></isEqual><![CDATA[   
+]]></isEqual><![CDATA[   
+]]></isNotEqual><![CDATA[
+]]><isEqual property="ECO_YN" compareValue="N"><![CDATA[ 
+   AND  A.CNSL_DEALCO_CD <> '11050'
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_YN" compareValue="Y"><![CDATA[ 
+   AND  A.CNSL_DEALCO_CD = '11050'
+]]></isEqual><![CDATA[]]>
+	</select>
+</sqlMap>

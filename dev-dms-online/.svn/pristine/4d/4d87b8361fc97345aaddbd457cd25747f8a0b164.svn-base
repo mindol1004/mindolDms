@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCntrtChgPrstMgmt">
+	<select id="SCntrtChgPrstLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtChgPrstMgmt.SCntrtChgPrstLstPaging 계약변경현황조회 */
+/* IO: 이민재,2015-07-22T14:29:05(이민재,2015-07-22T14:27:48) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.CNTRT_NO DESC) AS ROWNO
+                ,A.CNTRT_NO                         /* 계약번호 */
+                ,A.OP_CL_CD                         /* 업무구분코드 */
+                ,A.RENTAL_POLY_NO                   /* 렌탈정책번호 */
+                ,A.DMG_CMP_AMT_POLY_NO              /* 손해배상금정책번호 */
+                ,A.PEN_POLY_NO                      /* 위약금정책번호 */
+                ,A.EQP_MDL_CD                       /* 단말기모델코드 */
+                ,A.CNTRT_STA_DT                     /* 계약시작일자 */
+                ,A.CNTRT_END_DT                     /* 계약종료일자 */
+                ,A.CNTRT_PRD                        /* 계약기간 */
+                ,A.MTH_RENTAL_FEE                   /* 월렌탈료 */
+                ,A.REM_PRC                          /* 잔존가 */
+                ,B.SVC_MGMT_NO                      /* 서비스관리번호 */
+                ,B.RENTAL_SNO                       /* 렌탈일련번호 */
+                ,B.BIRTH                            /* 생년월일 */
+                ,B.POST_NO                          /* 우편번호 */
+                ,B.E_MAIL                           /* E-MAIL */
+                ,B.LINE_NO                          /* 회선번호 */
+                ,B.CNTRT_ST                         /* 계약상태 */
+                ,B.FEE_CHK_MTHD                     /* 요금확인방법 */
+                ,B.PAY_CHK_MTHD                     /* 납부확인방법 */
+                ,B.PAYER_NM                         /* 납부자명 */
+                ,B.CARD_BANK_NM                     /* 카드/은행명 */
+                ,B.CARD_ACNT_NO                     /* 카드/계좌번호 */
+                ,B.PWD                              /* 비밀번호 */
+                ,B.CNTRT_DTM                        /* 계약일자 */
+                ,B.SALE_AGN_CD                      /* 판매대리점코드 */
+                ,B.SALE_AGN_NM                      /* 판매대리점명 */
+                ,B.RTN_AGN_NM                       /* 반납대리점명 */
+                ,B.RTN_AGN_CD                       /* 반납대리점코드 */
+                ,B.IMEI                             /* IMEI */
+                ,B.PET_NM                           /* 펫네임 */
+                ,B.EQP_STAT                         /* 단말상태 */
+                ,B.EQP_SER_NUM                      /* 단말기일련번호 */
+                ,B.EQP_MDL_NM                       /* 단말기모델명 */
+                ,B.OUT_PRC                          /* 출고가 */
+                ,B.OP_DTM                           /* 처리일자 */
+                ,B.CCTR_DT                          /* 해지일자 */
+                ,B.SCRBR_NM                         /* 고객성명 */
+                ,B.CUST_TYP                         /* 고객유형 */
+                ,B.CORP_NUM                         /* 법인등록번호 */
+                ,B.INV_ADDR                         /* 청구주소 */
+                ,B.LEGAL_REPVE_NM                   /* 법정대리인성명 */
+                ,B.LEGAL_REPVE_CUST_TYP             /* 법정대리인고객유형 */
+                ,B.LEGAL_REPVE_BIZ_NUM              /* 법정대리인사업자등록번호 */
+                ,B.LEGAL_REPVE_CORP_NO              /* 법정대리인법인번호 */
+                ,B.LEGAL_REPVE_BIRTH                /* 법정대리인생년월일 */
+                ,B.LEGAL_REPVE_REL                  /* 법정대리인관계 */
+                ,B.LEGAL_REPVE_INV_ADDR             /* 법정대리인청구주소 */
+                ,B.BIZ_NUM                          /* 사업자등록번호 */
+                ,B.CAPA_CD                          /* 저장용량코드 */
+                ,C.CM_CD_NM AS CAPA_NM              /* 저장용량명 */
+                ,B.COLOR_CD                         /* 색상코드 */
+                ,D.CM_CD_NM AS COLOR_NM             /* 색상명 */
+                ,A.FS_REG_USER_ID                   /* 최초등록사용자ID */
+                ,A.FS_REG_DTM                       /* 최초등록일시 */
+                ,A.LS_CHG_USER_ID                   /* 최종변경사용자ID */
+                ,A.LS_CHG_DTM                       /* 최종변경일시 */
+          FROM  TB_RENTAL_CNTRT A
+          JOIN  TB_NR_CNTRT B ON (B.CNTRT_NO = A.CNTRT_NO)
+          LEFT  JOIN TB_CM_CD C ON (C.CM_CD_ID = B.CAPA_CD AND C.CM_GRP_CD_ID = 'DMS110')
+          LEFT  JOIN TB_CM_CD D ON (D.CM_CD_ID = B.COLOR_CD  AND D.CM_GRP_CD_ID = 'DMS100')
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                 B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNTRT_STA_DT" prepend="AND"><![CDATA[
+		         A.CNTRT_STA_DT BETWEEN #CNTRT_STA_DT# AND #CNTRT_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CNTRT_PRD" prepend="AND" compareValue="%"><![CDATA[
+                 A.CNTRT_PRD = #CNTRT_PRD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="CCTR_STA_DT" prepend="AND"><![CDATA[
+		         B.CCTR_DT BETWEEN #CCTR_STA_DT# AND #CCTR_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SCRBR_NM" prepend="AND"><![CDATA[
+                 B.SCRBR_NM LIKE #SCRBR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="LINE_NO" prepend="AND"><![CDATA[
+                 B.LINE_NO LIKE #LINE_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SALE_AGN_CD" prepend="AND"><![CDATA[
+                 B.SALE_AGN_CD = #SALE_AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CNTRT_ST" prepend="AND" compareValue="%"><![CDATA[
+                 B.CNTRT_ST = #CNTRT_ST#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="EQP_STAT" prepend="AND" compareValue="%"><![CDATA[
+                 B.EQP_STAT = #EQP_STAT#
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[
+        )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCntrtChgPrstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtChgPrstMgmt.SCntrtChgPrstTotCnt 계약변경현황총건수 */
+/* IO: 이민재,2015-07-22T14:28:43(이민재,2015-07-22T14:28:08) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_RENTAL_CNTRT A
+  JOIN  TB_NR_CNTRT B ON (B.CNTRT_NO = A.CNTRT_NO)
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+        B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNTRT_STA_DT" prepend="AND"><![CDATA[
+		A.CNTRT_STA_DT BETWEEN #CNTRT_STA_DT# AND #CNTRT_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CNTRT_PRD" prepend="AND" compareValue="%"><![CDATA[
+        A.CNTRT_PRD = #CNTRT_PRD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="CCTR_STA_DT" prepend="AND"><![CDATA[
+		B.CCTR_DT BETWEEN #CCTR_STA_DT# AND #CCTR_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SCRBR_NM" prepend="AND"><![CDATA[
+        B.SCRBR_NM LIKE #SCRBR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="LINE_NO" prepend="AND"><![CDATA[
+        B.LINE_NO LIKE #LINE_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SALE_AGN_CD" prepend="AND"><![CDATA[
+        B.SALE_AGN_CD = #SALE_AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CNTRT_ST" prepend="AND" compareValue="%"><![CDATA[
+        B.CNTRT_ST = #CNTRT_ST#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="EQP_STAT" prepend="AND" compareValue="%"><![CDATA[
+        B.EQP_STAT = #EQP_STAT#
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SCntrtChgPrstDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtChgPrstMgmt.SCntrtChgPrstDtl 계약변경현황상세조회 */
+/* IO: 이민재,2015-07-22T14:31:19(이민재,2015-07-22T14:31:06) */
+SELECT  A.CNTRT_NO                          /* 계약번호 */
+        ,A.OP_CL_CD                         /* 업무구분코드 */
+        ,A.RENTAL_POLY_NO                   /* 렌탈정책번호 */
+        ,A.DMG_CMP_AMT_POLY_NO              /* 손해배상금정책번호 */
+        ,A.PEN_POLY_NO                      /* 위약금정책번호 */
+        ,A.EQP_MDL_CD                       /* 단말기모델코드 */
+        ,A.CNTRT_STA_DT                     /* 계약시작일자 */
+        ,A.CNTRT_END_DT                     /* 계약종료일자 */
+        ,A.CNTRT_PRD                        /* 계약기간 */
+        ,A.MTH_RENTAL_FEE                   /* 월렌탈료 */
+        ,A.REM_PRC                          /* 잔존가 */
+        ,B.SVC_MGMT_NO                      /* 서비스관리번호 */
+        ,B.RENTAL_SNO                       /* 렌탈일련번호 */
+        ,B.BIRTH                            /* 생년월일 */
+        ,B.POST_NO                          /* 우편번호 */
+        ,B.E_MAIL                           /* E-MAIL */
+        ,B.LINE_NO                          /* 회선번호 */
+        ,B.CNTRT_ST                         /* 계약상태 */
+        ,B.FEE_CHK_MTHD                     /* 요금확인방법 */
+        ,B.PAY_CHK_MTHD                     /* 납부확인방법 */
+        ,B.PAYER_NM                         /* 납부자명 */
+        ,B.CARD_BANK_NM                     /* 카드/은행명 */
+        ,B.CARD_ACNT_NO                     /* 카드/계좌번호 */
+        ,B.PWD                              /* 비밀번호 */
+        ,B.CNTRT_DTM                        /* 계약일자 */
+        ,B.SALE_AGN_CD                      /* 판매대리점코드 */
+        ,B.SALE_AGN_NM                      /* 판매대리점명 */
+        ,B.RTN_AGN_NM                       /* 반납대리점명 */
+        ,B.RTN_AGN_CD                       /* 반납대리점코드 */
+        ,B.IMEI                             /* IMEI */
+        ,B.PET_NM                           /* 펫네임 */
+        ,B.EQP_STAT                         /* 단말상태 */
+        ,B.EQP_SER_NUM                      /* 단말기일련번호 */
+        ,B.EQP_MDL_NM                       /* 단말기모델명 */
+        ,B.OUT_PRC                          /* 출고가 */
+        ,B.OP_DTM                           /* 처리일자 */
+        ,B.CCTR_DT                          /* 해지일자 */
+        ,B.SCRBR_NM                         /* 고객성명 */
+        ,B.CUST_TYP                         /* 고객유형 */
+        ,B.CORP_NUM                         /* 법인등록번호 */
+        ,B.INV_ADDR                         /* 청구주소 */
+        ,B.LEGAL_REPVE_NM                   /* 법정대리인성명 */
+        ,B.LEGAL_REPVE_CUST_TYP             /* 법정대리인고객유형 */
+        ,B.LEGAL_REPVE_BIZ_NUM              /* 법정대리인사업자등록번호 */
+        ,B.LEGAL_REPVE_CORP_NO              /* 법정대리인법인번호 */
+        ,B.LEGAL_REPVE_BIRTH                /* 법정대리인생년월일 */
+        ,B.LEGAL_REPVE_REL                  /* 법정대리인관계 */
+        ,B.LEGAL_REPVE_INV_ADDR             /* 법정대리인청구주소 */
+        ,B.BIZ_NUM                          /* 사업자등록번호 */
+        ,B.CAPA_CD                          /* 저장용량코드 */
+        ,C.CM_CD_NM AS CAPA_NM              /* 저장용량명 */
+        ,B.COLOR_CD                         /* 색상코드 */
+        ,D.CM_CD_NM AS COLOR_NM             /* 색상명 */
+        ,A.FS_REG_USER_ID                   /* 최초등록사용자ID */
+        ,A.FS_REG_DTM                       /* 최초등록일시 */
+        ,A.LS_CHG_USER_ID                   /* 최종변경사용자ID */
+        ,A.LS_CHG_DTM                       /* 최종변경일시 */
+  FROM  TB_RENTAL_CNTRT A
+  JOIN  TB_NR_CNTRT B ON (B.CNTRT_NO = A.CNTRT_NO)
+  LEFT  JOIN TB_CM_CD C ON (C.CM_CD_ID = B.CAPA_CD AND C.CM_GRP_CD_ID = 'DMS110')
+  LEFT  JOIN TB_CM_CD D ON (D.CM_CD_ID = B.COLOR_CD  AND D.CM_GRP_CD_ID = 'DMS100')
+ WHERE  A.CNTRT_NO = #CNTRT_NO#]]>
+	</select>
+</sqlMap>

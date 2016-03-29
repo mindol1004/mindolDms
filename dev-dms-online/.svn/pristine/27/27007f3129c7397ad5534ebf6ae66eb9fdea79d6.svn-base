@@ -1,0 +1,236 @@
+package dms.pr.prbxmbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]렌탈용역계약관리</li>
+ * <li>설  명 : <pre>렌탈용역계약관리</pre></li>
+ * <li>작성일 : 2015-07-20 17:06:32</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class PPRRentalServCntrtMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PPRRentalServCntrtMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>임대폰포괄계약조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:06:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *	- field : STA_IN_DT [계약시작일자]
+	 *	- field : END_IN_DT [계약종료일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMPHS_CNTRT_LIST
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *		- field : CMPHS_CNTRT_STA_DT [포괄계약시작일자]
+	 *		- field : CMPHS_CNTRT_END_DT [포괄계약종료일자]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqRentphonServCmphsCntrtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    try {
+            // 2. FM 호출
+            responseData = callSharedBizComponentByDirect("pr.PRSXMBase", "fInqRentphonServCmphsCntrtLst", requestData, onlineCtx);
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        } 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>렌탈용역계약상세조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:06:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqRentalServCntrtDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    try {
+            // 2. FM 호출
+            responseData = callSharedBizComponentByDirect("pr.PRSXMBase", "fInqRentalServCntrtDtlLst", requestData, onlineCtx);
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        } 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>렌탈용역계약등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:06:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CNTRT_LIST
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : CNTRT_STA_DT [계약시작일자]
+	 *		- field : CNTRT_END_DT [계약종료일자]
+	 *		- field : RENT_PRD [렌트기간]
+	 *		- field : MTH_RENTAL_FEE [월렌탈료]
+	 *		- field : QTY [수량]
+	 *		- field : RE_CMC_CMMS [재상품화수수료]
+	 *		- field : PRCH_PRC [매입가]
+	 *		- field : REM_PRC [잔존가]
+	 *		- field : ALLOT_CMMS [할부수수료]
+	 *		- field : RMK [비고]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveRentalServCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		
+	    IRecordSet rs = requestData.getRecordSet("RS_CNTRT_LIST");
+	    CommonArea ca = getCommonArea(onlineCtx);
+		
+	    try {
+	    
+		    // 1. 레코드셋 상태에 따른 분기
+		    for (int i=0; i<rs.getRecordCount(); i++) {
+				requestData.putFieldMap(rs.getRecordMap(i));
+				requestData.putField("FS_REG_USER_ID", ca.getUserNo());
+				requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+	
+			    if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // INSERT
+					callSharedBizComponentByDirect("pr.PRSXMBase", "fRegRentalServCntrt", requestData, onlineCtx);
+				}
+			    //if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // UPDATE
+				//	callSharedBizComponentByDirect("pr.PRSXMBase", "fUpdRentphonServCmphsCntrt", requestData, onlineCtx);
+				//} 
+			   // if ( "D".equals(ca.getTrnPtrnDvcd()) ) { //DELETE
+				//	callSharedBizComponentByDirect("pr.PRSXMBase", "fDelRentphonServCmphsCntrt", requestData, onlineCtx);
+				//} 
+		    }
+
+			} catch ( BizRuntimeException e ) {
+				throw e;
+			} catch ( Exception e ) {
+				throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+			}
+			// 4. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약상태저장</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:06:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMPHS_CNTRT_LIST
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *		- field : CMPHS_CNTRT_STA_DT [포괄계약시작일자]
+	 *		- field : CMPHS_CNTRT_END_DT [포괄계약종료일자]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveRentphonServCmphsCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    IRecordSet rs = requestData.getRecordSet("RS_CMPHS_CNTRT_LIST");
+	    CommonArea ca = getCommonArea(onlineCtx);
+		
+	    try {
+	    
+		    // 1. 레코드셋 상태에 따른 분기
+		    for (int i=0; i<rs.getRecordCount(); i++) {
+				requestData.putFieldMap(rs.getRecordMap(i));
+				requestData.putField("FS_REG_USER_ID", ca.getUserNo());
+				requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+	
+			    if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // INSERT
+					callSharedBizComponentByDirect("pr.PRSXMBase", "fRegRentphonServCmphsCntrt", requestData, onlineCtx);
+				}
+			    if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // UPDATE
+					callSharedBizComponentByDirect("pr.PRSXMBase", "fUpdRentphonServCmphsCntrt", requestData, onlineCtx);
+				} 
+			    if ( "D".equals(ca.getTrnPtrnDvcd()) ) { //DELETE
+					callSharedBizComponentByDirect("pr.PRSXMBase", "fDelRentphonServCmphsCntrt", requestData, onlineCtx);
+				} 
+		    }
+
+			} catch ( BizRuntimeException e ) {
+				throw e;
+			} catch ( Exception e ) {
+				throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+			}
+			// 4. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+	
+	    return responseData;
+	}
+  
+}

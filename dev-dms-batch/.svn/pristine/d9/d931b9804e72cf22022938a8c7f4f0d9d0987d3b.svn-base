@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.DBE005">
+	<insert id="IPrchsOutM" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP015.IPrchsOutM 매입출고등록 */
+/* IO: 이준우,2015-10-15T15:01:32(이준우,2015-07-29T10:19:57) */
+INSERT INTO  TB_EP_CST_PRCHS_OUT_M (
+             PRCH_OUT_MGMT_NO      
+           , PRCH_OUT_CL           
+           , OUT_DEALCO_ID         
+           , IN_DEALCO_ID          
+           , OUT_CONF_DT           
+           , RMK                   
+           , DEL_YN
+           , UPDATE_COUNT
+           , FS_REG_DTM
+           , FS_REG_USER_ID
+           , LS_CHG_DTM
+           , LS_CHG_USER_ID
+          ) VALUES (
+             #CNSL_MGMT_NO#        /*매입 출고 관리 번호   */              
+           , ''                    /*매입 출고 구분        */            
+           , ''                    /*출고 거래처 ID        */           
+           , ''                    /*입고 거래처 ID        */           
+           , #CLCT_DT#             /*출고 확정 일자        */            
+           , ''                    /*비고                  */        
+           , 'N'
+           , 1
+           , SYSDATE
+           , 'BAT'
+           , SYSDATE
+           , 'BAT'
+             )]]>
+	</insert>
+	<update id="UConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP015.UConsultMgmt 상담관리수정 */
+/* IO: 이준우,2015-10-15T14:46:42(이준우,2015-09-30T13:24:28) */
+UPDATE  TB_EP_CST_CONSULT_MGMT
+   SET  CLCT_YN = 'Y'
+       ,UPDATE_COUNT = NVL(UPDATE_COUNT,0)+1
+       ,CLCT_DT = #CLCT_DT#
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = 'BAT'
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UPrchsMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP015.UPrchsMgmt 매입관리수정 */
+/* IO: 이준우,2015-10-15T14:49:40(이준우,2015-09-30T13:24:28) */
+UPDATE  TB_EP_CST_PRCHS_MGMT
+   SET  CLCT_YN = 'Y'
+       ,UPDATE_COUNT = NVL(UPDATE_COUNT,0)+1
+       ,CLCT_DT = #CLCT_DT#
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = 'BAT'
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<select id="SIfByeqpClctDt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE005.SIfByeqpClctDt IF단말기별회수일자조회 */
+/* IO: 이준우,2015-10-16T11:05:29(이준우,2015-08-11T14:15:42) */
+  SELECT  IF_PROC_DT                                         /*IF처리일자               */
+         ,IF_FILE_NM                                         /*IF파일명                 */
+         ,IF_SEQ                                             /*IF순번                   */
+         ,CNSL_MGMT_NO                                       /*상담관리번호             */
+         ,EQP_MDL_CD                                         /*단말기모델코드           */
+         ,EQP_SER_NO                                         /*단말기일련번호           */
+         ,CNSL_DT                                            /*상담일자                 */
+         ,CNSL_ORG_CD                                        /*상담조직코드             */
+         ,COLOR_CD                                           /*색상코드                 */
+         ,ONING_DT                                           /*개통일자                 */
+         ,EQP_ST                                             /*단말기상태               */
+         ,LOSS_EQP_YN                                        /*분실단말기여부           */
+         ,RWD_RTN_OBJ_YN                                     /*보상반납대상여부         */
+         ,RENTP_YN                                           /*임대폰여부               */
+         ,USIM_EQPCHG_YN                                     /*USIM기변여부             */
+         ,OTHRCO_FORGN_EQP_YN                                /*타사해외단말기여부       */
+         ,SUGG                                               /*의견                     */
+         ,CNSL_AMT                                           /*상담금액                 */
+         ,DPSTR                                              /*예금주                   */
+         ,DPSTR_ENPT                                         /*예금주암호화             */
+         ,BANK_CD                                            /*은행코드                 */
+         ,ACCO_NO                                            /*계좌번호                 */
+         ,ACCO_NO_ENPT                                       /*계좌번호암호화           */
+         ,TEL_NO                                             /*전화번호                 */
+         ,TEL_NO_ENPT                                        /*전화번호암호화           */
+         ,ZIPCD_1                                            /*우편번호1                */
+         ,ZIPCD_2                                            /*우편번호2                */
+         ,CUST_BAS_ADDR                                      /*고객기본주소             */
+         ,CUST_DTL_ADDR                                      /*고객상세주소             */
+         ,CUST_DTL_ADDR_ENPT                                 /*고객상세주소암호화       */
+         ,MOV_YN                                             /*이동여부                 */
+         ,DEL_YN                                             /*삭제여부                 */
+         ,UPDATE_CNT                                         /*UPDATE COUNT             */
+         ,UKEY_REG_DTM                                        /*UKEY등록일시             */
+         ,UKEY_REG_USER_ID                                    /*UKEY등록사용자ID         */
+         ,UKEY_CHG_DTM                                        /*UKEY변경일시             */
+         ,UKEY_CHG_USER_ID                                    /*UKEY변경사용자ID         */
+         ,FEE_DEDC_YN                                        /*요금공제여부             */
+         ,SVC_NO                                             /*서비스번호               */
+         ,SVC_NO_ENPT                                        /*서비스번호암호화         */
+         ,SVC_MGMT_NO                                        /*서비스관리번호           */
+         ,IMEI                                               /*IMEI                     */
+         ,ETC_CMPT                                           /*기타구성품               */
+         ,POLY_OBJ_YN                                        /*정책대상여부             */
+         ,PROGR_ST                                           /*진행상태                 */
+         ,UKEY_XCL_ORG_ID                                    /*UKEY정산조직ID           */
+         ,UKEY_XCL_ORG_ID_2                                   /*UKEY정산조직ID2          */
+         ,CLCT_DT                                            /*회수일자                 */
+         ,FILLER                                             /*FILLER                   */
+         ,PROC_ST_CD                                         /*처리상태코드             */
+         ,FS_REG_USER_ID                                     /*최초등록사용자ID         */
+         ,FS_REG_DTM                                         /*최초등록일시             */
+         ,LS_CHG_USER_ID                                     /*최종변경사용자ID         */
+         ,LS_CHG_DTM                                         /*최종변경일시             */
+    FROM  TF_BYEQP_CLCT_DT
+   WHERE  PROC_ST_CD = '09'
+     AND  IF_PROC_DT = #PROC_DT#		/*전문송신일자  iv_op_dt*/
+     AND  DEL_YN = 'N'
+ORDER BY  IF_SEQ]]>
+	</select>
+	<update id="UIfByeqpClctDt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE005.UIfByeqpClctDt IF단말기별회수일자수정 */
+/* IO: 이준우,2015-10-16T14:52:57(이준우,2015-09-30T13:24:28) */
+UPDATE  TF_BYEQP_CLCT_DT
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) Y,N*/
+       ,UPDATE_CNT = NVL(UPDATE_CNT,0)+1
+       ,UKEY_CHG_DTM  = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_PROC_DT   = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ    = #IF_SEQ#]]>
+	</update>
+	<delete id="DPrchsOutM" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE005.DPrchsOutM 매입출고관리삭제 */
+/* IO: 이준우,2015-10-20T10:46:27(이준우,2015-09-30T19:26:09) */
+DELETE  FROM TB_EP_CST_PRCHS_OUT_M
+ WHERE  PRCH_OUT_MGMT_NO = #CNSL_MGMT_NO#
+   AND  DEL_YN = 'N']]>
+	</delete>
+	<select id="SPrchsOutMCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE005.SPrchsOutMCnt 매입출고관리카운트 */
+/* IO: 이준우,2015-10-20T10:49:17(이준우,2015-09-30T13:15:09) */
+SELECT  COUNT(*) AS CNT
+  FROM  TB_EP_CST_PRCHS_OUT_M
+ WHERE  PRCH_OUT_MGMT_NO = #CNSL_MGMT_NO#
+   AND  DEL_YN = 'N']]>
+	</select>
+</sqlMap>

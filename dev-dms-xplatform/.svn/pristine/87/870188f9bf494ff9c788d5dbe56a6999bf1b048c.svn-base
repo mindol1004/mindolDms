@@ -1,0 +1,690 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="InsuRfndXclLstM" classname="DmgStlInfoLstM" inheritanceid="" position="absolute 0 0 1038 528" titletext="보증보험금 정산 (환급)" onload="Form_onload">
+    <Layouts>
+      <Layout>
+        <Static id="Static06" text="w&#13;&#10;20" class="tip_guide" visible="false" position2="absolute l:1018 w:20 t:24 h:478" positiontype="position2"/>
+        <Div id="div_search" anchor="left top right" taborder="0" onkeydown="div_search_onkeydown" class="bg_search" position="absolute 0 0 1018 40">
+          <Layouts>
+            <Layout width="1018" height="40">
+              <Static id="stc_02" text="보험관리번호" class="sta_WFSA_Label" position="absolute 203 9 284 29"/>
+              <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:0 w:15 t:0 h:42" positiontype="position2"/>
+              <Button id="btn_01" taborder="3" class="btn_WFSA_search" position="absolute 19 -39 39 -19" tooltiptype="hover" tooltiptext="우편번호 검색"/>
+              <Static id="Static00" text="w&#13;30" class="tip_guide" visible="false" position2="absolute l:173 w:30 t:-2 h:34" positiontype="position2"/>
+              <Static id="Static09" text="w&#13;&#10;&#13;10" class="tip_guide" visible="false" position2="absolute l:281 w:10 t:-4 h:42" positiontype="position2"/>
+              <Static id="Static01" text="정산년월" class="sta_WFSA_Label" position="absolute 15 9 79 29" tooltiptype="hover" tooltiptext="개설년도"/>
+              <Static id="Static08" text="w&#13;&#10;&#13;&#10;10" class="tip_guide" visible="false" position2="absolute l:68 w:10 t:-4 h:42" positiontype="position2"/>
+              <CommMonthCalendar id="cmc_Ym" titletext="월력" taborder="0" scrollbars="none" position="absolute 78 9 173 29"/>
+              <Edit id="edt_svcMgmtNo" taborder="1" inputtype="digit,alpha" maxlength="12" onkeydown="div_search_edt_userNm_onkeydown" position="absolute 291 9 433 29" validate=""/>
+            </Layout>
+          </Layouts>
+          <InitValue/>
+        </Div>
+        <Static id="Static07" text="h14" class="tip_guide" visible="false" position="absolute 5 40 47 54"/>
+        <Static id="Static10" text="h8" class="tip_guide" visible="false" position2="absolute l:6 w:42 t:65 h:8" positiontype="position2"/>
+        <Button id="btn_search" taborder="1" text="조회" onclick="btn_search_onclick" class="btn_WFSA_Search_M" position="absolute 959 12 1017 39" anchor="top right" style="align:center middle;"/>
+        <Static id="Static15" text="h33" class="tip_guide" visible="false" position2="absolute l:541 w:42 t:40 h:33" positiontype="position2"/>
+        <UserGrid id="grd_main" class="grd_subGrid" taborder="8" binddataset="ds_main" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" autofittype="col" hideendline="col" nodataimage="URL('theme://Img/ico_WFDA_nodata.png')" treeusebutton="no" treeusecheckbox="false" treeuseimage="false" oncelldblclick="grd_main_oncelldblclick" position="absolute 0 225 1018 528" anchor="all" tooltiptype="hover" _number="true" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="95"/>
+                <Column size="95"/>
+                <Column size="95"/>
+                <Column size="90"/>
+                <Column size="90"/>
+                <Column size="90"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell rowspan="2" text="정산년월" taborder="undefined"/>
+                <Cell col="1" rowspan="2" text="보험관리번호" taborder="undefined"/>
+                <Cell col="2" rowspan="2" text="보험금&#13;&#10;요청상태" taborder="undefined"/>
+                <Cell col="3" colspan="2" text="환급대상금액" taborder="undefined"/>
+                <Cell col="5" rowspan="2" text="환급금&#13;&#10;일치여부" taborder="undefined"/>
+                <Cell row="1" col="3" text="DMS"/>
+                <Cell row="1" col="4" text="SGI"/>
+              </Band>
+              <Band id="body">
+                <Cell displaytype="normal" style="align:center;" text="bind:XCL_DT" mask="@@@@-@@"/>
+                <Cell col="1" style="align:center;" text="bind:SGI_INSU_NO"/>
+                <Cell col="2" displaytype="normal" style="align:center;" calendardisplaynulltype="none"/>
+                <Cell col="3" displaytype="number" style="align:right;" text="bind:XCL_AMT" calendardisplaynulltype="none"/>
+                <Cell col="4" displaytype="number" style="align:right;" text="bind:XCL_UKEY_INV_AMT" calendardisplaynulltype="none"/>
+                <Cell col="5" displaytype="combo" edittype="none" style="align:center;" text="bind:INVE_MATCHED" combodataset="ds_flag" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Static id="Static00" text="h10" class="tip_guide" visible="false" position2="absolute l:104 w:42 t:0 h:10" positiontype="position2"/>
+        <Static id="Static14" text="h10" class="tip_guide" visible="false" position2="absolute l:104 w:42 t:30 h:10" positiontype="position2"/>
+        <Static id="stc_subTitle" text="보증보험금 환급금 전표 현황" usedecorate="true" class="sub_title" position="absolute 0 50 476 70"/>
+        <Button id="btn_excel" taborder="6" onclick="btn_excel_onclick" class="btn_common_excel" position="absolute 996 50 1018 70" anchor="top right" tooltiptext="액셀출력"/>
+        <Static id="stc_subTitle00" text="보증보험금 환급금 전표 상세" usedecorate="true" class="sub_title" position="absolute 0 202 251 222" anchor="left top"/>
+        <UserGrid id="grd_list" taborder="7" binddataset="ds_list" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" autofittype="col" hideendline="col" nodataimage="URL('theme://Img/ico_WFDA_nodata.png')" treeusebutton="no" treeusecheckbox="false" treeuseimage="false" onvtracklast="grd_main_onvtracklast" selectscrollmode="scroll" position="absolute 0 73 1018 192" anchor="left top right" tooltiptype="hover" _number="true" _status="false" _check="true" _checkColumnName="CHK" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="88"/>
+                <Column size="72"/>
+                <Column size="61"/>
+                <Column size="87"/>
+                <Column size="109"/>
+                <Column size="80"/>
+                <Column size="90"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell rowspan="2" text="정산년월" taborder="undefined"/>
+                <Cell col="1" rowspan="2" text="총건수" taborder="undefined"/>
+                <Cell col="2" colspan="2" text="총금액" taborder="undefined"/>
+                <Cell col="4" rowspan="2" text="전표번호" taborder="undefined"/>
+                <Cell col="5" rowspan="2" text="전표&#13;&#10;처리여부" taborder="undefined"/>
+                <Cell col="6" rowspan="2" text="처리일자" taborder="undefined"/>
+                <Cell row="1" col="2" text="DMS" taborder="undefined"/>
+                <Cell row="1" col="3" text="SGI"/>
+              </Band>
+              <Band id="body">
+                <Cell displaytype="normal" text="bind:YYYYMM" mask="@@@@-@@" calendardisplaynulltype="none"/>
+                <Cell col="1" text="bind:M_CNT"/>
+                <Cell col="2" style="align:right;" text="bind:DMS_AMT_SUM"/>
+                <Cell col="3" style="align:right;" text="bind:M_PRC"/>
+                <Cell col="4" displaytype="combo" style="align:center;" text="bind:SLIP_NO" combodataset="ds_DMS153" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="5" style="align:center;" text="bind:SLIP_ST_CD"/>
+                <Cell col="6" style="align:center;" text="bind:SLIP_DT"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Button id="btn_slipI" taborder="2" text="전표발행" onclick="btn_slipI_onclick" class="btn_common" position="absolute 763 50 832 70" anchor="top right"/>
+        <Button id="btn_slipC" taborder="3" text="전표취소" onclick="btn_slipC_onclick" class="btn_common" position="absolute 833 50 902 70" anchor="top right"/>
+        <CommGridPageCnt id="cgp_mainCnt00" anchor="right bottom" titletext="Grid Page Count" taborder="9" position="absolute 913 498 1013 518" style="background:transparent; "/>
+        <Static id="Static02" text="h33" class="tip_guide" visible="false" position2="absolute l:261 w:42 t:192 h:33" positiontype="position2"/>
+        <Button id="btn_filter" taborder="5" tabstop="true" onclick="btn_filter_onclick" class="btn_common_filter" position="absolute 973 50 995 70" anchor="top right" tooltiptext="필터" userautr=""/>
+        <Button id="btn_excelAll" taborder="4" tabstop="true" text="전체다운" onclick="btn_excelAll_onclick" class="btn_common" position="absolute 903 50 972 70" anchor="top right" tooltiptext="상세엑셀"/>
+        <Button id="btn_reState" taborder="10" text="전표상태재조회" onclick="btn_reState_onclick" class="btn_common" position="absolute 661 50 762 70" anchor="top right"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_main" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false" onrowposchanged="ds_main_onrowposchanged" onload="ds_main_onload">
+        <ColumnInfo>
+          <Column id="XCL_DT" type="STRING" size="256"/>
+          <Column id="SGI_INSU_NO" type="STRING" size="256"/>
+          <Column id="XCL_AMT" type="STRING" size="256"/>
+          <Column id="XCL_UKEY_INV_AMT" type="STRING" size="256"/>
+          <Column id="INVE_MATCHED" type="STRING" size="256"/>
+          <Column id="XCL_DEALCO_CD" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_AllExcel" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false"/>
+      <Dataset id="ds_flag" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="CM_CD_ID">%</Col>
+            <Col id="CM_CD_NM">전체</Col>
+          </Row>
+          <Row>
+            <Col id="CM_CD_ID">Y</Col>
+            <Col id="CM_CD_NM">일치</Col>
+          </Row>
+          <Row>
+            <Col id="CM_CD_ID">N</Col>
+            <Col id="CM_CD_NM">미일치</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_sumcnt" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="M_CNT" type="STRING" size="256"/>
+          <Column id="M_AMT" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_DMS153" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_GRP_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CHG_DTM" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_DESC" type="STRING" size="256"/>
+          <Column id="CM_CD_SORT_ORD" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="SUP_CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="SUP_CM_CD_ID" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD1" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD2" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD3" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD4" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD5" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD6" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD7" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD8" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD9" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD10" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_list" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CHK" type="STRING" size="256"/>
+          <Column id="YYYY" type="STRING" size="256"/>
+          <Column id="YYYYMM" type="STRING" size="256"/>
+          <Column id="M_CNT" type="STRING" size="256"/>
+          <Column id="M_PRC" type="STRING" size="256"/>
+          <Column id="DMS_AMT_SUM" type="STRING" size="256"/>
+          <Column id="SLIP_NO" type="STRING" size="256"/>
+          <Column id="SLIP_ST_CD" type="STRING" size="256"/>
+          <Column id="SLIP_DT" type="STRING" size="256"/>
+          <Column id="MATCHED_YN" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_search" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="XCL_YM" type="STRING" size="256"/>
+          <Column id="SGI_INSURE_MGMT_NO" type="STRING" size="256"/>
+          <Column id="STA_DT" type="STRING" size="256"/>
+          <Column id="END_DT" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="div_search.edt_svcMgmtNo" propid="value" datasetid="ds_search" columnid="SGI_INSURE_MGMT_NO"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 보증보험관리
+ * 02. 화면 : InsuRfndXclLstM.xfdl
+ * 03. 화면 설명 : 보증보험금 정산(환급)
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : H.B KIM
+ * 05. 작성일 : 2015-10-20
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015-10-20    H.B KIM    최초 작성
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+
+ //var pv_sPtrn = "";
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "FNR093M");
+
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form 종료전 Check 함수(공통)
+-----------------------------------------------------------------------------------------------*/
+function Form_checkBeforeClose()
+{
+	//변경된 Dataset검증
+	if ( gfn_formBeforeOnClose(this, "ds_main") ) {
+			return true;
+	} else {
+		return false;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+
+	var strCode = "DMS153=ds_DMS153=A"	   
+	    ;
+						
+	gfn_getCodeDs( this
+				  , strCode
+				  ,"fn_afterCodeCallBack");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{		 
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+	//그리드 페이징 초기화
+	//cgp_main.setPageInit("fn_selectPageExec", false);
+	//cgp_mainCnt.setPageNoCnt(0, 0, 0);	//PageNo Count
+	
+	//page = 1;
+	
+	// 그리드 초기화 
+	//gfn_initGrid(objGrid:UserGrid, bReadonly, bSortable, bTooltip, sSelectType, innerDs, sPage, sPageSize, sTotCnt);
+	gfn_initGrid(grd_main, false, true, true, "row", null);
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 페이지 Click시 페이지조회
+ * param   : iTotalRowCount - 전체 Row수
+ * param   : iUnitSelRowNo  - 페이지당 Row수
+ * param   : iCurrPage      - 현재 페이지
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_selectPageExec(iTotalRowCount, iUnitSelRowNo, iCurrPage)
+{
+	//페이징처리
+	page = iCurrPage;
+	fn_searchMain();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+	var setDt = gfn_today().substring(0,6);
+	div_search.cmc_Ym.setDate(setDt);
+	
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchMain()
+{
+	var sSvcID		 = "searchMain";
+	var sTrID		 = "PNRInsuMxclMgmt_pInqInsuRfndXclLst";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "ds_main=RS_INSUM_XCL_LIST ds_list=RS_SLIP_LIST ds_sumcnt=RS_SUM_LIST";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표생성 (insert, update)
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_saveSlip()
+{	
+	var sSvcID		 = "saveSlip";
+	var sTrID		 = "PNRInsuMxclMgmt_pSaveInqInsuRfndXclSlip";
+	var sPtrn		 = "I";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_SLIP_LIST=ds_list:u";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표취소 (update)
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_deleteSlip(){
+	var sSvcID		 = "delSlip";
+	var sTrID		 = "PNRInsuMxclMgmt_pSaveInqInsuRfndXclSlipDel";
+	var sPtrn		 = "U";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_SLIP_DELETE=ds_list:U";
+	var sOutputDs	 = ""; 
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전체엑셀다운로드
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_AllExcel(){
+	var sSvcID		 = "AllExcel";
+	var sTrID		 = "PNRInsuMxclMgmt_pInqInsuRfndXclAllExcel";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "ds_AllExcel=RS_ALL_EXCEL_LIST";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표처리상태 재조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_ReState()
+{
+	var sSvcID		 = "ReState";
+	var sTrID		 = "PNREqpPrchInfoMgmt_pReStateCall";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+	switch(sSvcID) {
+		case "searchMain": 
+			if ( iErrorCode == 0 ) {
+				//cgp_main.setPageNo(page_size, total_record_cnt, page);	//PageNo
+				//cgp_mainCnt.setPageNoCnt(page_size, total_record_cnt, page);	//PageNo Count
+			    //gfn_setGridTitleCountPaging(stc_subTitle, total_record_cnt);
+				
+				
+				if(ds_sumcnt.getRowCount() != 0){
+					var Ttotal = "보증보험금 환급금 전표 현황 총 "+"<fc v='#31a3dc'>"+ds_sumcnt.getColumn(0,"M_CNT")
+						+"</fc><b v='false'><fc v='#77787a'>건, 합계: </fc></b>"+"<fc v='#31a3dc'>"
+						+gfn_toFixedLocaleString(ds_sumcnt.getColumn(0,"M_AMT"), '@@@,@@@,@@@')+"</fc><b v='false'><fc v='#77787a'>원 </fc></b>";			
+					fn_setGridTitle(stc_subTitle,Ttotal);
+				}
+			}
+		break;
+		
+		case "saveSlip":
+			if ( iErrorCode == 0 ) {
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+				ds_list.clearData();
+			  fn_searchMain();
+			}else{
+				gfn_message("A","XYZE0000","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+			}
+		break;
+		
+		case "delSlip":
+
+			if (iErrorCode == 0) {
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+			  ds_list.clearData();
+			  fn_searchMain();
+			}else{
+				gfn_message("A","XYZE0000","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+			}
+		break;
+		
+		case "AllExcel":
+		//alert(ds_AllExcel.saveXML());
+		
+			if (iErrorCode == 0) {
+				var dsbind = gfn_makeGrid(ds_AllExcel);
+				dsbind.binddataset = "ds_AllExcel";
+				
+				dsbind.setFormatColProperty(1,"size","100");
+				dsbind.setFormatColProperty(4,"size","100");
+				
+				dsbind.setCellProperty("Body",0,"displaytype","text");
+				dsbind.setCellProperty("Body",0,"mask","@@@@-@@");
+				dsbind.setCellProperty("Body",0,"calendardisplaynulltype","none");
+				dsbind.setCellProperty("Body",1,"style","align:center");
+				dsbind.setCellProperty("Body",2,"style","align:right");
+				dsbind.setCellProperty("Body",3,"style","align:right");
+				dsbind.setCellProperty("Body",4,"style","align:center");
+				
+				gfn_baseExcelExpert(dsbind,"보증보험금정산(환급)목록","보증보험금정산(환급)목록");
+			}else{
+				gfn_message("A","XYZE0000","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+			}
+			break;
+		
+		case "ReState" :
+			if ( iErrorCode == 0 ) {
+				ds_main.clearData();
+				ds_list.clearData();
+				fn_searchMain();
+			}		
+		break;	
+		
+		default:
+		break;
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : search
+-----------------------------------------------------------------------------------------------*/
+function btn_search_onclick(obj:Button,  e:ClickEventInfo)
+{
+
+	 //입력 항목 Validate Check
+	if (!gfn_getValidateCompList(div_search)) {	
+		return false;
+	}
+	
+	var yn =  div_search.cmc_Ym.getDate();
+	ds_search.setColumn(0,"XCL_YM",yn);
+	
+	ds_main.clearData();
+	page = 1;
+	fn_searchMain();
+	
+}
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 검색 조건에서 엔터키가 눌러졌을때 검색
+-----------------------------------------------------------------------------------------------*/
+function div_search_onkeydown(obj:Div, e:KeyEventInfo)
+{
+	if (e.keycode == KEYCODE_ENTER) {
+		btn_search_onclick();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid filter
+-----------------------------------------------------------------------------------------------*/
+function btn_filter_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_toggleGridFilter(grd_main);
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid excel
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if (grd_main.rowcount == 0){
+		gfn_message("A","DMS00021","I"); //조회된 정보가 없습니다.
+	} else {
+		gfn_baseExcelExpert(grd_list,"보증보험금정산(환급)전표목록","보증보험금정산(환급)전표목록");
+		gfn_baseExcelExpert(grd_main,"보증보험금정산(환급)전표상세목록","보증보험금정산(환급)전표상세목록");
+		
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : new 모델코드 편집가능셋팅
+-----------------------------------------------------------------------------------------------*/
+function fn_chk_eqpid(){
+	if ( ds_main.getRowType(grd_main.currentrow) != Dataset.ROWTYPE_NORMAL ){			
+	}
+}
+
+/************************************************************************************************
+ * Function : 서브타이틀(Static)에 Dataset row count표시
+ * @param   : objStc - Static Object
+ * @param   : objDs - count용 Dataset Object
+ * Return   : objStc 에 objDs Row Count표시
+************************************************************************************************/
+function fn_setGridTitle(objStc:Static, msg)
+{
+	if ( gfn_isNull(objStc.userText) ) objStc.userText = objStc.text;
+	
+	objStc.usedecorate = true; 
+	
+	objStc.text = msg;	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표발행
+ * param   : obj - Button
+ * param   : e  - ClickEventInfo
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function btn_slipI_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var msg = "해당전표를 생성하시겠습니까?"; 
+	if(ds_list.findRow("CHK","1") == -1){
+		//체크대상없음
+		gfn_message("A","DMS00020","I"); // 선택된 정보가 없습니다.
+		return;
+	}
+	
+	for(i=0; i<ds_list.getRowCount(); i++){
+		if(ds_list.getColumn(i,"CHK")=='1'){
+			if(ds_list.getColumn(i,"SLIP_ST_CD") == '10' ){
+				gfn_message("A","DMS00087","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+				return false;
+		    }
+		}
+	}
+	
+	if(gfn_message("A",msg,"I","","")){
+		fn_saveSlip();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표취소
+ * param   : obj - Button
+ * param   : e  - ClickEventInfo
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function btn_slipC_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var msg = "해당전표를 삭제하시겠습니까?"; 
+	if(ds_list.findRow("CHK","1") == -1){
+		//체크대상없음
+		gfn_message("A","DMS00020","I"); // 선택된 정보가 없습니다.
+		return;
+	}
+	
+	var yn =  div_search.cmc_Ym.getDate();
+	var year = yn.substring(0,4);
+	ds_list.setColumn(ds_list.rowposition,"YYYY",year);
+	
+	for(i=0; i<ds_list.getRowCount(); i++){
+		if(ds_list.getColumn(i,"CHK")=='1'){
+			if(ds_list.getColumn(i,"SLIP_ST_CD") == '10'  ){
+				if(gfn_message("A",msg,"I","","")){
+					fn_deleteSlip();
+					
+				}
+				return false;
+		    } else {
+				 gfn_message("A","DMS00087","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+				return false;
+		    }  
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전체엑셀다운로드
+ * param   : obj - Button
+ * param   : e  - ClickEventInfo
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+
+function btn_excelAll_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var yn =  div_search.cmc_Ym.getDate();
+	ds_search.setColumn(0,"XCL_YM",yn);
+	
+	fn_AllExcel();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표상태재조회
+ * param   : obj - Button
+ * param   : e  - ClickEventInfo
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function btn_reState_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var yn =  div_search.cmc_Ym.getDate();
+	ds_search.setColumn(0,"STA_DT",yn+"01");
+	ds_search.setColumn(0,"END_DT",yn+"31");
+	
+	fn_ReState();
+}
+]]></Script>
+  </Form>
+</FDL>

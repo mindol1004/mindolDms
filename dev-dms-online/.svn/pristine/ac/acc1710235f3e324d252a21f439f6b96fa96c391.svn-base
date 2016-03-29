@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRConstInveLst">
+	<select id="SConstInveLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRConstInveLst.SConstInveLstPaging 구성품재고조회리스트 */
+/* IO: 이준우,2015-09-17T15:16:32(이준우,2015-07-15T12:35:58) */
+SELECT *
+  FROM (SELECT  ROW_NUMBER() OVER(ORDER BY XX.EQP_MDL_CD, XX.CMPT_CD ) AS ROWNO
+               ,XX.EQP_MDL_CD
+               ,CC.EQP_MDL_NM
+               ,XX.CMPT_CD
+               ,NVL(SUM(BB.IN_QTY),0) AS IN_QTY
+               ,NVL(SUM(BB.OUT_QTY),0) AS OUT_QTY
+               ,NVL(MAX(XX.TOT_QTY),0) AS TOT__QTY
+          FROM  (SELECT  EQP_MDL_CD AS EQP_MDL_CD
+                        ,CMPT_CD AS CMPT_CD
+                        ,SUM(CMPT_PRCH_QTY) AS IN_QTY
+                        ,0 AS OUT_QTY
+                        ,(SELECT  SUM(CMPT_PRCH_QTY)
+                            FROM  TB_CMPT_IN AA
+                           WHERE  A.EQP_MDL_CD = AA.EQP_MDL_CD
+                             AND  AA.CMPT_CD = A.CMPT_CD
+                             AND  AA.DEL_YN = 'N') AS TOT_IN_QTY
+                        ,0 AS TOT_OUT_QTY
+                        ,CMPT_IN_DT AS CMPT_DT
+                   FROM  TB_CMPT_IN A
+                  WHERE  A.DEL_YN = 'N'
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[             
+                    AND  EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CMPT_CD" prepend="AND" compareValue="%"><![CDATA[
+					     CMPT_CD = #CMPT_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="ST_DT"><![CDATA[
+                    AND  CMPT_IN_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT"><![CDATA[
+                    AND  CMPT_IN_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[
+               GROUP BY  EQP_MDL_CD, CMPT_CD, CMPT_IN_DT
+              UNION ALL
+                 SELECT  B.EQP_MDL_CD 
+                        ,A.CMPT_CD AS CMPT_CD
+                        ,0 AS IN_QTY
+                        ,SUM(A.CMPT_USE_QTY) AS OUT_QTY
+                        ,0 AS TOT_IN_QTY
+                        ,(SELECT  SUM(AA.CMPT_USE_QTY) 
+                            FROM  TB_CMPT_OUT AA
+                               ,  TB_EQP_ASSET BB
+                           WHERE  AA.ASSET_NO = BB.ASSET_NO
+                             AND  BB.EQP_MDL_CD = B.EQP_MDL_CD
+                             AND  AA.CMPT_CD = A.CMPT_CD
+                             AND  BB.OP_CL_CD = 'PR'
+                             AND  BB.DEL_YN = 'N'
+                             AND  AA.DEL_YN = 'N'
+                         ) AS TOT_OUT_QTY
+                        ,A.CMPT_OUT_DT AS CMPT_DT
+                   FROM  TB_CMPT_OUT A
+                        ,TB_EQP_ASSET B
+                  WHERE  A.ASSET_NO = B.ASSET_NO  
+                    AND  A.DEL_YN = 'N'
+                    AND  B.DEL_YN = 'N'
+                    AND  B.OP_CL_CD = 'PR'
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[             
+                    AND  EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CMPT_CD" prepend="AND" compareValue="%"><![CDATA[
+                         CMPT_CD = #CMPT_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="ST_DT"><![CDATA[
+                    AND  CMPT_OUT_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT"><![CDATA[
+                    AND  CMPT_OUT_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[                                               
+               GROUP BY  B.EQP_MDL_CD, A.CMPT_CD, A.CMPT_OUT_DT
+                )BB                                                                 /*입출고별카운트*/
+             ,  
+                (SELECT  ZZ.EQP_MDL_CD
+                        ,ZZ.CMPT_CD
+                        ,SUM(ZZ.TOT_IN_QTY-ZZ.TOT_OUT_QTY) AS TOT_QTY
+                   FROM  (SELECT  EQP_MDL_CD
+                                 ,CMPT_CD
+                                 ,0 AS IN_QTY
+                                 ,0 AS OUT_QTY
+                                 ,SUM(CMPT_PRCH_QTY) AS TOT_IN_QTY
+                                 ,0 AS TOT_OUT_QTY
+                                 ,'' AS CMPT_DT
+                            FROM  TB_CMPT_IN 
+                           WHERE  DEL_YN = 'N'
+                        GROUP BY  EQP_MDL_CD, CMPT_CD
+                       UNION ALL
+                          SELECT  EQP_MDL_CD
+                                 ,CMPT_CD
+                                 ,0 AS IN_QTY
+                                 ,0 AS OUT_QTY
+                                 ,0 AS TOT_IN_QTY
+                                 ,SUM(CMPT_USE_QTY) AS TOT_OUT_QTY
+                                 ,'' AS CMPT_DT
+                            FROM  TB_CMPT_OUT A
+                                 ,TB_EQP_ASSET B
+                           WHERE  A.ASSET_NO = B.ASSET_NO  
+                             AND  A.DEL_YN = 'N'
+                             AND  B.OP_CL_CD = 'PR'
+                             AND  B.DEL_YN = 'N'
+                        GROUP BY  EQP_MDL_CD, CMPT_CD
+                         )ZZ
+               GROUP BY  ZZ.EQP_MDL_CD, ZZ.CMPT_CD
+                )XX	                                                                    /*전체제고*/
+               ,TB_EQP_MDL CC
+         WHERE  BB.EQP_MDL_CD(+) = XX.EQP_MDL_CD
+           AND  BB.CMPT_CD(+) = XX.CMPT_CD
+           AND  XX.EQP_MDL_CD = CC.EQP_MDL_CD
+]]><isNotEmpty property="EQP_MDL_NM"><![CDATA[             
+       AND  CC.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[           
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[             
+       AND  CC.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual property="CMPT_CD" prepend="AND" compareValue="%"><![CDATA[
+            XX.CMPT_CD = #CMPT_CD#
+]]></isNotEqual><![CDATA[
+      GROUP BY  XX.EQP_MDL_CD, XX.CMPT_CD, CC.EQP_MDL_NM
+      ORDER BY  CC.EQP_MDL_NM, XX.CMPT_CD
+        )
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SConstInveLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRConstInveLst.SConstInveLstTotCnt 구성품재고조회총건수 */
+/* IO: 이준우,2015-09-17T15:16:17(이준우,2015-07-14T20:56:54) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  (SELECT  BB.EQP_MDL_CD    	          
+                ,BB.CMPT_CD
+                ,SUM(BB.IN_QTY) AS IN_QTY
+                ,SUM(BB.OUT_QTY) AS OUT_QTY
+                ,MAX(TOT_QTY) AS TOT__QTY
+     	   FROM  (SELECT  EQP_MDL_CD AS EQP_MDL_CD
+                         ,CMPT_CD AS CMPT_CD
+                         ,SUM(CMPT_PRCH_QTY) AS IN_QTY
+                         ,0 AS OUT_QTY
+                         ,(SELECT  SUM(CMPT_PRCH_QTY)
+                             FROM  TB_CMPT_IN AA
+                            WHERE  A.EQP_MDL_CD = AA.EQP_MDL_CD
+                              AND  AA.CMPT_CD = A.CMPT_CD) AS TOT_IN_QTY
+                         ,0 AS TOT_OUT_QTY
+                         ,CMPT_IN_DT AS CMPT_DT
+                    FROM  TB_CMPT_IN A
+                   WHERE  A.DEL_YN = 'N'
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[             
+                     AND  EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CMPT_CD" prepend="AND" compareValue="%"><![CDATA[
+                          CMPT_CD = #CMPT_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="ST_DT"><![CDATA[
+                     AND  CMPT_IN_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT"><![CDATA[
+                     AND  CMPT_IN_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[
+                GROUP BY  EQP_MDL_CD, CMPT_CD, CMPT_IN_DT
+               UNION ALL
+     	          SELECT  B.EQP_MDL_CD 
+     	                 ,A.CMPT_CD AS CMPT_CD
+     	                 ,0 AS IN_QTY
+     	                 ,SUM(A.CMPT_USE_QTY) AS OUT_QTY
+     	                 ,0 AS TOT_IN_QTY
+     	                 ,(SELECT  SUM(AA.CMPT_USE_QTY) 
+     	                     FROM  TB_CMPT_OUT AA
+     	                        ,  TB_EQP_ASSET BB
+     	                    WHERE  AA.ASSET_NO = BB.ASSET_NO
+     	                      AND  BB.EQP_MDL_CD = B.EQP_MDL_CD
+     	                      AND  AA.CMPT_CD = A.CMPT_CD
+                              AND  BB.OP_CL_CD = 'PR'
+                              AND  BB.DEL_YN = 'N'
+                              AND  AA.DEL_YN = 'N'     	                        
+     	                   ) AS TOT_OUT_QTY
+     	                 ,A.CMPT_OUT_DT AS CMPT_DT
+     	            FROM  TB_CMPT_OUT A
+     	                 ,TB_EQP_ASSET B
+     	           WHERE  A.ASSET_NO = B.ASSET_NO  
+                     AND  A.DEL_YN = 'N'
+                     AND  B.DEL_YN = 'N'
+                     AND  B.OP_CL_CD = 'PR'                        
+    ]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[             
+                     AND  EQP_MDL_CD = #EQP_MDL_CD#
+    ]]></isNotEmpty><![CDATA[
+    ]]><isNotEqual property="CMPT_CD" prepend="AND" compareValue="%"><![CDATA[
+                          CMPT_CD = #CMPT_CD#
+    ]]></isNotEqual><![CDATA[
+    ]]><isNotEmpty property="ST_DT"><![CDATA[
+                     AND  CMPT_OUT_DT >= #ST_DT#
+    ]]></isNotEmpty><![CDATA[
+    ]]><isNotEmpty property="ED_DT"><![CDATA[
+                     AND  CMPT_OUT_DT <= #ED_DT#
+    ]]></isNotEmpty><![CDATA[                                               
+                GROUP BY  B.EQP_MDL_CD, A.CMPT_CD, A.CMPT_OUT_DT
+            )BB
+          ,
+            (
+             SELECT  ZZ.EQP_MDL_CD
+                    ,ZZ.CMPT_CD
+                    ,SUM(ZZ.TOT_IN_QTY-ZZ.TOT_OUT_QTY) AS TOT_QTY
+               FROM
+                    (SELECT  EQP_MDL_CD
+                            ,CMPT_CD
+                            ,0 AS IN_QTY
+                            ,0 AS OUT_QTY
+                            ,SUM(CMPT_PRCH_QTY) AS TOT_IN_QTY
+                            ,0 AS TOT_OUT_QTY
+                            ,'' AS CMPT_DT
+                       FROM  TB_CMPT_IN 
+                      WHERE  DEL_YN = 'N'
+                   GROUP BY  EQP_MDL_CD, CMPT_CD
+                  UNION ALL
+                     SELECT  EQP_MDL_CD
+                            ,CMPT_CD
+                            ,0 AS IN_QTY
+                            ,0 AS OUT_QTY
+                            ,0 AS TOT_IN_QTY
+                            ,SUM(CMPT_USE_QTY) AS TOT_OUT_QTY
+                            ,'' AS CMPT_DT
+                       FROM  TB_CMPT_OUT A
+                            ,TB_EQP_ASSET B
+                      WHERE  A.ASSET_NO = B.ASSET_NO  
+                        AND  A.DEL_YN = 'N'
+                        AND  B.DEL_YN = 'N'
+                        AND  B.OP_CL_CD = 'PR'
+                   GROUP BY  EQP_MDL_CD, CMPT_CD
+                   )ZZ
+                 GROUP BY  ZZ.EQP_MDL_CD, ZZ.CMPT_CD
+               )XX
+              ,TB_EQP_MDL CC
+     WHERE  BB.EQP_MDL_CD(+) = XX.EQP_MDL_CD
+       AND  BB.CMPT_CD(+) = XX.CMPT_CD
+       AND  XX.EQP_MDL_CD = CC.EQP_MDL_CD             
+]]><isNotEmpty property="EQP_MDL_NM"><![CDATA[             
+       AND  CC.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[           
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[             
+       AND  CC.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual property="CMPT_CD" prepend="AND" compareValue="%"><![CDATA[
+            BB.CMPT_CD = #CMPT_CD#
+]]></isNotEqual><![CDATA[
+  GROUP BY  BB.EQP_MDL_CD, BB.CMPT_CD
+  ORDER BY  BB.EQP_MDL_CD, BB.CMPT_CD	
+  )]]>
+	</select>
+</sqlMap>

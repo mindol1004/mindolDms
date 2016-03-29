@@ -1,0 +1,257 @@
+package dms.pr.prsxmbase.biz;
+
+import java.util.Map;
+
+import dms.pr.prsxmbase.biz.DPRRentalServCntrtMgmt;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [FU]렌탈용역계약관리</li>
+ * <li>설  명 : <pre>렌탈용역계약관리</pre></li>
+ * <li>작성일 : 2015-07-20 17:13:56</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class FPRRentalServCntrtMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FPRRentalServCntrtMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>임대폰포괄계약조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:13:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *	- field : STA_IN_DT [계약시작일자]
+	 *	- field : END_IN_DT [계약종료일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMPHS_CNTRT_LIST
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *		- field : CMPHS_CNTRT_STA_DT [포괄계약시작일자]
+	 *		- field : CMPHS_CNTRT_END_DT [포괄계약종료일자]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet fInqRentphonServCmphsCntrtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+	    IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet rsPagingList = null;
+		int intTotalCnt = 0;
+	    
+        // 1. DU lookup
+	    DPRRentalServCntrtMgmt dPRRentalServCntrtMgmt = (DPRRentalServCntrtMgmt) lookupDataUnit(DPRRentalServCntrtMgmt.class);
+	    // 2. TOTAL COUNT DM호출
+		dsCnt = dPRRentalServCntrtMgmt.dSRentphonServCmphsToCnt(requestData, onlineCtx);
+		intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+		PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+        
+	    // 3. LISTDM호출
+	    responseData = dPRRentalServCntrtMgmt.dSRentphonServCmphsCntrtLst(requestData, onlineCtx);
+	    rsPagingList = responseData.getRecordSet("RS_CMPHS_CNTRT_LIST");
+		PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+ 
+        return responseData;
+		}
+
+	/**
+	 * <pre>[FM]렌탈용역계약상세조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-21 09:28:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqRentalServCntrtDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[FM]렌탈용역계약등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-21 09:29:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegRentalServCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[FM]렌탈용역계약수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-21 09:29:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdRentalServCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:13:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMPHS_CNTRT_LIST
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *		- field : CMPHS_CNTRT_STA_DT [포괄계약시작일자]
+	 *		- field : CMPHS_CNTRT_END_DT [포괄계약종료일자]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegRentphonServCmphsCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. DU lookup
+	    	DPRRentalServCntrtMgmt dPRRentalServCntrtMgmt = (DPRRentalServCntrtMgmt) lookupDataUnit(DPRRentalServCntrtMgmt.class);
+			// 2. Validation DM호출
+			IDataSet valDS = dPRRentalServCntrtMgmt.dSIRentphonServCmphsCntrtChk(requestData, onlineCtx);
+			if ( Integer.parseInt(valDS.getField("ROW_CNT")) > 0 ) {
+				throw new BizRuntimeException("DMS00003"); //중복입력 된 데이터가 존재합니다.
+			}
+			//일련번호조회
+			valDS = dPRRentalServCntrtMgmt.dSRentphonServCmphsCntrtNum(requestData, onlineCtx);
+			requestData.putField("CMPHS_CNTRT_NO", valDS.getField("CMPHS_CNTRT_NO"));
+	
+
+			// 3. 업무 DM호출 
+			responseData = dPRRentalServCntrtMgmt.dIRentphonServCmphsCntrt(requestData, onlineCtx);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-22 16:39:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdRentphonServCmphsCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+       
+	    try {
+			// 1. DU lookup
+	    	DPRRentalServCntrtMgmt dPRRentalServCntrtMgmt = (DPRRentalServCntrtMgmt) lookupDataUnit(DPRRentalServCntrtMgmt.class);
+			// 2. Validation DM호출
+			//IDataSet valDS = dPRRentalServCntrtMgmt.dSIRentphonServCmphsCntrtChk(requestData, onlineCtx);
+			//if ( Integer.parseInt(valDS.getField("ROW_CNT")) > 0 ) {
+			//	throw new BizRuntimeException("DMS00003"); //중복입력 된 데이터가 존재합니다.
+			//}
+
+			// 3. 업무 DM호출 
+			responseData = dPRRentalServCntrtMgmt.dURentalServCntrt(requestData, onlineCtx);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약삭제</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-22 16:40:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDelRentphonServCmphsCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();	
+		
+	    try {
+			// 1. DU lookup
+	    	DPRRentalServCntrtMgmt dPRRentalServCntrtMgmt = (DPRRentalServCntrtMgmt) lookupDataUnit(DPRRentalServCntrtMgmt.class);
+			// 2. Validation DM호출
+			//IDataSet valDS = dPRRentalServCntrtMgmt.dSIRentphonServCmphsCntrtChk(requestData, onlineCtx);
+			//if ( Integer.parseInt(valDS.getField("ROW_CNT")) > 0 ) {
+			//	throw new BizRuntimeException("DMS00003"); //중복입력 된 데이터가 존재합니다.
+			//}
+
+			// 3. 업무 DM호출 
+			responseData = dPRRentalServCntrtMgmt.dDRentphonServCmphsCntrt(requestData, onlineCtx);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	
+	    return responseData;
+	}
+  
+}

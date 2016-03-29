@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpAmtRmtXclMgmt">
+	<select id="SEqpAmtRmtXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpAmtRmtXclMgmt.SEqpAmtRmtXclList 단말기대금계좌송금조회 */
+/* IO: 정동현,2015-11-02T14:40:37(이민재,2015-10-23T10:27:47) */
+SELECT  ACCO_RMT_XCL_NO                          /* 계좌송금 정산 번호 */
+       ,XCL_STRD_STA_DT                          /* 정산 기준 시작 일자 */
+       ,XCL_STRD_END_DT                          /* 정산 기준 종료 일자 */
+       ,XCL_DEALCO_CD                            /* 정산 거래처 코드 */
+       ,INVE_TYP_CD                              /* 재고 유형 코드 */
+       ,SUBSTR(ACCO_RMT_SLIP_DT,0,4)  AS  YYYY   /* 정산년도 */
+       ,ACCO_RMT_AMT                             /* 계좌송금 금액 */
+       ,ACCO_RMT_XCL_CNT                         /* 계좌송금 정산 건수 */
+       ,ACCO_RMT_SLIP_DT  AS  SLIP_DT            /* 계좌송금 전표 일자 */
+       ,ACCO_RMT_SLIP_NO  AS  SLIP_NO            /* 계좌송금 전표 번호 */
+       ,ACCO_RMT_SLIP_ST  AS  SLIP_ST            /* 계좌송금 전표 상태 */
+       ,ACCO_RMT_CNCL_SLIP_DT                    /* 계좌송금 취소 전표 일자 */
+       ,ACCO_RMT_CNCL_SLIP_NO                    /* 계좌송금 취소 전표 번호 */
+       ,'3148216576'  AS  DEALCO_BLICENS_NO      /* 사업자 번호 */
+       ,COUNT(*) OVER()  AS  TOTAL_CNT
+  FROM  TB_EP_ACCO_RMT_XCL 
+ WHERE  ((XCL_STRD_STA_DT BETWEEN #STRD_FR# AND #STRD_TO#) OR (XCL_STRD_END_DT BETWEEN #STRD_FR# AND #STRD_TO#))
+   AND  DEL_YN = 'N']]>
+	</select>
+	<select id="SEqpAmtRmtXclDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpAmtRmtXclMgmt.SEqpAmtRmtXclDtl 단말기대금계좌송금상세조회 */
+/* IO: 정동현,2015-10-29T15:03:16(정동현,2015-10-27T18:05:57) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT  ROW_NUMBER() OVER(ORDER BY A.ACCO_RMT_XCL_NO ) AS ROWNO
+			   ,COUNT(*) OVER () AS EXCEL_TOTAL_CNT
+               ,A.ACCO_RMT_XCL_NO         /* 계좌 송금 정산 번호 */
+               ,A.ACCO_RMT_XCL_DTL_SEQ    /* 계좌 송금 정산 상세 순번 */
+               ,A.INVE_TYP_CD             /* 재고 유형 코드 */
+               ,A.CNSL_MGMT_NO            /* 상담 관리 번호 */
+               ,A.PRCH_MGMT_NO            /* 매입 관리 번호 */
+               ,B.EQP_MDL_NM              /* 모델명 */
+               ,A.EQP_MDL_CD              /* 모델코드 */
+               ,A.EQP_SER_NO              /* 일련번호 */
+               ,A.CNSL_DT                 /* 상담 일자 */
+               ,A.CLCT_DT                 /* 회수 일자 */
+               ,A.RMT_DT                  /* 송금일자 */
+               ,A.XCL_AMT                 /* 정산 금액 */
+               ,C.EQP_ST                  /* 단말기 상태 */
+			   ,C.EQP_ST_DTAIL            /* 단말기 상태 세부 */
+			   ,C.CUST_GRP                /* 고객 그룹 */
+          FROM  TB_EP_ACCO_RMT_XCL_DTL  A
+               ,TB_EQP_MDL  B
+               ,TB_EP_CST_CONSULT_MGMT  C
+         WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+           AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+           AND  A.ACCO_RMT_XCL_NO = #ACCO_RMT_XCL_NO#
+           AND  A.DEL_YN = 'N'
+       ) PA
+WHERE  PA.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<select id="SEqpAmtRmtXclChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpAmtRmtXclMgmt.SEqpAmtRmtXclChk 단말기대금계좌송금재집계전표발행체크 */
+/* IO: 정동현,2015-10-29T09:22:45(정동현,2015-10-28T09:41:36) */
+SELECT  COUNT(*) AS CNT
+  FROM  TB_EP_ACCO_RMT_XCL 
+ WHERE  ((XCL_STRD_STA_DT BETWEEN #STRD_FR# AND #STRD_TO#) OR (XCL_STRD_END_DT BETWEEN #STRD_FR# AND #STRD_TO#))
+   AND  DEL_YN = 'N'
+   AND  ACCO_RMT_SLIP_ST IN ('10','20','30')]]>
+	</select>
+	<select id="SEqpAmtRmtXclSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpAmtRmtXclMgmt.SEqpAmtRmtXclSeq 단말기대금계좌송금시퀀스조회 */
+/* IO: 정동현,2015-10-29T09:27:49(정동현,2015-10-28T09:47:39) */
+SELECT  ACCO_RMT_XCL_NO
+  FROM  TB_EP_ACCO_RMT_XCL 
+ WHERE  DEL_YN = 'N'
+]]><isEmpty property="XCL_DEL_CHK"><![CDATA[ 
+   AND  ((XCL_STRD_STA_DT BETWEEN #STRD_FR# AND #STRD_TO#) OR (XCL_STRD_END_DT BETWEEN #STRD_FR# AND #STRD_TO#))
+]]></isEmpty><![CDATA[
+]]><isNotEmpty property="XCL_DEL_CHK"><![CDATA[    
+   AND  XCL_STRD_STA_DT = #STRD_FR#
+   AND  XCL_STRD_END_DT = #STRD_TO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<update id="UEqpAmtRmtXclDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpAmtRmtXclMgmt.UEqpAmtRmtXclDel 단말기대금계좌송금재집계삭제 */
+/* IO: 정동현,2015-10-28T09:54:41(정동현,2015-10-28T09:51:57) */
+UPDATE  TB_EP_ACCO_RMT_XCL
+   SET  DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #USERNO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  ACCO_RMT_XCL_NO = #ACCO_RMT_XCL_NO#]]>
+	</update>
+	<update id="UEqpAmtRmtXclDtlDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpAmtRmtXclMgmt.UEqpAmtRmtXclDtlDel 단말기대금계좌송금재집계상세삭제 */
+/* IO: 정동현,2015-10-29T11:13:53(정동현,2015-10-28T09:53:45) */
+UPDATE  TB_EP_ACCO_RMT_XCL_DTL
+   SET  DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #USERNO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  ACCO_RMT_XCL_NO = #ACCO_RMT_XCL_NO#]]>
+	</update>
+	<insert id="IEqpAmtRmtXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpAmtRmtXclMgmt.IEqpAmtRmtXcl 단말기대금계좌송금재집계 */
+/* IO: 정동현,2015-10-30T14:18:37(정동현,2015-10-28T09:59:37) */
+INSERT
+  INTO  TB_EP_ACCO_RMT_XCL
+       (
+        ACCO_RMT_XCL_NO
+       ,XCL_STRD_STA_DT
+       ,XCL_STRD_END_DT
+       ,XCL_DEALCO_CD
+       ,INVE_TYP_CD
+       ,ACCO_RMT_AMT
+       ,ACCO_RMT_XCL_CNT
+       ,DEL_YN
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+SELECT  TO_CHAR(LPAD(SQ01_TB_EP_ACCO_RMT_XCL.NEXTVAL,15,0)) AS ACCO_RMT_XCL_NO
+       ,XCL_STRD_STA_DT
+       ,XCL_STRD_END_DT
+       ,XCL_DEALCO_CD
+       ,INVE_TYP_CD
+       ,NVL(ACCO_RMT_AMT,0) AS ACCO_RMT_AMT
+       ,ACCO_RMT_XCL_CNT
+       ,'N'
+       ,#USERNO#
+       ,SYSDATE
+       ,#USERNO#
+       ,SYSDATE
+  FROM  (
+         SELECT  #STRD_FR# AS XCL_STRD_STA_DT
+                ,#STRD_TO# AS XCL_STRD_END_DT
+                ,'10' AS INVE_TYP_CD
+                ,'1000000007'  AS  XCL_DEALCO_CD
+                ,COUNT(*) AS ACCO_RMT_XCL_CNT
+                ,SUM(PRCH_AMT) AS ACCO_RMT_AMT
+           FROM  ( 
+                  SELECT  NVL(C.PRCH_AMT,0) AS PRCH_AMT      /* 매입금액 */
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT >= D.DEAL_STA_DT
+                     AND  A.CNSL_DT <= D.DEAL_END_DT
+                     AND  A.DEL_YN = 'N'
+                     AND  C.DEL_YN = 'N'
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                     AND  A.CNSL_MGMT_NO LIKE 'C%'
+                     AND  C.AMT_RMT_YN = 'Y' /* 계좌송금 */
+                     AND  C.RMT_DT BETWEEN #STRD_FR# AND #STRD_TO#  /* 송금일자 */
+                     AND  A.CLCT_DT IS NOT NULL /* 현장감정 */
+                  )
+          UNION  ALL
+         SELECT  #STRD_FR# AS XCL_STRD_STA_DT
+                ,#STRD_TO# AS XCL_STRD_END_DT
+                ,'20' AS INVE_TYP_CD
+                ,'1000000007'  AS  XCL_DEALCO_CD
+                ,COUNT(*) AS ACCO_RMT_XCL_CNT
+                ,SUM(EQP_ST_AMT) AS ACCO_RMT_AMT
+           FROM  (  
+                  SELECT  DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',NVL(C.PRCH_AMT,0) 
+                               - NVL(C.ADJ_AMT,0),DECODE(NVL(C.PRCH_AMT,0),0,NVL(C.PRCH_AMT,0),NVL(C.PRCH_AMT,0) 
+                               + (TRUNC(NVL(B.DDCT_AMT,0),-2)-NVL(C.ADJ_AMT,0)))) AS EQP_ST_AMT  /* 등급산정가 */
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT >= D.DEAL_STA_DT
+                     AND  A.CNSL_DT <= D.DEAL_END_DT
+                     AND  A.DEL_YN = 'N'
+                     AND  C.DEL_YN = 'N'
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                     AND  A.CNSL_MGMT_NO LIKE 'C%'
+                     AND  C.AMT_RMT_YN = 'Y' /* 계좌송금 */
+                     AND  C.RMT_DT BETWEEN #STRD_FR# AND #STRD_TO#  /* 송금일자 */
+                     AND  A.CLCT_DT IS NULL /* 비현장감정 */
+                     AND  D.DEALCO_CD <> '11050'  /* 에코폰 4u*/
+                  )
+          UNION  ALL
+         SELECT  #STRD_FR# AS XCL_STRD_STA_DT
+                ,#STRD_TO# AS XCL_STRD_END_DT
+                ,'' AS INVE_TYP_CD 
+                ,'11050'  AS  XCL_DEALCO_CD
+                ,COUNT(*) AS ACCO_RMT_XCL_CNT
+                ,SUM(EQP_ST_AMT) AS ACCO_RMT_AMT
+           FROM  (  
+                  SELECT  DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',NVL(C.PRCH_AMT,0) 
+                               - NVL(C.ADJ_AMT,0),DECODE(NVL(C.PRCH_AMT,0),0,NVL(C.PRCH_AMT,0),NVL(C.PRCH_AMT,0) 
+                               + (TRUNC(NVL(B.DDCT_AMT,0),-2)-NVL(C.ADJ_AMT,0)))) AS EQP_ST_AMT  /* 등급산정가 */
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT >= D.DEAL_STA_DT
+                     AND  A.CNSL_DT <= D.DEAL_END_DT
+                     AND  A.DEL_YN = 'N'
+                     AND  C.DEL_YN = 'N'
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                     AND  A.CNSL_MGMT_NO LIKE 'C%'
+                     AND  C.AMT_RMT_YN = 'Y' /* 계좌송금 */
+                     AND  C.RMT_DT BETWEEN #STRD_FR# AND #STRD_TO#  /* 송금일자 */
+                     AND  D.DEALCO_CD = '11050'  /* 에코폰 4u*/
+              )
+  )]]>
+	</insert>
+	<insert id="IEqpAmtRmtXclDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpAmtRmtXclMgmt.IEqpAmtRmtXclDtl 단말기대금계좌송금재집계상세 */
+/* IO: 정동현,2015-10-30T14:19:08(정동현,2015-10-28T15:43:40) */
+INSERT
+  INTO  TB_EP_ACCO_RMT_XCL_DTL
+       (
+        ACCO_RMT_XCL_NO
+       ,ACCO_RMT_XCL_DTL_SEQ
+       ,INVE_TYP_CD
+       ,CNSL_MGMT_NO
+       ,PRCH_MGMT_NO
+       ,EQP_MDL_CD
+       ,EQP_SER_NO
+       ,CNSL_DT
+       ,CLCT_DT
+       ,RMT_DT
+       ,XCL_AMT
+       ,DEL_YN
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+SELECT  ACCO_RMT_XCL_NO
+       ,ACCO_RMT_XCL_DTL_SEQ
+       ,INVE_TYP_CD
+       ,CNSL_MGMT_NO
+       ,PRCH_MGMT_NO
+       ,EQP_MDL_CD
+       ,EQP_SER_NO
+       ,CNSL_DT
+       ,CLCT_DT
+       ,RMT_DT
+       ,NVL(XCL_AMT,0) AS XCL_AMT
+       ,'N'
+       ,#USERNO#
+       ,SYSDATE
+       ,#USERNO#
+       ,SYSDATE
+  FROM  (
+			SELECT  A.ACCO_RMT_XCL_NO
+			       ,B.*
+			  FROM  (SELECT  MAX(ACCO_RMT_XCL_NO)  AS  ACCO_RMT_XCL_NO
+					   FROM  TB_EP_ACCO_RMT_XCL 
+				      WHERE  XCL_STRD_STA_DT = #STRD_FR#
+					    AND  XCL_STRD_END_DT = #STRD_TO#
+					    AND  INVE_TYP_CD = '10')  A
+			       ,(SELECT  ROW_NUMBER() OVER(ORDER BY IA.CNSL_MGMT_NO) AS ACCO_RMT_XCL_DTL_SEQ
+							,'10' AS INVE_TYP_CD  
+							,IA.CNSL_MGMT_NO                                                        /* 접수관리번호 */
+							,IC.PRCH_MGMT_NO                                                        /* 매입관리번호 */
+							,IC.EQP_MDL_CD                                                          /* 모델코드 */
+							,IC.EQP_SER_NO                                                          /* 일련번호 */
+							,IA.CNSL_DT                                                             /* 접수일자 */
+							,IA.CLCT_DT                                                             /* 회수일자 */
+							,SUBSTR(IC.RMT_DT,0,8)  AS  RMT_DT                                      /* 송금일자 */
+							,NVL(IC.PRCH_AMT,0) AS XCL_AMT                                          /* 매입금액 */
+					   FROM  TB_EP_CST_CONSULT_MGMT  IA
+							,(SELECT  CNSL_MGMT_NO
+									 ,SUM(DDCT_AMT) DDCT_AMT
+								FROM  TB_EP_CST_CONSULT_DTL
+							   WHERE  DEL_YN = 'N'
+							   GROUP  BY CNSL_MGMT_NO)  IB
+							,TB_EP_CST_PRCHS_MGMT  IC
+							,TB_DEALCO  ID
+							,TB_EQP_MDL  IE
+					  WHERE  IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+						AND  IA.CNSL_MGMT_NO = IC.CNSL_MGMT_NO
+						AND  IA.CNSL_DEALCO_CD = ID.DEALCO_CD
+						AND  IA.EQP_MDL_CD = IE.EQP_MDL_CD
+						AND  IA.CNSL_DT >= ID.DEAL_STA_DT
+						AND  IA.CNSL_DT <= ID.DEAL_END_DT
+						AND  IA.DEL_YN = 'N'
+						AND  IC.DEL_YN = 'N'
+						AND  ID.DEL_YN = 'N'
+						AND  IE.DEL_YN = 'N'
+						AND  IA.CNSL_MGMT_NO LIKE 'C%'
+						AND  IC.AMT_RMT_YN = 'Y' /* 계좌송금 */
+						AND  IC.RMT_DT BETWEEN #STRD_FR# AND #STRD_TO#  /* 송금일자 */
+						AND  IA.CLCT_DT IS NOT NULL /* 현장감정 */ )  B
+            UNION  ALL
+            SELECT  A.ACCO_RMT_XCL_NO
+			       ,B.*
+			  FROM  (SELECT  MAX(ACCO_RMT_XCL_NO)  AS  ACCO_RMT_XCL_NO
+					   FROM  TB_EP_ACCO_RMT_XCL 
+				      WHERE  XCL_STRD_STA_DT = #STRD_FR#
+					    AND  XCL_STRD_END_DT = #STRD_TO#
+					    AND  INVE_TYP_CD = '20')  A
+				   ,(SELECT ROW_NUMBER() OVER(ORDER BY IA.CNSL_MGMT_NO)  AS  ACCO_RMT_XCL_DTL_SEQ
+						   ,'20' AS INVE_TYP_CD     
+					  	   ,IA.CNSL_MGMT_NO                                                                         /* 접수관리번호 */
+						   ,IC.PRCH_MGMT_NO                                                                         /* 매입관리번호 */
+   						   ,IC.EQP_MDL_CD                                                                           /* 모델코드 */
+						   ,IC.EQP_SER_NO                                                                           /* 일련번호 */
+						   ,IA.CNSL_DT                                                                              /* 접수일자 */
+						   ,IA.CLCT_DT                                                                              /* 회수일자 */
+						   ,SUBSTR(IC.RMT_DT,0,8)  AS  RMT_DT                                                       /* 송금일자 */
+						   ,DECODE(NVL(IE.FIX_PRC_YN,'N'),'Y',NVL(IC.PRCH_AMT,0) 
+					   		     - NVL(IC.ADJ_AMT,0),DECODE(NVL(IC.PRCH_AMT,0),0,NVL(IC.PRCH_AMT,0),NVL(IC.PRCH_AMT,0) 
+							     +(TRUNC(NVL(IB.DDCT_AMT,0),-2)-NVL(IC.ADJ_AMT,0))))  AS  XCL_AMT                   /* 등급산정가 */
+				      FROM  TB_EP_CST_CONSULT_MGMT  IA
+						   ,(SELECT  CNSL_MGMT_NO
+						            ,SUM(DDCT_AMT) DDCT_AMT
+							   FROM  TB_EP_CST_CONSULT_DTL
+						      WHERE  DEL_YN = 'N'
+						      GROUP  BY CNSL_MGMT_NO)  IB
+						   ,TB_EP_CST_PRCHS_MGMT  IC
+						   ,TB_DEALCO  ID
+						   ,TB_EQP_MDL  IE
+				     WHERE  IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+					   AND  IA.CNSL_MGMT_NO = IC.CNSL_MGMT_NO
+					   AND  IA.CNSL_DEALCO_CD = ID.DEALCO_CD
+					   AND  IA.EQP_MDL_CD = IE.EQP_MDL_CD
+					   AND  IA.CNSL_DT >= ID.DEAL_STA_DT
+					   AND  IA.CNSL_DT <= ID.DEAL_END_DT
+					   AND  IA.DEL_YN = 'N'
+					   AND  IC.DEL_YN = 'N'
+					   AND  ID.DEL_YN = 'N'
+					   AND  IE.DEL_YN = 'N'
+					   AND  IA.CNSL_MGMT_NO LIKE 'C%'
+					   AND  IC.AMT_RMT_YN = 'Y' /* 계좌송금 */
+					   AND  IC.RMT_DT BETWEEN #STRD_FR# AND #STRD_TO#  /* 송금일자 */
+					   AND  IA.CLCT_DT IS NULL /* 비현장감정 */
+					   AND  ID.DEALCO_CD <> '11050'  /* 에코폰 4u*/ )  B
+            UNION  ALL
+            SELECT  A.ACCO_RMT_XCL_NO
+			       ,B.*
+         	  FROM  (SELECT  MAX(ACCO_RMT_XCL_NO)  AS  ACCO_RMT_XCL_NO
+					   FROM  TB_EP_ACCO_RMT_XCL 
+				      WHERE  XCL_STRD_STA_DT = #STRD_FR#
+					    AND  XCL_STRD_END_DT = #STRD_TO#
+					    AND  INVE_TYP_CD IS NULL)  A
+                   ,(SELECT  ROW_NUMBER() OVER(ORDER BY IA.CNSL_MGMT_NO)  AS  ACCO_RMT_XCL_DTL_SEQ
+							,'' AS INVE_TYP_CD     
+							,IA.CNSL_MGMT_NO                                                                         /* 접수관리번호 */
+							,IC.PRCH_MGMT_NO                                                                         /* 매입관리번호 */
+							,IC.EQP_MDL_CD                                                                           /* 모델코드 */
+							,IC.EQP_SER_NO                                                                           /* 일련번호 */ 
+							,IA.CNSL_DT                                                                              /* 접수일자 */
+							,IA.CLCT_DT                                                                              /* 회수일자 */
+							,SUBSTR(IC.RMT_DT,0,8)  AS  RMT_DT                                                       /* 송금일자 */
+							,DECODE(NVL(IE.FIX_PRC_YN,'N'),'Y',NVL(IC.PRCH_AMT,0) 
+								  - NVL(IC.ADJ_AMT,0),DECODE(NVL(IC.PRCH_AMT,0),0,NVL(IC.PRCH_AMT,0),NVL(IC.PRCH_AMT,0) 
+								  + (TRUNC(NVL(IB.DDCT_AMT,0),-2)-NVL(IC.ADJ_AMT,0)))) AS XCL_AMT                     /* 등급산정가 */
+					   FROM  TB_EP_CST_CONSULT_MGMT  IA
+							,(SELECT  CNSL_MGMT_NO
+									 ,SUM(DDCT_AMT) DDCT_AMT
+								FROM  TB_EP_CST_CONSULT_DTL
+							   WHERE  DEL_YN = 'N'
+							   GROUP  BY CNSL_MGMT_NO)  IB
+							,TB_EP_CST_PRCHS_MGMT  IC
+							,TB_DEALCO  ID
+							,TB_EQP_MDL  IE
+					  WHERE  IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+						AND  IA.CNSL_MGMT_NO = IC.CNSL_MGMT_NO
+						AND  IA.CNSL_DEALCO_CD = ID.DEALCO_CD
+						AND  IA.EQP_MDL_CD = IE.EQP_MDL_CD
+						AND  IA.CNSL_DT >= ID.DEAL_STA_DT
+						AND  IA.CNSL_DT <= ID.DEAL_END_DT
+						AND  IA.DEL_YN = 'N'
+						AND  IC.DEL_YN = 'N'
+						AND  ID.DEL_YN = 'N'
+						AND  IE.DEL_YN = 'N'
+						AND  IC.AMT_RMT_YN = 'Y' /* 계좌송금 */
+						AND  IC.RMT_DT BETWEEN #STRD_FR# AND #STRD_TO#  /* 송금일자 */
+						AND  ID.DEALCO_CD = '11050'  /* 에코폰 4u*/  ) B
+        )]]>
+	</insert>
+</sqlMap>

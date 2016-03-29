@@ -1,0 +1,236 @@
+package dms.bi.bibbase.biz;
+
+import org.apache.commons.net.bsd.RExecClient;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/기준정보</li>
+ * <li>단위업무명: [PU]박스바코드관리</li>
+ * <li>설  명 : <pre>박스바코드관리</pre></li>
+ * <li>작성일 : 2015-06-29 10:05:10</li>
+ * <li>작성자 : 개발자 (developer)</li>
+ * </ul>
+ *
+ * @author 개발자 (developer)
+ */
+public class PBIBoxBarcdMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PBIBoxBarcdMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>박스바코드 상세 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-09 15:37:51
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : BOX_BAR_CD [박스바코드번호]
+	 *	- field : MGMT_BAR_CD [관리바코드번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_BOXDTL_LST
+	 *		- field : BOX_BAR_CD [박스바코드번호]
+	 *		- field : MNGT_BAR_CD [관리바코드번호]
+	 *		- field : S_GB [중고폰 업무구분]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 *		- field : MAX_QTY [최대수량]
+	 *	- record : RS_BOXBAR
+	 *		- field : BOX_BAR_CD [박스바코드번호]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : BOX_ST_CD [박스상태코드]
+	 *		- field : BOX_ST_SCL_CD [박스상태상세코드]
+	 *		- field : MAX_QTY [최대수량]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 *	- record : RS_EP_LST
+	 *		- field : MGMT_BAR_CD [관리번호]
+	 *		- field : BOX_BAR_CD [박스바코드]
+	 *		- field : S_GB [접수매입구분]
+	 * </pre>
+	 */
+    public IDataSet pInqBoxBarcdDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    	try {
+    		// 1. FU lookup
+    		FBIBoxBarcdMgmt fBIBoxBarcdMgmt = (FBIBoxBarcdMgmt) lookupFunctionUnit(FBIBoxBarcdMgmt.class);
+    		// 2. FM 호출
+    		responseData.putRecordSet("RS_BOXBAR",fBIBoxBarcdMgmt.fInqBoxBarcd(requestData, onlineCtx).getRecordSet("RS_BOXBAR"));
+    		responseData.putRecordSet("RS_BOXDTL_LST",fBIBoxBarcdMgmt.fInqBoxBarcdDtlLst(requestData, onlineCtx).getRecordSet("RS_BOXDTL_LST"));
+    		responseData.putRecordSet("RS_EP_LST",fBIBoxBarcdMgmt.fInqBoxBarcdDtlLst(requestData, onlineCtx).getRecordSet("RS_EP_LST"));
+            // 3. 결과값 리턴
+    		responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); //시스템 오류
+    	}
+        return responseData;
+    }
+
+    /**
+	 * <pre>박스바코드 세팅</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-09 15:37:51
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_BOXDTL_LST
+	 *		- field : BOX_BAR_CD [박스바코드]
+	 *		- field : MGMT_BAR_CD [관리바코드]
+	 *		- field : S_GB [중고폰 업무구분]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종수정자ID]
+	 *		- field : LS_CHG_DTM [최종수정일시]
+	 *	- field : PROD_QTY [등록건수]
+	 *	- field : BOX_NO [박스바코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet pSaveBoxBarcdSet(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IRecordSet rs = requestData.getRecordSet("RS_BOXDTL_LST");
+        CommonArea ca = getCommonArea(onlineCtx);
+
+    	try {
+    		// 1. FU lookup
+    		FBIBoxBarcdMgmt fBIBoxBarcdMgmt = (FBIBoxBarcdMgmt) lookupFunctionUnit(FBIBoxBarcdMgmt.class);
+    		 
+    		// 2. 입력 RS설정
+            for (int i=0; i<rs.getRecordCount(); i++) {
+                requestData.putFieldMap(rs.getRecordMap(i));
+                requestData.putField("USER_NO", ca.getUserNo());
+                requestData.putField("FS_REG_USER_ID", ca.getUserNo());
+                requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                fBIBoxBarcdMgmt.fUpdBoxBarcdSet(requestData, onlineCtx);
+            }
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+    	// 4. 결과값 리턴
+    	responseData.setOkResultMessage("DMS00000", null); // 정상 처리되었습니다.
+        return responseData;
+    }
+
+    /**
+	 * <pre>박스바코드 생성</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-09 15:37:51
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : BOX_BAR_CD [박스바코드]
+	 *	- field : OP_CL_CD [업무구분]
+	 *	- field : BOX_ST_CD [상태구분]
+	 *	- field : BOX_ST_SCL_CD [상태 상세구분]
+	 *	- field : BOX_CD [박스시작코드]
+	 *	- field : MAX_QTY [수량]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_BOXBAR
+	 *		- field : BOX_BAR_CD [박스바코드]
+	 *		- field : OP_CL_CD [업무구분]
+	 *		- field : BOX_ST_CD [상태구분]
+	 *		- field : BOX_ST_SCL_CD [상태 상세구분]
+	 *		- field : MAX_QTY [수량]
+	 * </pre>
+	 */
+    public IDataSet pSaveBoxBarcd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try {
+    		// 1. FU lookup
+    		FBIBoxBarcdMgmt fBIBoxBarcdMgmt = (FBIBoxBarcdMgmt) lookupFunctionUnit(FBIBoxBarcdMgmt.class);
+    		// 2. 입력 RS설정
+    		requestData.putField("USER_NO", ca.getUserNo());
+    		responseData = fBIBoxBarcdMgmt.fRegBoxBarcd(requestData, onlineCtx);
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+        return responseData;
+    }
+
+	/**
+	 *
+	 *
+	 * @author 이하나 (hana526)
+	 * @since 2015-07-09 15:37:51
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : BOX_BAR_CD [박스바코드]
+	 *	- field : MGMT_BAR_CD [관리바코드]
+	 *	- field : CNSL_MGMT_NO [접수관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PRODINFO
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : DPSTR [예금주]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : S_GB [S_GB]
+	 *		- field : PROC_GB [PROC_GB]
+	 *		- field : CHECK_YN [CHECK_YN]
+	 *		- field : EQP_ST [등급]
+	 *		- field : CNSL_DT [접수일자]
+	 *		- field : SKN_CL [SKN여부]
+	 * </pre>
+	 */
+	public IDataSet pGetProdInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+    	try {
+    		// 1. FU lookup
+    		FBIBoxBarcdMgmt fBIBoxBarcdMgmt = (FBIBoxBarcdMgmt) lookupFunctionUnit(FBIBoxBarcdMgmt.class);
+    		// 2. FM 호출
+    		responseData.putRecordSet("RS_PRODINFO",fBIBoxBarcdMgmt.fGetProdInfo(requestData, onlineCtx).getRecordSet("RS_PRODINFO"));
+    		// 3. 결과값 리턴
+    		responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); //시스템 오류
+    	}
+	
+	    return responseData;
+	}
+}

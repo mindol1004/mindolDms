@@ -1,0 +1,1143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR005">
+	<insert id="INRCntrtHst" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.INRCntrtHst 계약이력등록 */
+/* IO: 안진갑,2015-08-27T17:05:41(진병수,2015-08-04T15:01:21) */
+]]><selectKey resultClass="String" keyProperty="NEW_CNTRT_HST_SEQ" type="pre"><![CDATA[
+SELECT  NVL(MAX(NEW_CNTRT_HST_SEQ),0)+1 AS NEW_CNTRT_HST_SEQ FROM TH_NR_CNTRT_HST WHERE CNTRT_NO=#CNTRT_NO#
+]]></selectKey><![CDATA[
+INSERT  INTO TH_NR_CNTRT_HST
+(
+  NEW_CNTRT_HST_SEQ
+ ,CNTRT_NO
+ ,SVC_MGMT_NO
+ ,RENTAL_SER_NO
+ ,SVC_NO
+ ,SVC_NO_ENPT
+ ,OP_TYP_CD
+ ,OP_PROC_DT
+ ,AGN_CD
+ ,PET_NM
+ ,EQP_SER_NO
+ ,NEW_CNTRT_DT
+ ,COLOR_CD
+ ,CUST_TYP
+ ,NEW_CNTRTR_NM
+ ,NEW_CNTRTR_BIRTH_YMD
+ ,NEW_CNTRTR_ZIPCD
+ ,NEW_CNTRTR_INV_ADDR
+ ,NEW_CNTRTR_INV_ADDR_DTL
+ ,NEW_CNTRTR_BIZ_REG_NO
+ ,NEW_CNTRTR_CORP_REG_NO
+ ,LEGAL_AGENT_NM
+ ,LEGAL_AGENT_CUST_TYP
+ ,LEGAL_AGENT_BIZ_REG_NO
+ ,LEGAL_AGENT_CORP_REG_NO
+ ,LEGAL_AGENT_BIRTH_YMD
+ ,LEGAL_AGENT_REL
+ ,EQP_RTN_YN
+ ,TTUL_CHG_YN
+ ,EQP_CHG_YN
+ ,LEGAL_AGENT_CHG_YN
+ ,RENTAL_POLY_NO
+ ,PEN_POLY_NO
+ ,EQP_MDL_CD
+ ,RENTAL_CNTRT_STA_DT
+ ,RENTAL_CNTRT_END_DT
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+ ,NEW_CNTRTR_NM_ENPT
+ ,NEW_CNTRTR_BIRTH_YMD_ENPT
+ ,NEW_CNTRTR_INV_ADDR_DTL_ENPT
+ ,LEGAL_AGENT_NM_ENPT
+ ,LEGAL_AGENT_BIRTH_YMD_ENPT
+ ,UNRTN_AMT
+)
+VALUES
+(
+  #NEW_CNTRT_HST_SEQ#
+ ,#CNTRT_NO#
+ ,#SVC_MGMT_NO#
+ ,#RENTAL_SER_NO#
+ ,#SVC_NO#
+ ,#SVC_NO_ENPT#
+ ,#OP_TYP_CD#
+ ,#OP_PROC_DT#
+ ,#AGN_CD#
+ ,(SELECT PET_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = #EQP_MDL_CD#) 
+ ,#EQP_SER_NO#
+ ,#RENTAL_CNTRT_STA_DT#
+ ,#COLOR_CD#
+ ,#CUST_TYP#
+ ,#NEW_CNTRTR_NM#
+ ,#NEW_CNTRTR_BIRTH_YMD#
+ ,#NEW_CNTRTR_ZIPCD#
+ ,#NEW_CNTRTR_INV_ADDR#
+ ,#NEW_CNTRTR_INV_ADDR_DTL#
+ ,#NEW_CNTRTR_BIZ_REG_NO#
+ ,#NEW_CNTRTR_CORP_REG_NO#
+ ,#LEGAL_AGENT_NM#
+ ,#LEGAL_AGENT_CUST_TYP#
+ ,#LEGAL_AGENT_BIZ_REG_NO#
+ ,#LEGAL_AGENT_CORP_REG_NO#
+ ,#LEGAL_AGENT_BIRTH_YMD#
+ ,#LEGAL_AGENT_REL#
+ ,#EQP_RTN_YN#
+ ,#TTUL_CHG_YN#
+ ,#EQP_CHG_YN#
+ ,#LEGAL_AGENT_CHG_YN#
+ ,#RENTAL_POLY_NO#
+ ,#PEN_POLY_NO#
+ ,#EQP_MDL_CD#
+ ,#RENTAL_CNTRT_STA_DT#
+ ,#RENTAL_CNTRT_END_DT#
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+ ,#NEW_CNTRTR_NM_ENPT#
+ ,#NEW_CNTRTR_BIRTH_YMD_ENPT#
+ ,#NEW_CNTRTR_INV_ADDR_DTL_ENPT#
+ ,#LEGAL_AGENT_NM_ENPT#
+ ,#LEGAL_AGENT_BIRTH_YMD_ENPT#
+ ,#UNRTN_AMT#
+)]]>
+	</insert>
+	<insert id="INRCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.INRCntrt 신규R계약등록 */
+/* IO: 안진갑,2015-08-28T16:39:09(진병수,2015-08-04T15:05:26) */
+INSERT  INTO TB_NR_CNTRT
+(
+  CNTRT_NO
+ ,SVC_MGMT_NO
+ ,RENTAL_SER_NO
+ ,SVC_NO
+ ,SVC_NO_ENPT
+ ,OP_TYP_CD
+ ,OP_PROC_DT
+ ,AGN_CD
+ ,PET_NM
+ ,EQP_SER_NO
+ ,NEW_CNTRT_DT
+ ,COLOR_CD
+ ,CUST_TYP
+ ,NEW_CNTRTR_NM
+ ,NEW_CNTRTR_BIRTH_YMD
+ ,NEW_CNTRTR_ZIPCD
+ ,NEW_CNTRTR_INV_ADDR
+ ,NEW_CNTRTR_INV_ADDR_DTL
+ ,NEW_CNTRTR_BIZ_REG_NO
+ ,NEW_CNTRTR_CORP_REG_NO
+ ,LEGAL_AGENT_NM
+ ,LEGAL_AGENT_CUST_TYP
+ ,LEGAL_AGENT_BIZ_REG_NO
+ ,LEGAL_AGENT_CORP_REG_NO
+ ,LEGAL_AGENT_BIRTH_YMD
+ ,LEGAL_AGENT_REL
+ ,EQP_RTN_YN
+ ,TTUL_CHG_YN
+ ,EQP_CHG_YN
+ ,LEGAL_AGENT_CHG_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+ ,NEW_CNTRTR_NM_ENPT
+ ,NEW_CNTRTR_BIRTH_YMD_ENPT
+ ,NEW_CNTRTR_INV_ADDR_DTL_ENPT
+ ,LEGAL_AGENT_NM_ENPT
+ ,LEGAL_AGENT_BIRTH_YMD_ENPT
+ ,UNRTN_AMT
+)
+VALUES
+(
+  #CNTRT_NO#
+ ,#SVC_MGMT_NO#
+ ,#RENTAL_SER_NO#
+ ,#SVC_NO#
+ ,#SVC_NO_ENPT#
+ ,#OP_TYP_CD#
+ ,#OP_PROC_DT#
+ ,#AGN_CD#
+ ,(SELECT PET_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = #EQP_MDL_CD#)
+ ,#EQP_SER_NO#
+ ,#RENTAL_CNTRT_STA_DT#
+ ,#COLOR_CD#
+ ,#CUST_TYP#
+ ,#NEW_CNTRTR_NM#
+ ,#NEW_CNTRTR_BIRTH_YMD#
+ ,#NEW_CNTRTR_ZIPCD#
+ ,#NEW_CNTRTR_INV_ADDR#
+ ,#NEW_CNTRTR_INV_ADDR_DTL#
+ ,#NEW_CNTRTR_BIZ_REG_NO#
+ ,#NEW_CNTRTR_CORP_REG_NO#
+ ,#LEGAL_AGENT_NM#
+ ,#LEGAL_AGENT_CUST_TYP#
+ ,#LEGAL_AGENT_BIZ_REG_NO#
+ ,#LEGAL_AGENT_CORP_REG_NO#
+ ,#LEGAL_AGENT_BIRTH_YMD#
+ ,#LEGAL_AGENT_REL#
+ ,#EQP_RTN_YN#
+ ,#TTUL_CHG_YN#
+ ,#EQP_CHG_YN#
+ ,#LEGAL_AGENT_CHG_YN#
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+ ,#NEW_CNTRTR_NM_ENPT#
+ ,#NEW_CNTRTR_BIRTH_YMD_ENPT#
+ ,#NEW_CNTRTR_INV_ADDR_DTL_ENPT#
+ ,#LEGAL_AGENT_NM_ENPT#
+ ,#LEGAL_AGENT_BIRTH_YMD_ENPT#
+ ,#UNRTN_AMT#
+)]]>
+	</insert>
+	<insert id="IEqpAsset" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IEqpAsset 자산등록 */
+/* IO: 안진갑,2015-09-10T16:19:02(안진갑,2015-08-04T18:32:01) */
+]]><selectKey resultClass="String" keyProperty="ASSET_NO" type="pre"><![CDATA[
+SELECT  'EA'||LPAD(SQ01_TB_EQP_ASSET.NEXTVAL,10,'0') FROM DUAL 
+]]></selectKey><![CDATA[
+INSERT  INTO TB_EQP_ASSET
+(
+  ASSET_NO
+ ,EQP_MDL_CD
+ ,EQP_SER_NO
+ ,EQP_IMEI_NO
+ ,EQP_COLOR_CD
+ ,OP_CL_CD
+ ,INVE_ST_CD
+ ,EQP_PRCH_AMT
+ ,FST_IN_DT
+ ,EQP_PRCH_DT
+ ,LAST_EXPART_DT
+ ,LAST_IN_OUT_NO
+ ,EQP_LOSS_DT
+ ,BOX_NO
+ ,FISCL_SVCL
+ ,FISCL_ACNTB_AMT
+ ,FISCL_REMPRC
+ ,FISCL_DEPR_SUM_AMT
+ ,DEL_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+ ,PRCH_NO
+)
+SELECT  #ASSET_NO#
+       ,#EQP_MDL_CD#
+       ,#EQP_SER_NO#
+       ,''
+       ,#COLOR_CD#
+       ,#OP_CL_CD#
+       ,'20'
+       ,ROUND(TO_NUMBER(#OUT_PRC#)*100/110,0)
+       ,#RENTAL_CNTRT_STA_DT#
+       ,#RENTAL_CNTRT_STA_DT#
+       ,''
+       ,''
+       ,''
+       ,''
+       ,'2'
+       ,ROUND(TO_NUMBER(#OUT_PRC#)*100/110,0)
+       ,ROUND(TO_NUMBER(#OUT_PRC#)*100/110,0)
+       ,0
+       ,'N'
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+       ,#PRCH_NO#
+  FROM  DUAL]]>
+	</insert>
+	<insert id="IEqpCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IEqpCntrt 단말계약등록 */
+/* IO: 안진갑,2015-08-05T18:43:07(안진갑,2015-08-04T18:32:57) */
+INSERT  INTO TB_EQP_CNTRT
+(
+  ASSET_NO
+ ,CNTRT_NO
+ ,RENT_STA_DT
+ ,RENT_END_SCHD_DT
+ ,RENT_END_DT
+ ,RENT_APRV_YN
+ ,DEL_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  #ASSET_NO#
+ ,#CNTRT_NO#
+ ,#RENTAL_CNTRT_STA_DT#
+ ,#RENTAL_CNTRT_END_DT#
+ ,''
+ ,'Y'
+ ,'N'
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<insert id="IEqpIn" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IEqpIn 단말입고등록 */
+/* IO: 안진갑,2015-08-05T18:35:33(안진갑,2015-08-04T18:33:33) */
+]]><selectKey resultClass="String" keyProperty="EQP_IN_NO" type="pre"><![CDATA[
+SELECT  'EI'||LPAD(SQ01_TB_EQP_IN.NEXTVAL,10,'0') FROM DUAL 
+]]></selectKey><![CDATA[
+INSERT  INTO TB_EQP_IN
+(
+  EQP_IN_NO
+ ,ASSET_NO
+ ,EQP_MDL_CD
+ ,EQP_SER_NO
+ ,EQP_IN_DT
+ ,IN_DTL_CD
+ ,IN_DEALCO_CD
+ ,CHRG_DEPT_CD
+ ,DEL_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+( 
+  #EQP_IN_NO#
+ ,#ASSET_NO#
+ ,#EQP_MDL_CD#
+ ,#EQP_SER_NO#
+ ,#RENTAL_CNTRT_STA_DT#
+ ,'10'
+ ,#AGN_CD#
+ ,'501802'
+ ,'N'
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<insert id="IEqpOut" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IEqpOut 단말출고등록 */
+/* IO: 안진갑,2015-08-05T18:23:17(안진갑,2015-08-04T18:33:52) */
+]]><selectKey resultClass="String" keyProperty="EQP_OUT_NO" type="pre"><![CDATA[
+SELECT  'EO'||LPAD(SQ01_TB_EQP_OUT.NEXTVAL,10,'0') FROM DUAL 
+]]></selectKey><![CDATA[
+INSERT  INTO TB_EQP_OUT
+(
+  EQP_OUT_NO
+ ,ASSET_NO
+ ,EQP_MDL_CD
+ ,EQP_SER_NO
+ ,EQP_OUT_DT
+ ,OUT_DTL_CD
+ ,OUT_DEALCO_CD
+ ,CHRG_DEPT_CD
+ ,DEL_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  #EQP_OUT_NO#
+ ,#ASSET_NO#
+ ,#EQP_MDL_CD#
+ ,#EQP_SER_NO#
+ ,#RENTAL_CNTRT_STA_DT#
+ ,'30'
+ ,#AGN_CD#
+ ,'501802'
+ ,'N'
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<insert id="IRentalCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IRentalCntrt 계약마스터등록 */
+/* IO: 안진갑,2015-08-06T16:56:21(안진갑,2015-08-04T18:35:05) */
+]]><selectKey resultClass="String" keyProperty="CNTRT_NO" type="pre"><![CDATA[
+SELECT  'RC'||LPAD(SQ01_TB_RENTAL_CNTRT.NEXTVAL,10,'0') FROM DUAL 
+]]></selectKey><![CDATA[
+INSERT  INTO TB_RENTAL_CNTRT
+(
+  CNTRT_NO
+ ,OP_CL_CD
+ ,PEN_POLY_NO
+ ,RENTAL_POLY_NO
+ ,EQP_MDL_CD
+ ,RENTAL_CNTRT_STA_DT
+ ,RENTAL_CNTRT_END_DT
+ ,DEL_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  #CNTRT_NO#
+ ,#OP_CL_CD#
+ ,#PEN_POLY_NO#
+ ,#RENTAL_POLY_NO#
+ ,#EQP_MDL_CD#
+ ,#RENTAL_CNTRT_STA_DT#
+ ,#RENTAL_CNTRT_END_DT#
+ ,'N'
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<insert id="IPrch" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IPrch 매입등록 */
+/* IO: 안진갑,2015-09-10T16:16:24(안진갑,2015-08-04T18:36:43) */
+]]><selectKey resultClass="String" keyProperty="PRCH_NO" type="pre"><![CDATA[
+SELECT  'PR'||LPAD(SQ01_TB_PRCH.NEXTVAL,10,'0') AS PRCH_NO FROM DUAL 
+]]></selectKey><![CDATA[
+INSERT  INTO TB_PRCH
+(
+  PRCH_NO
+ ,OP_CL_CD
+ ,EQP_MDL_CD
+ ,EQP_SER_NO
+ ,PRCH_DT
+ ,PRCH_AMT
+ ,PRCH_ASSET_CL
+ ,PRCH_ST_CD
+ ,REVS_DEPT_CD
+ ,PRCHCO_CD
+ ,PRCHCO_CHRGR
+ ,PRCHCO_TEL_NO
+ ,SPLY_PRC
+ ,SURTAX_AMT
+ ,SURTAX_CL
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+ ,PRCH_ADJ_BF_AMT
+ ,PRCH_ADJ_DAMT
+)
+SELECT  #PRCH_NO#
+       ,#OP_CL_CD#
+       ,#EQP_MDL_CD#
+       ,#EQP_SER_NO#
+       ,#RENTAL_CNTRT_STA_DT#
+       ,#OUT_PRC#
+       ,'01'
+       ,'01'
+       ,'501802'
+       ,#AGN_CD#
+       ,(SELECT DEALCO_REPVE_NM FROM TB_DEALCO WHERE AGN_ORG_CD = #AGN_CD#) 
+       ,(SELECT DEALCO_TEL_NO FROM TB_DEALCO WHERE AGN_ORG_CD = #AGN_CD#) 
+       ,ROUND(TO_NUMBER(#OUT_PRC#)*100/110,0)
+       ,TO_NUMBER(#OUT_PRC#)-ROUND(TO_NUMBER(#OUT_PRC#)*100/110,0)
+       ,'1'
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+       ,0
+       ,0
+  FROM  DUAL]]>
+	</insert>
+	<select id="SIFCntrt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR005.SIFCntrt 인터페이스계약정보조회 */
+/* IO: 안진갑,2015-10-30T09:51:15(안진갑,2015-08-04T18:39:05) */
+SELECT  DECODE(SVC_OP_TYP_CD,'01','1','03','2','04','3','02','4','06',5,'05',6,'07',7) AS SORT_SEQ 
+       ,IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,SVC_OP_TYP_CD          AS OP_TYP_CD
+       ,SVC_OP_PROC_DT         AS OP_PROC_DT
+       ,SVC_MGMT_NO
+       ,SVC_NO
+       ,SVC_NO_ENPT
+       ,EQP_MDL_CD
+       ,EQP_SER_NO
+       ,EQP_RTN_YN
+       ,EQP_COLOR_CD           AS COLOR_CD
+       ,AGN_CD
+       ,RENTAL_POLY_ID         AS RENTAL_POLY_NO
+       ,RENTAL_SER_NO          AS RENTAL_SER_NO
+       ,RENTAL_CNTRT_STA_DT    AS RENTAL_CNTRT_STA_DT  
+       ,RENTAL_CNTRT_END_DT    AS RENTAL_CNTRT_END_DT
+       ,CUST_NM                AS NEW_CNTRTR_NM
+       ,CUST_NM_ENPT           AS NEW_CNTRTR_NM_ENPT
+       ,CUST_TYP              
+       ,CUST_BLICENS_NO        AS NEW_CNTRTR_BIZ_REG_NO
+       ,CUST_COPREG_NO         AS NEW_CNTRTR_CORP_REG_NO
+       ,CUST_BIRTH_YMD         AS NEW_CNTRTR_BIRTH_YMD
+       ,CUST_BIRTH_YMD_ENPT    AS NEW_CNTRTR_BIRTH_YMD_ENPT
+       ,CUST_INV_ZIPCD         AS NEW_CNTRTR_ZIPCD
+       ,CUST_INV_ADDR          AS NEW_CNTRTR_INV_ADDR
+       ,CUST_INV_DTL_ADDR      AS NEW_CNTRTR_INV_ADDR_DTL
+       ,CUST_INV_DTL_ADDR_ENPT AS NEW_CNTRTR_INV_ADDR_DTL_ENPT
+       ,AGENT_NM               AS LEGAL_AGENT_NM
+       ,AGENT_NM_ENPT          AS LEGAL_AGENT_NM_ENPT
+       ,AGENT_CUST_TYP         AS LEGAL_AGENT_CUST_TYP
+       ,AGENT_BLICENS_NO       AS LEGAL_AGENT_BIZ_REG_NO
+       ,AGENT_COPREG_NO        AS LEGAL_AGENT_CORP_REG_NO
+       ,AGENT_BIRTH_YMD        AS LEGAL_AGENT_BIRTH_YMD
+       ,AGENT_BIRTH_YMD_ENPT   AS LEGAL_AGENT_BIRTH_YMD_ENPT
+       ,AGENT_REL              AS LEGAL_AGENT_REL 
+       ,CMPT_INFO
+  FROM  TF_SVC_INFO
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09'
+]]><isNotEmpty property="OP_TYP_CD" prepend="AND"><![CDATA[
+        SVC_OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEmpty><![CDATA[
+ ORDER  BY SORT_SEQ]]>
+	</select>
+	<update id="UNRCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UNRCntrt 신규R계약변경 */
+/* IO: 안진갑,2015-10-13T09:06:52(안진갑,2015-08-04T18:40:03) */
+UPDATE  TB_NR_CNTRT
+   SET  SVC_NO = #SVC_NO#
+       ,SVC_NO_ENPT = #SVC_NO_ENPT#
+       ,OP_TYP_CD = #OP_TYP_CD#
+       ,OP_PROC_DT = #OP_PROC_DT#
+       ,AGN_CD = #AGN_CD#
+       ,PET_NM = (SELECT PET_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = #EQP_MDL_CD#) 
+       ,EQP_SER_NO = #EQP_SER_NO#
+       ,COLOR_CD = #COLOR_CD#
+       ,CUST_TYP = #CUST_TYP#
+       ,NEW_CNTRTR_NM = #NEW_CNTRTR_NM#
+       ,NEW_CNTRTR_BIRTH_YMD = #NEW_CNTRTR_BIRTH_YMD#
+       ,NEW_CNTRTR_ZIPCD = #NEW_CNTRTR_ZIPCD#
+       ,NEW_CNTRTR_INV_ADDR = #NEW_CNTRTR_INV_ADDR#
+       ,NEW_CNTRTR_INV_ADDR_DTL = #NEW_CNTRTR_INV_ADDR_DTL#
+       ,NEW_CNTRTR_BIZ_REG_NO = #NEW_CNTRTR_BIZ_REG_NO#
+       ,NEW_CNTRTR_CORP_REG_NO = #NEW_CNTRTR_CORP_REG_NO#
+       ,LEGAL_AGENT_NM = #LEGAL_AGENT_NM#
+       ,LEGAL_AGENT_CUST_TYP = #LEGAL_AGENT_CUST_TYP#
+       ,LEGAL_AGENT_BIZ_REG_NO = #LEGAL_AGENT_BIZ_REG_NO#
+       ,LEGAL_AGENT_CORP_REG_NO = #LEGAL_AGENT_CORP_REG_NO#
+       ,LEGAL_AGENT_BIRTH_YMD = #LEGAL_AGENT_BIRTH_YMD#
+       ,LEGAL_AGENT_REL = #LEGAL_AGENT_REL#
+       ,EQP_RTN_YN = #EQP_RTN_YN#
+       ,TTUL_CHG_YN = #TTUL_CHG_YN#
+       ,EQP_CHG_YN = #EQP_CHG_YN#
+       ,LEGAL_AGENT_CHG_YN = #LEGAL_AGENT_CHG_YN#
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+       ,NEW_CNTRTR_NM_ENPT = #NEW_CNTRTR_NM_ENPT#
+       ,NEW_CNTRTR_BIRTH_YMD_ENPT = #NEW_CNTRTR_BIRTH_YMD_ENPT#
+       ,NEW_CNTRTR_INV_ADDR_DTL_ENPT = #NEW_CNTRTR_INV_ADDR_DTL_ENPT#
+       ,LEGAL_AGENT_NM_ENPT = #LEGAL_AGENT_NM_ENPT#
+       ,LEGAL_AGENT_BIRTH_YMD_ENPT = #LEGAL_AGENT_BIRTH_YMD_ENPT#
+       ,UNRTN_AMT = #UNRTN_AMT#
+ WHERE  SVC_MGMT_NO = #SVC_MGMT_NO#
+   AND  RENTAL_SER_NO = #RENTAL_SER_NO#]]>
+	</update>
+	<update id="UEqpAsset" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UEqpAsset 자산변경(교품일,일련번호) */
+/* IO: 안진갑,2015-10-13T09:08:22(안진갑,2015-08-04T18:42:25) */
+UPDATE  TB_EQP_ASSET
+   SET  EQP_SER_NO = #EQP_SER_NO#
+       ,LAST_EXPART_DT = #OP_PROC_DT#
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  ASSET_NO = (
+ 					SELECT  A.ASSET_NO
+                      FROM  TB_EQP_CNTRT A
+                           ,TB_NR_CNTRT B
+                     WHERE  A.CNTRT_NO = B.CNTRT_NO
+                       AND  B.SVC_MGMT_NO = #SVC_MGMT_NO#
+                       AND  B.RENTAL_SER_NO = #RENTAL_SER_NO#                       
+                   )]]>
+	</update>
+	<update id="UPrch" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UPrch 매입변경(일련번호 변경) */
+/* IO: 안진갑,2015-10-13T09:05:27(안진갑,2015-08-05T12:34:15) */
+UPDATE  TB_PRCH
+   SET  EQP_SER_NO = #EQP_SER_NO#
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE   
+ WHERE  PRCH_NO = (
+ 					SELECT  A.PRCH_NO
+                      FROM  TB_EQP_ASSET A
+                           ,TB_EQP_CNTRT B
+                           ,TB_NR_CNTRT C
+                     WHERE  A.ASSET_NO = B.ASSET_NO
+                       AND  B.CNTRT_NO = C.CNTRT_NO
+                       AND  C.SVC_MGMT_NO = #SVC_MGMT_NO#
+					   AND  C.RENTAL_SER_NO = #RENTAL_SER_NO#                        
+                   )]]>
+	</update>
+	<insert id="IEqpCntrtDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IEqpCntrtDtl 단말계약상세등록 */
+/* IO: 안진갑,2015-11-12T16:24:03(안진갑,2015-08-05T12:37:52) */
+INSERT  INTO TB_EQP_CNTRT_DTL
+(
+  ASSET_NO
+ ,CNTRT_NO
+ ,RENT_YM
+ ,RENTAL_FEE
+ ,RENTAL_FEE_TOT  
+ ,SURTAX
+ ,ALLWN_AMT
+ ,DEL_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)  
+
+WITH BASE AS(
+              SELECT  A.*
+                     ,COUNT(1) AS RENTAL_DAYS
+                     ,TO_NUMBER(#RENTAL_FEE#) AS RENTAL_FEE
+                     ,(TO_NUMBER(#OUT_PRC#)*100/110)/2-TO_NUMBER(#EXPT_DSPSL_PRC#) AS APPR_DEBT
+                FROM (
+                        SELECT  TO_CHAR(TO_DATE(#RENTAL_CNTRT_STA_DT#,'YYYYMMDD') + LEVEL -1, 'YYYYMM') AS YYYYMM
+                               ,TO_NUMBER(TO_CHAR(LAST_DAY(TO_DATE(#RENTAL_CNTRT_STA_DT#,'YYYYMMDD') + LEVEL -1),'DD')) AS MONTH_DAYS          
+                          FROM  DUAL
+                       CONNECT  BY LEVEL <= TO_DATE(#RENTAL_CNTRT_END_DT#, 'YYYYMMDD') - TO_DATE(#RENTAL_CNTRT_STA_DT#,'YYYYMMDD') + 1
+                     ) A
+               GROUP  BY YYYYMM, MONTH_DAYS
+               ORDER  BY YYYYMM
+)
+SELECT  #ASSET_NO#
+       ,#CNTRT_NO#
+       ,B.YYYYMM
+       ,B.FEE
+       ,B.FEE_TOT
+       ,B.FEE_TOT - B.FEE
+       ,B.ALLWN_AMT
+       ,'N'
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE        
+  FROM (
+		SELECT  YYYYMM
+		       ,CASE WHEN YYYYMM = SUBSTR(#RENTAL_CNTRT_END_DT#,0,6) THEN ROUND(RENTAL_FEE*100/110
+                                                                  -NVL((SELECT  ROUND(RENTAL_FEE*100/110/MONTH_DAYS*RENTAL_DAYS,0) 
+                                                                          FROM  BASE 
+                                                                         WHERE  YYYYMM=SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6)
+                                                                           AND  MONTH_DAYS <> RENTAL_DAYS
+                                                                   ),0),0)
+                     ELSE ROUND(RENTAL_FEE*100/110/MONTH_DAYS*RENTAL_DAYS,0)
+        	    END AS FEE
+       		   ,CASE WHEN YYYYMM = SUBSTR(#RENTAL_CNTRT_END_DT#,0,6) THEN TRUNC(RENTAL_FEE
+               	                                                          -NVL((SELECT  TRUNC(RENTAL_FEE/MONTH_DAYS*RENTAL_DAYS,-1) 
+                       	                                                          FROM  BASE 
+                                                                                 WHERE  YYYYMM=SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6)
+                                                                                   AND  MONTH_DAYS <> RENTAL_DAYS
+                                                                          ),0),-1)
+                     ELSE TRUNC(RENTAL_FEE/MONTH_DAYS*RENTAL_DAYS,-1)
+                END AS FEE_TOT      
+       		   ,CASE WHEN APPR_DEBT<0 THEN 0
+                     WHEN ROWNUM>12 THEN 0
+                     WHEN ROWNUM=12 THEN APPR_DEBT - TRUNC(APPR_DEBT/12,-1)*11
+                     ELSE TRUNC(APPR_DEBT/12,-1)
+                END AS ALLWN_AMT      
+          FROM  BASE
+        ) B]]>
+	</insert>
+	<select id="SEqpAssetCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR005.SEqpAssetCnt 단말자산조회(유효성체크) */
+/* IO: 안진갑,2015-10-08T12:43:01(안진갑,2015-08-05T15:27:12) */
+SELECT  COUNT(1) AS CNT
+  FROM  TB_EQP_ASSET
+ WHERE  EQP_SER_NO = #EQP_SER_NO#
+   AND  OP_CL_CD = 'NR']]>
+	</select>
+	<select id="SNRCntrtCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR005.SNRCntrtCnt 계약조회(유효성체크) */
+/* IO: 안진갑,2015-10-08T13:05:55(안진갑,2015-08-05T16:14:30) */
+SELECT  COUNT(1) AS CNT
+  FROM  TB_NR_CNTRT
+ WHERE  SVC_MGMT_NO = #SVC_MGMT_NO#
+   AND  RENTAL_SER_NO = #RENTAL_SER_NO#]]>
+	</select>
+	<update id="UEqpIn" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UEqpIn 단말입고변경(일련번호) */
+/* IO: 안진갑,2015-10-13T09:09:43(안진갑,2015-08-06T11:26:15) */
+UPDATE  TB_EQP_IN
+   SET  EQP_SER_NO = #EQP_SER_NO#
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE   
+ WHERE  EQP_IN_NO IN (
+ 					  SELECT  A.EQP_IN_NO
+                        FROM  TB_EQP_IN A
+                             ,TB_EQP_ASSET B
+                             ,TB_EQP_CNTRT C
+                             ,TB_NR_CNTRT D
+                       WHERE  A.ASSET_NO = B.ASSET_NO
+                         AND  B.ASSET_NO = C.ASSET_NO
+                         AND  C.CNTRT_NO = D.CNTRT_NO
+                         AND  D.SVC_MGMT_NO = #SVC_MGMT_NO#
+                         AND  D.RENTAL_SER_NO = #RENTAL_SER_NO#
+                      )]]>
+	</update>
+	<update id="UEqpOut" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UEqpOut 단말출고변경(일련번호) */
+/* IO: 안진갑,2015-10-13T09:02:18(안진갑,2015-08-06T11:26:46) */
+UPDATE  TB_EQP_OUT
+   SET  EQP_SER_NO = #EQP_SER_NO#
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE   
+ WHERE  EQP_OUT_NO IN (
+ 					  SELECT  A.EQP_OUT_NO
+                        FROM  TB_EQP_OUT A
+                             ,TB_EQP_ASSET B
+                             ,TB_EQP_CNTRT C
+                             ,TB_NR_CNTRT D
+                       WHERE  A.ASSET_NO = B.ASSET_NO
+                         AND  B.ASSET_NO = C.ASSET_NO
+                         AND  C.CNTRT_NO = D.CNTRT_NO
+                         AND  D.SVC_MGMT_NO = #SVC_MGMT_NO#
+                         AND  D.RENTAL_SER_NO = #RENTAL_SER_NO#                         
+                      )]]>
+	</update>
+	<update id="UEqpAssetOut" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UEqpAssetOut 단말자산 출고번호 등록 */
+/* IO: 안진갑,2015-08-07T10:54:19(안진갑,2015-08-07T08:45:44) */
+UPDATE  TB_EQP_ASSET
+   SET  LAST_IN_OUT_NO = #EQP_OUT_NO#
+ WHERE  ASSET_NO = #ASSET_NO#]]>
+	</update>
+	<update id="UEqpAssetSt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UEqpAssetSt 단말자산상태변경 */
+/* IO: 안진갑,2015-10-13T09:03:35(안진갑,2015-08-07T16:01:22) */
+UPDATE  TB_EQP_ASSET
+   SET  INVE_ST_CD = #INVE_ST_CD#
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  ASSET_NO = (
+ 					SELECT  A.ASSET_NO
+                      FROM  TB_EQP_CNTRT A
+                           ,TB_NR_CNTRT B
+                     WHERE  A.CNTRT_NO = B.CNTRT_NO
+                       AND  B.SVC_MGMT_NO = #SVC_MGMT_NO#
+                       AND  B.RENTAL_SER_NO = #RENTAL_SER_NO#
+                   )]]>
+	</update>
+	<update id="UPrchSt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UPrchSt 매입상태변경 */
+/* IO: 안진갑,2015-12-02T15:25:35(안진갑,2015-08-05T12:34:15) */
+UPDATE
+      ( 
+        SELECT  PRCH_CNCL_AMT
+               ,PRCH_CNCL_SPLY_PRC
+               ,PRCH_CNCL_SURTAX_AMT
+               ,PRCH_CNCL_YN
+               ,PRCH_ST_CD
+               ,CNCL_DT
+               ,LS_CHG_USER_ID
+               ,LS_CHG_DTM                
+               ,PRCH_AMT
+               ,SPLY_PRC
+               ,SURTAX_AMT             
+          FROM  TB_PRCH
+         WHERE  PRCH_NO = ( SELECT  A.PRCH_NO
+                              FROM  TB_EQP_ASSET A
+                                   ,TB_EQP_CNTRT B
+                                   ,TB_NR_CNTRT C
+                             WHERE  A.ASSET_NO = B.ASSET_NO
+                               AND  B.CNTRT_NO = C.CNTRT_NO
+                               AND  C.SVC_MGMT_NO = #SVC_MGMT_NO#
+                               AND  C.RENTAL_SER_NO = #RENTAL_SER_NO#
+                           )
+       )
+   SET  PRCH_CNCL_AMT = PRCH_AMT
+       ,PRCH_CNCL_SPLY_PRC = SPLY_PRC
+       ,PRCH_CNCL_SURTAX_AMT = SURTAX_AMT
+       ,PRCH_ST_CD = #PRCH_ST_CD#  
+       ,PRCH_CNCL_YN = 'Y'       
+       ,CNCL_DT = #OP_PROC_DT#
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE]]>
+	</update>
+	<select id="SRentalCntrt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR005.SRentalCntrt 렌탈계약정보 조회 */
+/* IO: 안진갑,2015-10-07T16:32:36(안진갑,2015-08-07T16:27:30) */
+SELECT  A.CNTRT_NO                         /* 계약번호 */                
+       ,A.OP_CL_CD                         /* 업무구분코드 */
+       ,B.OP_PROC_DT                       /* 업무처리일자 */
+       ,B.OP_TYP_CD                        /* 계약상태(업무유형) */
+       ,A.RENTAL_POLY_NO                   /* 렌탈정책번호 */
+       ,A.PEN_POLY_NO                      /* 위약금정책번호 */
+       ,B.EQP_SER_NO                       /* 단말기일련번호 */
+       ,A.EQP_MDL_CD                       /* 단말기모델코드 */
+       ,B.COLOR_CD                         /* 색상코드 */
+       ,B.SVC_NO                           /* 서비스번호 */
+       ,B.SVC_NO_ENPT                      /* 서비스번호 */       
+       ,B.EQP_RTN_YN                       /* 단말반납여부코드 */
+       ,A.RENTAL_CNTRT_STA_DT              /* 계약시작일자 */
+       ,A.RENTAL_CNTRT_END_DT              /* 계약종료일자 */
+       ,B.SVC_MGMT_NO                      /* 서비스관리번호 */
+       ,B.RENTAL_SER_NO                    /* 렌탈일련번호 */
+       ,B.NEW_CNTRTR_NM                    /* 고객성명 */
+       ,B.NEW_CNTRTR_NM_ENPT
+       ,B.CUST_TYP                         /* 고객유형 */                
+       ,B.NEW_CNTRTR_ZIPCD                 /* 우편번호 */
+       ,B.NEW_CNTRTR_INV_ADDR              /* 청구주소 */
+       ,B.NEW_CNTRTR_INV_ADDR_DTL          /* 청구상세주소 */
+       ,B.NEW_CNTRTR_INV_ADDR_DTL_ENPT
+       ,B.NEW_CNTRTR_BIRTH_YMD             /* 생년월일 */
+       ,B.NEW_CNTRTR_BIRTH_YMD_ENPT
+       ,B.NEW_CNTRTR_CORP_REG_NO           /* 법인등록번호 */
+       ,B.NEW_CNTRTR_BIZ_REG_NO            /* 사업자등록번호 */                
+       ,B.AGN_CD                           /* 대리점코드 */
+       ,B.LEGAL_AGENT_NM                   /* 법정대리인성명 */
+       ,B.LEGAL_AGENT_NM_ENPT
+       ,B.LEGAL_AGENT_CUST_TYP             /* 법정대리인고객유형 */
+       ,B.LEGAL_AGENT_BIZ_REG_NO           /* 법정대리인사업자등록번호 */
+       ,B.LEGAL_AGENT_CORP_REG_NO          /* 법정대리인법인번호 */
+       ,B.LEGAL_AGENT_BIRTH_YMD            /* 법정대리인생년월일 */
+       ,B.LEGAL_AGENT_BIRTH_YMD_ENPT
+       ,B.LEGAL_AGENT_REL                  /* 법정대리인관계 */ 
+       ,B.TTUL_CHG_YN                      /* 명의변경여부 */
+       ,B.EQP_CHG_YN                       /* 단말변경여부 */
+       ,B.LEGAL_AGENT_CHG_YN               /* 법정대리인변경여부 */  
+       ,B.TERM_PROC_REQS_DT                /* 해지처리요청일자 */
+       ,B.UNRTN_AMT                        /* 미반남금 */
+       ,C.OUT_PRC                          /* 출고가 */
+       ,C.EXPT_DSPSL_PRC                   /* 예상매각가 */
+       ,C.RENTAL_PRN                       /* 렌탈원금 */
+       ,C.RENTAL_FEE                       /* 렌탈요금 */
+       ,C.CNTRT_PRD                        /* 계약기간 */
+       ,D.PEN_POLY_APLY_DT                 /* 위약금정책반영일자 */
+       ,D.TOT_RENTAL_FEE_RT                /* 합계렌탈요금비율 */
+       ,D.REM_RENTAL_FEE_RT                /* 잔여렌탈요금비율 */
+       ,D.DAY_RENTAL_FEE_RT                /* 일렌탈요금비율 */
+       ,D.RENTAL_FEE_RT                    /* 렌탈요금비율 */
+  FROM  TB_RENTAL_CNTRT A
+       ,TB_NR_CNTRT B
+       ,TB_RENTAL_POLY C
+       ,TB_PEN_POLY D
+ WHERE  A.CNTRT_NO = B.CNTRT_NO   
+   AND  A.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+   AND  A.PEN_POLY_NO = D.PEN_POLY_NO
+   AND  B.SVC_MGMT_NO = #SVC_MGMT_NO#
+   AND  B.RENTAL_SER_NO = #RENTAL_SER_NO#]]>
+	</select>
+	<update id="UIFCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UIFCntrt 인터페이스테이블상태변경 */
+/* IO: 안진갑,2015-08-07T18:23:29(안진갑,2015-08-07T18:20:14) */
+UPDATE TF_SVC_INFO
+    SET PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+        AND IF_FILE_NM = #IF_FILE_NM#
+        AND IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<update id="UEqpCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UEqpCntrt 단말계약변경(렌탈종료일) */
+/* IO: 안진갑,2015-08-12T08:52:15(안진갑,2015-08-12T08:49:22) */
+UPDATE  TB_EQP_CNTRT
+   SET  RENT_END_DT = #OP_PROC_DT#
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  CNTRT_NO = #CNTRT_NO#]]>
+	</update>
+	<insert id="IClctObj" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IClctObj 단말기회수대상등록 */
+/* IO: 안진갑,2015-11-06T09:05:26(안진갑,2015-08-17T09:57:02) */
+]]><selectKey resultClass="String" keyProperty="EQP_CLCT_OBJ_NO" type="pre"><![CDATA[
+SELECT  'EC'||LPAD(SQ01_TB_EQP_CLCT_OBJ.NEXTVAL,10,'0') AS EQP_CLCT_OBJ_NO FROM DUAL 
+]]></selectKey><![CDATA[
+INSERT  INTO TB_EQP_CLCT_OBJ
+(
+  EQP_CLCT_OBJ_NO
+ ,EQP_MDL_CD
+ ,EQP_SER_NO
+ ,OP_CL_CD
+ ,IN_OBJ_DTL_CD
+ ,EQP_COLOR_CD
+ ,IN_SCHD_DT
+ ,CLCT_OBJ_REG_DT
+ ,SKN_CLCT_DT
+ ,DEL_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  #EQP_CLCT_OBJ_NO#
+ ,#EQP_MDL_CD#
+ ,#EQP_SER_NO#
+ ,#OP_CL_CD#
+ ,'01'
+ ,#COLOR_CD#
+ ,''
+ ,''
+ ,''
+ ,'N'
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<insert id="IRentalPen" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IRentalPen 중도해지위약금등록 */
+/* IO: 안진갑,2015-10-08T10:25:57(안진갑,2015-08-19T17:07:26) */
+MERGE  INTO TB_RENTAL_PEN A
+ USING  DUAL
+    ON  ( PEN_POLY_NO = #PEN_POLY_NO#
+          AND CNTRT_NO = #CNTRT_NO#
+          AND PEN_POLY_CL = '01' )
+  WHEN  MATCHED THEN
+UPDATE  SET  DMS_PEN_AMT = #DMS_PEN_AMT#                       
+            ,REM_RENTAL_FEE = #REM_RENTAL_FEE#
+            ,LS_CHG_USER_ID = 'BAT'
+            ,LS_CHG_DTM = SYSDATE
+  WHEN  NOT MATCHED THEN
+INSERT
+(
+  PEN_POLY_NO
+ ,CNTRT_NO
+ ,PEN_POLY_CL
+ ,PEN_OCCR_DT
+ ,DMS_PEN_AMT
+ ,PEN_PROC_DT
+ ,REM_RENTAL_FEE
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES 
+(
+  #PEN_POLY_NO#
+ ,#CNTRT_NO#
+ ,'01'
+ ,TO_CHAR(SYSDATE,'YYYYMMDD')
+ ,#DMS_PEN_AMT#
+ ,#OP_PROC_DT#
+ ,#REM_RENTAL_FEE#
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<select id="SUnrtnAmt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR005.SUnrtnAmt 손해배상금 미반납금 계산 */
+/* IO: 안진갑,2015-11-05T15:59:45(안진갑,2015-08-27T18:58:08) */
+SELECT TRUNC(( #OUT_PRC# * (36 - DATEDIF_MONTH(#RENTAL_CNTRT_STA_DT#,
+                                                     TO_CHAR(TO_DATE(MIN(SCARL_DT),'YYYYMMDD') + 1, 'YYYYMMDD') )) / 36 ) *1.005, -1) AS UNRTN_AMT
+  FROM  TB_HOLY
+ WHERE  SCARL_DT >= TO_CHAR(TO_DATE(#BASE_DT#, 'YYYYMMDD')+30, 'YYYYMMDD')
+   AND  HOLY_YN = 'N']]>
+	</select>
+	<insert id="IRentalPenDelay" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IRentalPenDelay 반납지연위약금 */
+/* IO: 안진갑,2015-10-15T14:37:18(안진갑,2015-08-28T15:34:51) */
+MERGE  INTO TB_RENTAL_PEN A
+ USING  DUAL
+    ON  ( PEN_POLY_NO = #PEN_POLY_NO#
+          AND CNTRT_NO = #CNTRT_NO#
+          AND PEN_POLY_CL = '02' )
+  WHEN  MATCHED THEN
+UPDATE  SET  DMS_PEN_AMT = TRUNC((TO_DATE(#RTN_DT#,'YYYYMMDD')-TO_DATE(#BASE_DT#,'YYYYMMDD')) 
+                           * TO_NUMBER(#RENTAL_FEE#)/30
+                           * TO_NUMBER(#DAY_RENTAL_FEE_RT#)/100),-1) 
+            ,PEN_PROC_DT = #RTN_DT#                           
+            ,RTN_DELAY_NOD = TO_DATE(#RTN_DT#,'YYYYMMDD')-TO_DATE(#BASE_DT#,'YYYYMMDD')
+            ,LS_CHG_USER_ID = 'BAT'
+            ,LS_CHG_DTM = SYSDAE
+  WHEN  NOT MATCHED THEN
+INSERT
+(
+  PEN_POLY_NO
+ ,CNTRT_NO
+ ,PEN_POLY_CL
+ ,PEN_OCCR_DT
+ ,DMS_PEN_AMT  
+ ,PEN_PROC_DT
+ ,RTN_DELAY_NOD
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  #PEN_POLY_NO#
+ ,#CNTRT_NO#
+ ,'02'
+ ,TO_CHAR(SYSDATE, 'YYYYMMDD')
+ ,TRUNC((TO_DATE(#RTN_DT#,'YYYYMMDD')-TO_DATE(#BASE_DT#,'YYYYMMDD')) 
+         * TO_NUMBER(#RENTAL_FEE#)/30
+         * TO_NUMBER(#DAY_RENTAL_FEE_RT#)/100,-1)  
+ ,#RTN_DT#
+ ,TO_DATE(#RTN_DT#,'YYYYMMDD')-TO_DATE(#BASE_DT#,'YYYYMMDD')
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<select id="SUnRtnPenPrd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR005.SUnRtnPenPrd 반납지연위약금적용기간 조회 */
+/* IO: 안진갑,2015-09-23T13:23:43(안진갑,2015-08-31T09:54:05) */
+SELECT  SUM(SCARL_STA_DT) AS SCARL_STA_DT
+       ,SUM(SCARL_END_DT) AS SCARL_END_DT
+  FROM  (
+         SELECT  MIN(SCARL_DT) AS SCARL_STA_DT
+                ,'' AS SCARL_END_DT
+           FROM  TB_HOLY
+          WHERE  SCARL_DT >= TO_CHAR(TO_DATE(#BASE_DT#, 'YYYYMMDD')+14, 'YYYYMMDD')
+            AND  HOLY_YN = 'N'
+          UNION 
+         SELECT  '' AS SCARL_STA_DT
+                ,MIN(SCARL_DT) AS SCARL_END_DT
+           FROM  TB_HOLY
+          WHERE  SCARL_DT >= TO_CHAR(TO_DATE(#BASE_DT#, 'YYYYMMDD')+30, 'YYYYMMDD')
+            AND  HOLY_YN = 'N'
+        )]]>
+	</select>
+	<update id="UeqpCntrtDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UeqpCntrtDtl 단말계약상세수정(중도해지시 렌탈료 수정) */
+/* IO: 안진갑,2015-11-12T16:30:26(안진갑,2015-09-01T17:49:56) */
+UPDATE
+        (
+          SELECT  B.RENTAL_FEE
+                 ,B.RENTAL_FEE_TOT
+                 ,B.SURTAX
+                 ,B.FEE_TOT
+                 ,ROUND(B.FEE_TOT*100/110,0) AS FEE
+                 ,B.FEE_TOT - ROUND(B.FEE_TOT*100/110,0) AS TAX
+            FROM (
+                   SELECT  A.RENTAL_FEE
+                          ,A.RENTAL_FEE_TOT
+                          ,A.SURTAX
+                          ,CASE
+                                WHEN RENT_YM = SUBSTR(TO_CHAR(TO_DATE(#OP_PROC_DT#,'YYYYMMDD')-1,'YYYYMMDD'),0,6) AND RENT_YM = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6) /* 해지월이 계약월과 같은 경우 */
+                                     THEN ROUND((A.RENTAL_FEE_TOT/(LAST_DAY(TO_DATE(#OP_PROC_DT#,'YYYYMMDD')-1) - TO_DATE(#RENTAL_CNTRT_STA_DT#, 'YYYYMMDD')+1)) * (TO_DATE(#OP_PROC_DT#,'YYYYMMDD')-1 - TO_DATE(#RENTAL_CNTRT_STA_DT#,'YYYYMMDD')+1),0)
+                                WHEN RENT_YM = SUBSTR(TO_CHAR(TO_DATE(#OP_PROC_DT#,'YYYYMMDD')-1,'YYYYMMDD'),0,6) AND RENT_YM = SUBSTR(#RENTAL_CNTRT_END_DT#,0,6) /* 해지월이 종료예정월과 같은 경우 */
+                                     THEN ROUND(A.RENTAL_FEE_TOT/TO_CHAR(TO_DATE(#RENTAL_CNTRT_END_DT#,'YYYYMMDD'),'DD') * TO_CHAR(TO_DATE(#OP_PROC_DT#, 'YYYYMMDD')-1,'DD'),0)
+                                WHEN RENT_YM = SUBSTR(TO_CHAR(TO_DATE(#OP_PROC_DT#,'YYYYMMDD')-1,'YYYYMMDD'),0,6) /* 해지월이 계약월,종료예정월과 다른 경우 */
+                                     THEN ROUND(A.RENTAL_FEE_TOT/TO_CHAR(LAST_DAY(TO_DATE(#OP_PROC_DT#,'YYYYMMDD')-1),'DD') * TO_CHAR(TO_DATE(#OP_PROC_DT#,'YYYYMMDD')-1,'DD'),0)
+                                ELSE 0
+                           END AS FEE_TOT                
+                     FROM  TB_EQP_CNTRT_DTL A
+                    WHERE  A.CNTRT_NO = #CNTRT_NO#
+                      AND A.RENT_YM >= SUBSTR(TO_CHAR(TO_DATE(#OP_PROC_DT#,'YYYYMMDD')-1,'YYYYMMDD'),0,6)
+                  ) B
+        )
+   SET  RENTAL_FEE = FEE
+       ,RENTAL_FEE_TOT = FEE_TOT
+       ,SURTAX = TAX]]>
+	</update>
+	<insert id="IRentalDcp" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IRentalDcp 손해배상금 미반납 등록 */
+/* IO: 안진갑,2015-11-05T13:46:55(안진갑,2015-10-01T19:38:02) */
+MERGE INTO TB_RENTAL_DCP A
+ USING  DUAL
+    ON  (DCP_NO = (SELECT  DCP_NO 
+                      FROM  TB_DMG_CMP_POLY 
+                     WHERE  OP_CL_CD = 'NR' AND EQP_MDL_CD = #EQP_MDL_CD# AND #BASE_DT# BETWEEN DCP_EFF_PRD_STA_DT AND DCP_EFF_PRD_END_DT)
+         AND CNTRT_NO = #CNTRT_NO#
+         AND DCP_CL = '02' )
+  WHEN  MATCHED THEN         
+UPDATE  SET  DMS_DMG_CMP_AMT = #UNRTN_AMT#
+            ,DMG_CMP_PROC_DT = (SELECT MIN(SCARL_DT) FROM TB_HOLY WHERE SCARL_DT >= TO_CHAR(TO_DATE(#BASE_DT#, 'YYYYMMDD')+30, 'YYYYMMDD') AND  HOLY_YN = 'N')
+            ,LS_CHG_USER_ID = 'BAT'
+            ,LS_CHG_DTM = SYSDATE
+  WHEN  NOT MATCHED THEN
+INSERT
+(
+  DCP_NO
+ ,CNTRT_NO
+ ,DCP_CL
+ ,DMG_CMP_OCCR_DT
+ ,DMS_DMG_CMP_AMT
+ ,DMG_CMP_PROC_DT
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  (SELECT  DCP_NO 
+     FROM  TB_DMG_CMP_POLY 
+    WHERE  OP_CL_CD = 'NR' AND EQP_MDL_CD = #EQP_MDL_CD# AND #BASE_DT# BETWEEN DCP_EFF_PRD_STA_DT AND DCP_EFF_PRD_END_DT)
+ ,#CNTRT_NO#
+ ,'02'
+ ,TO_CHAR(SYSDATE,'YYYYMMDD')
+ ,#UNRTN_AMT#
+ ,(SELECT MIN(SCARL_DT) FROM TB_HOLY WHERE SCARL_DT >= TO_CHAR(TO_DATE(#BASE_DT#, 'YYYYMMDD')+30, 'YYYYMMDD') AND  HOLY_YN = 'N')
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<update id="UeqpCntrtDtl2" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UeqpCntrtDtl2 14일이내해지시 렌탈료 수정 */
+/* IO: 안진갑,2015-11-03T12:45:06(안진갑,2015-10-06T12:51:07) */
+UPDATE  TB_EQP_CNTRT_DTL A
+   SET  RENTAL_FEE = 0
+       ,RENTAL_FEE_TOT = 0
+       ,SURTAX = 0
+ WHERE  A.CNTRT_NO = #CNTRT_NO#]]>
+	</update>
+	<select id="SRentalPenAmt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR005.SRentalPenAmt 중도해지위약금 계산(위약금, 잔여렌탈료) */
+/* IO: 안진갑,2015-11-09T13:34:31(안진갑,2015-10-06T14:34:56) */
+SELECT  NVL(SUM(B.DMS_PEN_AMT),0) AS REM_RENTAL_FEE
+       ,TRUNC(NVL(SUM(B.DMS_PEN_AMT),0) * #REM_RENTAL_FEE_RT#/100, -1) AS DMS_PEN_AMT
+  FROM (
+        SELECT  CASE WHEN A.RENT_YM = SUBSTR(#OP_PROC_DT#,0,6) AND RENT_YM = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6)
+                          THEN TRUNC(A.RENTAL_FEE_TOT / (LAST_DAY(TO_DATE(#RENTAL_CNTRT_STA_DT#, 'YYYYMMDD')) - TO_DATE(#RENTAL_CNTRT_STA_DT#, 'YYYYMMDD')+1)
+                               * (LAST_DAY(TO_DATE(#OP_PROC_DT#, 'YYYYMMDD')) - TO_DATE(#OP_PROC_DT#, 'YYYYMMDD')+1),-1)
+                     WHEN A.RENT_YM = SUBSTR(#OP_PROC_DT#,0,6) AND RENT_YM = SUBSTR(#RENTAL_CNTRT_END_DT#,0,6)
+                          THEN TRUNC(A.RENTAL_FEE_TOT / TO_CHAR(TO_DATE(#RENTAL_CNTRT_END_DT#, 'YYYYMMDD'),'DD')
+                               * (TO_DATE(#RENTAL_CNTRT_END_DT#, 'YYYYMMDD') - TO_DATE(#OP_PROC_DT#, 'YYYYMMDD')+1),-1)
+                     WHEN A.RENT_YM = SUBSTR(#OP_PROC_DT#,0,6)
+                          THEN TRUNC(A.RENTAL_FEE_TOT / TO_CHAR(LAST_DAY(TO_DATE(#OP_PROC_DT#, 'YYYYMMDD')),'DD')
+                               * (LAST_DAY(TO_DATE(#OP_PROC_DT#, 'YYYYMMDD'))-TO_DATE(#OP_PROC_DT#, 'YYYYMMDD')+1),-1)
+                     ELSE A.RENTAL_FEE_TOT
+                END AS DMS_PEN_AMT
+          FROM  TB_EQP_CNTRT_DTL A
+         WHERE  A.CNTRT_NO = #CNTRT_NO#
+           AND  A.RENT_YM >= SUBSTR(#OP_PROC_DT#,0,6)
+        ) B]]>
+	</select>
+	<select id="SDealCoCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR005.SDealCoCnt 거래처 갯수(유효성체크) */
+/* IO: 안진갑,2015-10-07T17:13:03(안진갑,2015-10-07T17:08:42) */
+SELECT  COUNT(1) AS CNT
+  FROM  TB_DEALCO
+ WHERE  AGN_ORG_CD = #AGN_CD#]]>
+	</select>
+	<update id="UInsuUkey" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UInsuUkey 보증보험 UKEY 테이블 계약번호 업데이트 */
+/* IO: 안진갑,2015-11-05T17:47:25(안진갑,2015-10-13T20:31:45) */
+UPDATE  TB_INSU_UKEY
+   SET  CNTRT_NO = #CNTRT_NO#
+       ,UKEY_INSURE_SCRB_AMT = (SELECT  C.OUT_PRC
+  								  FROM  TB_NR_CNTRT A
+       								   ,TB_RENTAL_CNTRT B
+       								   ,TB_RENTAL_POLY C
+ 								 WHERE  A.CNTRT_NO = B.CNTRT_NO
+   								   AND  B.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+                                   AND  A.SVC_MGMT_NO = #SVC_MGMT_NO# 
+                                   AND  A.RENTAL_SER_NO = #RENTAL_SER_NO#)
+ WHERE  UKEY_SVC_MGMT_NO = #SVC_MGMT_NO#
+   AND  RENTAL_SER_NO = #RENTAL_SER_NO#
+   AND  CNTRT_NO IS NULL]]>
+	</update>
+	<update id="UInsuSgi" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.UInsuSgi 보증보험 SGI 테이블 계약번호 업데이트 */
+/* IO: 안진갑,2015-11-16T15:18:42(안진갑,2015-10-14T08:49:40) */
+UPDATE  TB_INSU_SGI
+   SET  CNTRT_NO = #CNTRT_NO#
+ WHERE  SGI_SVC_MGMT_NO = #SVC_MGMT_NO#
+   AND  SVC_SCRB_DT = #RENTAL_CNTRT_STA_DT#
+   AND  CNTRT_NO IS NULL]]>
+	</update>
+	<insert id="IEqpCmptRtn" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR005.IEqpCmptRtn 반납구성품 등록 */
+/* IO: 안진갑,2015-11-05T12:52:00(안진갑,2015-10-30T09:46:03) */
+INSERT INTO TB_EQP_CMPT_RTN
+(
+    CNTRT_NO
+   ,EQP_CMPT_RTN_SEQ
+   ,CMPT_CD
+   ,RTN_YN
+   ,FS_REG_USER_ID
+   ,FS_REG_DTM
+   ,LS_CHG_USER_ID
+   ,LS_CHG_DTM
+)
+VALUES
+(
+    #CNTRT_NO#
+   ,(SELECT NVL(MAX(EQP_CMPT_RTN_SEQ),0)+1 FROM TB_EQP_CMPT_RTN WHERE CNTRT_NO = #CNTRT_NO#)
+   ,#CMPT_CD#
+   ,#RTN_YN#
+   ,'BAT'
+   ,SYSDATE
+   ,'BAT'
+   ,SYSDATE
+)]]>
+	</insert>
+</sqlMap>

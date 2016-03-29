@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBU001">
+	<insert id="INRUscanImgInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR029.INRUscanImgInfo 신규USCAN이미지입력 */
+/* IO: 이영진,2015-11-11T10:29:12(이영진,2015-11-05T10:55:26) */
+INSERT
+  INTO  TB_NR_USCAN_IMG_INFO
+SELECT  SQ01_TB_NR_USCAN_IMG_INFO.NEXTVAL
+       ,PROC_SEQ
+       ,PROC_CL_CD
+       ,MQ_SEQ
+       ,CUST_ACNT_SVC_CL_CD
+       ,CUST_ACNT_SVC_MGMT_NO
+       ,IMG_APPLY_DTM
+       ,CHG_CD
+       ,RETN_BR_ID
+       ,IMG_SER_NO
+       ,IMG_FILE_NM
+       ,U_LAST_CHG_DTM
+       ,PROC_TMS
+       ,ADDT_RETN_YN
+       ,PROC_ST_CD
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+  FROM  TF_USCAN_IMG_INFO
+ WHERE  PROC_ST_CD = '09']]>
+	</insert>
+	<update id="UIFUscanImgInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR029.UIFUscanImgInfo 인터페이스USCAN이미지수정 */
+/* IO: 이영진,2015-11-11T10:34:26(이영진,2015-11-05T11:05:15) */
+UPDATE  TF_USCAN_IMG_INFO
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) Y,N*/
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  PROC_ST_CD   = '09']]>
+	</update>
+	<select id="SNRUscanImgInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBU001.SNRUscanImgInfo 인터페이스USCAN이미지처리건수 */
+/* IO: 이영진,2015-11-18T16:39:51(이영진,2015-11-18T16:37:36) */
+SELECT  
+        COUNT(*) CNT
+  FROM  TF_USCAN_IMG_INFO
+ WHERE  PROC_ST_CD = '09']]>
+	</select>
+</sqlMap>

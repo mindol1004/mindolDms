@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRSaleXclRgst">
+	<select id="SInqSaleXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRSaleXclRgst.SInqSaleXclList 매출정산그룹리스트 */
+/* IO: 김상오,2015-09-22T11:07:49(김상오,2015-08-12T09:24:45) */
+SELECT * 
+  FROM (SELECT SALE_DT AS XCL_YM
+               ,SALE_ITM_CD AS XCL_CD
+               ,(SELECT CM_CD_NM   FROM TB_CM_CD A ,TB_CM_GRP_CD B    WHERE  A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS127'    AND A.CM_CD_ID = SALE_ITM_CD )  AS XCL_NM 
+               ,(SELECT CM_CD_SORT_ORD   FROM TB_CM_CD A ,TB_CM_GRP_CD B    WHERE  A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS127'    AND A.CM_CD_ID = SALE_ITM_CD )  AS SORT_ORD  
+               ,COUNT(*) AS XCL_QTY
+               ,SUM(SPLY_PRC) AS XCL_AMT
+               ,MAX(TO_CHAR(S.FS_REG_DTM, 'YYYY-MM-DD')) AS XCL_DT
+               ,MAX(U.USER_NM) AS XCL_CRTR_NM
+          FROM TB_SALE S 
+               ,TB_USER U
+         WHERE S.FS_REG_USER_ID = U.USER_NO
+           AND SALE_DT = #IN_DT#
+           AND DEL_YN = 'N'
+         GROUP BY SALE_DT, SALE_ITM_CD
+         UNION ALL  
+         SELECT XCL_DT     AS XCL_YM 
+                ,XCL_ITM_CD AS XCL_CD 
+                ,( SELECT CM_CD_NM    FROM      TB_CM_CD A ,      TB_CM_GRP_CD B    WHERE      A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS145'    AND A.CM_CD_ID     = XCL_ITM_CD  ) AS XCL_NM 
+                ,( SELECT CM_CD_SORT_ORD    FROM      TB_CM_CD A ,      TB_CM_GRP_CD B    WHERE      A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS145'    AND A.CM_CD_ID     = XCL_ITM_CD  ) AS SORT_ORD        
+                ,COUNT(*) AS XCL_QTY 
+                ,SUM(XCL_AMT)  AS XCL_AMT 
+                ,MAX(TO_CHAR(S.FS_REG_DTM, 'YYYY-MM-DD')) AS XCL_DT 
+                ,MAX(U.USER_NM) AS XCL_CRTR_NM
+          FROM
+          (SELECT SUBSTR(XCL_DT, 0,6) AS XCL_DT 
+                  ,XCL_ITM_CD 
+                  ,XCL_AMT
+                  ,FS_REG_DTM
+                  ,FS_REG_USER_ID
+             FROM TB_ETC_XCL S
+            WHERE XCL_DT LIKE #IN_DT#||'%'
+              AND XCL_ITM_CD IN ('HD', 'JD','RC','JN', 'RR')
+              AND DEL_YN         = 'N'
+          ) S ,  TB_USER U
+ WHERE  S.FS_REG_USER_ID = U.USER_NO(+)
+ GROUP BY  XCL_DT,  XCL_ITM_CD 
+)
+ORDER BY SORT_ORD ASC]]>
+	</select>
+	<select id="SInqSaleXclExcelList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRSaleXclRgst.SInqSaleXclExcelList 매출정산엑셀다운로드 리스트 */
+/* IO: 김상오,2015-09-22T11:10:26(김상오,2015-08-12T16:51:56) */
+SELECT XCL_YM
+       ,XCL_NM
+       ,ASSET_NO
+       ,XCL_AMT
+       ,XCL_DT
+       ,XCL_CRTR_NM
+       ,EQP_SER_NO
+       ,EQP_MDL_CD
+       ,MM_RENTAL_FEE
+       ,RENT_STA_DT
+       ,RENT_END_DT
+       ,STA_DT
+       ,END_DT
+       ,CASE 
+          WHEN STA_DT <= RENT_STA_DT  AND RENT_STA_DT <= END_DT THEN RENT_STA_DT
+          ELSE STA_DT
+        END AS XCL_STA_DT
+       ,CASE 
+          WHEN END_DT <= RENT_END_DT THEN END_DT
+          ELSE RENT_END_DT
+        END AS XCL_END_DT   
+  FROM (SELECT SALE_DT             AS XCL_YM 
+               ,(SELECT CM_CD_NM   FROM TB_CM_CD A ,TB_CM_GRP_CD B    WHERE  A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS127'    AND A.CM_CD_ID = SALE_ITM_CD )  AS XCL_NM 
+               ,S.ASSET_NO
+               ,S.SPLY_PRC       AS XCL_AMT 
+               ,TO_CHAR(S.FS_REG_DTM, 'YYYY-MM-DD')   AS XCL_DT 
+               ,U.USER_NM AS XCL_CRTR_NM
+               ,E.EQP_SER_NO
+               ,E.EQP_MDL_CD
+               ,D.MM_RENTAL_FEE 
+               ,C.RENT_STA_DT 
+               ,DECODE(C.RENT_END_DT, NULL, RENT_END_SCHD_DT , C.RENT_END_DT) RENT_END_DT
+               ,SALE_DT||'01' as  STA_DT
+               ,TO_CHAR( LAST_DAY(TO_DATE( SALE_DT||'01'))  , 'yyyymmdd') as END_DT
+          FROM TB_SALE S 
+               ,TB_USER U
+               ,TB_EQP_ASSET E
+               ,TB_EQP_CNTRT C
+               ,TB_RENTAL_CNTRT D
+         WHERE S.FS_REG_USER_ID = U.USER_NO
+           AND S.ASSET_NO = E.ASSET_NO
+           AND S.CNTRT_NO = C.CNTRT_NO
+           AND S.ASSET_NO = C.ASSET_NO
+           AND C.CNTRT_NO = D.CNTRT_NO
+           AND SALE_DT =  #IN_DT#
+           AND SALE_ITM_CD = #XCL_GUBUN#
+           AND S.DEL_YN = 'N'
+           AND E.DEL_YN = 'N'
+           AND C.DEL_YN = 'N'
+) A
+ORDER BY EQP_MDL_CD , EQP_SER_NO]]>
+	</select>
+	<select id="SInqSaleXclCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRSaleXclRgst.SInqSaleXclCnt 매출정산 대상데이터 카운트 */
+/* IO: 김상오,2015-09-22T11:01:14(김상오,2015-08-18T17:46:04) */
+]]><isEqual property="XCL_GUBUN" compareValue="RENT"><![CDATA[
+SELECT COUNT(*) CNT
+  FROM TB_EQP_CNTRT_DTL A
+       ,TB_RENTAL_CNTRT B
+ WHERE A.CNTRT_NO = B.CNTRT_NO
+   AND B.OP_CL_CD = 'PR' 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.RENT_YM = #IN_DT#
+]]></isEqual><![CDATA[
+]]><isEqual property="XCL_GUBUN" compareValue="HD"><![CDATA[
+SELECT COUNT(*) CNT
+  FROM TB_EQP_WAYBIL A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_EQP_ASSET D
+ WHERE A.ASSET_NO = B.ASSET_NO
+   AND A.ASSET_NO = D.ASSET_NO
+   AND B.CNTRT_NO = C.CNTRT_NO
+   AND C.OP_CL_CD = 'PR'   
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN = 'N'
+   AND A.HDLV_SND_DT like #IN_DT#||'%'
+]]></isEqual><![CDATA[
+]]><isEqual property="XCL_GUBUN" compareValue="JD"><![CDATA[
+SELECT COUNT(*) CNT
+  FROM TB_EQP_JDG A 
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_EQP_ASSET D
+ WHERE A.ASSET_NO = B.ASSET_NO
+   AND A.ASSET_NO = D.ASSET_NO
+   AND B.CNTRT_NO = C.CNTRT_NO
+   AND C.OP_CL_CD = 'PR' 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN = 'N'
+   AND A.EQP_JDG_DT LIKE #IN_DT#||'%'
+]]></isEqual><![CDATA[
+]]><isEqual property="XCL_GUBUN" compareValue="RC"><![CDATA[
+SELECT COUNT(*) CNT
+  FROM TB_EQP_JDG A 
+       , TB_EQP_CNTRT B 
+       , TB_RENTAL_CNTRT C 
+       , TB_EQP_ASSET D
+ WHERE A.ASSET_NO = B.ASSET_NO
+   AND A.ASSET_NO = D.ASSET_NO
+   AND B.CNTRT_NO = C.CNTRT_NO
+   AND C.OP_CL_CD = 'PR' 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN = 'N'
+   AND A.EQP_JDG_DT LIKE #IN_DT#||'%'
+   AND A.EQP_RECMC_YN = 'Y'
+]]></isEqual><![CDATA[
+]]><isEqual property="XCL_GUBUN" compareValue="JN"><![CDATA[
+SELECT COUNT(*) CNT
+  FROM TB_EQP_CNTRT_DTL A
+       ,TB_RENTAL_CNTRT B 
+       ,TB_EQP_CNTRT C 
+       ,TB_EQP_ASSET D
+ WHERE A.CNTRT_NO = B.CNTRT_NO
+   AND A.CNTRT_NO = C.CNTRT_NO
+   AND A.ASSET_NO = C.ASSET_NO
+   AND A.ASSET_NO = D.ASSET_NO
+   AND B.OP_CL_CD = 'PR' 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.RENT_YM = #IN_DT#
+   AND D.EQP_LOSS_DT like #IN_DT#||'%'
+ ORDER BY A.RENT_YM
+
+]]></isEqual><![CDATA[
+]]><isEqual property="XCL_GUBUN" compareValue="RR"><![CDATA[
+SELECT count(*) CNT
+  FROM TB_CMPT_OUT A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_EQP_ASSET D
+       ,TB_CMPT_UPRC E
+ WHERE A.ASSET_NO = B.ASSET_NO
+   AND A.ASSET_NO = D.ASSET_NO
+   AND B.CNTRT_NO = C.CNTRT_NO
+   AND C.CNTRT_NO = E.CNTRT_NO
+   AND A.CMPT_CD = E.CMPT_CD
+   AND C.OP_CL_CD = 'PR'   
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN = 'N'
+   AND E.DEL_YN = 'N'
+   AND A.CMPT_OUT_DT like #IN_DT#||'%'
+
+]]></isEqual><![CDATA[]]>
+	</select>
+	<select id="SInqEtcSaleXclExcelList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRSaleXclRgst.SInqEtcSaleXclExcelList 기타매출정산엑셀다운로드 리스트 */
+/* IO: 김상오,2015-09-22T10:59:06(김상오,2015-09-22T10:59:06) */
+SELECT SUBSTR(XCL_DT, 0,6) AS XCL_YM
+       ,XCL_DT AS XCL_STA_DT
+       ,(SELECT CM_CD_NM   FROM TB_CM_CD A ,TB_CM_GRP_CD B    WHERE  A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS145'    AND A.CM_CD_ID = XCL_ITM_CD )  AS XCL_NM 
+       ,S.ASSET_NO 
+       ,S.XCL_AMT AS XCL_AMT 
+       ,TO_CHAR(S.FS_REG_DTM, 'YYYY-MM-DD') AS XCL_DT 
+       ,U.USER_NM AS XCL_CRTR_NM
+       ,E.EQP_SER_NO
+       ,E.EQP_MDL_CD
+       ,C.RENT_STA_DT
+       ,DECODE(C.RENT_END_DT, null, RENT_END_SCHD_DT , C.RENT_END_DT) RENT_END_DT
+       ,( SELECT MAX(CMPT_OUT_DTL_CD) FROM TB_CMPT_OUT WHERE ASSET_NO =  S.ASSET_NO AND CMPT_OUT_DT  = S.XCL_DT AND DEL_YN = 'N' GROUP BY ASSET_NO )  CMPT_OUT_DTL_CD
+       ,XCL_CL_CD
+  FROM TB_ETC_XCL S
+       ,TB_USER U
+       ,TB_EQP_ASSET E
+       ,TB_EQP_CNTRT C
+ WHERE S.FS_REG_USER_ID = U.USER_NO
+   AND S.ASSET_NO = E.ASSET_NO
+   AND S.CNTRT_NO = C.CNTRT_NO
+   AND S.ASSET_NO = C.ASSET_NO
+   AND XCL_DT     like #IN_DT#||'%'
+   AND XCL_ITM_CD = #XCL_GUBUN#
+   AND S.DEL_YN = 'N'
+   AND E.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+ ORDER BY E.EQP_MDL_CD , E.EQP_SER_NO , XCL_CL_CD]]>
+	</select>
+</sqlMap>

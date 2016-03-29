@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCFrmItemMgmt">
+	<select id="SFrmItemLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmItemMgmt.SFrmItemLstPaging 화면항목목록조회 */
+/* IO: 심상준,2014-10-07T19:45:36(심상준,2014-07-31T11:08:51) */
+SELECT                                                            
+        *          
+  FROM (                                                          
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY A.FRM_ID ASC) AS ROWNO  
+               ,A.FRM_ID                             /* 화면ID */
+               ,B.FRM_NM                             /* 화면명 */
+               ,A.FRM_ITEM_NM                        /* 화면항목명 */  
+               ,A.FRM_ITEM_CTT                       /* 화면항목내용 */
+               ,DECODE(A.USE_YN, 'Y', '1', 'N', '0') AS USE_YN           /* 사용여부 */
+               ,A.FS_REG_USER_ID                     /* 최초등록사용자ID */
+               ,TO_CHAR(A.FS_REG_DTM, 'YYYYMMDDHH24MISS') AS FS_REG_DTM  /* 최초등록일시 */
+               ,A.LS_CHG_USER_ID                     /* 최종등록사용자ID */
+               ,TO_CHAR(A.LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM  /* 최종등록일시 */
+          FROM  TB_FRM_ITEM A   /* SC_화면항목 */
+               ,TB_FRM B        /* SC_화면 */
+         WHERE  A.FRM_ID = B.FRM_ID                                              
+           AND  A.FRM_ID = #FRM_ID#
+        ]]><isNotEmpty prepend="AND" property="FRM_ITEM_NM"><![CDATA[       
+                A.FRM_ITEM_NM LIKE '%'||#FRM_ITEM_NM#||'%'  
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEqual prepend="AND" property="USE_YN" compareValue="%"><![CDATA[
+                A.USE_YN = #USE_YN#
+        ]]></isNotEqual><![CDATA[
+        )PA
+ WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IFrmItem" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmItemMgmt.IFrmItem 화면항목등록 */
+/* IO: 심상준,2014-09-26T21:20:32(심상준,2014-07-31T11:09:05) */
+INSERT
+  INTO  TB_FRM_ITEM             /* SC_화면항목 */
+       (
+        FRM_ID                  /* 화면ID */                     
+       ,FRM_ITEM_NM             /* 화면항목명 */                 
+       ,FRM_ITEM_CTT            /* 화면항목내용 */               
+       ,USE_YN                  /* 사용유무 */                   
+       ,FS_REG_USER_ID          /* 최초등록사용자ID */           
+       ,FS_REG_DTM              /* 최초등록일시 */               
+       ,LS_CHG_USER_ID          /* 최종등록사용자ID */           
+       ,LS_CHG_DTM              /* 최종등록일시 */            
+        )
+VALUES  
+       (
+        #FRM_ID#               /* 화면ID */
+       ,#FRM_ITEM_NM#          /* 화면항목명 */
+       ,#FRM_ITEM_CTT#         /* 화면항목내용 */
+       ,DECODE(#USE_YN#,'1','Y','0','N', NULL, 'N')  /* 사용유무 */ 
+       ,#USERNO#               /* 최초등록사용자ID */ 
+       ,SYSDATE                /* 최초등록일시 */  
+       ,#USERNO#               /* 최종등록사용자ID */ 
+       ,SYSDATE                /* 최종등록일시 */
+        )]]>
+	</insert>
+	<update id="UFrmItem" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmItemMgmt.UFrmItem 화면항목수정 */
+/* IO: 심상준,2014-10-06T18:06:49(심상준,2014-07-31T11:09:17) */
+UPDATE  
+        TB_FRM_ITEM    /* SC_화면항목 */
+   SET  FRM_ITEM_NM = #FRM_ITEM_NM#                /* 화면항목명 */ 
+       ,FRM_ITEM_CTT = #FRM_ITEM_CTT#              /* 화면항목내용 */
+       ,USE_YN = DECODE(#USE_YN#,'1','Y','0','N')  /* 사용유무 */ 
+       ,LS_CHG_USER_ID = #USERNO#                  /* 최종등록사용자ID */ 
+       ,LS_CHG_DTM = SYSDATE                       /* 최종등록일시 */ 
+ WHERE  FRM_ID = #FRM_ID#  
+   AND  FRM_ITEM_NM = #FRM_ITEM_NM#]]>
+	</update>
+	<select id="SFrmItemLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmItemMgmt.SFrmItemLstTotCnt 화면항목건수조회 */
+/* IO: 심상준,2014-10-07T19:51:01(심상준,2014-08-27T15:12:26) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_FRM_ITEM A  /* SC_화면항목 */
+       ,TB_FRM B       /* SC_화면 */                      
+ WHERE  A.FRM_ID = B.FRM_ID                                              
+   AND  A.FRM_ID = #FRM_ID#
+]]><isNotEmpty prepend="AND" property="FRM_ITEM_NM"><![CDATA[       
+        A.FRM_ITEM_NM LIKE '%'||#FRM_ITEM_NM#||'%'  
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="USE_YN" compareValue="%"><![CDATA[
+        A.USE_YN = #USE_YN#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SFrmItemLstValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmItemMgmt.SFrmItemLstValidate 화면항목저장사전체크 */
+/* IO: 심상준,2014-10-06T18:06:56(심상준,2014-08-27T15:12:52) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_FRM_ITEM   /* SC_화면항목 */
+ WHERE  FRM_ID      = #FRM_ID#
+   AND  FRM_ITEM_NM = #FRM_ITEM_NM#]]>
+	</select>
+	<delete id="DFrmItem" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmItemMgmt.DFrmItem 화면항목삭제 */
+/* IO: 심상준,2014-09-26T21:21:26(심상준,2014-08-27T15:13:08) */
+DELETE
+  FROM  TB_FRM_ITEM    /* SC_화면항목 */
+ WHERE  FRM_ID = #FRM_ID#
+   AND  FRM_ITEM_NM = #FRM_ITEM_NM#]]>
+	</delete>
+</sqlMap>

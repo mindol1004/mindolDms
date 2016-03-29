@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.EPR003">
+	<select id="SScanSlipStatus" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR003.SScanSlipStatus 전표상태변경감지 */
+/* IO: 진병수,2015-12-22T17:59:40(진병수,2015-10-30T10:24:24) */
+SELECT SLIP_NO, SLIP_BF_ST_CD , SLIP_CL_CD
+  FROM PS_MNG.TB_SLIP
+ WHERE SLIP_BF_ST_CD != SLIP_BF_ST_CD
+   AND DEAL_TYP_CD = #DEAL_TYP_CD#
+   AND SLIP_ST_CD  = NVL(#SLIP_ST_CD#, SLIP_ST_CD)]]>
+	</select>
+	<update id="USlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR003.USlipInfo 전표업데이트 */
+/* IO: 진병수,2015-12-22T18:01:17(진병수,2015-11-12T17:07:19) */
+UPDATE PS_MNG.TB_SLIP
+   SET SLIP_BF_ST_CD = NVL(#SLIP_BF_ST_CD#, SLIP_BF_ST_CD)
+     , SLIP_APRV_DT  = #SLIP_APRV_DT#
+ WHERE SLIP_NO       = #SLIP_NO#]]>
+	</update>
+</sqlMap>

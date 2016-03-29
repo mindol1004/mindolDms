@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.BNR005">
+	<insert id="ISKNInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR004.ISKNInfo SKN여신등록 */
+/* IO: 박홍서,2015-08-05T09:44:24(박홍서,2015-08-05T09:44:24) */
+MERGE INTO  TB_NR_SKN_CRD A
+     USING  (SELECT  PROC_SEQ
+                    ,AGN_CD
+                    ,PAY_YM
+                    ,PAY_YM_TS
+                    ,AGN_NM
+                    ,CRD_AMT
+                    ,FS_REG_USER_ID
+                    ,FS_REG_DTM
+                    ,LS_CHG_USER_ID
+                    ,LS_CHG_DTM
+               FROM  TB_NR_SKN_CRD_IF
+              WHERE  PROC_ST_CD = '09'
+                AND  (PROC_CL_CD = '1'
+                 OR   PROC_CL_CD = '2')) B
+        ON  (
+            A.AGN_CD = B.AGN_CD
+       AND  A.PAY_YM = B.PAY_YM
+       AND  A.PAY_YM_TS = B.PAY_YM_TS
+            )
+WHEN MATCHED THEN
+    UPDATE
+       SET  AGN_NM = B.AGN_NM
+           ,CRD_AMT = B.CRD_AMT
+           ,LS_CHG_USER_ID = #OPER_ID#
+           ,LS_CHG_DTM = SYSDATE
+WHEN NOT MATCHED THEN
+    INSERT (
+            AGN_CD
+           ,PAY_YM
+           ,PAY_YM_TS
+           ,AGN_NM
+           ,CRD_AMT
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+            )
+    VALUES
+           (
+            B.AGN_CD
+           ,B.PAY_YM
+           ,B.PAY_YM_TS
+           ,B.AGN_NM
+           ,B.CRD_AMT
+           ,#OPER_ID#
+           ,SYSDATE
+           ,#OPER_ID#
+           ,SYSDATE
+            )]]>
+	</insert>
+	<select id="SSKNInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR004.SSKNInfoTotCnt SKN여신 작업건수 조회 */
+/* IO: 박홍서,2015-08-05T14:37:17(박홍서,2015-08-05T14:35:43) */
+SELECT  COUNT(1) AS TOT_CNT
+  FROM  TB_NR_SKN_CRD_IF
+ WHERE  PROC_ST_CD = '09']]>
+	</select>
+	<select id="SSKNInfoDelete" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR004.SSKNInfoDelete SKN여신 삭제정보 조회 */
+/* IO: 박홍서,2015-08-05T14:36:56(박홍서,2015-08-05T14:36:56) */
+SELECT  AGN_CD
+       ,PAY_YM
+       ,PAY_YM_TS
+  FROM  TB_NR_SKN_CRD_IF
+ WHERE  PROC_ST_CD = '09'
+   AND  PROC_CL_CD = '3']]>
+	</select>
+	<delete id="DSKNInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR004.DSKNInfo SKN여신삭제 */
+/* IO: 박홍서,2015-08-05T14:38:22(박홍서,2015-08-05T14:38:08) */
+DELETE
+  FROM  TB_NR_SKN_CRD
+ WHERE  AGN_CD = #AGN_CD#
+   AND  PAY_YM = #PAY_YM#
+   AND  PAY_YM_TS = #PAY_YM_TS#]]>
+	</delete>
+	<update id="USKNInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR004.USKNInfo SKN여신처리상태업데이트 */
+/* IO: 박홍서,2015-08-05T14:39:31(박홍서,2015-08-05T14:39:31) */
+UPDATE  TB_NR_SKN_CRD_IF
+   SET  PROC_ST_CD = '01'
+ WHERE  PROC_ST_CD = '09']]>
+	</update>
+</sqlMap>

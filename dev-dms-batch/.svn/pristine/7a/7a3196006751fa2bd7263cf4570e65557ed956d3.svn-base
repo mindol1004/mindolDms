@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR002">
+	<select id="SSelEqpInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR002.SSelEqpInfo 매각대상단말기조회 */
+/* IO: 문재웅,2015-08-28T17:10:25(진병수,2015-08-10T17:45:22) */
+SELECT  A.INVE_ST_CD    /* 재고상태코드 */
+       ,A.ASSET_NO      /* 자산번호 */
+       ,B.EQP_JDG_DT
+  FROM  TB_EQP_ASSET    A   /* PR_단말기자산 */
+       ,TB_EQP_JDG      B   /* PR_단말기감정 */
+       ,TB_EQP_JDG_DTL  C   /* PR_단말기감정상세 */
+ WHERE  A.ASSET_NO      = B.ASSET_NO
+   AND  A.DEL_YN        = 'N'
+   AND  A.OP_CL_CD      = 'NR'
+   AND  A.INVE_ST_CD    = '40'            /* 40감정완료 */
+   AND  B.ASSET_NO      =  C.ASSET_NO 
+   AND  C.INSP_DTL_ITM_CD != 'A0'         /* 감정상세 파손(A0) 없는 정보  */
+   AND  B.EQP_JDG_DT    = (SELECT  MIN(SCARL_DT)
+                             FROM  (SELECT  SCARL_DT FROM TB_HOLY 
+                                     WHERE  SCARL_DT <= TO_CHAR(SYSDATE,'YYYYMMDD')
+                                       AND  HOLY_YN = 'N' 
+                                       AND  ROWNUM <= 5    /* 오늘날짜 - 4(순수영업일만) ==  단말기감정일자 */
+                                     ORDER  BY SCARL_DT DESC
+                                   )
+                          )]]>
+	</select>
+	<update id="UEqpAsset" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR012.UEqpAsset 단말기자산상태변경 */
+/* IO: 진병수,2015-08-10T17:49:04(진병수,2015-08-10T17:46:23) */
+UPDATE TB_EQP_ASSET
+   SET INVE_ST_CD     = #INVE_ST_CD#
+     , LS_CHG_USER_ID = 'BAT'
+     , LS_CHG_DTM     = SYSDATE                       
+ WHERE ASSET_NO   = #ASSET_NO#]]>
+	</update>
+</sqlMap>

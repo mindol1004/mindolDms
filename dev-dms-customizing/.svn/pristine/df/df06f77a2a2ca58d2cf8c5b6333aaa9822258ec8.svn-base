@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dev-dms-customizing" default="all" basedir="..">
+
+    <property environment="env" />
+
+    <property file="${NEXCORE_HOME_ANT}/script/build/nexcore.build.properties" />
+    <property file="${ant.home}/nexcore.build.properties" />
+	  <property name="dms-customizing"   value="."/>
+    <property name="dms-customizing-javadoc-dest"   value="C:/projects/skcc-dms/workspace/hpc-docs/api"/>
+
+    <target name="check.nexcore.property" unless="NEXCORE_HOME">
+        <echo message="____________________________________" />
+        <available file="${ant.home}/nexcore.build.properties" property="check.property.ant" />
+        <antcall target="check.nexcore.property.anthome" />
+        <property file="${ant.home}/nexcore.build.properties" />
+    </target>
+    <target name="check.nexcore.property.anthome" unless="check.property.ant">
+        <echo message="ERROR: " />
+        <echo message="      define property 'NEXCORE_HOME_ANT' first " />
+        <echo message="      in your Eclipse Preferences [Ant-Runtime-properties]" />
+        <echo message="      before depoying" />
+        <fail message="ERROR: Ant runtime property 에 'NEXCORE_HOME_ANT'을 등록하세요. " />
+    </target>
+
+    <!-- ################################################################## -->
+    <!-- ## START ######################################################### -->
+
+    <!-- jar 파일 생성 시, 압축을 할 것인지 여부 -->
+    <property name="compress.jar" value="false" />
+
+    <!-- ## END ########################################################### -->
+    <!-- ################################################################## -->
+
+
+    <!-- ################################################################## -->
+    <!-- ## One Stop Build ################################################ -->
+    <!-- ################################################################## -->
+    <target name="all">
+        <antcall target="mkjar.dms-customizing" />
+        <antcall target="javadocs" />
+    </target>
+
+	<!-- ################################################################## -->
+    <!-- ## CUSTOM 라이브러리를 생성한다. ################################### -->
+    <!-- ################################################################## -->
+    <target name="mkjar.dms-customizing" >
+        <delete dir="./tempbin"/>
+        <mkdir dir="./tempbin"/>
+        <javac srcdir="${dms-customizing}/src/java" destdir="./tempbin" encoding="utf-8" debug="true">
+            <exclude name="**/*Test.java" />
+            <include name="**/*.java" />
+            <classpath>
+                <fileset dir="${NEXCORE_HOME}/lib" includes="*.jar" />
+                <fileset dir="${app.ear.common.lib.path}" includes="*.jar" />
+            </classpath>
+        </javac>
+        <jar destfile="${app.ear.common.lib.path}/dms-customizing.jar" compress="${compress.jar}" >
+            <fileset dir="tempbin">
+                <include name="**/*.class" />
+            </fileset>
+            <fileset dir="${dms-customizing}/src/java">
+            	<include name="**/*.xsql" />
+            </fileset>
+        </jar>
+        <delete dir="./tempbin"/>
+    </target>
+
+	<target name="javadocs">
+		<javadoc
+			destdir="${dms-customizing-javadoc-dest}"
+		    sourcepath="src/java"
+		    author="true"
+		    version="true"
+		    use="true"
+			protected="true"
+		    windowtitle="dms-customizing"
+			encoding="utf-8"
+			docencoding="euc-kr"
+			verbose="true">
+			
+		    <classpath>
+		        <fileset dir="${app.ear.common.lib.path}" includes="*.jar" excludes="dms-customizing.jar"/>
+		    	<fileset dir="${NEXCORE_HOME}/lib" includes="*.jar" />
+		    </classpath>
+
+		    <fileset dir="${dms-customizing}/src/java" defaultexcludes="yes">
+				<patternset refid="javadocpatternset" />
+		    </fileset>
+			
+		    <doctitle><![CDATA[<h1>dms-customizing</h1>]]></doctitle>
+		    <bottom><![CDATA[dms-customizing]]></bottom>
+		 </javadoc>
+	</target>
+
+	<patternset id="javadocpatternset">
+		<include name="ams/common/*.java" />
+	</patternset>	
+	
+</project>

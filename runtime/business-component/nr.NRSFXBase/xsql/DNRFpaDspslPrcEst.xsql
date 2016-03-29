@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRFpaDspslPrcEst">
+	<select id="SFpaDspslPrcEstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaDspslPrcEst.SFpaDspslPrcEstTotCnt FPA매각가산정 총 건수 */
+/* IO: 문재웅,2015-11-20T13:51:57(문재웅,2015-10-20T10:55:44) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_ASSET     A   /* PR_단말기자산 */
+       ,TB_EQP_CNTRT     B   /* PR_단말기계약 */
+       ,TB_RENTAL_CNTRT  C   /* PR_렌탈계약 */
+       ,TB_NR_CNTRT      D   /* NR_신규R계약 */
+       ,TB_RENTAL_POLY   E   /* NR_렌탈정책 */
+       ,TB_EQP_REMPRC    F   /* NR_단말기잔존가 */
+ WHERE  A.ASSET_NO       = B.ASSET_NO 
+   AND  B.CNTRT_NO       = C.CNTRT_NO
+   AND  B.CNTRT_NO       = D.CNTRT_NO
+   AND  A.OP_CL_CD       = 'NR'
+   AND  A.INVE_ST_CD IN ('60','61')
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.EQP_MDL_CD     = F.EQP_MDL_CD
+   AND  SUBSTR(C.RENTAL_CNTRT_STA_DT,5,2) = F.REMPRC_STRD_MM_CD  /* 계약월 = 출시월(M1~12) */
+   AND  SUBSTR(A.DSPSL_DT,0,6)  = #DSPSL_YM#
+   /* AND  (SUBSTR(A.DSPSL_DT,0,6) = 삽DSPSL_YM삽 OR A.DSPSL_DT IS NULL) */
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO    = #SVC_MGMT_NO# /* 서비스관리번호 */        
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SFpaDspslPrcEstLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaDspslPrcEst.SFpaDspslPrcEstLstPaging FPA매각가산정조회 */
+/* IO: 문재웅,2015-11-20T15:16:44(문재웅,2015-10-20T10:56:37) */
+/* ■CASE 1 계약데이터의 출시일기준 잔존월(M1~12)을 산출 ■ */  
+WITH RENTAL_CNTRT_DATA AS
+(
+SELECT  TC.CNTRT_NO
+       ,TA.EQP_MDL_CD 
+       ,MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1 AS MONTH_TS              /* 잔존가월:출시월-계약월 */
+       ,CASE WHEN MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1 > 12 THEN '12' /* 최대월로~~*/
+          ELSE 
+            (SELECT  CM_CD_ID 
+               FROM  TB_CM_CD 
+              WHERE  CM_GRP_CD_ID  = 'DMS248' 
+                AND  TO_NUMBER(CM_CD_ID) = MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1
+            )
+          END MONTH_CD
+       ,TC.RENTAL_POLY_NO
+       ,TC.RENTAL_CNTRT_STA_DT
+       ,TC.RENTAL_CNTRT_END_DT
+  FROM  TB_EQP_MDL TA
+       ,TB_RENTAL_CNTRT TC
+ WHERE  TA.EQP_MDL_CD =  TC.EQP_MDL_CD
+   AND  TA.LAUNC_DT IS NOT NULL
+   AND  OP_CL_CD = 'NR'
+)
+/* ■CASE 2 계약데이터의 M+12~23 잔존가:매각가 산출 ■ */  
+SELECT  *
+  FROM  (
+        SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,A.DSPSL_DT             /* 매각일자*/
+                ,D.SVC_MGMT_NO    		/* 서비스관리번호 */
+                ,B.CNTRT_NO         	/* 계약번호*/  
+                ,A.EQP_MDL_CD   		/* 모델코드 */
+                ,(SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = A.EQP_MDL_CD ) AS EQP_MDL_NM /* 모델명 */
+                ,A.EQP_SER_NO  			/* 단말기일련번호*/
+                /* ,A.EQP_PRCH_AMT  매입가 = 출고가 */ 
+                ,E.OUT_PRC      		/* 출고가 */ 
+                ,E.EXPT_DSPSL_PRC   	/* 예상매각가격 */
+                /* ,TRUNC(E.EXPT_DSPSL_PRC*(100/110),0) AS EXPT_DSPSL_PRC    예상매각가격: 부가세뺄겨우 */
+                ,CASE MONTHS_BETWEEN(TO_DATE(#DSPSL_YM#,'YYYYMM'),TO_DATE(SUBSTR(C.RENTAL_CNTRT_STA_DT,1,6),'YYYYMM') ) + 1  
+                   WHEN 1  THEN NVL(F.MM_12,0)  WHEN 2  THEN NVL(F.MM_13,0)
+                   WHEN 3  THEN NVL(F.MM_14,0)  WHEN 4  THEN NVL(F.MM_15,0)
+                   WHEN 5  THEN NVL(F.MM_16,0)  WHEN 6  THEN NVL(F.MM_17,0)
+                   WHEN 7  THEN NVL(F.MM_18,0)  WHEN 8  THEN NVL(F.MM_19,0)
+                   WHEN 9  THEN NVL(F.MM_20,0)  WHEN 10 THEN NVL(F.MM_21,0)
+                   WHEN 11 THEN NVL(F.MM_22,0)  WHEN 12 THEN NVL(F.MM_23,0)
+                 ELSE NVL(F.MM_23,0) END AS DSPSL_PRC /* 매각가격        */
+                ,A.ASSET_NO         	/* 자산번호          */
+                ,C.RENTAL_POLY_NO
+                ,C.RENTAL_CNTRT_STA_DT
+                ,C.RENTAL_CNTRT_END_DT
+           FROM  TB_EQP_ASSET     A   /* PR_단말기자산 */
+                ,TB_EQP_CNTRT     B   /* PR_단말기계약 */
+				,RENTAL_CNTRT_DATA C  
+                ,TB_NR_CNTRT      D   /* NR_신규R계약 */
+                ,TB_RENTAL_POLY   E   /* NR_렌탈정책 */
+                ,TB_EQP_REMPRC    F   /* NR_단말기잔존가 */
+          WHERE  A.ASSET_NO       = B.ASSET_NO 
+            AND  B.CNTRT_NO       = C.CNTRT_NO
+            AND  B.CNTRT_NO       = D.CNTRT_NO
+            AND  A.OP_CL_CD       = 'NR'
+            AND  A.INVE_ST_CD IN ('60','61')
+            AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  A.EQP_MDL_CD     = F.EQP_MDL_CD
+            AND  C.MONTH_CD       = F.REMPRC_STRD_MM_CD     /* 출시월(M1~12) */
+            AND  SUBSTR(A.DSPSL_DT,0,6)  = #DSPSL_YM#
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        		 D.SVC_MGMT_NO    = #SVC_MGMT_NO# /* 서비스관리번호 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+		) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SFpaDspslPrcEstAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaDspslPrcEst.SFpaDspslPrcEstAllExcel FPA매각가산정전체엑셀조회 */
+/* IO: 문재웅,2015-10-30T09:37:42(문재웅,2015-10-20T13:47:24) */
+/* ■CASE 1 계약데이터의 출시일기준 잔존월(M1~12)을 산출 ■ */  
+WITH RENTAL_CNTRT_DATA AS
+(
+SELECT  TC.CNTRT_NO
+       ,TA.EQP_MDL_CD 
+       ,MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1 AS MONTH_TS              /* 잔존가월:출시월-계약월 */
+       ,CASE WHEN MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1 > 12 THEN '12' /* 최대월로~~*/
+          ELSE 
+            (SELECT  CM_CD_ID 
+               FROM  TB_CM_CD 
+              WHERE  CM_GRP_CD_ID  = 'DMS248' 
+                AND  TO_NUMBER(CM_CD_ID) = MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1
+            )
+          END MONTH_CD
+       ,TC.RENTAL_POLY_NO
+       ,TC.RENTAL_CNTRT_STA_DT
+       ,TC.RENTAL_CNTRT_END_DT
+  FROM  TB_EQP_MDL TA
+       ,TB_RENTAL_CNTRT TC
+ WHERE  TA.EQP_MDL_CD =  TC.EQP_MDL_CD
+   AND  TA.LAUNC_DT IS NOT NULL
+   AND  OP_CL_CD = 'NR'
+)
+/* ■CASE 2 계약데이터의 M+12~23 잔존가:매각가 산출 ■ */  
+SELECT  TO_CHAR(TO_DATE(PA.DSPSL_DT,'YYYYMMDD'),'YYYY-MM-DD') AS "매각일자"
+       ,PA.SVC_MGMT_NO          AS "서비스관리번호"
+       ,PA.EQP_SER_NO  	        AS "단말기일련번호"
+       ,PA.EQP_MDL_CD           AS "모델"
+       ,PA.EQP_MDL_NM           AS "모델명"
+       ,PA.CNTRT_NO             AS "계약번호"
+       ,PA.OUT_PRC              AS "출고가"
+       ,PA.EXPT_DSPSL_PRC       AS "예상매각가"
+       ,PA.DSPSL_PRC            AS "실제매각가"
+       ,PA.EXPT_DSPSL_PRC - PA.DSPSL_PRC AS "차액"
+       ,PA.ASSET_NO             AS "자산번호"
+       ,PA.SVC_NO               AS "서비스번호"
+       ,PA.RENTAL_POLY_NO       AS "단말기정책번호"
+       ,TO_CHAR(TO_DATE(PA.RENTAL_CNTRT_STA_DT,'YYYYMMDD'),'YYYY-MM-DD')   	AS "계약시작일자"
+       ,TO_CHAR(TO_DATE(PA.RENTAL_CNTRT_END_DT,'YYYYMMDD'),'YYYY-MM-DD')   	AS "계약종료일자"
+  FROM  (
+        SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,A.DSPSL_DT           	/* 매각일자 */
+                ,D.SVC_MGMT_NO    		/* 서비스관리번호 */
+                ,B.CNTRT_NO           	/* 계약번호*/  
+                ,A.EQP_MDL_CD   		/* 모델코드 */
+                ,(SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = A.EQP_MDL_CD ) AS EQP_MDL_NM /* 모델명 */
+                ,A.EQP_SER_NO  			/* 단말기일련번호*/
+                /* ,A.EQP_PRCH_AMT      매입가 = 출고가 */ 
+                ,E.OUT_PRC      	    /* 출고가 */ 
+                ,E.EXPT_DSPSL_PRC     	/* 예상매각가격 */
+                /* ,TRUNC(E.EXPT_DSPSL_PRC*(100/110),0) AS EXPT_DSPSL_PRC    예상매각가격: 부가세뺄겨우 */
+                ,CASE MONTHS_BETWEEN(TO_DATE(#DSPSL_YM#,'YYYYMM'),TO_DATE(SUBSTR(C.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM') ) + 1  
+                   WHEN 1  THEN NVL(F.MM_12,0)  WHEN 2  THEN NVL(F.MM_13,0)
+                   WHEN 3  THEN NVL(F.MM_14,0)  WHEN 4  THEN NVL(F.MM_15,0)
+                   WHEN 5  THEN NVL(F.MM_16,0)  WHEN 6  THEN NVL(F.MM_17,0)
+                   WHEN 7  THEN NVL(F.MM_18,0)  WHEN 8  THEN NVL(F.MM_19,0)
+                   WHEN 9  THEN NVL(F.MM_20,0)  WHEN 10 THEN NVL(F.MM_21,0)
+                   WHEN 11 THEN NVL(F.MM_22,0)  WHEN 12 THEN NVL(F.MM_23,0)
+                 ELSE NVL(F.MM_23,0) END AS DSPSL_PRC /* 매각가격        */
+                ,A.ASSET_NO             /* 자산번호          */
+                ,D.SVC_NO				/* 서비스번호          */
+                ,C.RENTAL_POLY_NO
+                ,C.RENTAL_CNTRT_STA_DT
+                ,C.RENTAL_CNTRT_END_DT
+           FROM  TB_EQP_ASSET     A   /* PR_단말기자산 */
+                ,TB_EQP_CNTRT     B   /* PR_단말기계약 */
+                ,RENTAL_CNTRT_DATA C  
+                ,TB_NR_CNTRT      D   /* NR_신규R계약 */
+                ,TB_RENTAL_POLY   E   /* NR_렌탈정책 */
+                ,TB_EQP_REMPRC    F   /* NR_단말기잔존가 */
+          WHERE  A.ASSET_NO       = B.ASSET_NO 
+            AND  B.CNTRT_NO       = C.CNTRT_NO
+            AND  B.CNTRT_NO       = D.CNTRT_NO
+            AND  A.OP_CL_CD       = 'NR'
+            AND  A.INVE_ST_CD IN ('60','61')
+            AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  C.EQP_MDL_CD     = F.EQP_MDL_CD
+            AND  C.MONTH_CD       = F.REMPRC_STRD_MM_CD     /* 출시월(M1~12) */
+            AND  SUBSTR(A.DSPSL_DT,0,6) = #DSPSL_YM#
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                 D.SVC_MGMT_NO    = #SVC_MGMT_NO# /* 서비스관리번호 */        
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+		) PA
+ ORDER BY ROWNO]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,633 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR002">
+	<select id="SSelEqpInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR002.SSelEqpInfo 자산전환대상단말기조회 */
+/* IO: 진병수,2016-03-14T16:40:39(진병수,2015-08-10T17:45:22) */
+SELECT E.ASSET_NO
+     , C.OP_TYP_CD
+     , C.OP_PROC_DT  AS DEPR_END_DT
+     , C.CNTRT_NO
+     , C.SVC_MGMT_NO
+     , R.RENT_STA_DT AS DEPR_STA_DT
+     , NVL(R.RENT_END_DT, R.RENT_END_SCHD_DT) AS RENT_END_DT
+     , CASE WHEN (( C.EQP_RTN_YN = 'N' AND  C.OP_TYP_CD IN('02','07') )   ) 
+            THEN 'Y'
+            ELSE 'N'
+       END AS NOT_RETURN
+     , CASE WHEN    C.OP_TYP_CD = '08'
+                 THEN 'Y'
+                 ELSE 'N'
+       END AS YET_RETURN 
+  FROM TB_PRCH      A
+     , TB_EQP_ASSET E
+     , TB_EQP_CNTRT R
+     , TB_RENTAL_CNTRT RC
+     , TB_NR_CNTRT  C
+ WHERE E.PRCH_NO  = A.PRCH_NO
+   AND R.ASSET_NO = E.ASSET_NO
+   AND RC.CNTRT_NO  = C.CNTRT_NO
+   AND E.OP_CL_CD = 'NR'
+   AND E.DEL_YN   = 'N'
+   AND R.RENT_STA_DT LIKE '201501%' /* FOR TEST */
+   /*AND E.ASSET_NO in ( 'EA0000007462', 'EA0000007463', 'EA0000007464', 'EA0000007402', 'EA0000007393', 'EA0000007417')  for test*/
+   /*AND    E.ASSET_NO IN ('EA0000007478', 'EA0000007479') for test*/
+   AND C.CNTRT_NO = R.CNTRT_NO
+   AND C.OP_TYP_CD NOT IN ('06') /** 14일 이내도 제외*/
+   AND (    (C.OP_TYP_CD IN ('02','07','08') AND  C.OP_PROC_DT                           <= NVL(#PROC_DT#,TO_CHAR(SYSDATE,'YYYYMMDD'))) /**해지(정상해지,중도해지,직권해지-렌탈계약종료(단독)) 면 해지일자 체크*/
+       )   
+   AND E.INVE_ST_CD NOT IN ('60','61','70','71')/* 매각대상도 제외 *//* 제각대상도 제외 */]]>
+	</select>
+	<update id="UEqpAsset" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.UEqpAsset 자산이관상태변경 */
+/* IO: 진병수,2016-03-15T16:21:22(문재웅,2015-09-03T12:47:13) */
+UPDATE  TB_EQP_ASSET
+   SET  FISCL_REMPRC        = #DISPO_PRFITLS_AMT#    /*회계잔존가 = 잔액 - 감상액 - 충당액*/
+      , FISCL_ACNTB_AMT     = #ASSET_DISPO_REM_AMT#  /*회계장부금액 = 잔액 - 감상액*/
+      , FISCL_DEPR_SUM_AMT  = #DISPO_AMT#            /*회계감가상각누계금액 누개+=감상액*/
+      , INVE_ST_CD     = #INVE_ST_CD#
+       ,DSPSL_DT	   = #DISPO_DT#
+       ,LS_CHG_USER_ID = NVL(#USER_NO#,'XCR002')
+       ,LS_CHG_DTM     = SYSDATE                       
+ WHERE  ASSET_NO      = #ASSET_NO#]]>
+	</update>
+	<select id="SUserInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR010.SUserInfo 사용자정보조회 */
+/* IO: 진병수,2015-09-08T15:58:17(진병수,2015-09-08T15:57:33) */
+SELECT *
+  FROM TB_USER
+ WHERE USER_NO = #USER_NO#]]>
+	</select>
+	<select id="SSlipSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.SSlipSeq 전표시퀀스조회 */
+/* IO: 진병수,2015-08-31T09:25:19(진병수,2015-08-28T20:11:23) */
+SELECT LPAD(SQ01_TB_SLIP.NEXTVAL,10,'0') AS SLIP_NO  
+  FROM DUAL]]>
+	</select>
+	<select id="SSlipLogHstSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR010.SSlipLogHstSeq 전표전송로그시퀀스조회 */
+/* IO: 진병수,2015-10-16T16:13:08(진병수,2015-08-28T20:11:23) */
+SELECT SQ01_TB_SLIP_TRMS_HST.NEXTVAL AS SLIP_HST_NO  
+  FROM DUAL]]>
+	</select>
+	<insert id="ISlipTrmsHst" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.ISlipTrmsHst 전표이력상위테이블 */
+/* IO: 진병수,2015-10-13T19:49:55(진병수,2015-10-13T19:49:55) */
+INSERT INTO TB_SLIP_TRMS_HST
+            (
+             SLIP_TRMS_HST_NO
+           , DMS_SLIP_NO
+           , FISCL_SLIP_NO
+           , SLIP_TYP_CD
+           , TRMS_STA_DT
+           , TRMS_END_DT
+           , TRMS_SUSS_YN
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+           , LS_CHG_USER_ID
+           , LS_CHG_DTM
+             )
+       VALUES  
+             (
+             #SLIP_TRMS_HST_NO#
+           , #DMS_SLIP_NO#
+           , #FISCL_SLIP_NO#
+           , #SLIP_TYP_CD#
+           , #TRMS_STA_DT#
+           , #TRMS_END_DT#
+           , #TRMS_SUSS_YN#
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+            )]]>
+	</insert>
+	<insert id="ISlipTrmsDtlHst" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.ISlipTrmsDtlHst 전표이력중간테이블 */
+/* IO: 진병수,2015-10-13T19:59:15(진병수,2015-10-13T19:49:55) */
+INSERT INTO TB_SLIP_TRMS_DTL_HST
+            (            
+             SLIP_TRMS_HST_NO
+           , SLIP_TRMS_DTL_HST_NO
+           , SLIP_TRMS_DTL_EVNT
+           , SLIP_TRMS_DTL_CONT
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+           , LS_CHG_USER_ID
+           , LS_CHG_DTM
+             )
+       VALUES  
+             (
+             #SLIP_TRMS_HST_NO#
+           , #SLIP_TRMS_DTL_HST_NO#
+           , #SLIP_TRMS_DTL_EVNT#
+           , #SLIP_TRMS_DTL_CONT#
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+            )]]>
+	</insert>
+	<insert id="ISlipTrmsDtlDtailHst" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.ISlipTrmsDtlDtailHst 전표이력하위테이블 */
+/* IO: 진병수,2015-10-13T20:04:01(진병수,2015-10-13T19:49:55) */
+INSERT INTO TB_SLIP_TRMS_DTL_DTAIL_HST
+            (            
+             SLIP_TRMS_HST_NO
+           , SLIP_TRMS_DTL_HST_NO
+           , SLIP_TRMS_DTL_DTAIL_HST_NO
+           , SLIP_TRMS_DTL_DTAIL_HST_EVNT
+           , SLIP_TRMS_DTL_DTAIL_HST_CONT
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+           , LS_CHG_USER_ID
+           , LS_CHG_DTM
+             )
+       VALUES  
+             (
+             #SLIP_TRMS_HST_NO#
+           , #SLIP_TRMS_DTL_HST_NO#
+           , #SLIP_TRMS_DTL_DTAIL_HST_NO#
+           , #SLIP_TRMS_DTL_DTAIL_HST_EVNT#
+           , #SLIP_TRMS_DTL_DTAIL_HST_CONT#
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+            )]]>
+	</insert>
+	<insert id="ISlipData" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.ISlipData 전표데이터등록 */
+/* IO: 진병수,2015-10-29T16:49:18(진병수,2015-08-20T14:46:28) */
+INSERT INTO TB_SLIP
+            (
+               SLIP_NO
+             , PRPSL_DEPT_CD
+             , SLIP_DT
+             , PRPSR
+             , PRPSL_DT
+             , DEAL_TYP_CD
+             , SLIP_APRV_DEPT_CD
+             , SLIP_APRVR
+             , SLIP_APRV_DT
+             , DEBIT_TOT
+             , CR_TOT
+             , PRF_CD
+             , SLIP_APLY
+             , SLIP_TRMS_YN
+             , ORGL_SLIP_NO
+             , SLIP_NORM_CNCL_CL
+             , SLIP_RTNR
+             , SLIP_RETUR_DT
+             , TAX_BILL_NO
+             , SLIP_CL_CD
+             , FISCL_SYS_SEQ     
+             , SLIP_ST_CD 
+             , FS_REG_USER_ID
+             , FS_REG_DTM    
+             , LS_CHG_USER_ID
+             , LS_CHG_DTM    
+            )   
+     VALUES 
+            (
+               #SLIP_NO#
+             , #PRPSL_DEPT_CD#
+             , NVL(#SLIP_DT#, TO_CHAR(SYSDATE, 'YYYYMMDD'))
+             , NVL(#PRPSR#,#USER_NO#)
+             , NVL(#PRPSL_DT#, TO_CHAR(SYSDATE, 'YYYYMMDD'))
+             , NVL(#DEAL_TYP_CD#, ' ')
+             , #SLIP_APRV_DEPT_CD#
+             , #SLIP_APRVR#
+             , #SLIP_APRV_DT#
+             , NVL(#DEBIT_TOT# , 0)
+             , NVL(#CR_TOT#    , 0)
+             , #PRF_CD#
+             , #SLIP_APLY#
+             , #SLIP_TRMS_YN#
+             , #ORGL_SLIP_NO#
+             , #SLIP_NORM_CNCL_CL#
+             , #SLIP_RTNR#
+             , #SLIP_RETUR_DT#
+             , #TAX_BILL_NO#
+             , #SLIP_CL_CD#
+             , #FISCL_SYS_SEQ#
+             , NVL(#SLIP_ST_CD#,'10')
+             , NVL(#USER_NO#,'BAT')
+             , SYSDATE
+             , NVL(#USER_NO#,'BAT')
+             , SYSDATE
+            )]]>
+	</insert>
+	<update id="UClsDeprDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.UClsDeprDtl 자산상각상세테이블업데이트 */
+/* IO: 진병수,2016-03-03T14:10:44(진병수,2015-09-14T10:48:49) */
+UPDATE TB_CLS_DEPR_DTL
+   SET DEPR_SLIP_NO        = NVL(#SLIP_NO#,DEPR_SLIP_NO)
+     , DEPR_CNCL_SLIP_NO   = NVL(#DEPR_CNCL_SLIP_NO#,DEPR_CNCL_SLIP_NO)
+     , LS_CHG_USER_ID      = NVL(NVL(#USER_NO#,#OPER_ID#),'BAT')
+     , LS_CHG_DTM          = SYSDATE
+ WHERE DEPR_STRD_YM        = NVL(#DEPR_STRD_YM#,#SLIP_YM#   )
+   AND DEPR_DEPT_CD        = NVL(#DEPR_DEPT_CD#,DEPR_DEPT_CD)
+   AND DEPR_TS             = NVL(#DEPR_TS#     ,DEPR_TS     )]]>
+	</update>
+	<update id="UClsDepr" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.UClsDepr 자산상각테이블업데이트 */
+/* IO: 진병수,2016-03-03T14:10:31(진병수,2015-09-14T10:48:49) */
+UPDATE TB_CLS_DEPR
+   SET DEPR_SLIP_NO        = #SLIP_NO#
+     , DEPR_SLIP_DT        = NVL(#DEPR_SLIP_DT#, TO_CHAR(SYSDATE,'YYYYMMDD'))
+     , LS_CHG_USER_ID      = NVL(NVL(#USER_NO#,#OPER_ID#),'BAT')
+     , LS_CHG_DTM          = SYSDATE
+ WHERE DEPR_STRD_YM        = NVL(#DEPR_STRD_YM#, #SLIP_YM#   )
+   AND DEPR_DEPT_CD        = NVL(#DEPR_DEPT_CD#, DEPR_DEPT_CD)
+   AND DEPR_CL             = NVL(#DEPR_CL#     , DEPR_CL     )
+   AND DEPR_TS             = NVL(#DEPR_TS#     , DEPR_TS     )]]>
+	</update>
+	<update id="UClsAssetDispoDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.UClsAssetDispoDtl 자산처분테이블업데이트 */
+/* IO: 진병수,2016-03-14T09:17:16(진병수,2015-09-14T10:48:49) */
+UPDATE TB_CLS_ASSET_DISPO_DTL
+   SET ASSET_DISPO_SLIP_NO        = #SLIP_NO#
+     , ASSET_DISPO_SLIP_DT        = NVL(#ASSET_DISPO_SLIP_DT#, TO_CHAR(SYSDATE,'YYYYMMDD'))
+     , LS_CHG_USER_ID             = NVL(NVL(#USER_NO#,#OPER_ID#),'EPR010')
+     , LS_CHG_DTM                 = SYSDATE
+ WHERE ASSET_DISPO_STRD_YM      = #ASSET_DISPO_STRD_YM#
+   AND OP_CL_CD                 = NVL(#OP_CL_CD#           , OP_CL_CD           )
+   AND ASSET_DISPO_DEPT_CD      = NVL(#ASSET_DISPO_DEPT_CD#, ASSET_DISPO_DEPT_CD)
+   AND DSPSL_DIS_CL             = NVL(#DSPSL_DIS_CL#       , DSPSL_DIS_CL       )
+   AND DISPO_DT                 = NVL(#DISPO_DT#           , DISPO_DT           )
+   AND DISPO_TS                 = NVL(#DISPO_TS#           , DISPO_TS           )]]>
+	</update>
+	<update id="UClsAssetDispo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.UClsAssetDispo 자산처분테이블업데이트 */
+/* IO: 진병수,2016-03-14T16:47:46(진병수,2015-09-14T10:48:49) */
+UPDATE TB_CLS_ASSET_DISPO
+   SET ASSET_DISPO_SLIP_NO        = #SLIP_NO#
+     , ASSET_DISPO_SLIP_DT        = NVL(#ASSET_DISPO_SLIP_DT#, TO_CHAR(SYSDATE,'YYYYMMDD'))
+     , LS_CHG_USER_ID             = NVL(NVL(#USER_NO#,#OPER_ID#),'EPR010')
+     , LS_CHG_DTM                 = SYSDATE
+ WHERE ASSET_DISPO_STRD_YM      = NVL(#ASSET_DISPO_STRD_YM#, #SLIP_YM#          )
+   AND OP_CL_CD                 = NVL(#OP_CL_CD#           , OP_CL_CD           )
+   AND ASSET_DISPO_DEPT_CD      = NVL(#ASSET_DISPO_DEPT_CD#, ASSET_DISPO_DEPT_CD)
+   AND DSPSL_DIS_CL             = NVL(#DSPSL_DIS_CL#       , DSPSL_DIS_CL       )
+   AND DISPO_DT                 = NVL(#DISPO_DT#           , DISPO_DT           )
+   AND DISPO_TS                 = NVL(#DISPO_TS#           , DISPO_TS           )]]>
+	</update>
+	<insert id="IAssetDispoDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.IAssetDispoDtl 마감자산처분상세등록 */
+/* IO: 진병수,2016-02-18T14:46:36(문재웅,2015-11-04T14:32:11) */
+INSERT
+  INTO  TB_CLS_ASSET_DISPO_DTL 
+        ( ASSET_DISPO_STRD_YM
+         ,DSPSL_DIS_CL
+         ,OP_CL_CD
+         ,DISPO_TS
+         ,ASSET_NO
+         ,DISPO_DT
+         ,ASSET_DISPO_DEPT_CD
+         ,ASSET_DISPO_ACNTB_AMT
+         ,ASSET_DISPO_REM_AMT
+         ,DISPO_AMT
+         ,DISPO_PRFITLS_AMT
+         ,DISPO_PRE_PRFITLS_AMT
+         ,FS_REG_USER_ID
+         ,FS_REG_DTM
+         ,LS_CHG_USER_ID
+         ,LS_CHG_DTM
+       )
+VALUES
+       (
+          #ASSET_DISPO_STRD_YM#
+         ,#DSPSL_DIS_CL#
+         ,#OP_CL_CD#
+         ,#DISPO_TS#
+         ,#ASSET_NO#
+         ,#DISPO_DT#
+         ,#ASSET_DISPO_DEPT_CD#
+         ,#ASSET_DISPO_ACNTB_AMT#
+         ,#ASSET_DISPO_REM_AMT#
+         ,#DISPO_AMT#
+         ,#DISPO_PRFITLS_AMT#
+         ,#DISPO_PRE_PRFITLS_AMT#
+         ,NVL(#USER_NO#,'BAT')
+         ,NVL(#FS_REG_DTM#, SYSDATE)
+         ,NVL(#USER_NO#,'BAT')
+         ,NVL(#LS_CHG_DTM#, SYSDATE)       
+       )]]>
+	</insert>
+	<insert id="IAssetDispo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.IAssetDispo 마감자산처분등록 */
+/* IO: 진병수,2016-02-17T13:01:44(문재웅,2015-11-04T15:25:42) */
+MERGE INTO PS_MNG.TB_CLS_ASSET_DISPO A USING
+ (SELECT
+     #ASSET_DISPO_STRD_YM#   AS ASSET_DISPO_STRD_YM
+   , #DSPSL_DIS_CL#          AS DSPSL_DIS_CL
+   , #OP_CL_CD#              AS OP_CL_CD
+   , #DISPO_DT#              AS DISPO_DT
+   , #DISPO_TS#              AS DISPO_TS
+   , #ASSET_DISPO_DEPT_CD#   AS ASSET_DISPO_DEPT_CD
+   , #ASSET_DISPO_ACNTB_AMT# AS ASSET_DISPO_ACNTB_AMT
+   , #ASSET_DISPO_REM_AMT#   AS ASSET_DISPO_REM_AMT
+   , #DISPO_PRE_PRFITLS_AMT# AS DISPO_PRE_PRFITLS_AMT
+   , #DISPO_AMT#             AS DISPO_AMT
+   , #DISPO_PRFITLS_AMT#     AS DISPO_PRFITLS_AMT
+   , #ASSET_DISPO_SLIP_NO#   AS ASSET_DISPO_SLIP_NO
+   , #ASSET_DISPO_SLIP_DT#   AS ASSET_DISPO_SLIP_DT
+   , NVL(#USER_NO#,'BAT')    AS FS_REG_USER_ID
+   , SYSDATE                 AS FS_REG_DTM
+   , NVL(#USER_NO#,'BAT')    AS LS_CHG_USER_ID
+   , SYSDATE                 AS LS_CHG_DTM
+  FROM DUAL) B
+ON (A.ASSET_DISPO_STRD_YM = B.ASSET_DISPO_STRD_YM and A.DSPSL_DIS_CL = B.DSPSL_DIS_CL and A.OP_CL_CD = B.OP_CL_CD and A.DISPO_DT = B.DISPO_DT and A.DISPO_TS = B.DISPO_TS)
+WHEN NOT MATCHED THEN 
+INSERT (
+  ASSET_DISPO_STRD_YM, DSPSL_DIS_CL, OP_CL_CD, DISPO_DT, DISPO_TS, 
+  ASSET_DISPO_DEPT_CD, ASSET_DISPO_ACNTB_AMT, ASSET_DISPO_REM_AMT, DISPO_PRE_PRFITLS_AMT, DISPO_AMT, 
+  DISPO_PRFITLS_AMT, ASSET_DISPO_SLIP_NO, ASSET_DISPO_SLIP_DT, FS_REG_USER_ID, FS_REG_DTM, 
+  LS_CHG_USER_ID, LS_CHG_DTM)
+VALUES (
+  B.ASSET_DISPO_STRD_YM, B.DSPSL_DIS_CL, B.OP_CL_CD, B.DISPO_DT, B.DISPO_TS, 
+  B.ASSET_DISPO_DEPT_CD, B.ASSET_DISPO_ACNTB_AMT, B.ASSET_DISPO_REM_AMT, B.DISPO_PRE_PRFITLS_AMT, B.DISPO_AMT, 
+  B.DISPO_PRFITLS_AMT, B.ASSET_DISPO_SLIP_NO, B.ASSET_DISPO_SLIP_DT, B.FS_REG_USER_ID, B.FS_REG_DTM, 
+  B.LS_CHG_USER_ID, B.LS_CHG_DTM)
+WHEN MATCHED THEN
+UPDATE SET 
+  A.ASSET_DISPO_DEPT_CD = B.ASSET_DISPO_DEPT_CD,
+  A.ASSET_DISPO_ACNTB_AMT = B.ASSET_DISPO_ACNTB_AMT,
+  A.ASSET_DISPO_REM_AMT = B.ASSET_DISPO_REM_AMT,
+  A.DISPO_PRE_PRFITLS_AMT = B.DISPO_PRE_PRFITLS_AMT,
+  A.DISPO_AMT = B.DISPO_AMT,
+  A.DISPO_PRFITLS_AMT = B.DISPO_PRFITLS_AMT,
+  A.ASSET_DISPO_SLIP_NO = B.ASSET_DISPO_SLIP_NO,
+  A.ASSET_DISPO_SLIP_DT = B.ASSET_DISPO_SLIP_DT,
+  A.LS_CHG_USER_ID = B.LS_CHG_USER_ID,
+  A.LS_CHG_DTM = B.LS_CHG_DTM]]>
+	</insert>
+	<insert id="IDeprDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.IDeprDtl 감가상각상세등록 */
+/* IO: 진병수,2016-03-07T16:18:36(진병수,2015-08-04T20:37:05) */
+/* 전체리에서 삭제처리로직에서 제외된건은 UPDATE 처리한다 */
+MERGE INTO  TB_CLS_DEPR_DTL USING  DUAL
+        ON (DEPR_CL       = #DEPR_CL#
+       AND  DEPR_STRD_YM  = #DEPR_STRD_YM#
+       AND  DEPR_DEPT_CD  = #DEPR_DEPT_CD#
+       AND  DEPR_TS       = #DEPR_TS#
+       AND  ASSET_NO      = #ASSET_NO#
+           )
+WHEN  MATCHED THEN
+       UPDATE SET  
+            DEPR_OBJ_AMT      = #DEPR_OBJ_AMT#          /* 감가상각대상금액 */
+           ,DEPR_DTL_REM_AMT  = #DEPR_DTL_REM_AMT#      /* 감가상각상세잔여금액 */
+           ,DEPR_DTL_AMT      = #DEPR_DTL_AMT#          /* 감가상각상세금액 */
+           ,DEPR_DTL_SUM_AMT  = #DEPR_DTL_SUM_AMT#      /* 감가상각상세누계금액 */
+           ,DEPR_DTL_CROVR_SUM_AMT = #DEPR_DTL_CROVR_SUM_AMT# /* 감가상각상세이월누계금액 */
+           ,DEPR_DTL_ACNTB_AMT= #DEPR_DTL_ACNTB_AMT#   	/* 감가상각상세장부금액 */
+           ,DEPR_DTL_TS       = #DEPR_DTL_TS#           /* 감가상각상세차수 */
+           ,DISPO_PRE_PRFITLS_AMT =#ALLWN_AMT# 			/* 처분선손익금액:충당부채금액 */
+           ,DISPO_PRE_PRFITLS_SUM_AMT =#ALLWN_SUM_AMT# 			/* 처분선손익금액:충당부채누계금액 */
+           ,DEPR_STA_DT       = #DEPR_MON_STA_DT#       /* 감가상각시작일자:기준월 */  
+           ,DEPR_END_DT       = #DEPR_MON_END_DT#       /* 감가상각종료일자 :기준월*/
+           ,LS_CHG_USER_ID    = NVL(#USER_NO#,'BAT')
+           ,LS_CHG_DTM        = SYSDATE
+WHEN  NOT MATCHED THEN
+    INSERT(
+            DEPR_CL			    /* 감가상각구분 */
+           ,DEPR_STRD_YM		/* 감가상각기준년월 */
+           ,DEPR_DEPT_CD		/* 감가상각부서코드 */
+           ,DEPR_TS             /* 감가상각차수 */
+           ,ASSET_NO			/* 자산번호 */
+           ,DEPR_DTL_SVCL		/* 감가상각상세내용연수 */
+           ,DEPR_OBJ_AMT		/* 감가상각대상금액 */
+           ,DEPR_DTL_REM_AMT	/* 감가상각상세잔여금액 */
+           ,DEPR_DTL_AMT		/* 감가상각상세금액(현재월(일수)의 감가상각금액) */
+           ,DEPR_DTL_SUM_AMT	/* 감가상각상세누계금액 */
+           ,DEPR_DTL_CROVR_SUM_AMT /* 감가상각상세이월누계금액 */
+           ,DEPR_DTL_ACNTB_AMT  /* 감가상각상세장부금액 */
+           ,DEPR_DTL_TS			/* 감가상각상세차수 */
+           ,DISPO_PRE_PRFITLS_AMT /* 처분선손익금액:충당부채금액 */
+           ,DISPO_PRE_PRFITLS_SUM_AMT /* 처분선손익금액:충당부채누계금액 */
+           ,DEPR_STA_DT         /* 감가상각시작일자:기준월 */  
+           ,DEPR_END_DT         /* 감가상각종료일자 :기준월*/
+           ,MOV_DISPO_CL
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+       	   ,LS_CHG_USER_ID
+       	   ,LS_CHG_DTM
+         )
+  VALUES (
+            NVL(#DEPR_CL#, 'AC')
+           ,#DEPR_STRD_YM#
+           ,#DEPR_DEPT_CD#
+           ,#DEPR_TS#
+           ,#ASSET_NO#
+           ,#DEPR_DTL_SVCL#
+           ,#DEPR_OBJ_AMT#
+           ,#DEPR_DTL_REM_AMT#
+           ,#DEPR_DTL_AMT#
+           ,#DEPR_DTL_SUM_AMT#
+           ,#DEPR_DTL_CROVR_SUM_AMT# /* 감가상각상세이월누계금액 */
+           ,#DEPR_DTL_ACNTB_AMT#   	/* 감가상각상세장부금액 */
+           ,#DEPR_DTL_TS#
+           ,#ALLWN_AMT# 			/* 처분선손익금액:충당부채금액 */
+           ,#ALLWN_SUM_AMT# 	    /* 처분선손익금액:충당부채누계금액 */
+           ,#DEPR_STA_DT#       /* 감가상각시작일자:기준월 */  
+           ,#DEPR_END_DT#       /* 감가상각종료일자 :기준월*/
+           ,#MOV_DISPO_CL#
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+         )]]>
+	</insert>
+	<insert id="IDepr" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.IDepr 감가상각등록 */
+/* IO: 진병수,2016-02-18T14:34:48(진병수,2015-08-06T20:30:03) */
+MERGE INTO  TB_CLS_DEPR USING  DUAL
+        ON (DEPR_STRD_YM  = #DEPR_STRD_YM#
+       AND  DEPR_DEPT_CD  = NVL(#DEPR_DEPT_CD#, DEPR_DEPT_CD)
+       AND  DEPR_CL       = NVL(#DEPR_CL#, 'AC')
+       AND  DEPR_TS       = #DEPR_TS#
+           )
+WHEN  MATCHED THEN
+       UPDATE SET  
+            DEPR_AMT			= #DEPR_AMT#
+           ,DEPR_SUM_AMT		= #DEPR_SUM_AMT#
+           ,DEPR_CROVR_SUM_AMT	= #DEPR_CROVR_SUM_AMT#
+           ,DISPO_PRE_PRFITS_AMT= #DISPO_PRE_PRFITLS_AMT#	/* 처분선손익금액:충당금 */ 
+           ,DISPO_PRE_PRFITS_SUM_AMT= #DISPO_PRE_PRFITLS_SUM_AMT#	/* 처분선손익금액:충당금 */ 
+           ,LS_CHG_USER_ID    	= NVL(#USER_NO#,'BAT')
+           ,LS_CHG_DTM       	= SYSDATE
+WHEN  NOT MATCHED THEN
+    INSERT(
+            DEPR_CL
+           ,DEPR_STRD_YM
+           ,DEPR_DEPT_CD
+           ,DEPR_TS
+           ,DEPR_AMT
+           ,DEPR_SUM_AMT
+           ,DEPR_CROVR_SUM_AMT	 /* 감가상각이월누계금액 */
+           ,DISPO_PRE_PRFITS_AMT /* 처분선손익금액:충당금 */ 
+           ,DISPO_PRE_PRFITS_SUM_AMT /* 처분선손익금액:충당누계액 */ 
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+       	   ,LS_CHG_USER_ID
+       	   ,LS_CHG_DTM
+         )
+  VALUES (
+            NVL(#DEPR_CL#,'AC')
+           ,#DEPR_STRD_YM#
+           ,NVL(#DEPR_DEPT_CD#,'501802')
+           ,#DEPR_TS#
+           ,#DEPR_AMT#
+           ,#DEPR_SUM_AMT#
+           ,#DEPR_CROVR_SUM_AMT#	/* 감가상각이월누계금액 */              
+           ,#DISPO_PRE_PRFITLS_AMT#	/* 처분선손익금액:충당금 */ 
+           ,#DISPO_PRE_PRFITLS_SUM_AMT#	/* 처분선손익금액:충당누계금액 */ 
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+         )]]>
+	</insert>
+	<select id="SDtl4IDepr" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR002.SDtl4IDepr 상위테이블에넣기위한데이터조회_감가상각 */
+/* IO: 진병수,2016-03-03T10:41:16(진병수,2016-02-17T09:44:05) */
+SELECT A.DEPR_STRD_YM, A.DEPR_TS, A.DEPR_CL
+     , A.DEPR_DEPT_CD
+     , SUM(A.DEPR_DTL_AMT             ) AS DEPR_AMT
+     , SUM(A.DEPR_DTL_SUM_AMT         ) AS DEPR_SUM_AMT
+     , SUM(A.DEPR_DTL_CROVR_SUM_AMT   ) AS DEPR_CROVR_SUM_AMT
+     , SUM(A.DISPO_PRE_PRFITLS_AMT    ) AS DISPO_PRE_PRFITLS_AMT
+     , SUM(A.DISPO_PRE_PRFITLS_SUM_AMT) AS DISPO_PRE_PRFITLS_SUM_AMT
+  FROM TB_CLS_DEPR_DTL A
+ WHERE A.DEPR_TS = '0'
+ GROUP BY A.DEPR_STRD_YM,A.DEPR_TS , A.DEPR_CL, A.DEPR_DEPT_CD]]>
+	</select>
+	<select id="SDispoDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR002.SDispoDtl 자산처분상세조회 */
+/* IO: 진병수,2016-03-15T13:15:03(진병수,2016-02-17T11:22:42) */
+SELECT A.DEPR_STRD_YM AS ASSET_DISPO_STRD_YM
+     , NVL(#DSPSL_DIS_CL#, DECODE(NVL(MOV_DISPO_CL,'N'),'Y','AD','AS') )   AS DSPSL_DIS_CL
+     , NVL(#OP_CL_CD#, 'NR')   AS OP_CL_CD
+     , A.ASSET_NO
+     , NVL(#DISPO_DT#, TO_CHAR(SYSDATE,'YYYYMMDD')) AS DISPO_DT
+     , NVL((SELECT MAX(DISPO_TS) FROM TB_CLS_ASSET_DISPO_DTL WHERE ASSET_DISPO_STRD_YM = A.DEPR_STRD_YM),0) +1 AS DISPO_TS
+     , NVL(#ASSET_DISPO_DEPT_CD#, '501802') AS ASSET_DISPO_DEPT_CD
+     , E.EQP_PRCH_AMT        AS ASSET_DISPO_ACNTB_AMT/*장부가 매입금액*/
+     , E.EQP_PRCH_AMT - A.DEPR_DTL_SUM_AMT      AS ASSET_DISPO_REM_AMT  /*잔존가 자산의장부가*/
+     , A.DISPO_PRE_PRFITLS_SUM_AMT AS DISPO_PRE_PRFITLS_AMT /*충당부채*/ 
+     , E.EQP_PRCH_AMT - A.DEPR_DTL_SUM_AMT  - A.DISPO_PRE_PRFITLS_SUM_AMT  AS DISPO_PRFITLS_AMT     /*처분손익 자산의잔존가*/
+     , A.DEPR_DTL_SUM_AMT  AS DISPO_AMT             /*처분금액 감상누계*/
+     , DECODE(NVL(MOV_DISPO_CL,'N'),'Y','71','61')                  AS INVE_ST_CD /*자산전환 */
+  FROM TB_CLS_DEPR_DTL A
+     , TB_EQP_ASSET    E
+ WHERE A.DEPR_TS      = '0'
+   AND A.ASSET_NO     = E.ASSET_NO]]>
+	</select>
+	<select id="SDtl4IDispo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR002.SDtl4IDispo 상위테이블에넣기위한데이터조회_자산처분 */
+/* IO: 진병수,2016-03-09T13:16:14(진병수,2016-02-17T09:44:05) */
+SELECT A.ASSET_DISPO_STRD_YM
+     , A.DSPSL_DIS_CL
+     , A.OP_CL_CD
+     , A.DISPO_DT
+     , A.ASSET_DISPO_DEPT_CD
+     , A.DISPO_TS
+     , SUM (A.ASSET_DISPO_ACNTB_AMT) AS ASSET_DISPO_ACNTB_AMT
+     , SUM (A.ASSET_DISPO_REM_AMT) AS ASSET_DISPO_REM_AMT
+     , SUM (A.DISPO_PRE_PRFITLS_AMT) AS DISPO_PRE_PRFITLS_AMT
+     , SUM (A.DISPO_AMT) AS DISPO_AMT
+     , SUM (A.DISPO_PRFITLS_AMT) AS DISPO_PRFITLS_AMT
+  FROM TB_CLS_ASSET_DISPO_DTL A
+     , TB_CLS_DEPR_DTL        D
+ WHERE A.ASSET_DISPO_STRD_YM = D.DEPR_STRD_YM
+   AND A.ASSET_NO            = D.ASSET_NO
+   AND A.OP_CL_CD            = NVL(A.OP_CL_CD, 'NR')
+   AND A.DSPSL_DIS_CL        = NVL(#DSPSL_DIS_CL#, A.DSPSL_DIS_CL)
+   AND A.DISPO_DT            = NVL(#DISPO_DT#, A.DISPO_DT)
+   AND A.ASSET_DISPO_DEPT_CD = NVL(#ASSET_DISPO_DEPT_CD#, A.ASSET_DISPO_DEPT_CD)
+   AND D.DEPR_TS = 0
+ GROUP BY A.ASSET_DISPO_STRD_YM
+     , A.DSPSL_DIS_CL
+     , A.OP_CL_CD
+     , A.DISPO_DT
+     , A.ASSET_DISPO_DEPT_CD
+     , A.DISPO_TS]]>
+	</select>
+	<select id="SDepr" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR002.SDepr 감가상각조회 */
+/* IO: 진병수,2016-03-03T13:18:32(진병수,2016-02-17T11:22:42) */
+SELECT *
+  FROM TB_CLS_DEPR A
+ WHERE A.DEPR_TS = 0]]>
+	</select>
+	<delete id="DDeprDtlTemp" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.DDeprDtlTemp 처리중임시데이터삭제(감가상각, 자산처분) */
+/* IO: 진병수,2016-03-09T13:33:16(진병수,2016-03-03T09:58:02) */
+BEGIN
+
+DELETE TB_CLS_ASSET_DISPO A
+ WHERE (A.ASSET_DISPO_STRD_YM , A.DSPSL_DIS_CL , A.OP_CL_CD , A.DISPO_DT, A.ASSET_DISPO_DEPT_CD , A.DISPO_TS) IN ( 
+            SELECT A.ASSET_DISPO_STRD_YM
+                 , A.DSPSL_DIS_CL
+                 , A.OP_CL_CD
+                 , A.DISPO_DT
+                 , A.ASSET_DISPO_DEPT_CD
+                 , A.DISPO_TS    
+                  FROM TB_CLS_ASSET_DISPO_DTL A
+                 WHERE ASSET_NO IN (
+                                    SELECT ASSET_NO
+                                      FROM TB_CLS_DEPR_DTL    
+                                     WHERE DEPR_TS = 0
+                                   )
+      )
+;      
+
+          DELETE TB_CLS_ASSET_DISPO_DTL A
+                 WHERE ASSET_NO IN (
+                                    SELECT ASSET_NO
+                                      FROM TB_CLS_DEPR_DTL    
+                                     WHERE DEPR_TS = 0
+                                   )
+                                   ;
+
+DELETE TB_CLS_DEPR_DTL
+ WHERE DEPR_TS = '0'
+;
+
+DELETE TB_CLS_DEPR
+ WHERE DEPR_TS = '0'
+;
+ 
+ 
+END;]]>
+	</delete>
+	<update id="UDeprDtl4DeprTS" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR002.UDeprDtl4DeprTS 감가상각차수업데이트 */
+/* IO: 진병수,2016-03-03T11:19:39(진병수,2016-03-03T10:50:33) */
+BEGIN
+UPDATE TB_CLS_DEPR_DTL
+   SET DEPR_TS = #DEPR_TS#
+ WHERE DEPR_TS = '0'
+   AND DEPR_STRD_YM  = #DEPR_STRD_YM#
+   AND DEPR_CL       = #DEPR_CL#
+   AND DEPR_DEPT_CD  = #DEPR_DEPT_CD#
+;   
+
+UPDATE TB_CLS_DEPR
+   SET DEPR_TS = #DEPR_TS#
+ WHERE DEPR_TS = '0'
+   AND DEPR_STRD_YM  = #DEPR_STRD_YM#
+   AND DEPR_CL       = #DEPR_CL#
+   AND DEPR_DEPT_CD  = #DEPR_DEPT_CD#
+;
+END
+;]]>
+	</update>
+	<select id="SDtl4UpdateTS" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR002.SDtl4UpdateTS 차수업데이트틑위한데이터조회_감가상각 */
+/* IO: 진병수,2016-03-03T11:26:48(진병수,2016-02-17T09:44:05) */
+SELECT A.DEPR_STRD_YM, NVL((SELECT MAX(DEPR_TS)  FROM TB_CLS_DEPR WHERE DEPR_STRD_YM  = A.DEPR_STRD_YM AND A.DEPR_CL = DEPR_CL AND  A.DEPR_DEPT_CD=DEPR_DEPT_CD),0)+1 AS DEPR_TS, A.DEPR_CL, A.DEPR_DEPT_CD
+  FROM TB_CLS_DEPR A 
+ WHERE (A.DEPR_STRD_YM,A.DEPR_CL, A.DEPR_DEPT_CD) IN (SELECT DEPR_STRD_YM, DEPR_CL,  DEPR_DEPT_CD  FROM TB_CLS_DEPR WHERE A.DEPR_TS = 0)
+ GROUP BY A.DEPR_STRD_YM,A.DEPR_CL, A.DEPR_DEPT_CD]]>
+	</select>
+	<select id="SDispo4Slip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR002.SDispo4Slip 자산처분조회_전표발행용 */
+/* IO: 진병수,2016-03-14T16:14:41(진병수,2016-02-17T11:22:42) */
+SELECT A.*
+  FROM TB_CLS_ASSET_DISPO A
+ WHERE (A.ASSET_DISPO_STRD_YM , A.DSPSL_DIS_CL , A.OP_CL_CD , A.DISPO_DT, A.ASSET_DISPO_DEPT_CD , A.DISPO_TS) IN ( 
+            SELECT A.ASSET_DISPO_STRD_YM
+                 , A.DSPSL_DIS_CL
+                 , A.OP_CL_CD
+                 , A.DISPO_DT
+                 , A.ASSET_DISPO_DEPT_CD
+                 , A.DISPO_TS
+              FROM TB_CLS_ASSET_DISPO_DTL A
+                 , TB_CLS_DEPR_DTL        D
+             WHERE A.ASSET_DISPO_STRD_YM = D.DEPR_STRD_YM
+               AND A.ASSET_NO            = D.ASSET_NO
+               AND A.OP_CL_CD            = NVL(A.OP_CL_CD, 'NR')
+               AND A.DSPSL_DIS_CL        = NVL(#DSPSL_DIS_CL#, 'AS')
+               AND A.DISPO_DT            = NVL(#DISPO_DT#, A.DISPO_DT)
+               AND A.ASSET_DISPO_DEPT_CD = NVL(#ASSET_DISPO_DEPT_CD#, A.ASSET_DISPO_DEPT_CD)
+               AND D.DEPR_TS = 0
+             )]]>
+	</select>
+</sqlMap>

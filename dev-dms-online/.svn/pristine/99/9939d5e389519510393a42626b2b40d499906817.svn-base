@@ -1,0 +1,240 @@
+package dms.ep.epscsbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+import org.apache.commons.logging.Log;
+
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [DU]일반감정상담관리</li>
+ * <li>설  명 : <pre>[DU]일반감정상담관리</pre></li>
+ * <li>작성일 : 2015-08-31 11:01:22</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ *
+ * @author 김상오 (myneti99)
+ */
+public class DEPCnslMgmt extends fwk.base.DataUnit {
+	
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DEPCnslMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>[DM]상담대상목록조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-31 11:01:22
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dInqCnslObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+	    try {       
+	    	IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+	    	
+	    	// 1.쿼리문 호출
+	    	IRecord record  = null; 
+	    	
+	    	reqDs.putField("DPSTR_ENPT", HpcUtils.encodeByAES(reqDs.getField("DPSTR")));
+	    	
+	    	if("CO".equals(requestData.getField("SR_GUBUN_1")) )
+	    		record  = dbSelectSingle("DEPCnslMgmt.SInqCnslObjListTotCnt", reqDs, onlineCtx);
+	    	else if("SM".equals(requestData.getField("SR_GUBUN_1")) )
+	    		record  = dbSelectSingle("DEPCnslMgmt.SInqCnclSMSListTotCnt", reqDs, onlineCtx);
+	    	
+	    	reqDs.putField("TOTAL_CNT", record.get("TOTAL_CNT"));
+	    	int intTotalCnt = Integer.parseInt(record.get("TOTAL_CNT"));  
+	    	PagenateUtils.setPagenatedParamsToDataSet(reqDs);	//카운트 셋
+	    	
+	    	
+	    	IRecordSet rsPagingList  = null;
+	    	if("CO".equals(requestData.getField("SR_GUBUN_1")) )
+	    		rsPagingList  = dbSelect("DEPCnslMgmt.SInqCnslObListPaging", reqDs, onlineCtx);
+	    	else if("SM".equals(requestData.getField("SR_GUBUN_1")) )
+	    		rsPagingList  = dbSelect("DEPCnslMgmt.SInqCnclSMSListPaging", reqDs, onlineCtx);
+	    	
+	    	// 2.결과값 셋팅
+            responseData.putRecordSet("RS_CNSL_OBJ_LIST", rsPagingList);
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);	//리스트 셋
+			
+            
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]상담등록내역조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-31 11:01:22
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dInqPrchsCustRmksNo(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		Log logger = LogManager.getFwkLog();
+	    try {       
+	    	IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+	    	
+	    	IRecordSet conDtl;
+			IRecordSet conM;
+			IRecordSet prchsM;
+			Map mPrchs = null;
+			
+//			System.out.println("data: "+requestData.getFieldMap());
+	    	// 1.쿼리문 호출
+	    	prchsM  = dbSelect("DEPCnslMgmt.SInqPrchsMgmtCheck", requestData, onlineCtx);
+			
+			if (prchsM.getRecordCount() == 0) {
+				throw new BizRuntimeException("DMS00105");//상담대상이 아닙니다. 진행상태를 확인하세요.
+			}
+	    		    	
+			conM = dbSelect("DEPCnslMgmt.SInqPrchsMgmt", requestData ,onlineCtx);
+			mPrchs = conM.getRecordMap(0);
+			conDtl = dbSelect("DEPCnslMgmt.SInqPrchsDtl", mPrchs,onlineCtx);
+
+			IRecordSet color = dbSelect("DEPCnslMgmt.SInqEqpColorList", mPrchs,onlineCtx);
+			IRecordSet prod = dbSelect("DEPCnslMgmt.SInqEqpMgmt", mPrchs,onlineCtx);
+			IRecordSet rate = dbSelect("DEPCnslMgmt.SInqEqpRateMgmt", mPrchs,onlineCtx);
+			IRecordSet rmks = dbSelect("DEPCnslMgmt.SInqPrchsCustRmksList", mPrchs,onlineCtx);
+//
+	    	
+//			logger.debug("\n\n>>>>>>>>>>>>>>>  \n rate : " + rate);
+	    	
+	    	// 2.결과값 셋팅
+			responseData.putRecordSet("RS_CONSULT_M", conM);
+			responseData.putRecordSet("RS_CONSULT_D", conDtl);
+			responseData.putRecordSet("RS_COLOR", color);
+			responseData.putRecordSet("RS_PROD_M", prod);
+			responseData.putRecordSet("RS_RATE", rate);
+			responseData.putRecordSet("RS_RMK_LIST", rmks);
+            
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]상담등록</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-31 11:01:22
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dMRegEqpCnsl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    
+	    /// logger
+	    Log logger = LogManager.getFwkLog();
+	    logger.debug("\n\n >>>>>>>>>>>>>>  로그로그 \n\n");
+//	    logger.debug("\n\n >>>>>>>>>>>>>> RQ_PRCHS_CUST_RMKS:"+requestData.getRecordSet("RQ_PRCHS_CUST_RMKS"));
+//	    logger.debug("\n\n >>>>>>>>>>>>>> RQ_CONSULT_M:"+requestData.getRecordSet("RQ_CONSULT_M"));
+		IDataSet responseData = new DataSet();
+		 
+		
+	    IRecordSet mgmt = requestData.getRecordSet("RQ_CONSULT_M");
+		IRecordSet rmks = requestData.getRecordSet("RQ_PRCHS_CUST_RMKS");
+//		PRCH_MGMT_NO | PRCH_CUST_SER_NO | CUST_SUGG_DT | CUST_IDEA | CUST_IDEA_DTL | EVALCNSLR_SUGG | RMKS_CL | RETURN_CL | ncRecStatus
+		Map mRmks = null;
+		Map mMgmt = null;
+		String sSeq = "";
+		String sRmk = "";
+		if (rmks != null) {
+			mRmks = rmks.getRecordMap(0);
+			mMgmt = mgmt.getRecordMap(0);
+			mRmks.put("USER_ID", requestData.getField("USER_ID"));
+			mMgmt.put("USER_ID", requestData.getField("USER_ID"));
+			
+			
+			sSeq = (String) mRmks.get("PRCH_CUST_SER_NO");
+			sRmk = mRmks.get("RMKS_CL") == null ? "" : (String) mRmks.get("RMKS_CL");
+			
+			logger.debug("\n\n\n\n\n");
+			logger.debug(">>>>>>>>>>>>  sRmk:"+sRmk);
+			logger.debug(">>>>>>>>>>>>  sSeq:"+sSeq);
+			logger.debug(">>>>>>>>>>>>  CUST_IDEA:"+mRmks.get("CUST_IDEA"));
+			logger.debug(">>>>>>>>>>>>  CUST_IDEA_DTL:"+mRmks.get("CUST_IDEA_DTL"));
+			logger.debug("\n\n\n\n\n");
+			
+			if ("1".equals(sRmk)) {
+				dbInsert("DEPCnslMgmt.IPrchsCustRmksOnly", mRmks, onlineCtx);//CSTADV01100.addPrchsCustRmksOnly
+			} else {
+				//암호화 필드 처리 
+				//HpcUtils.encodeByAES(plainText);
+				
+				mMgmt.put("CTZ_NO_ENPT", HpcUtils.encodeByAES(mMgmt.get("CTZ_NO").toString()));
+				mMgmt.put("CTZ_NO", HpcUtils.maskingJuminNo(mMgmt.get("CTZ_NO").toString()));
+				
+				mMgmt.put("DPSTR_ENPT", HpcUtils.encodeByAES(mMgmt.get("DPSTR").toString()));
+				mMgmt.put("DPSTR", HpcUtils.maskingName(mMgmt.get("DPSTR").toString()));
+				
+				mMgmt.put("ACCO_NO_ENPT", HpcUtils.encodeByAES(mMgmt.get("ACCO_NO").toString()));
+				mMgmt.put("ACCO_NO", HpcUtils.maskingName(mMgmt.get("ACCO_NO").toString()));
+				
+				mMgmt.put("ADDR_ENPT", HpcUtils.encodeByAES(mMgmt.get("ADDR").toString()));
+				mMgmt.put("ADDR", HpcUtils.maskingAddress(mMgmt.get("ADDR").toString()));
+				
+				mMgmt.put("ETC_ADDR_ENPT", HpcUtils.encodeByAES(mMgmt.get("ETC_ADDR").toString()));
+				mMgmt.put("ETC_ADDR", HpcUtils.maskingAddrDtl(mMgmt.get("ETC_ADDR").toString()));
+				
+				mMgmt.put("SVC_NO_ENPT", HpcUtils.encodeByAES(mMgmt.get("SVC_NO").toString()));
+				mMgmt.put("SVC_NO", HpcUtils.maskingTelNo(mMgmt.get("SVC_NO").toString()));
+				
+				mMgmt.put("TEL_NO_ENPT", HpcUtils.encodeByAES(mMgmt.get("TEL_NO").toString()));
+				mMgmt.put("TEL_NO", HpcUtils.maskingTelNo(mMgmt.get("TEL_NO").toString()));
+				
+				
+				if (sSeq == null || sSeq.equals("")) {
+					
+					dbInsert("DEPCnslMgmt.IPrchsCustRmks", mRmks, onlineCtx);  //TCST_PRCHS_CUST_RMKS
+					dbUpdate("DEPCnslMgmt.UPrchsMgmtCustPrc", mRmks, onlineCtx); //CSTADV01100.updatePrchsCustPrc TCST_PRCHS_MGMT
+					dbUpdate("DEPCnslMgmt.UPrchsMgmtCust", mMgmt, onlineCtx); //DEPCnslMgmt.UPrchsMgmtCust TCST_PRCHS_MGMT
+				} else {
+					dbUpdate("DEPCnslMgmt.UPrchsCustRmks", mRmks, onlineCtx); //CSTADV01100.updatePrchsCustRmks TCST_PRCHS_CUST_RMKS
+					dbUpdate("DEPCnslMgmt.UPrchsMgmtCust", mMgmt, onlineCtx);     //CSTADV00200.updatePrchsCust TCST_PRCHS_MGMT
+					if (mRmks.get("CUST_IDEA").toString().equals("28") 
+							|| mRmks.get("CUST_IDEA_DTL").toString().equals("24") || mRmks.get("CUST_IDEA_DTL").toString().equals("27")) {
+						dbUpdate("DEPCnslMgmt.UPrchsMgmtRetCL", mRmks,onlineCtx); //UPDATE TCST_PRCHS_MGMT
+					}
+				}
+			}
+		}
+
+		
+	    return responseData;
+	}
+  
+}

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR003">
+	<select id="SEqpRentalPoly" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR003.SEqpRentalPoly 단말기정책정보조회 */
+/* IO: 안진갑,2015-10-27T11:25:40(이민재,2015-08-04T16:41:12) */
+SELECT  RENTAL_POLY_NO AS RENTAL_PLAN_ID	          /* 렌탈정책번호 */
+       ,EQP_MDL_CD                                    /* 모델코드 */
+       ,OUT_PRC AS FST_STRD_AMT						  /* 출고가 */
+       ,RENTAL_PRN AS GROSS_RENTAL_FEE				  /* 렌탈원금 */
+       ,RENTAL_FEE AS MM_RENTAL_FEE					  /* 렌탈요금 */
+       ,CNTRT_PRD AS RENTAL_CNTRT_MTH_CNT			  /* 계약기간코드 */
+       ,RENTAL_POLY_EFF_PRD_STA_DT AS POLY_STA_DT	  /* 유효기간시작일 */
+       ,RENTAL_POLY_EFF_PRD_END_DT AS POLY_END_DT	  /* 유효기간종료일 */
+       ,'01' AS PROC_CL_CD                            /* 처리구분코드(등록) */
+  FROM  TB_RENTAL_POLY
+ WHERE  TO_CHAR(TO_DATE(RENTAL_POLY_EFF_PRD_STA_DT, 'YYYYMMDD')-2, 'YYYYMMDD') = #IF_PROC_DT#
+   AND  NVL(RENTAL_POLY_END_YN,'N')='N'
+UNION ALL
+SELECT  RENTAL_POLY_NO AS RENTAL_PLAN_ID	          /* 렌탈정책번호 */
+       ,EQP_MDL_CD                                    /* 모델코드 */ 
+       ,OUT_PRC AS FST_STRD_AMT						  /* 출고가 */
+       ,RENTAL_PRN AS GROSS_RENTAL_FEE				  /* 렌탈원금 */
+       ,RENTAL_FEE AS MM_RENTAL_FEE					  /* 렌탈요금 */
+       ,CNTRT_PRD AS RENTAL_CNTRT_MTH_CNT			  /* 계약기간코드 */
+       ,RENTAL_POLY_EFF_PRD_STA_DT AS POLY_STA_DT	  /* 유효기간시작일 */
+       ,RENTAL_POLY_EFF_PRD_END_DT AS POLY_END_DT	  /* 유효기간종료일 */
+       ,'03' AS PROC_CL_CD                            /* 처리구분코드(삭제) */
+  FROM  TB_RENTAL_POLY
+ WHERE  TO_CHAR(TO_DATE(RENTAL_POLY_EFF_PRD_END_DT, 'YYYYMMDD'), 'YYYYMMDD') = #IF_PROC_DT#
+   AND  RENTAL_POLY_END_YN='Y']]>
+	</select>
+	<insert id="IEqpRentalPoly" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR003.IEqpRentalPoly 단말기정책정보I/F저장 */
+/* IO: 안진갑,2015-10-27T11:26:48(이민재,2015-08-07T10:18:10) */
+INSERT
+  INTO  TF_RENTAL_POLY                        /* 단말기정책I/F */ 
+       (
+        IF_PROC_DT                            /* IF_처리일자 */
+       ,IF_FILE_NM                            /* IF_파일명 */
+       ,IF_SEQ                                /* IF_순번 */
+       ,PROC_CL_CD                            /* 처리구분코드 */
+       ,RENTAL_PLAN_ID                        /* 렌탈계획ID */
+       ,RENTAL_CNTRT_MTH_CNT                  /* 렌탈계약개월수 */
+       ,POLY_STA_DT                           /* 정책시작일 */
+       ,POLY_END_DT                           /* 정책종료일 */
+       ,FST_STRD_AMT                          /* 최초기준가 */
+       ,MM_RENTAL_FEE                         /* 월렌탈료 */
+       ,GROSS_RENTAL_FEE                      /* 총렌탈요금 */
+       ,EQP_MDL_CD                            /* 단말기모델코드 */
+       ,PROC_ST_CD                            /* 처리상태코드 */
+       ,FS_REG_USER_ID                        /* 최초등록사용자ID */
+       ,FS_REG_DTM                            /* 최초등록일시 */
+       ,LS_CHG_USER_ID                        /* 최종변경사용자ID */
+       ,LS_CHG_DTM                            /* 최종변경일시 */
+       )
+VALUES
+       (
+       	#IF_PROC_DT#                          /* IF_처리일자 */
+       ,#IF_FILE_NM#                          /* IF_파일명 */
+       ,#IF_SEQ#                              /* IF_순번 */
+       ,#PROC_CL_CD#                          /* 처리구분코드 */
+       ,#RENTAL_PLAN_ID#                      /* 렌탈계획ID */
+       ,#RENTAL_CNTRT_MTH_CNT#                /* 렌탈계약개월수 */
+       ,#POLY_STA_DT#                         /* 정책시작일 */
+       ,#POLY_END_DT#                         /* 정책종료일 */
+       ,#FST_STRD_AMT#                        /* 최초기준가 */
+       ,#MM_RENTAL_FEE#                       /* 월렌탈료 */
+       ,#GROSS_RENTAL_FEE#                    /* 총렌탈요금 */
+       ,#EQP_MDL_CD#                          /* 단말기모델코드 */
+       ,#PROC_ST_CD#                          /* 처리상태코드 */
+       ,'BAT'                                 /* 최초등록사용자ID */
+       ,SYSDATE                               /* 최초등록일시 */
+       ,'BAT'                                 /* 최종변경사용자ID */
+       ,SYSDATE                               /* 최종변경일시 */
+       )]]>
+	</insert>
+</sqlMap>

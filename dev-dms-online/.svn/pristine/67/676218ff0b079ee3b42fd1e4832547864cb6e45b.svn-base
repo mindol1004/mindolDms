@@ -1,0 +1,265 @@
+package dms.nr.nrsxmbase.biz;
+
+import java.util.UUID;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.data.RecordSet;
+
+import org.apache.commons.logging.Log;
+
+import com.ibm.icu.util.Calendar;
+
+import fwk.utils.SAPUtils;
+
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]ERP_PING</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-07-21 17:32:59</li>
+ * <li>작성자 : 진병수 (greatjin)</li>
+ * </ul>
+ *
+ * @author 진병수 (greatjin)
+ */
+public class FNRErpIF extends fwk.base.FunctionUnit {
+ 	enum TARGET {SCQ};
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRErpIF(){
+		super();
+	}
+
+	private static final String FUNCTION="STFC_CONNECTION";
+	private static final String I_PARAM = "REQUTEXT";
+	
+	/**
+	 *
+	 *
+	 * @author 진병수 (greatjin)
+	 * @since 2015-07-21 17:32:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqErpIFPing(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+    	IDataSet inDataSet = new DataSet();
+    	inDataSet.putField(I_PARAM, "");
+
+    	
+//    	responseData = SAPUtils.callFunction(SAPUtils.TARGET.SCQ, FUNCTION, inDataSet);
+//    	
+//    	
+//	
+//    	Log log = getLog(onlineCtx);
+//    	
+//    	log.debug("----------------------------------------------------------");
+//    	log.debug(responseData);
+//    	log.debug("----------------------------------------------------------");
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요
+    	
+	    return this.fRegSlip(requestData, onlineCtx);
+	
+//	    return responseData;
+	}
+	
+   /**
+	 *
+	 *
+	 * @author 진병수 (greatjin)
+	 * @since 2015-07-21 17:32:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+    	IDataSet inDataSet = new DataSet();
+
+    	String zserial = "DMS" + Calendar.getInstance().getTimeInMillis();
+
+    	inDataSet.putField("BLDAT","2015.06.24".trim());//증빙일(검수일)	2015.06.24
+    	inDataSet.putField("BUDAT","2015.06.29".trim());//전기일	2015.06.29        
+    	inDataSet.putField("BLART","KR        ".trim());//전표유형	KR              
+    	inDataSet.putField("BUKRS","SKCC      ".trim());//회사코드	SKCC            
+    	inDataSet.putField("WAERS","KRW       ".trim());//통화	KRW                 
+    	inDataSet.putField("WWERT","          ".trim());//환산일자	                
+    	inDataSet.putField("XBLNR","          ".trim());//참조 	                    
+    	inDataSet.putField("BKTXT","          ".trim());//헤더텍스트	추후정의      
+    	inDataSet.putField("KURSF","          ".trim());//환율	                    
+    	inDataSet.putField("TCODE","          ".trim());//트랜잭션코드	  
+
+    
+    	IRecordSet IT_ZTPS101 = new RecordSet("Z_FI_RFC_DMS_MBCREDIT_AP");
+    	IT_ZTPS101.addHeader(new RecordHeader("NEWBS".trim())); //전기키	31	40	40                                                                      
+    	IT_ZTPS101.addHeader(new RecordHeader("NEWUM".trim())); //특별 G/L지시자			                                                                    
+    	IT_ZTPS101.addHeader(new RecordHeader("NEWKO".trim())); //GL계정 및 거래처코드	4102638611(벧엘텔레콤)	217950(미수금-기타)	416101(매입부가가치세)
+    	IT_ZTPS101.addHeader(new RecordHeader("HKONT".trim())); //회계 계정코드			                                                                      
+    	IT_ZTPS101.addHeader(new RecordHeader("WRBTR".trim())); //금액 	25,932,379	23,574,890	2357489                                                   
+    	IT_ZTPS101.addHeader(new RecordHeader("DMBTR".trim())); //현지금액			                                                                          
+    	IT_ZTPS101.addHeader(new RecordHeader("MWSKZ".trim())); //세금코드	V0(매입부가세(10%)-세금계산서(일반))		V0                                    
+    	IT_ZTPS101.addHeader(new RecordHeader("WMWST".trim())); //세금금액			                                                                          
+    	IT_ZTPS101.addHeader(new RecordHeader("MWSTS".trim())); //현지세금금액			                                                                      
+    	IT_ZTPS101.addHeader(new RecordHeader("HWBAS".trim())); //과세 표준액(현지 통화)			                                                            
+    	IT_ZTPS101.addHeader(new RecordHeader("FWBAS".trim())); //과세 표준액(전표 통화) (TC)			23,574,890                                              
+    	IT_ZTPS101.addHeader(new RecordHeader("GSBER".trim())); //사업영역	5018	5018	                                                                  
+    	IT_ZTPS101.addHeader(new RecordHeader("BUPLA".trim())); //사업장(세적지)	1100	1100	1100                                                        
+    	IT_ZTPS101.addHeader(new RecordHeader("PRCTR".trim())); //손익센터			                                                                          
+    	IT_ZTPS101.addHeader(new RecordHeader("PROJK".trim())); //WBS요소(Cost code)		신규R WBS(추후 생성)	                                            
+    	IT_ZTPS101.addHeader(new RecordHeader("KOSTL".trim())); //코스트센터(Charge)			                                                                
+    	IT_ZTPS101.addHeader(new RecordHeader("AUFNR".trim())); //내부오더(Charge)			                                                                  
+    	IT_ZTPS101.addHeader(new RecordHeader("FKBER".trim())); //기능영역			                                                                          
+    	IT_ZTPS101.addHeader(new RecordHeader("EMPFB".trim())); //지급대체인	1138612053(에스케이 네트웍스㈜)-여신이 있는경우 		                        
+    	IT_ZTPS101.addHeader(new RecordHeader("ZFBDT".trim())); //기산일			                                                                            
+    	IT_ZTPS101.addHeader(new RecordHeader("ZTERM".trim())); //지급조건	A2R0(원화F/B 2차R) 		                                                        
+    	IT_ZTPS101.addHeader(new RecordHeader("ZLSCH".trim())); //지급방법	B(하나 F/B현금)-입력필드여부 세무팀 확인 필요		                              
+    	IT_ZTPS101.addHeader(new RecordHeader("ZLSPR".trim())); //지급보류	입력필드여부 세무팀 확인 필요		                                              
+    	IT_ZTPS101.addHeader(new RecordHeader("SGTXT".trim())); //텍스트 	추후정의	추후정의	                                                            
+    	IT_ZTPS101.addHeader(new RecordHeader("ZUONR".trim())); //지정필드 	22101185-D001-02	22101185-D001-02	22101185-D001-02                          
+    	IT_ZTPS101.addHeader(new RecordHeader("XREF1".trim())); //참조키1 			                                                                          
+    	IT_ZTPS101.addHeader(new RecordHeader("XREF2".trim())); //참조키2			                                                                            
+    	IT_ZTPS101.addHeader(new RecordHeader("XREF3".trim())); //참조키3			
+
+    	
+        IRecord IT_ZTPS101_RC = IT_ZTPS101.newRecord();
+        
+
+		IT_ZTPS101_RC.put("NEWBS".trim(), "31              ".trim());
+		IT_ZTPS101_RC.put("NEWUM".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("NEWKO".trim(), "4102638611      ".trim());
+		IT_ZTPS101_RC.put("HKONT".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("WRBTR".trim(), "25932379        ".trim());
+		IT_ZTPS101_RC.put("DMBTR".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("MWSKZ".trim(), "V0              ".trim());
+		IT_ZTPS101_RC.put("WMWST".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("MWSTS".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("HWBAS".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("FWBAS".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("GSBER".trim(), "5018            ".trim());
+		IT_ZTPS101_RC.put("BUPLA".trim(), "1100            ".trim());
+		IT_ZTPS101_RC.put("PRCTR".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("PROJK".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("KOSTL".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("AUFNR".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("FKBER".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("EMPFB".trim(), "1138612053      ".trim());
+		IT_ZTPS101_RC.put("ZFBDT".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("ZTERM".trim(), "A2R0            ".trim());
+		IT_ZTPS101_RC.put("ZLSCH".trim(), "B               ".trim());
+		IT_ZTPS101_RC.put("ZLSPR".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("SGTXT".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("ZUONR".trim(), "22101185-D001-02".trim());
+		IT_ZTPS101_RC.put("XREF1".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("XREF2".trim(), "                ".trim());
+		IT_ZTPS101_RC.put("XREF3".trim(), "                ".trim());
+				
+        IT_ZTPS101.addRecord(IT_ZTPS101_RC);
+        
+        
+        IT_ZTPS101_RC = IT_ZTPS101.newRecord();
+        
+
+        IT_ZTPS101_RC.put("NEWBS".trim(), "40                    ".trim());
+        IT_ZTPS101_RC.put("NEWUM".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("NEWKO".trim(), "217950                ".trim());
+        IT_ZTPS101_RC.put("HKONT".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("WRBTR".trim(), "23574890              ".trim());
+        IT_ZTPS101_RC.put("DMBTR".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("MWSKZ".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("WMWST".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("MWSTS".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("HWBAS".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("FWBAS".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("GSBER".trim(), "5018                  ".trim());
+        IT_ZTPS101_RC.put("BUPLA".trim(), "1100                  ".trim());
+        IT_ZTPS101_RC.put("PRCTR".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("PROJK".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("KOSTL".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("AUFNR".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("FKBER".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("EMPFB".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZFBDT".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZTERM".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZLSCH".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZLSPR".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("SGTXT".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZUONR".trim(), "22101185-D001-02      ".trim());
+        IT_ZTPS101_RC.put("XREF1".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("XREF2".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("XREF3".trim(), "                      ".trim());
+
+        
+        IT_ZTPS101.addRecord(IT_ZTPS101_RC);
+        
+        
+        IT_ZTPS101_RC = IT_ZTPS101.newRecord();
+        
+
+        IT_ZTPS101_RC.put("NEWBS".trim(), "40                    ".trim());
+        IT_ZTPS101_RC.put("NEWUM".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("NEWKO".trim(), "416101                ".trim());
+        IT_ZTPS101_RC.put("HKONT".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("WRBTR".trim(), "2357489               ".trim());
+        IT_ZTPS101_RC.put("DMBTR".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("MWSKZ".trim(), "V0                    ".trim());
+        IT_ZTPS101_RC.put("WMWST".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("MWSTS".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("HWBAS".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("FWBAS".trim(), "23574890              ".trim());
+        IT_ZTPS101_RC.put("GSBER".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("BUPLA".trim(), "1100                  ".trim());
+        IT_ZTPS101_RC.put("PRCTR".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("PROJK".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("KOSTL".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("AUFNR".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("FKBER".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("EMPFB".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZFBDT".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZTERM".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZLSCH".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZLSPR".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("SGTXT".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("ZUONR".trim(), "22101185-D001-02      ".trim());
+        IT_ZTPS101_RC.put("XREF1".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("XREF2".trim(), "                      ".trim());
+        IT_ZTPS101_RC.put("XREF3".trim(), "                      ".trim());
+        
+        IT_ZTPS101.addRecord(IT_ZTPS101_RC);
+        
+        inDataSet.putField("rs1", IT_ZTPS101);
+    	
+    	responseData = SAPUtils.callFunction(SAPUtils.TARGET.SCQ, "Z_FI_RFC_DMS_MBCREDIT_AP", inDataSet);
+	
+    	Log log = getLog(onlineCtx);
+    	
+    	log.debug("----------------------------------------------------------");
+    	log.debug(responseData);
+    	log.debug("----------------------------------------------------------");
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    
+	
+	    return responseData;
+	}
+	
+	
+	
+}

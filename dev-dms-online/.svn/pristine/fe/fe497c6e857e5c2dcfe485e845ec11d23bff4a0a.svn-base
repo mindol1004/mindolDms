@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DXYZTMessageTb">
+	<select id="SMsgListByPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.fwkc.fwkcsbase.db.DXYZTMessageTb.SMsgListByPaging 메시지목록조회(페이징) */
+/* IO: 임지후,2015-01-13T14:56:37(admin,2014-08-05T14:12:55) */
+SELECT *
+FROM (
+    SELECT  ROW_NUMBER() OVER (ORDER BY MESSAGE_ID ASC) AS ROWNO
+           ,LOCALE_XD 
+           ,MESSAGE_ID 
+           ,MESSAGE_NAME 
+           ,MESSAGE_REASON 
+           ,MESSAGE_TYPE_XD 
+           ,MESSAGE_REMARK 
+           ,BIZ_GROUP_XD 
+           ,FS_REG_USER_ID 
+           ,FS_REG_DTM 
+           ,LS_CHG_USER_ID 
+           ,LS_CHG_DTM 
+      FROM  SKF_MESSAGE
+     WHERE  LOCALE_XD=#LOCALE_XD#
+]]><isNotEmpty prepend="AND" property="MESSAGE_ID"><![CDATA[          
+             MESSAGE_ID LIKE '%'||#MESSAGE_ID#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="MESSAGE_NAME"><![CDATA[
+             MESSAGE_NAME LIKE '%'||#MESSAGE_NAME#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="MESSAGE_TYPE_XD" compareValue="%"><![CDATA[
+			 MESSAGE_TYPE_XD = #MESSAGE_TYPE_XD#
+]]></isNotEqual><![CDATA[
+) A
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<update id="UMsgInfo" parameterClass="map" ><![CDATA[/* Biz: dms.fw.fwsbase.db.DXYZTMessageTb.UMsgInfo 메시지 수정 */
+/* IO: admin,2015-06-30T10:55:17(admin,2014-08-05T16:28:03) */
+UPDATE  SKF_MESSAGE
+   SET  
+       MESSAGE_NAME    = #MESSAGE_NAME#    /* 메시지 Name */ 	
+      ,MESSAGE_REASON  = #MESSAGE_REASON#  /* 메시지 설명 */ 	
+      ,MESSAGE_TYPE_XD = #MESSAGE_TYPE_XD# /* 메시지 타입 */ 	
+      ,MESSAGE_REMARK  = #MESSAGE_REMARK#  /* 메시지 약어 */
+      ,BIZ_GROUP_XD    = 'dms'
+      ,LS_CHG_USER_ID  = #USER_NO#
+      ,LS_CHG_DTM      = SYSTIMESTAMP
+WHERE  LOCALE_XD   = #LOCALE_XD#	
+  AND  MESSAGE_ID  = #MESSAGE_ID#]]>
+	</update>
+	<insert id="IMsgInfo" parameterClass="map" ><![CDATA[/* Biz: dms.fw.fwsbase.db.DXYZTMessageTb.IMsgInfo 메시지 등록 */
+/* IO: admin,2015-06-30T10:55:13(admin,2014-08-05T16:29:34) */
+INSERT
+  INTO  SKF_MESSAGE
+        (LOCALE_XD          /* 로케일코드 */ 	
+        , MESSAGE_ID        /* 메시지 ID */ 	
+        , MESSAGE_NAME      /* 메시지 Name */ 	
+        , MESSAGE_REASON    /* 메시지 설명 */ 	
+        , MESSAGE_TYPE_XD   /* 메시지 타입 */ 	
+        , MESSAGE_REMARK    /* 메시지 약어 */ 	
+        , BIZ_GROUP_XD      /* 업무그룹코드 */ 
+        , FS_REG_USER_ID    /* 최초등록자ID */
+        , FS_REG_DTM	    /* 최초등록일 */
+        , LS_CHG_USER_ID	/* 수정자ID */
+        , LS_CHG_DTM	    /* 수정일 */
+        )	
+VALUES  
+        ( #LOCALE_XD#	
+        , #MESSAGE_ID_NEW#
+        , #MESSAGE_NAME# 	
+        , #MESSAGE_REASON# 	
+        , #MESSAGE_TYPE_XD# 	
+        , #MESSAGE_REMARK#  	
+        , 'dms'
+        , #USER_NO#
+        , SYSTIMESTAMP
+        , #USER_NO#
+        , SYSTIMESTAMP
+        )]]>
+	</insert>
+	<delete id="DMsgInfo" parameterClass="map" ><![CDATA[/* Biz: hpc.fwkc.fwkcsbase.db.DXYZTMessageTb.DMsgInfo 메시지 삭제 */
+/* IO: admin,2014-09-19T16:38:48(admin,2014-08-05T16:34:04) */
+DELETE
+  FROM  SKF_MESSAGE
+ WHERE  LOCALE_XD = #LOCALE_XD# /* 로케일코드 */ 	
+   AND  MESSAGE_ID = #MESSAGE_ID# /* 메시지 ID */]]>
+	</delete>
+	<select id="SMsgInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.fwkc.fwkcsbase.db.DXYZTMessageTb.SMsgInfo 메시지 조회 */
+/* IO: admin,2014-09-19T16:37:47(admin,2014-08-05T16:39:24) */
+SELECT
+        a.LOCALE_XD /* 로케일코드 */ 	
+     ,  a.MESSAGE_ID  /* 메시지 ID */ 	
+     ,  a.MESSAGE_NAME /* 메시지 Name */ 	
+     ,  a.MESSAGE_REASON  /* 메시지 설명 */ 	
+     ,  a.MESSAGE_TYPE_XD /* 메시지 타입 */ 	
+     ,  a.MESSAGE_REMARK  /* 메시지 약어 */ 	
+     ,  a.BIZ_GROUP_XD /* 업무그룹코드 */ 
+     ,  a.FS_REG_USER_ID 
+	 ,  a.FS_REG_DTM 
+	 ,  a.LS_CHG_USER_ID 
+	 ,  a.LS_CHG_DTM 
+  FROM  SKF_MESSAGE a
+ WHERE  a.LOCALE_XD = #LOCALE_XD#	
+   AND  a.MESSAGE_ID = #MESSAGE_ID#	
+]]><isNotEmpty prepend="AND" property="MESSAGE_NAME"><![CDATA[
+	a.MESSAGE_NAME = #MESSAGE_NAME#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SMsgCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.fwkc.fwkcsbase.db.DXYZTMessageTb.SMsgCnt 메시지 전체건수조회 */
+/* IO: 심상준,2014-10-07T09:30:46(admin,2014-08-06T13:46:46) */
+SELECT COUNT(*) AS msgTotalCnt
+  FROM  SKF_MESSAGE
+WHERE LOCALE_XD=#LOCALE_XD#  
+]]><isNotEmpty prepend="AND" property="MESSAGE_ID"><![CDATA[          
+             MESSAGE_ID LIKE '%'||#MESSAGE_ID#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="MESSAGE_NAME"><![CDATA[
+             MESSAGE_NAME LIKE '%'||#MESSAGE_NAME#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="MESSAGE_TYPE_XD" compareValue="%"><![CDATA[
+			 MESSAGE_TYPE_XD = #MESSAGE_TYPE_XD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SAllMsgList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.fwkc.fwkcsbase.db.DXYZTMessageTb.SAllMsgList 메시지목록조회(전체) */
+/* IO: admin,2014-09-23T17:03:02(admin,2014-08-06T17:24:10) */
+SELECT     LOCALE_XD 
+          ,MESSAGE_ID 
+          ,MESSAGE_NAME
+          ,MESSAGE_REASON 
+          ,MESSAGE_TYPE_XD 
+          ,MESSAGE_REMARK 
+          ,BIZ_GROUP_XD 
+          ,FS_REG_USER_ID 
+          ,FS_REG_DTM 
+          ,LS_CHG_USER_ID 
+          ,LS_CHG_DTM 
+FROM SKF_MESSAGE
+WHERE LOCALE_XD=#LOCALE_XD#]]>
+	</select>
+	<select id="SExistMsgId" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.fwkc.fwkcsbase.db.DXYZTMessageTb.SExistMsgId 메시지 저장 사전체크 */
+/* IO: admin,2014-09-19T16:38:24(심상준,2014-08-29T15:39:25) */
+SELECT  COUNT(1) AS ROW_CNT
+  FROM  SKF_MESSAGE
+ WHERE  1=1
+     ]]><isNotEmpty prepend="AND" property="MESSAGE_ID"><![CDATA[          
+             MESSAGE_ID=#MESSAGE_ID#
+     ]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SNewMsgId" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.fwkc.fwkcsbase.db.DXYZTMessageTb.SNewMsgId 메세지ID채번 */
+/* IO: 임지후,2015-01-14T13:40:24(임지후,2015-01-14T13:40:24) */
+SELECT 
+	   'DMS'||LPAD(TO_CHAR(NVL(MAX(SUBSTR(MESSAGE_ID,4,8)),0)+ 1),5,0) AS MESSAGE_ID_NEW 
+  FROM  SKF_MESSAGE    
+ WHERE  MESSAGE_ID LIKE 'DMS%' ]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,198 @@
+package dms.nr.nrbfxbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]FPA잔존가관리</li>
+ * <li>설  명 : <pre>[PU]FPA잔존가관리</pre></li>
+ * <li>작성일 : 2015-10-15 13:30:15</li>
+ * <li>작성자 : 문재웅 (jaiwoong)</li>
+ * </ul>
+ *
+ * @author 문재웅 (jaiwoong)
+ */
+public class PNRFpaRemprcMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRFpaRemprcMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]FPA잔존가모델조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-15 13:30:15
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [단말기코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FPA_REMPRC_EQP_MDL_LIST
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : MFACT_CD [생산업체코드]
+	 *		- field : LAUNC_DT [출시 일자]
+	 *		- field : OUT_PRC [출고 가격]
+	 *		- field : PET_NM [펫명]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : ESI_USE_YN [단말기기준정보사용여부]
+	 *		- field : MDL_NO [모델번호]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : EQP_REMPRC_RMK [단말기잔존가비고]
+	 * </pre>
+	 */
+	public IDataSet pFpaRemprcEqpMdlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSFXBase", "fFpaRemprcEqpMdlLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]FPA잔존가조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-15 13:30:15
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD_M [단말기코드]
+	 *	- field : CAPA_CD [용량코드]
+	 *	- field : OP_CL_CD [업무구분코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FPA_REMPRC_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : REMPRC_STRD_MM_CD [잔존가기준월코드]
+	 *		- field : REMPRC_STRD_MM_NM [잔존가기준월]
+	 *		- field : MM_12 [월12]
+	 *		- field : MM_13 [월13]
+	 *		- field : MM_14 [월14]
+	 *		- field : MM_15 [월15]
+	 *		- field : MM_16 [월16]
+	 *		- field : MM_17 [월17]
+	 *		- field : MM_18 [월18]
+	 *		- field : MM_19 [월19]
+	 *		- field : MM_20 [월20]
+	 *		- field : MM_21 [월21]
+	 *		- field : MM_22 [월22]
+	 *		- field : MM_23 [월23]
+	 *		- field : EQP_REMPRC_RMK [단말기잔존가비고]
+	 * </pre>
+	 */
+	public IDataSet pFpaRemprcLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSFXBase", "fFpaRemprcLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]FPA잔존가 등록/수정</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-15 13:30:15
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_REMPRC_LIST
+	 *		- field : REMPRC_STRD_MM [잔존가기준월]
+	 *		- field : MM_11 [월11]
+	 *		- field : MM_12 [월12]
+	 *		- field : MM_13 [월13]
+	 *		- field : MM_14 [월14]
+	 *		- field : MM_15 [월15]
+	 *		- field : MM_16 [월16]
+	 *		- field : MM_17 [월17]
+	 *		- field : MM_18 [월18]
+	 *		- field : MM_19 [월19]
+	 *		- field : MM_20 [월20]
+	 *		- field : MM_21 [월21]
+	 *		- field : MM_22 [월22]
+	 *		- field : MM_23 [월23]
+	 *	- field : EQP_MDL_CD_M [단말기모델코드]
+	 *	- field : CAPA_CD [용량코드]
+	 *	- field : OP_CL_CD [업무구분코드]
+	 *	- field : EQP_REMPRC_RMK [비고]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveFpaRemprc(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            // 1. 입력 RS설정
+            IRecordSet rs = requestData.getRecordSet("RS_REMPRC_LIST");
+            requestData.putField("USER_NO", ca.getUserNo());
+            
+            // 2. 레코드셋 상태에 따른 분기
+            if ( "I".equals(ca.getTrnPtrnDvcd()) || "U".equals(ca.getTrnPtrnDvcd()) ) { // INSERT OR UPDATE
+                callSharedBizComponentByDirect("nr.NRSFXBase", "fFpaRemprcSave", requestData, onlineCtx);
+            }
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        
+        return responseData;
+    }
+  
+}

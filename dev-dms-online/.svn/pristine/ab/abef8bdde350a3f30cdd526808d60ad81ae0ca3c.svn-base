@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRPrchInfoMgmt">
+	<select id="SPrchInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRPrchInfoMgmt.SPrchInfoLstPaging 매입정보 페이징 조회 */
+/* IO: 박홍서,2015-07-24T15:47:07(이민재,2015-07-17T15:45:08) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.AGN_CD ASC, A.CNTRT_DTM DESC) AS ROWNO
+              , A.SVC_MGMT_NO
+              , A.AGN_CD
+              , F.DEAL_CO_NM AS AGN_NM
+              , F.SEQ AS AGN_SEQ
+              , B.EQP_MDL_CD
+              , C.EQP_MDL_NM
+              , A.COLOR_CD
+              , A.PET_NM
+              , A.CNTRT_DTM
+              , E.PRCH_AMT
+              , 0 AS FPA_AMT
+              , A.FS_REG_USER_ID
+              , A.FS_REG_DTM
+              , A.LS_CHG_USER_ID
+              , A.LS_CHG_DTM
+          FROM  TB_NR_CNTRT A
+              , TB_RENTPHON_CNTRT B
+              , TB_EQP_MDL C
+              , TB_EQP_CNTRT D
+              , TB_EQP_ASSET E
+              , TB_DEAL_CO F
+         WHERE  A.CNTRT_DTM BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+           AND  A.CNTRT_NO = B.CNTRT_NO
+           AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+           AND  A.CNTRT_NO = D.CNTRT_NO
+           AND  D.ASSET_NO = E.ASSET_NO
+           AND  A.AGN_CD = F.DEAL_CO_CD
+           AND  A.CNTRT_DTM BETWEEN F.EFF_STA_DTM AND F.EFF_STA_DTM
+           AND  F.DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+                F.DEAL_CO_NM LIKE '%'||#AGN_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+                C.EQP_MDL_NM LIKE '%'||#EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SPrchInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRPrchInfoMgmt.SPrchInfoTotCnt 매입정보 총건수 조회 */
+/* IO: 박홍서,2015-07-24T15:36:44(이민재,2015-07-17T15:45:29) */
+SELECT  COUNT(1) AS TOTAL_CNT
+      , NVL(SUM(E.PRCH_AMT),0) AS SUM_PRC
+  FROM  TB_NR_CNTRT A
+      , TB_RENTPHON_CNTRT B
+      , TB_EQP_MDL C
+      , TB_EQP_CNTRT D
+      , TB_EQP_ASSET E
+      , TB_DEAL_CO F
+ WHERE  A.CNTRT_DTM BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+   AND  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  D.ASSET_NO = E.ASSET_NO
+   AND  A.AGN_CD = F.DEAL_CO_CD
+   AND  A.CNTRT_DTM BETWEEN F.EFF_STA_DTM AND F.EFF_STA_DTM
+   AND  F.DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+        F.DEAL_CO_NM LIKE '%'||#AGN_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+        C.EQP_MDL_NM LIKE '%'||#EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SPrchInfoDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRPrchInfoMgmt.SPrchInfoDtl 매입정보상세조회 */
+/* IO: 이민재,2015-07-17T15:45:46(이민재,2015-07-17T15:45:46) */]]>
+	</select>
+	<select id="SPrchInfoLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRPrchInfoMgmt.SPrchInfoLst 매입정보 리스트 조회 */
+/* IO: 박홍서,2015-07-24T15:48:39(박홍서,2015-07-24T15:16:34) */
+SELECT  A.SVC_MGMT_NO
+      , A.AGN_CD
+      , F.DEAL_CO_NM AS AGN_NM
+      , F.SEQ AS AGN_SEQ
+      , B.EQP_MDL_CD
+      , C.EQP_MDL_NM
+      , A.COLOR_CD
+      , A.PET_NM
+      , A.CNTRT_DTM
+      , E.PRCH_AMT
+      , 0 AS FPA_AMT
+      , A.FS_REG_USER_ID
+      , A.FS_REG_DTM
+      , A.LS_CHG_USER_ID
+      , A.LS_CHG_DTM
+  FROM  TB_NR_CNTRT A
+      , TB_RENTPHON_CNTRT B
+      , TB_EQP_MDL C
+      , TB_EQP_CNTRT D
+      , TB_EQP_ASSET E
+      , TB_DEAL_CO F
+ WHERE  A.CNTRT_DTM BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+   AND  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  D.ASSET_NO = E.ASSET_NO
+   AND  A.AGN_CD = F.DEAL_CO_CD
+   AND  A.CNTRT_DTM BETWEEN F.EFF_STA_DTM AND F.EFF_STA_DTM
+   AND  F.DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+        F.DEAL_CO_NM LIKE '%'||#AGN_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+        C.EQP_MDL_NM LIKE '%'||#EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+ ORDER BY A.AGN_CD ASC, A.CNTRT_DTM DESC]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCmpPolyMgmt">
+	<select id="SCmpPolyLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpPolyMgmt.SCmpPolyLstPaging 손해배상금정책 조회 */
+/* IO: 안진갑,2015-07-16T20:58:39(안진갑,2015-07-10T09:51:42) */
+SELECT  *
+  FROM (
+		SELECT  ROW_NUMBER() OVER(ORDER BY A.DMG_CMP_AMT_POLY_NO DESC) AS ROWNO 
+		       ,A.DMG_CMP_AMT_POLY_NO
+       		   ,A.OP_CL_CD
+		       ,A.EQP_MDL_CD
+               ,B.EQP_MDL_NM
+               ,A.UNRTN
+               ,A.EFF_PRD_FR_DT
+               ,A.EFF_PRD_TO_DT
+               ,TO_CHAR(A.FS_REG_DTM, 'YYYYMMDD') AS FS_REG_DT
+          FROM  TB_DMG_CMP_POLY A
+               ,TB_EQP_MDL B      
+         WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+           AND  A.OP_CL_CD = #OP_CL_CD#        
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+		        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EFF_PRD_FR_DT" prepend="AND"><![CDATA[
+		        A.EFF_PRD_FR_DT BETWEEN #EFF_PRD_FR_DT# AND #EFF_PRD_TO_DT# 
+]]></isNotEmpty><![CDATA[		 
+        ) PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCmpPolyTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrbplbase.db.DNRCmpPolyMgmt.SCmpPolyTotCnt 손해배상금정책 총 건수 */
+/* IO: 안진갑,2015-07-16T08:54:19(안진갑,2015-07-10T09:52:16) */
+SELECT COUNT(DMG_CMP_AMT_POLY_NO) AS TOTAL_CNT
+  FROM (
+		 SELECT  DMG_CMP_AMT_POLY_NO
+  	       FROM TB_DMG_CMP_POLY A
+          WHERE  A.OP_CL_CD = #OP_CL_CD#
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+		         A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EFF_PRD_FR_DT" prepend="AND"><![CDATA[
+		         A.EFF_PRD_FR_DT BETWEEN #EFF_PRD_FR_DT# AND #EFF_PRD_TO_DT#
+]]></isNotEmpty><![CDATA[
+          GROUP BY DMG_CMP_AMT_POLY_NO, OP_CL_CD, EFF_PRD_FR_DT, EFF_PRD_TO_DT
+       )]]>
+	</select>
+	<insert id="ICmpPoly" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpPolyMgmt.ICmpPoly 손해배상금정책 등록 */
+/* IO: 안진갑,2015-07-16T20:29:05(안진갑,2015-07-10T09:53:00) */
+INSERT  INTO TB_DMG_CMP_POLY
+(
+  EQP_MDL_CD
+  ,DMG_CMP_AMT_POLY_NO
+  ,EFF_PRD_FR_DT
+  ,EFF_PRD_TO_DT
+  ,OP_CL_CD
+  ,UNRTN
+  ,FS_REG_USER_ID
+  ,LS_CHG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_DTM
+)
+VALUES
+(
+  #EQP_MDL_CD#
+  ,#DMG_CMP_AMT_POLY_NO#
+  ,#EFF_PRD_FR_DT#
+  ,#EFF_PRD_TO_DT#
+  ,#OP_CL_CD#
+  ,#UNRTN#
+  ,#USER_NO#
+  ,#USER_NO#
+  ,SYSDATE
+  ,SYSDATE
+)]]>
+	</insert>
+	<update id="UCmpPoly" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpPolyMgmt.UCmpPoly 손해배상금정책 수정 */
+/* IO: 안진갑,2015-07-17T14:25:42(안진갑,2015-07-10T09:53:25) */
+UPDATE  TB_DMG_CMP_POLY
+   SET  EFF_PRD_FR_DT = #EFF_PRD_FR_DT#
+        ,EFF_PRD_TO_DT = #EFF_PRD_TO_DT#
+        ,OP_CL_CD      = #OP_CL_CD#
+        ,UNRTN         = #UNRTN#
+		,LS_CHG_USER_ID = #USER_NO#
+		,LS_CHG_DTM     = SYSDATE           
+ WHERE  DMG_CMP_AMT_POLY_NO= #DMG_CMP_AMT_POLY_NO#]]>
+	</update>
+	<select id="SEqpConsPen" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrbplbase.db.DNRCmpPolyMgmt.SEqpConsPen 단말기점검항목 조회 */
+/* IO: 안진갑,2015-07-16T09:59:10(안진갑,2015-07-13T12:38:32) */
+SELECT  * 
+  FROM (
+        SELECT  (SELECT SUP_CM_CD_ID FROM TB_CM_CD WHERE CM_GRP_CD_ID = A.SUP_CM_GRP_CD_ID AND CM_CD_ID = A.SUP_CM_CD_ID AND ROWNUM = 1) AS INSP_CL_CD
+               ,SUP_CM_CD_ID AS INSP_ITM_CD                                                                                           
+               ,CM_CD_ID     AS INSP_DRL_ITM_CD
+          FROM  TB_CM_CD A
+         WHERE  1=1
+         START  WITH CM_GRP_CD_ID = 'DMS105'
+       CONNECT  BY PRIOR CM_GRP_CD_ID = SUP_CM_GRP_CD_ID
+           AND  PRIOR CM_CD_ID = SUP_CM_CD_ID
+         ORDER  BY  CM_GRP_CD_ID,CM_CD_ID
+       ) CD
+ WHERE  INSP_CL_CD IS NOT NULL]]>
+	</select>
+	<select id="SCmpPolyNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrbplbase.db.DNRCmpPolyMgmt.SCmpPolyNo 손해배상금정책번호 채번 */
+/* IO: 안진갑,2015-07-16T10:49:02(안진갑,2015-07-14T16:04:32) */
+SELECT  'CP'||LPAD(SQ01_TB_DMG_CMP_POLY.NEXTVAL,10,0) AS DMG_CMP_AMT_POLY_NO
+  FROM  DUAL]]>
+	</select>
+	<select id="SCmpPolyDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpPolyMgmt.SCmpPolyDtl 손해배상금상세 조회 */
+/* IO: 안진갑,2015-07-17T14:22:48(안진갑,2015-07-16T10:48:08) */
+WITH INSP AS (
+                 SELECT  * 
+                   FROM (
+                         SELECT  (SELECT SUP_CM_CD_ID FROM TB_CM_CD WHERE CM_GRP_CD_ID = A.SUP_CM_GRP_CD_ID AND CM_CD_ID = A.SUP_CM_CD_ID AND ROWNUM = 1) AS INSP_CL_CD
+                                ,SUP_CM_CD_ID AS INSP_ITM_CD                                                                                           
+                                ,CM_CD_ID     AS INSP_DRL_ITM_CD
+                           FROM  TB_CM_CD A
+                          WHERE  1=1
+                          START  WITH CM_GRP_CD_ID = 'DMS105'
+                        CONNECT  BY PRIOR CM_GRP_CD_ID = SUP_CM_GRP_CD_ID
+                            AND  PRIOR CM_CD_ID = SUP_CM_CD_ID
+                  ORDER  BY  CM_GRP_CD_ID,CM_CD_ID
+                        ) CD
+                  WHERE  INSP_CL_CD IS NOT NULL
+                )
+SELECT   A.DMG_CMP_AMT_POLY_NO
+        ,B.INSP_CL_CD
+        ,B.INSP_ITM_CD
+        ,A.INSP_DRL_ITM_CD
+        ,A.INDF_AMT
+        ,A.RMK
+        ,A.USE_YN
+  FROM  TB_DMG_CMP_POLY_DTL_ITM A
+        , INSP B
+ WHERE  A.INSP_DRL_ITM_CD = B.INSP_DRL_ITM_CD
+   AND  A.DMG_CMP_AMT_POLY_NO = #DMG_CMP_AMT_POLY_NO#
+ ORDER  BY INSP_DRL_ITM_CD]]>
+	</select>
+	<insert id="ICmpPolyDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpPolyMgmt.ICmpPolyDtl 손해배상금정책등록 */
+/* IO: 안진갑,2015-07-17T14:01:35(안진갑,2015-07-16T18:32:21) */
+INSERT  INTO TB_DMG_CMP_POLY_DTL_ITM
+(
+  DMG_CMP_AMT_POLY_NO
+  ,INSP_DRL_ITM_CD
+  ,INDF_AMT
+  ,USE_YN
+  ,RMK
+  ,FS_REG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_USER_ID
+  ,LS_CHG_DTM
+)
+SELECT  #DMG_CMP_AMT_POLY_NO#
+       ,#INSP_DRL_ITM_CD#
+       ,#INDF_AMT#
+       ,#USE_YN#
+       ,#RMK#
+       ,#USER_NO#
+       ,SYSDATE
+       ,#USER_NO#
+       ,SYSDATE
+  FROM DUAL]]>
+	</insert>
+	<update id="UCmpPolyDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpPolyMgmt.UCmpPolyDtl 손해배상금정책상세 등록 */
+/* IO: 안진갑,2015-07-17T14:28:23(안진갑,2015-07-17T10:12:18) */
+UPDATE  TB_DMG_CMP_POLY_DTL_ITM
+   SET  INDF_AMT       = #INDF_AMT#
+        ,USE_YN         = #USE_YN#
+        ,RMK            = #RMK#
+		,LS_CHG_USER_ID = #USER_NO#
+		,LS_CHG_DTM     = SYSDATE   
+ WHERE  DMG_CMP_AMT_POLY_NO = #DMG_CMP_AMT_POLY_NO#
+   AND  INSP_DRL_ITM_CD = #INSP_DRL_ITM_CD#]]>
+	</update>
+	<update id="UPreCmpPoly" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpPolyMgmt.UPreCmpPoly 이전정책종료일 변경 */
+/* IO: 안진갑,2015-07-17T14:10:12(안진갑,2015-07-17T11:18:26) */
+UPDATE  TB_DMG_CMP_POLY
+   SET  EFF_PRD_TO_DT = TO_CHAR(TO_DATE(#EFF_PRD_FR_DT#, 'YYYYMMDD')-1, 'YYYYMMDD')
+ WHERE  DMG_CMP_AMT_POLY_NO = (SELECT MAX(DMG_CMP_AMT_POLY_NO)
+                                 FROM TB_DMG_CMP_POLY
+                                WHERE EQP_MDL_CD = #EQP_MDL_CD#
+                                  AND DMG_CMP_AMT_POLY_NO < #DMG_CMP_AMT_POLY_NO#)]]>
+	</update>
+	<select id="SChkDupFrDt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpPolyMgmt.SChkDupFrDt 손해배상금유효시작일 중복체크 */
+/* IO: 안진갑,2015-07-17T18:14:04(안진갑,2015-07-17T18:01:41) */
+SELECT  COUNT(1) AS DUP_CNT
+  FROM  TB_DMG_CMP_POLY
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EFF_PRD_FR_DT >= #EFF_PRD_FR_DT#]]>
+	</select>
+</sqlMap>

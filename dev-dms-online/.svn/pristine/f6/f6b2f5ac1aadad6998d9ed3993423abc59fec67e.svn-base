@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRRCmcProcRgstMgmt">
+	<select id="SRCmcProcRgstLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.SRCmcProcRgstLstPaging 재상품화처리조회목록 */
+/* IO: 박민정,2015-08-10T16:58:37(박민정,2015-08-04T11:15:24) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.ASSET_NO DESC) AS ROWNO
+                ,B.EQP_IN_DT AS IN_DT             /*단말기입고일자*/
+                ,A.ASSET_NO                       /*자산번호*/
+                ,A.EQP_MDL_CD                     /*단말기모델코드*/
+                ,E.EQP_MDL_NM                     /*단말기모델*/
+                ,A.EQP_COLOR_CD                   /*단말기색상코드*/
+                ,A.EQP_SER_NUM                    /*단말기일련번호*/
+                ,A.EQP_IMEI_NUM                   /*단말기IMEI번호*/
+                ,A.BOX_NO                         /*BOX NO*/
+                ,A.EQP_PRCH_AMT AS PRCH_AMT       /*단말기매입금액*/
+                ,C.EQP_JDG_DT                     /*단말기감정일자*/
+                ,C.EQP_JDG_RSLT_CD                /*단말기감정결과코드*/
+                ,C.JDG_APRV_YN                    /*감정승인여부*/
+                ,C.JDG_CHRGR_NO                   /*감정담당자번호*/
+                ,C.JDG_APRV_DT                    /*감정승인일자*/
+                ,C.EQP_JDG_SEQ                    /*단말기감정순번*/
+                ,C.EQP_RE_CMC_YN                  /*재상품화여부*/   
+                ,B.IN_PLC_CD                      /*입고처코드*/
+                ,D.DEAL_CO_NM                     /*입고처명*/
+                ,G.LS_CHG_USER_ID
+                ,U.USER_NM AS CMPT_OUT_NM         /*재상품화처리자*/
+           FROM  TB_EQP_ASSET A                   /*단말기 자산*/
+                ,TB_EQP_IN B                      /*단말기입고*/
+                ,TB_EQP_JDG C                     /*단말기감정*/
+                ,TB_EQP_MDL E                     /*단말기모델*/
+                ,TB_DEAL_CO D                     /*거래처*/
+                ,(SELECT ASSET_NO
+                        ,LS_CHG_USER_ID 
+                    FROM TB_CMPT_OUT
+                    WHERE DEL_YN = 'N'
+                    AND CONST_OUT_NO=(SELECT MAX(CONST_OUT_NO)
+                                        FROM TB_CMPT_OUT) 
+                 GROUP BY ASSET_NO, LS_CHG_USER_ID) G /*구성품출고*/
+                ,TB_USER U 
+          WHERE  A.ASSET_NO = B.ASSET_NO
+            AND  A.OP_CL_CD = 'PR'
+            AND  A.INVE_ST_CD = '10'              /*재고상태:입고*/
+            AND  B.IN_DTL_CD = '20'               /*입고상세코드:재상품화*/
+            AND  C.EQP_JDG_RSLT_CD ='10'          /*감정결과코드:재상품화 */
+            AND  C.JDG_APRV_YN = 'Y'              /*감정승인여부:Y*/
+            AND  B.ASSET_NO = C.ASSET_NO(+)
+            AND  B.ASSET_NO = G.ASSET_NO(+)
+            AND  B.EQP_IN_DT = C.EQP_IN_DT(+)
+            AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+            AND  G.LS_CHG_USER_ID = U.USER_NO(+)
+            AND  B.IN_PLC_CD = D.DEAL_CO_CD
+            AND  A.DEL_YN = 'N'
+            AND  B.DEL_YN = 'N'
+            AND  C.DEL_YN(+) = 'N'
+            AND  C.EQP_JDG_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NUM"><![CDATA[
+            AND  A.EQP_SER_NUM = #EQP_SER_NUM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+            AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="EQP_RE_CMC_YN" compareValue="%"><![CDATA[
+            AND  C.EQP_RE_CMC_YN = #EQP_RE_CMC_YN#
+]]></isNotEqual><![CDATA[            
+        )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SRCmcProcRgstLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.SRCmcProcRgstLstTotCnt 재상품화처리조회총건수 */
+/* IO: 박민정,2015-08-10T16:59:36(박민정,2015-08-04T11:37:14) */
+SELECT  COUNT(*) AS TOTAL_CNT     /*전체건수*/
+  FROM  TB_EQP_ASSET A            /*단말기 자산*/
+       ,TB_EQP_IN B               /*단말기입고*/
+       ,TB_EQP_JDG C              /*단말기감정*/
+       ,TB_EQP_MDL E              /*단말기모델*/
+       ,TB_DEAL_CO D              /*거래처*/
+       ,(SELECT ASSET_NO
+               ,LS_CHG_USER_ID 
+           FROM TB_CMPT_OUT 
+            WHERE DEL_YN = 'N'
+              AND CONST_OUT_NO=(SELECT MAX(CONST_OUT_NO)
+                                  FROM TB_CMPT_OUT) 
+             GROUP BY ASSET_NO,LS_CHG_USER_ID)G /*구성품출고*/
+       ,TB_USER U 
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  A.OP_CL_CD = 'PR'
+   AND  A.INVE_ST_CD = '10'       /*재고상태:입고*/
+   AND  B.IN_DTL_CD = '20'        /*입고상세코드:재상품화*/
+   AND  C.EQP_JDG_RSLT_CD='10'    /*감정결과코드:재상품화 */
+   AND  C.JDG_APRV_YN= 'Y'        /*감정승인여부:Y*/
+   AND  B.ASSET_NO = C.ASSET_NO(+)
+   AND  B.ASSET_NO = G.ASSET_NO(+)
+   AND  B.EQP_IN_DT = C.EQP_IN_DT(+)
+   AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+   AND  G.LS_CHG_USER_ID = U.USER_NO(+)
+   AND  B.IN_PLC_CD = D.DEAL_CO_CD
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+   AND  C.DEL_YN(+) = 'N'
+   AND  C.EQP_JDG_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+   AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NUM"><![CDATA[
+   AND  A.EQP_SER_NUM = #EQP_SER_NUM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+   AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="EQP_RE_CMC_YN" compareValue="%"><![CDATA[
+   AND  C.EQP_RE_CMC_YN = #EQP_RE_CMC_YN#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SRProdEqpConstRMatchLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.SRProdEqpConstRMatchLst 재상품화단말기구성품재매칭목록조회 */
+/* IO: 박민정,2015-08-07T12:51:41(박민정,2015-08-04T17:31:29) */
+SELECT C.CM_CD_ID  
+      ,C.CM_CD_NM
+      ,F.CMPT_CD
+      ,DECODE(F.CMPT_CD,'','0','1') as checked            /*구성품출고적용체크*/
+      ,DECODE(D.MGMT_ITEM_CD10,'','0','1') AS CHECKED2    /*재매칭대상여부체크*/
+  FROM TB_EQP_CNTRT  A                                    /*단말기계약*/
+      ,TB_CMPT_UPRC  B                                    /*구성품단가*/
+      ,TB_CM_CD C                                         /*코드*/
+       ,(SELECT Y.MGMT_ITEM_CD10
+          FROM TB_EQP_JDG_DTL X
+               ,TB_CM_CD Y
+           WHERE X.DEL_YN='N'
+]]><isNotEmpty property="ASSET_NO"><![CDATA[  
+             AND X.ASSET_NO = #ASSET_NO# 
+]]></isNotEmpty><![CDATA[           
+]]><isNotEmpty property="EQP_JDG_SEQ"><![CDATA[  
+             AND X.EQP_JDG_SEQ = #EQP_JDG_SEQ# 
+]]></isNotEmpty><![CDATA[
+             AND X.INSP_DRL_ITM_CD = Y.CM_CD_ID
+             AND Y.CM_GRP_CD_ID = 'DMS107'
+             AND Y.MGMT_ITEM_CD10 > ' ')D
+      ,(SELECT CMPT_CD 
+          FROM TB_CMPT_OUT  
+         WHERE DEL_YN='N'
+]]><isNotEmpty property="ASSET_NO"><![CDATA[  
+           AND ASSET_NO = #ASSET_NO# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_JDG_SEQ"><![CDATA[  
+           AND EQP_JDG_SEQ = #EQP_JDG_SEQ# 
+]]></isNotEmpty><![CDATA[
+         )F          /*구성품출고*/
+ WHERE A.CNTRT_NO = B.CNTRT_NO
+]]><isNotEmpty property="ASSET_NO"><![CDATA[  
+   AND A.ASSET_NO = #ASSET_NO#
+]]></isNotEmpty><![CDATA[
+   AND B.CMPT_CD  = C.CM_CD_ID
+   AND B.CMPT_CD  = F.CMPT_CD(+)
+   AND B.CMPT_CD  = D.MGMT_ITEM_CD10(+)
+   AND C.CM_GRP_CD_ID = 'DMS111'/*구성품공통코드*/]]>
+	</select>
+	<select id="SConstOutNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.SConstOutNum 구성품출고일련번호 */
+/* IO: 박민정,2015-08-05T09:35:18(박민정,2015-08-05T09:35:01) */
+SELECT  'CO'||LPAD(SQ01_TB_CMPT_OUT.NEXTVAL,10,'0') AS CONST_OUT_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IConstOut" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.IConstOut 구성품출고등록 */
+/* IO: 박민정,2015-08-05T09:38:40(박민정,2015-08-05T09:35:42) */
+INSERT
+  INTO  TB_CMPT_OUT              /*구성품출고 */ 
+     (
+      CONST_OUT_NO	             /*구성품출고번호*/
+     ,CMPT_OUT_DTL_CD            /*구성품출고상세코드*/
+     ,CMPT_CD	                 /*구성품코드*/
+     ,CMPT_USE_QTY	             /*구성품사용수량*/
+     ,CMPT_OUT_DT	             /*구성품출고일자*/
+     ,ASSET_NO	                 /*자산번호*/
+     ,EQP_JDG_SEQ	             /*단말기감정순번*/
+     ,DEL_YN	                 /*삭제여부*/
+     ,FS_REG_USER_ID	         /*최초등록사용자ID*/
+     ,FS_REG_DTM	             /*최초등록일시*/
+     ,LS_CHG_USER_ID	         /*최종변경사용자ID*/
+     ,LS_CHG_DTM	             /*최종변경일시*/
+     )
+ VALUES
+     (
+      #CONST_OUT_NO#             /*구성품출고번호*/
+     ,#CMPT_OUT_DTL_CD#          /*구성품출고상세코드*/
+     ,#CMPT_CD# 	             /*구성품코드*/
+     ,#CMPT_USE_QTY# 	         /*구성품사용수량*/
+     ,#CMPT_OUT_DT# 	         /*구성품출고일자*/
+     ,#ASSET_NO# 	             /*자산번호*/
+     ,#EQP_JDG_SEQ# 	         /*단말기감정순번*/
+     ,#DEL_YN# 	                 /*삭제여부*/
+     ,#FS_REG_USER_ID#	         /*최초등록사용자ID */ 
+     ,SYSDATE	                 /*최초등록일시 */ 
+     ,#LS_CHG_USER_ID#	         /*최종변경사용자ID */ 
+     ,SYSDATE	                 /*최종변경일시 */ 
+     )]]>
+	</insert>
+	<update id="UReqpConstOutStat" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.UReqpConstOutStat 구성품출고취소 */
+/* IO: 박민정,2015-08-05T17:43:31(박민정,2015-08-05T16:54:10) */
+UPDATE TB_CMPT_OUT                             /*구성품출고*/
+   SET DEL_YN = 'Y'                            /*삭제여부*/
+      ,LS_CHG_USER_ID  = #LS_CHG_USER_ID#      /*최종변경사용자ID*/
+      ,LS_CHG_DTM = SYSDATE                    /*최종변경일시*/
+ WHERE ASSET_NO = #ASSET_NO#                   /*자산번호*/
+   AND CMPT_CD = #CMPT_CD#                     /*구성품코드*/]]>
+	</update>
+	<update id="UReqpjdgStat" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.UReqpjdgStat 단말기재상품여부상태수정 */
+/* IO: 박민정,2015-08-06T15:52:25(박민정,2015-08-06T15:51:04) */
+UPDATE TB_EQP_JDG
+   SET EQP_RE_CMC_YN = #EQP_RE_CMC_YN#
+      ,LS_CHG_USER_ID  = #LS_CHG_USER_ID#       /*최종변경사용자ID*/
+      ,LS_CHG_DTM = SYSDATE                     /*최종변경일시*/
+ WHERE ASSET_NO = #ASSET_NO#                    /*자산번호*/ 
+   AND EQP_JDG_SEQ = #EQP_JDG_SEQ# 	            /*단말기감정순번*/]]>
+	</update>
+</sqlMap>

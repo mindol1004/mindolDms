@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRSaleXclSlipRgst">
+	<select id="SInqSaleXclSlipList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRSaleXclSlipRgst.SInqSaleXclSlipList 매출정산전표등록리스트 */
+/* IO: 김상오,2015-10-01T11:18:13(김상오,2015-10-01T10:33:16) */
+SELECT * 
+  FROM (SELECT SALE_DT AS XCL_YM
+               ,SALE_ITM_CD AS XCL_CD
+               ,(SELECT CM_CD_NM   FROM TB_CM_CD A ,TB_CM_GRP_CD B    WHERE  A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS127'    AND A.CM_CD_ID = SALE_ITM_CD )  AS XCL_NM 
+               ,(SELECT CM_CD_SORT_ORD   FROM TB_CM_CD A ,TB_CM_GRP_CD B    WHERE  A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS127'    AND A.CM_CD_ID = SALE_ITM_CD )  AS SORT_ORD  
+               ,SLIP_NO 
+               ,MAX(NVL(SLIP_ST_CD, '00')) SLIP_ST_CD
+               ,COUNT(*) AS XCL_QTY
+               ,SUM(SPLY_PRC) AS XCL_AMT
+               ,MAX(TO_CHAR(S.FS_REG_DTM, 'YYYY-MM-DD')) AS XCL_DT
+               ,MAX(U.USER_NM) AS XCL_CRTR_NM
+          FROM TB_SALE S 
+               ,TB_USER U
+               ,TB_SLIP C
+         WHERE S.FS_REG_USER_ID = U.USER_NO(+)
+           AND S.SALE_DT = #IN_DT#
+           AND S.SALE_ITM_CD = 'RENT'
+           AND S.XCL_SLIP_NO = C.SLIP_NO(+)
+           AND S.DEL_YN = 'N'
+         GROUP BY SALE_DT, SALE_ITM_CD , SLIP_NO
+         UNION ALL  
+        SELECT XCL_DT     AS XCL_YM 
+               ,XCL_ITM_CD AS XCL_CD 
+               ,( SELECT CM_CD_NM    FROM      TB_CM_CD A ,      TB_CM_GRP_CD B    WHERE      A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS145'    AND A.CM_CD_ID     = XCL_ITM_CD  ) AS XCL_NM 
+               ,( SELECT CM_CD_SORT_ORD    FROM      TB_CM_CD A ,      TB_CM_GRP_CD B    WHERE      A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS145'    AND A.CM_CD_ID     = XCL_ITM_CD  ) AS SORT_ORD        
+               ,SLIP_NO 
+               ,MAX(NVL(SLIP_ST_CD, '00')) SLIP_ST_CD
+               ,COUNT(*) AS XCL_QTY 
+               ,SUM(XCL_AMT)  AS XCL_AMT 
+               ,MAX(TO_CHAR(S.FS_REG_DTM, 'YYYY-MM-DD')) AS XCL_DT 
+               ,MAX(U.USER_NM) AS XCL_CRTR_NM
+          FROM (SELECT SUBSTR(XCL_DT, 0,6) AS XCL_DT 
+                       ,XCL_ITM_CD 
+                       ,XCL_AMT
+                       ,XCL_SLIP_NO
+                       ,S.FS_REG_DTM
+                       ,S.FS_REG_USER_ID
+                  FROM TB_ETC_XCL S
+                 WHERE XCL_DT LIKE #IN_DT#||'%'
+                   AND XCL_ITM_CD IN ('HD', 'JD','RC','JN', 'RR')
+                   AND DEL_YN = 'N'
+               )S 
+               ,TB_USER U 
+               ,TB_SLIP C
+         WHERE S.FS_REG_USER_ID = U.USER_NO(+)
+           AND XCL_SLIP_NO = C.SLIP_NO(+)
+         GROUP BY  S.XCL_DT,  S.XCL_ITM_CD , SLIP_NO
+       )
+ORDER BY SORT_ORD ASC]]>
+	</select>
+</sqlMap>

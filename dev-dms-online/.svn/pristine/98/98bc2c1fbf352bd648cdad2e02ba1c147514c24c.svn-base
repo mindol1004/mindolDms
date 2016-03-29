@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRPenPolyMgmt">
+	<select id="SPenPolyTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRPenPolyMgmt.SPenPolyTotCnt 위약금정책 총 건수 */
+/* IO: 김혁범,2015-08-04T13:41:46(김혁범,2015-07-10T11:15:54) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_PEN_POLY       /* 거래처 */
+]]><dynamic prepend="WHERE"><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="OP_CL_CD"><![CDATA[
+        OP_CL_CD = #OP_CL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PP_EFF_PRD_FR_DT"><![CDATA[
+        PP_EFF_PRD_FR_DT BETWEEN #PP_EFF_PRD_FR_DT# AND #PP_EFF_PRD_TO_DT#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SPenPolyLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRPenPolyMgmt.SPenPolyLstPaging 위약금정책 정보 조회 */
+/* IO: 김혁범,2015-08-03T14:34:26(김혁범,2015-07-10T11:16:23) */
+SELECT  * 
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.PEN_POLY_NO ASC) AS ROWNO
+                ,A.PEN_POLY_NO 							/*위약금정책번호*/
+                ,A.OP_CL_CD 								/*위약금구분*/  
+                ,A.TOT_RENTAL_FEE_RT 						/*위약금비율1*/
+                ,A.REM_RENTAL_FEE_RT 						/*위약금비율2*/
+                ,A.PP_APLY_DT 								/*위약금대상일자*/
+                ,A.PP_EFF_PRD_FR_DT 							/*유효기간시작일*/
+                ,A.PP_EFF_PRD_TO_DT 							/*유효기간종료일*/
+                ,A.PP_RMK 									/*비고*/
+                ,A.FS_REG_USER_ID 							/*최초등록사용자ID*/
+                ,TO_CHAR(A.FS_REG_DTM,'YYYYMMDD') AS FS_REG_DTM	/*최초등록일시*/
+                ,A.LS_CHG_USER_ID 							/*최종변경사용자ID*/
+                ,TO_CHAR(A.LS_CHG_DTM,'YYYYMMDD') AS LS_CHG_DTM	/*최종변경일시*/
+                ,A.DAY_RENTAL_FEE_RT 						/*일렌탈료비율*/
+                ,A.RENTAL_FEE_RT 							/*렌탈료비율*/
+           FROM TB_PEN_POLY A
+]]><dynamic prepend="WHERE"><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="OP_CL_CD"><![CDATA[
+                 OP_CL_CD = #OP_CL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PP_EFF_PRD_FR_DT"><![CDATA[
+                 PP_EFF_PRD_FR_DT BETWEEN #PP_EFF_PRD_FR_DT# AND #PP_EFF_PRD_TO_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+		        #RENTAL_CNTRT_STA_DT# BETWEEN A.PP_EFF_PRD_FR_DT AND A.PP_EFF_PRD_TO_DT 
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="RENTAL_CNTRT_END_DT" prepend="AND"><![CDATA[
+		        #RENTAL_CNTRT_END_DT# BETWEEN A.PP_EFF_PRD_FR_DT AND A.PP_EFF_PRD_TO_DT 
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[             
+      )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IPenPoly" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRPenPolyMgmt.IPenPoly 위약금정책정보등록 */
+/* IO: 김혁범,2015-08-03T14:21:00(김혁범,2015-07-10T11:20:49) */
+INSERT INTO TB_PEN_POLY
+(
+	PEN_POLY_NO
+	,OP_CL_CD
+	,TOT_RENTAL_FEE_RT /*총렌탈료비율*/
+	,REM_RENTAL_FEE_RT /*잔여렌탈료비율*/
+	,PP_APLY_DT /*일자*/
+	,PP_EFF_PRD_FR_DT /*유효기간시작일자*/
+	,PP_EFF_PRD_TO_DT /*유효기간종료일*/
+	,PP_RMK /*비고*/
+	,FS_REG_USER_ID /*최초등록사용자ID*/
+	,FS_REG_DTM /*최초등록일시*/
+	,LS_CHG_USER_ID /*최종변경사용자ID*/
+	,LS_CHG_DTM /*최종변경일시*/
+	,DAY_RENTAL_FEE_RT /*일렌탈료비율*/
+	,RENTAL_FEE_RT /*렌탈료비율*/
+	
+)VALUES(
+	 #PEN_POLY_NO#
+	,#OP_CL_CD#
+	,#TOT_RENTAL_FEE_RT#
+	,#REM_RENTAL_FEE_RT#
+	,#PP_APLY_DT#
+	,#PP_EFF_PRD_FR_DT#
+	,#PP_EFF_PRD_TO_DT#
+	,#PP_RMK#
+	,#USERNO#
+	,SYSDATE
+	,#USERNO#
+	,SYSDATE
+	,#DAY_RENTAL_FEE_RT#
+	,#RENTAL_FEE_RT#
+)]]>
+	</insert>
+	<update id="UPenPoly" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRPenPolyMgmt.UPenPoly 위약금정책정보수정 */
+/* IO: 김혁범,2015-08-03T14:09:50(김혁범,2015-07-10T11:21:11) */
+UPDATE  TB_PEN_POLY
+   SET 	TOT_RENTAL_FEE_RT = #TOT_RENTAL_FEE_RT# 	/*총렌탈료비율*/
+	   ,REM_RENTAL_FEE_RT = #REM_RENTAL_FEE_RT# 	/*잔여렌탈료비율*/
+	   ,PP_APLY_DT = #PP_APLY_DT# 						/*일자*/
+	   ,PP_EFF_PRD_FR_DT = #PP_EFF_PRD_FR_DT# 			/*유효기간시작일자*/
+	   ,PP_EFF_PRD_TO_DT = #PP_EFF_PRD_TO_DT# 			/*유효기간종료일*/
+	   ,PP_RMK = #PP_RMK# 								/*비고*/
+	   ,DAY_RENTAL_FEE_RT = #DAY_RENTAL_FEE_RT# 	/*일렌탈료비율*/
+	   ,RENTAL_FEE_RT = #RENTAL_FEE_RT# 			/*렌탈료비율*/
+ WHERE  PEN_POLY_NO = #PEN_POLY_NO#]]>
+	</update>
+	<select id="SPenPolySeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRPenPolyMgmt.SPenPolySeq 위약금정책정보시퀀스등록 */
+/* IO: 김혁범,2015-07-29T16:06:20(김혁범,2015-07-15T19:03:25) */
+SELECT  'PP'||LPAD(SQ01_TB_PEN_POLY.NEXTVAL,10,0) AS PEN_POLY_NO
+  FROM  DUAL]]>
+	</select>
+	<update id="UPenPolyDate" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRPenPolyMgmt.UPenPolyDate 위약금정책정보기간수정 */
+/* IO: 김혁범,2015-08-03T14:30:01(김혁범,2015-07-16T16:55:57) */
+UPDATE  TB_PEN_POLY
+   SET  PP_EFF_PRD_TO_DT = TO_CHAR(TO_DATE(#PP_EFF_PRD_FR_DT#,'YYYYMMDD')-1,'YYYYMMDD')
+ WHERE  PEN_POLY_NO = (SELECT  MAX(PEN_POLY_NO) 
+                         FROM  TB_PEN_POLY
+                        WHERE  PEN_POLY_NO <#PEN_POLY_NO# )]]>
+	</update>
+	<select id="SChkPolyFrDt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRPenPolyMgmt.SChkPolyFrDt 위약금정책관리 중복체크 */
+/* IO: 김혁범,2015-08-03T14:30:23(김혁범,2015-07-20T14:09:28) */
+SELECT  COUNT(1) AS DUP_CNT
+  FROM  TB_PEN_POLY
+ WHERE  PP_EFF_PRD_FR_DT >= #PP_EFF_PRD_FR_DT#]]>
+	</select>
+	<select id="SChkPolyToDt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRPenPolyMgmt.SChkPolyToDt 위약금정책관리 수정 중복체크 */
+/* IO: 김혁범,2015-08-03T14:29:23(김혁범,2015-07-20T15:22:14) */
+SELECT  COUNT(1) AS DUP_CNT
+  FROM  TB_PEN_POLY
+ WHERE  PEN_POLY_NO < #PEN_POLY_NO#
+   AND  PP_EFF_PRD_FR_DT >= #PP_EFF_PRD_FR_DT#]]>
+	</select>
+</sqlMap>

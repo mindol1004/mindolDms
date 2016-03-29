@@ -1,0 +1,624 @@
+package dms.ep.epbcsbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import fwk.utils.HpcUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]반송대상관리</li>
+ * <li>설  명 : <pre>반송대상관리</pre></li>
+ * <li>작성일 : 2015-09-10 10:54:59</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class PEPRtnMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPRtnMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>검수반송대상조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : FR_DT [처리시작일자]
+	 *	- field : TO_DT [처리종료일자]
+	 *	- field : DT_GB [조회기준구분]
+	 *	- field : AFFIL_AGN [소속대리점코드]
+	 *	- field : AFFIL_AGN_NM [소속대리점명]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : CNSL_DEALCO_NM [상담처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : DPSTR [고객명]
+	 *	- field : RETUR_RSLT [처리구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_JDG_RTN_OBJ_LIST
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : AFFIL_ORG_ID [소속조직]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_CD [대리점조직코드]
+	 *		- field : HEADQ_NM [본부명]
+	 *		- field : MKT_TEAM_CD [마케팅팀코드]
+	 *		- field : MKT_TEAM_NM [마케팅팀명]
+	 *		- field : UKEY_SUB_CD [UKEY서브코드]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_NM [상담거래처]
+	 *		- field : CNSL_DEALCO_CD [상담거래처코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : RETUR_RSLT [반송결과]
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : DEALCO_ZIPCD [우편번호]
+	 *		- field : DEALCO_ADDR [주소]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : CHEKED [체크]
+	 *		- field : DPSTR_ENPT [예금주암호화]
+	 *		- field : DEALCO_ADDR_ENPT [거래처주소암호화]
+	 * </pre>
+	 */
+	public IDataSet pInqJdgRtnObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            if(requestData != null && requestData.getField("DPSTR") != null && !"".equals(requestData.getField("DPSTR").toString())){
+                requestData.putField("DPSTR_ENPT", HpcUtils.encodeByAES(requestData.getField("DPSTR")));
+            }
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqJdgRtnObjList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>고객반송대상조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : FR_DT [처리시작일자]
+	 *	- field : TO_DT [처리종료일자]
+	 *	- field : DT_GB [조회기준구분]
+	 *	- field : AFFIL_AGN [소속대리점코드]
+	 *	- field : AFFIL_AGN_NM [소속대리점명]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : CNSL_DEALCO_NM [상담처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : DPSTR [고객명]
+	 *	- field : RETUR_RSLT [처리구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CUST_RTN_OBJ_LIST
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : DPSTR [고객명]
+	 *		- field : ZIPCD [우편번호]
+	 *		- field : ADDR [주소]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : CHEKED [체크]
+	 *		- field : DPSTR_ENPT [예금주암호화]
+	 *		- field : ETC_ADDR_ENPT [주소암호화]
+	 * </pre>
+	 */
+	public IDataSet pInqCustRtnList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            if(requestData != null && requestData.getField("DPSTR") != null && !"".equals(requestData.getField("DPSTR").toString())){
+                requestData.putField("DPSTR_ENPT", HpcUtils.encodeByAES(requestData.getField("DPSTR")));
+            }
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqCustRtnObjList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점반송대상조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : FR_DT [처리시작일자]
+	 *	- field : TO_DT [처리종료일자]
+	 *	- field : DT_GB [조회기준구분]
+	 *	- field : AFFIL_AGN [소속대리점코드]
+	 *	- field : AFFIL_AGN_NM [소속대리점명]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : CNSL_DEALCO_NM [상담처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : DPSTR [고객명]
+	 *	- field : RETUR_RSLT [처리구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_RTN_OBJ_LIST
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : AGN_ORG_CD [대리점조직코드]
+	 *		- field : CNSL_DEALCO_NM [상담거래처명]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : UKEY_SUB_CD [UKEY서브코드]
+	 *		- field : DEALCO_ZIPCD [우편번호]
+	 *		- field : DEALCO_ADDR [주소]
+	 *		- field : DEALCO_TEL_NO [전화번호]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : DPSTR [고객명]
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : CHEKED [체크]
+	 *		- field : DPSTR_ENPT [예금주암호화]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnRtnList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            if(requestData != null && requestData.getField("DPSTR") != null && !"".equals(requestData.getField("DPSTR").toString())){
+                requestData.putField("DPSTR_ENPT", HpcUtils.encodeByAES(requestData.getField("DPSTR")));
+            }
+            responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqAgnRtnObjList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+    /**
+	 * <pre>검수반송상태저장</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_JDG_RTN_CON_LIST
+	 *		- field : RETUR_RSLT [반송결과]
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInJdgRtnStatSave(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            // 1. FM 호출
+              responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fRegJdgRtn", requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>고객반송상태저장</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CUST_RTN_LIST
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInCustRtnStatSave(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            // 1. FM 호출
+              responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fRegCustRtn", requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점반송상태저장</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_RTN_LIST
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : DATA_GB [데이터구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInAgnRtnStatSave(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            // 1. FM 호출
+              responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fRegAgnRtn", requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>고객반송취소</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CUST_RTN_LIST
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pUCustRtnCncl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            // 1. FM 호출
+              responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUpdCustRtnCnl", requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점반송취소</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_RTN_LIST
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : DATA_GB [데이터구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pUAgnRtnCncl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            // 1. FM 호출
+              responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUpdAgnRtnCnl", requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+    
+        return responseData;
+    }
+
+	/**
+	 * <pre>[PM]반송등록대상관리</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_AGN_RTN_LIST
+	 *		- field : PROGR_ST [진행 상태]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : EQP_SER_NO [일련 번호]
+	 *		- field : TEL_NO [전화 번호]
+	 *		- field : ZIPCD [우편번호]
+	 *		- field : ADDR [주소]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : RETUR_OUT_DT [반송일]
+	 *		- field : RETUR_SUGG [반송 의견]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : SR_GUBUN [검색구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_RTN_OBJ_LIST
+	 *		- field : CHK [체크구분]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : DEALCO_NM [거래처 명]
+	 *		- field : AFFIL_AGN [소속 대리점]
+	 *		- field : UKEY_SUB_CD [UKEY 서브 코드]
+	 *		- field : DEALCO_ZIPCD [거래처우편번호]
+	 *		- field : DEALCO_ADDR [거래처 주소]
+	 *		- field : DEALCO_TEL_NO [거래처 전화번호]
+	 *		- field : PROGR_ST [진행 상태]
+	 *		- field : DPSTR [예금주]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : RETUR_SUGG [반송 의견]
+	 *		- field : RETUR_OUT_DT [반송일]
+	 * </pre>
+	 */
+	public IDataSet pInqRtnRegBoxList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqRtnRegBoxList", requestData, onlineCtx);
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+		return responseData;
+	}
+
+	/**
+	 * <pre>[PM]반송등록대상조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SR_GUBUN [검색구분]
+	 *	- field : FR_DT [검색시작일]
+	 *	- field : TO_DT [검색종료일]
+	 *	- field : DT_GB [검색날짜구분]
+	 *	- field : AFFIL_AGN [소속 대리점]
+	 *	- field : AFFIL_AGN_NM [대리점명]
+	 *	- field : CNSL_MGMT_NO [접수번호]
+	 *	- field : CNSL_DEALCO_CD [상담 거래처 코드]
+	 *	- field : CNSL_DEALCO_NM [거래처명]
+	 *	- field : EQP_MDL_CD [단말기 모델 코드]
+	 *	- field : EQP_MDL_NM [단말기 모델 명]
+	 *	- field : EQP_SER_NO [단말기 일련 번호]
+	 *	- field : DPSTR [예금주]
+	 *	- field : RETUR_RSLT [반송 결과]
+	 *	- field : RETURN_GB [반송구분]
+	 *	- field : AGN_ORG_CD [대리점코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_RTN_OBJ_LIST
+	 *		- field : CHK [체크구분]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : DEALCO_NM [거래처 명]
+	 *		- field : AFFIL_AGN [소속 대리점]
+	 *		- field : UKEY_SUB_CD [UKEY 서브 코드]
+	 *		- field : DEALCO_ZIPCD [거래처우편번호]
+	 *		- field : DEALCO_ADDR [거래처 주소]
+	 *		- field : DEALCO_TEL_NO [거래처 전화번호]
+	 *		- field : PROGR_ST [진행 상태]
+	 *		- field : DPSTR [예금주]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : RETUR_SUGG [반송 의견]
+	 *		- field : RETUR_OUT_DT [반송일]
+	 * </pre>
+	 */
+	public IDataSet pInqRtnRegObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		/// logger
+		Log logger = LogManager.getFwkLog();
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqRtnRegObjList", requestData, onlineCtx);
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+		return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-09-10 10:54:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_AGN_RTN_LIST
+	 *		- field : PROGR_ST [진행 상태]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : EQP_SER_NO [일련 번호]
+	 *		- field : TEL_NO [전화 번호]
+	 *		- field : ZIPCD [우편번호]
+	 *		- field : ADDR [주소]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : RETUR_OUT_DT [반송일]
+	 *		- field : RETUR_SUGG [반송 의견]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : CHK [체크박스]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : CNSL_MGMT_NO [접수번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : SR_GUBUN [검색구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_RTN_OBJ_LIST
+	 *		- field : CHK [체크구분]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : DEALCO_NM [거래처 명]
+	 *		- field : AFFIL_AGN [소속 대리점]
+	 *		- field : UKEY_SUB_CD [UKEY 서브 코드]
+	 *		- field : DEALCO_ZIPCD [거래처우편번호]
+	 *		- field : DEALCO_ADDR [거래처 주소]
+	 *		- field : DEALCO_TEL_NO [거래처 전화번호]
+	 *		- field : PROGR_ST [진행 상태]
+	 *		- field : DPSTR [예금주]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : RETUR_SUGG [반송 의견]
+	 *		- field : RETUR_OUT_DT [반송일]
+	 * </pre>
+	 */
+	public IDataSet pRegRtnRegObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		/// logger
+		Log logger = LogManager.getFwkLog();
+		
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fRegRtnRegObjList", requestData, onlineCtx);
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+		return responseData;
+	}
+  
+}

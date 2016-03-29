@@ -1,0 +1,333 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  comChart.xjs
+ * 03. js 설명 : 차트 관련 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.07.17
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.07.17    심상준    최초 작성
+*************************************************************************************************/
+/************************************************************************************************
+ * gfn_drawMainColumn3D                 : 메인화면 Column3D 차트 함수.
+ * gfn_ViewChart                        : 차트 구동 함수.
+************************************************************************************************/
+
+/************************************************************************************************
+ * Function : 메인화면 Column3D 차트 함수
+ * @param   : objChart - 차트ID
+ *            objDataSet - 차트용 데이타셋
+ * Return   : 
+ * 사용예  : gfn_drawColumn3D(exFusionChart, ds_main);
+************************************************************************************************/
+function gfn_drawMainColumn3D(objChart, objDataSet){
+	// 차트에 보여줄 데이타를 퓨전차트에서 정의된 xml형태로 정의한다.
+	var sXmldata = "<chart caption='"+objDataSet.getConstColumn("TITLE")+"' xAxisName='"+objDataSet.getConstColumn("XLABEL")+"' yAxisName='"+objDataSet.getConstColumn("YLABEL")+"' showValues='0' decimals='0' formatNumberScale='0' palette='1' baseFont='Tahoma' baseFontSize='12' >\n";
+	//var sXmldata = "<chart caption='"+objDataSet.getConstColumn("TITLE")+"' xAxisName='"+objDataSet.getConstColumn("XLABEL")+"' yAxisName='"+objDataSet.getConstColumn("YLABEL")+"' showValues='0' decimals='0' formatNumberScale='0' palette='1' baseFont='Dotum' baseFontSize='12' >\n";
+	//var sXmldata = "<chart caption='"+objDataSet.getConstColumn("TITLE")+"' xAxisName='"+objDataSet.getConstColumn("XLABEL")+"' yAxisName='"+objDataSet.getConstColumn("YLABEL")+"' showValues='0' decimals='0' formatNumberScale='0' palette='1' baseFont='Malgun' baseFontSize='12' >\n";
+	for(var i=0; i<objDataSet.rowcount; i++) {
+		sXmldata += "<set label='"+objDataSet.getColumn(i, "LABEL")+"' value='"+objDataSet.getColumn(i, "VAL")+"' color='"+objDataSet.getColumn(i, "COLOR")+"' />\n";
+		//sXmldata += "<set label='"+objDataSet.getColumn(i, "LABEL")+"' value='"+objDataSet.getColumn(i, "VAL")+"' />\n";
+	}
+	if(!gfn_isNull(objDataSet.getConstColumn("LINE_VAL"))) {
+		sXmldata += "<trendlines>\n";
+		//sXmldata += "<line startValue='"+objDataSet.getConstColumn("LINE_VAL")+"' displayValue='"+objDataSet.getConstColumn("LINE_LABEL")+"' color='009900' valueOnRight='1' thickness='2' alpha='100' isTrendZone='0' showOnTop='1' />\n";
+		sXmldata += "<line startValue='"+objDataSet.getConstColumn("LINE_VAL")+"' displayValue='"+objDataSet.getConstColumn("LINE_LABEL")+"\n("+toNumber(objDataSet.getConstColumn("LINE_VAL")).toLocaleString("ko_KR")+")' color='009900' valueOnRight='1' alpha='100' isTrendZone='1' showOnTop='1' />\n";
+		sXmldata += "</trendlines>\n";
+	}
+	sXmldata += "</chart>";
+
+	// 차트를 보여준다.
+	//gfn_ViewChart(objDataSet.getConstColumn("CHART"), objChart, sXmldata);
+	gfn_ViewChart("Column3D.swf", objChart, sXmldata);
+}
+
+/************************************************************************************************
+ * Function : 메인화면 MSCombi2D 차트 함수
+ * @param   : objChart - 차트ID
+ *            objDataSet - 차트용 데이타셋
+ * Return   : 
+ * 사용예  : gfn_drawColumn3D(exFusionChart, ds_main);
+************************************************************************************************/
+function gfn_drawMainMSCombi2D(objChart, objDataSet){
+	// 차트에 보여줄 데이타를 퓨전차트에서 정의된 xml형태로 정의한다.
+	//var sXmldata = "<chart caption='"+objDataSet.getConstColumn("TITLE")+"' xAxisName='"+objDataSet.getConstColumn("XLABEL")+"' yAxisName='"+objDataSet.getConstColumn("YLABEL")+"' showValues='0' decimals='0' formatNumberScale='0' palette='1' baseFont='Tahoma' baseFontSize='12' >\n";
+	
+	var sXmldata = "<chart palette='3' caption='"+objDataSet.getConstColumn("TITLE")+"' bgColor='FFFFFF,FFFFFF' showBorder='0' showValues='0' canvasBorderThickness='0' divLineDecimalPrecision='1' limitsDecimalPrecision='1' formatNumberScale='0' plotSpacePercent='50' baseFont='Tahoma' baseFontSize='12' >\n";
+	sXmldata += "<categories>\n";				// X축명
+	for(var i=0; i<objDataSet.rowcount; i++) {
+		sXmldata += "<category label='"+objDataSet.getColumn(i, "LABEL")+"' />\n";
+	}
+	sXmldata += "</categories>\n";
+	
+	sXmldata += "<dataset seriesName='실적' >\n";
+	for(var i=0; i<objDataSet.rowcount; i++) {
+		sXmldata += "<set value='"+objDataSet.getColumn(i, "VAL")+"' color='B3DAF8' />\n";
+	}
+	sXmldata += "</dataset>\n";
+	
+	sXmldata += "<dataset seriesName='목표' renderAs='Line'>\n";
+	for(var i=0; i<objDataSet.rowcount; i++) {
+		sXmldata += "<set value='"+objDataSet.getColumn(i, "EXPR_VAL")+"' />\n";
+	}
+	sXmldata += "</dataset>\n";
+	
+	if(!gfn_isNull(objDataSet.getConstColumn("LINE_VAL"))) {
+		sXmldata += "<trendlines>\n";
+		//sXmldata += "<line startValue='"+objDataSet.getConstColumn("LINE_VAL")+"' displayValue='"+objDataSet.getConstColumn("LINE_LABEL")+"' color='009900' valueOnRight='1' thickness='2' alpha='100' isTrendZone='0' showOnTop='1' />\n";
+		sXmldata += "<line startValue='"+objDataSet.getConstColumn("LINE_VAL")+"' displayValue='"+objDataSet.getConstColumn("LINE_LABEL")+"\n("+toNumber(objDataSet.getConstColumn("LINE_VAL")).toLocaleString("ko_KR")+")' color='009900' valueOnRight='1' alpha='100' isTrendZone='1' showOnTop='1' />\n";
+		sXmldata += "</trendlines>\n";
+	}
+	sXmldata += "</chart>";
+
+	// 차트를 보여준다.
+	//gfn_ViewChart(objDataSet.getConstColumn("CHART"), objChart, sXmldata);
+	gfn_ViewChart("MSCombi2D.swf", objChart, sXmldata);
+}
+
+/************************************************************************************************
+ * Function : 차트 구동 함수
+ * @param   : swf - 사용차트(*.swf)
+ *            objchart - 차트ID
+ *            dataXml - 차트용 XML 데이타
+ * Return   : 
+ * 사용예  : gfn_drawColumn3D(exFusionChart, ds_main);
+************************************************************************************************/
+function gfn_ViewChart(swf,objchart,dataXml)
+{
+	//첨부한 swf파일의 위치로 아래 url은 변경을 하셔야 합니다.
+	objchart.Movie =  "CHART::"+swf;
+	objchart.SetVariable('dataXML', dataXml);
+	objchart.visible=true;
+	objchart.Rewind();
+	objchart.Stop();
+	objchart.Play();
+}
+
+
+/*-------------------------------------------------------------------------------------------------
+/	* FusionCharts 참고 URL
+/		- FusionCharts doc		: http://www.fusioncharts.com/docs/
+/		- FusionCharts Sample	: http://www.fusioncharts.com/Gallery/
+/	* FusionCharts의 상세 속성은 http://www.fusioncharts.com/docs/에서 'Chart XML API'에서 참조.
+--------------------------------------------------------------------------------------------------*/
+/*
+ ******************************************************************************************
+ * 함  수  명	:	gfn_SingleChart(objChrt,strChartType,objDS,strColLab,strColVal,arrArg)
+ * 입      력	:	objChrt			- Chart Object
+ *					strChartType	- 차트의 종류(swf파일명)
+ *					objDS			- 차트데이터가 있는 데이터셋 Object
+ *					strColLab		- 데이터셋에서 이름이 있는 컬럼명(X축)
+ *					strColVal		- 데이터셋에서 값이 있는 컬럼명(Y축)
+ *					arrArg			- 차트에 속성셋팅(2개씩 셋트) [속성명1,속성값1,속성명2,속성값2,....]
+ *										(자세한것은 FusionCharts doc참조)
+ *					arrColor		- 차트색상 배열
+ *					strColLink		- (차트클릭 시) 리턴값 컬럼
+ * 반      환	:	없음
+ * 기      능	:	한가지 그룹으로 되어있는 차트를 그려준다.
+ ******************************************************************************************
+ */
+function gfn_SingleChart(objChrt,strChartType,objDS,strColLab,strColVal,arrArg,arrColor,strColLink)
+{
+	// XML생성
+	var strChartXML = gfn_SingleMakeXML(objDS,strColLab,strColVal,arrArg,arrColor,strColLink);
+	
+	gfn_ViewChart(strChartType+".swf",objChrt,strChartXML);
+}
+
+/*
+ ******************************************************************************************
+ * 함  수  명	:	gfn_SingleMakeXML(objDS,strColLab,strColVal,arrArg)
+ * 입      력	:	objDS			- 차트데이터가 있는 데이터셋 Object
+ *					strColLab		- 데이터셋에서 이름이 있는 컬럼명(X축)
+ *					strColVal		- 데이터셋에서 값이 있는 컬럼명(Y축)
+ *					arrArg			- 차트에 속성셋팅(2개씩 셋트) [속성명1,속성값1,속성명2,속성값2,....]
+ *										(자세한것은 FusionCharts doc참조)
+ *					arrColor		- 차트색상 배열
+ *					strColLink		- (차트클릭 시) 리턴값 컬럼
+ * 반      환	:	strXml			- 차트 XML
+ * 기      능	:	한가지 그룹으로 되어있는 차트의 XML생성 및 리턴
+ ******************************************************************************************
+ */
+function gfn_SingleMakeXML(objDS,strColLab,strColVal,arrArg,arrColor,arrColor,strColLink)
+{
+	var nArgCnt, nRowCnt;
+	var strXmlHead, strXmlBody;
+	var strXml;
+	var strLinkData;
+	
+	nArgCnt	= arrArg.length;			// 차트속성 사이즈
+	nRowCnt	= objDS.getRowCount();		// 데이터셋 Row Count(X축갯수)
+	
+	// Head(차트속성 셋팅)
+	strXmlHead = "<chart ";
+	for( var i = 0 ; i < nArgCnt ; i++)
+	{
+		if (i%2 == 0)	// 속성명인 경우
+		{
+			strXmlHead += arrArg[i] + "=";
+		} else {
+			strXmlHead += "'" + arrArg[i] + "' ";
+		}
+	}
+	strXmlHead += ">";
+	
+	// Body(데이터 생성)
+	strXmlBody="";
+	for( var i = 0 ; i < nRowCnt ; i++)
+	{
+		// 데이터값 Xml생성
+		strXmlBody += "<set label='" + objDS.getColumn(i,strColLab) + "' value='" + objDS.getColumn(i,strColVal) + "'";
+		if (arrColor != null && arrColor.length > 0) strXmlBody += " color='" + gfn_ChartColor(arrColor,i) + "'";
+		if (strColLink != null && strColLink.length > 0)
+		{
+			strLinkData	= objDS.getColumn(i,strColLink);
+			
+			if (strLinkData.trim().length > 0)	strXmlBody += " link='" + strLinkData + "'";
+		}
+		strXmlBody += "/> \n";
+	}
+	
+	strXml = strXmlHead + "\n";
+	strXml += strXmlBody;
+	strXml += "</chart>";
+	
+	return strXml;
+}
+
+/*
+ ******************************************************************************************
+ * 함  수  명	:	gfn_MultiChart(objChrt,strChartType,objDS,strColLab,arrSer,arrArg)
+ * 입      력	:	objChrt			- Chart Object
+ *					strChartType	- 차트의 종류(swf파일명)
+ *					objDS			- 차트데이터가 있는 데이터셋 Object
+ *					strColLab		- 데이터셋에서 이름이 있는 컬럼명(X축)
+ *					arrSer			- 그룹정보 배열(3개씩 셋트) [그룹명1,컬럼명1,속성1,그룹명2,컬럼명2,속성2,...]
+ *										-> 그룹명	: 범례에들어가는 그룹의 명
+ *										-> 컬럼명	: 데이터셋에서 값이 들어있는 컬럼명(Y축)
+ *										-> 속성		: 그룹에 적용할 속성 예) renderAs='Line' - 해당그룹은 선으로 표시
+ *					arrArg			- 차트에 속성셋팅(2개씩 셋트) [속성명1,속성값1,속성명2,속성값2,....]
+ *										(자세한것은 FusionCharts doc참조)
+ *					arrColor		- 차트색상 배열
+ *					arrColLink		- (차트클릭 시) 리턴값 컬럼 배열[그룹1 리턴컬럼, 그룹2 리턴컬럼, 그룹3 리턴컬럼...]
+ * 반      환	:	없음
+ * 기      능	:	여러 그룹으로 되어있는 차트를 그려준다.
+ ******************************************************************************************
+ */
+function gfn_MultiChart(objChrt,strChartType,objDS,strColLab,arrSer,arrArg,arrColor,arrColLink)
+{
+	var strChartXML = gfn_MultiMakeXML(objDS,strColLab,arrSer,arrArg,arrColor,arrColLink);
+	
+	gfn_ViewChart(strChartType+".swf",objChrt,strChartXML);
+}
+
+/*
+ ******************************************************************************************
+ * 함  수  명	:	gfn_MultiMakeXML(objDS,strColLab,arrSer,arrArg)
+ * 입      력	:	objDS			- 차트데이터가 있는 데이터셋 Object
+ *					strColLab		- 데이터셋에서 이름이 있는 컬럼명(X축)
+ *					arrSer			- 그룹정보 배열(3개씩 셋트) [그룹명1,컬럼명1,속성1,그룹명2,컬럼명2,속성2,...]
+ *										-> 그룹명	: 범례에들어가는 그룹의 명
+ *										-> 컬럼명	: 데이터셋에서 값이 들어있는 컬럼명(Y축)
+ *										-> 속성		: 그룹에 적용할 속성 예) renderAs='Line' - 해당그룹은 선으로 표시
+ *					arrArg			- 차트에 속성셋팅(2개씩 셋트) [속성명1,속성값1,속성명2,속성값2,....]
+ *										(자세한것은 FusionCharts doc참조)
+ *					arrColor		- 차트색상 배열
+ *					arrColLink		- (차트클릭 시) 리턴값 컬럼 배열[그룹1 리턴컬럼, 그룹2 리턴컬럼, 그룹3 리턴컬럼...]
+ * 반      환	:	strXml			- 차트 XML
+ * 기      능	:	여러 그룹으로 되어있는 차트의 XML생성 및 리턴
+ ******************************************************************************************
+ */
+function gfn_MultiMakeXML(objDS,strColLab,arrSer,arrArg,arrColor,arrColLink)
+{
+	var nArgCnt, nRowCnt, nSerCnt;
+	var strXmlHead, strXmlBody1, strXmlBody2;
+	var strXml;
+	var strLinkData;
+	
+	nArgCnt	= arrArg.length;		// 차트속성 사이즈
+	nRowCnt	= objDS.getRowCount();	// 데이터셋 Row Count(X축갯수)
+	nSerCnt	= arrSer.length/3;		// 그룹갯수
+	
+	// Head(차트속성 셋팅)
+	strXmlHead = "<chart ";
+	for( var i = 0 ; i < nArgCnt ; i++)
+	{
+		if (i%2 == 0)		// 속성명인 경우
+		{
+			strXmlHead += arrArg[i] + "=";
+		}
+		else				// 속성값인 경우
+		{
+			strXmlHead += "'" + arrArg[i] + "' ";
+		}
+	}
+	strXmlHead += ">";
+	
+	// Body(데이터 생성)
+	var nArrIdx1, nArrIdx2, nArrIdx3;
+	strXmlBody1="<categories>\n";				// X축명
+	strXmlBody2="";								// 데이터값
+	for( var i = 0 ; i < nSerCnt ; i++)
+	{
+		nArrIdx1		= i * 3;				// 그룹명 index
+		nArrIdx2		= nArrIdx1 + 1;			// 컬럼명 index
+		nArrIdx3		= nArrIdx1 + 2;			// 속성 index
+		
+		strXmlBody2 += "<dataset seriesName='" + arrSer[nArrIdx1] + "' ";
+		strXmlBody2 += arrSer[nArrIdx3];		// Chart 속성
+		if (arrColor != null && arrColor.length > 0) strXmlBody2 += " color='" + gfn_ChartColor(arrColor,i) + "'";
+		strXmlBody2 += ">\n";
+		
+		for( var j = 0 ; j < nRowCnt ; j++)
+		{
+			// X축명정보(1번만)
+			if (i == 0)
+			{
+				strXmlBody1 += "<category label='" + objDS.getColumn(j,strColLab) + "'/>\n";
+			}
+			
+			// 데이터값
+			strXmlBody2 += "<set value='" + objDS.getColumn(j,arrSer[nArrIdx2]) + "'";
+			if (arrColLink != null && arrColLink.length > 0)
+			{
+				strLinkData	= objDS.getColumn(j,arrColLink[i]);
+				
+				if (strLinkData.trim().length > 0)	strXmlBody2 += " link='" + strLinkData + "'";
+			}
+			strXmlBody2 += "/> \n";
+		}
+		
+		strXmlBody2 += "</dataset>\n";
+	}
+	strXmlBody1 += "</categories>\n";
+	
+	strXml = strXmlHead + "\n";
+	strXml += strXmlBody1;
+	strXml += strXmlBody2;
+	strXml += "</chart>";
+	
+	return strXml;
+}
+/*
+ ******************************************************************************************
+ * 함  수  명	:	gfn_ChartColor(arrChartColor,nIdx)
+ * 입      력	:	arrColor		- 차트색상 배열
+ *					nIdx			- 순번
+ * 반      환	:	색상값
+ * 기      능	:	배열에서 반복해서 색상반환
+ ******************************************************************************************
+ */
+function gfn_ChartColor(arrChartColor,nIdx)
+{
+	var nLen = arrChartColor.length;
+	var arrIdx = nIdx%nLen;
+	
+	return arrChartColor[arrIdx];
+}
+
+]]></Script>

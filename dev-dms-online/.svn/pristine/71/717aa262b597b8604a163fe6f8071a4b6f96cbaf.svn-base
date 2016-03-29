@@ -1,0 +1,619 @@
+package dms.pr.prbxmbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [DU]렌탈용역계약관리</li>
+ * <li>설  명 : <pre>[DU]렌탈용역계약관리</pre></li>
+ * <li>작성일 : 2015-07-24 09:53:33</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class DPRRentalServCntrtMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DPRRentalServCntrtMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[DM]포괄계약조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *	- field : STA_IN_DT [조회시작일자]
+	 *	- field : END_IN_DT [조회종료일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMPHS_CNTRT_LIST
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *		- field : CMPHS_CNTRT_STA_DT [포괄계약시작일자]
+	 *		- field : CMPHS_CNTRT_END_DT [포괄계약종료일자]
+	 * </pre>
+	 */
+	public IDataSet dSInqCmphsCntrtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SInqCmphsCntrtLst", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RS_CMPHS_CNTRT_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기계약목록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *	- field : OP_CL_CD [업무구분코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CNTRT_LIST
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : RENTAL_POLY_NO [렌탈정책번호]
+	 *		- field : PEN_POLY_NO [위약금정책번호]
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : CNTRT_STA_DT [계약시작일자]
+	 *		- field : CNTRT_END_DT [계약종료일자]
+	 *		- field : CNTRT_PRD [계약기간]
+	 *		- field : MTH_RENTAL_FEE [월렌탈료]
+	 *		- field : QTY [수량]
+	 *		- field : RE_CMC_CMMS [재상품화수수료]
+	 *		- field : PRCH_PRC [매입가]
+	 *		- field : REM_PRC [잔존가]
+	 *		- field : ALLOT_CMMS [할부수수료]
+	 *		- field : RMK [비고]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 * </pre>
+	 */
+	public IDataSet dSInqEqpCntrtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SInqEqpCntrtLst", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RS_EQP_CNTRT_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]포괄계약등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *	- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *	- field : CMPHS_CNTRT_STA_DT [포괄계약시작일자]
+	 *	- field : CMPHS_CNTRT_END_DT [포괄계약종료일자]
+	 *	- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dICmphsCntrtRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("ICmphsCntrtRgst", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]포괄계약수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *	- field : CMPHS_CNTRT_STA_DT [포괄계약시작일자]
+	 *	- field : CMPHS_CNTRT_END_DT [포괄계약종료일자]
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *	- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCmphsCntrtUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("UCmphsCntrtUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]포괄계약삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 14:12:29
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *	- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDCmphsCntrtDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("DCmphsCntrtDel", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]포괄계약일련번호조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 14:24:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 * </pre>
+	 */
+	public IDataSet dSCmphsCntrtNo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출     
+        IRecord record = dbSelectSingle("SCmphsCntrtNo", requestData, onlineCtx);
+        // 2.결과값 셋팅     
+        responseData.putFieldMap(record);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기렌탈계약등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_EQP_RENTAL_CNTRT_LIST
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : RENTAL_POLY_NO [렌탈정책번호]
+	 *		- field : PEN_POLY_NO [위약금정책번호]
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : CNTRT_STA_DT [계약시작일자]
+	 *		- field : CNTRT_END_DT [계약종료일자]
+	 *		- field : CNTRT_PRD [계약기간]
+	 *		- field : MTH_RENTAL_FEE [월렌탈료]
+	 *		- field : QTY [수량]
+	 *		- field : RE_CMC_CMMS [재상품화수수료]
+	 *		- field : PRCH_PRC [매입가]
+	 *		- field : REM_PRC [잔존가]
+	 *		- field : ALLOT_CMMS [할부수수료]
+	 *		- field : RMK [비고]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEqpRentalCntrtRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("IEqpRentalCntrtRgst", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기렌탈계약수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 16:46:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_NO [계약번호]
+	 *	- field : OP_CL_CD [업무구분코드]
+	 *	- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *	- field : RENTAL_POLY_NO [렌탈정책번호]
+	 *	- field : PEN_POLY_NO [위약금정책번호]
+	 *	- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : CNTRT_STA_DT [계약시작일자]
+	 *	- field : CNTRT_END_DT [계약종료일자]
+	 *	- field : CNTRT_PRD [계약기간]
+	 *	- field : MTH_RENTAL_FEE [월렌탈료]
+	 *	- field : QTY [수량]
+	 *	- field : RE_CMC_CMMS [재상품화수수료]
+	 *	- field : PRCH_PRC [매입가]
+	 *	- field : REM_PRC [잔존가]
+	 *	- field : ALLOT_CMMS [할부수수료]
+	 *	- field : RMK [비고]
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUEqpRentalCntrtUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("UEqpRentalCntrtUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기렌탈계약삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 16:47:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *	- field : CNTRT_NO [계약번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDEqpRentalCntrtDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("DEqpRentalCntrtDel", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        }     
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기계약일련번호조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 17:02:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_NO [계약번호]
+	 * </pre>
+	 */
+	public IDataSet dSEqpRentalCntrtNo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출     
+        IRecord record = dbSelectSingle("SEqpRentalCntrtNo", requestData, onlineCtx);
+        // 2.결과값 셋팅     
+        responseData.putFieldMap(record);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기계약구성품단가조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_NO [계약번호]
+	 *	- field : OP_CL_CD [업무구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CNTRT_CMPT_UPRC_LIST
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : CMPT_CD [구성품코드]
+	 *		- field : CMPT_UPRC [구성품단가]
+	 *		- field : RTN_ITM_YN [반납품목여부]
+	 *		- field : CHECKED [CHECKED]
+	 * </pre>
+	 */
+	public IDataSet dSInqEqpCntrtCmptUprcLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SInqEqpCntrtCmptUprcLst", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RS_EQP_CNTRT_CMPT_UPRC_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기계약구성품단가등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-28 09:26:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPT_CD [구성품코드]
+	 *	- field : CNTRT_NO [계약번호]
+	 *	- field : CMPT_UPRC [구성품단가]
+	 *	- field : RTN_ITM_YN [반납품목여부]
+	 *	- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEqpCntrtCmptUprcRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("IEqpCntrtCmptUprcRgst", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기계약구성품단가삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-28 09:32:29
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_NO [계약번호]
+	 *	- field : CMPT_CD [구성품코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDEqpCntrtCmptUprcDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("DEqpCntrtCmptUprcDel", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기계약구성품단가수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-28 11:33:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPT_UPRC [구성품단가]
+	 *	- field : RTN_ITM_YN [반납품목여부]
+	 *	- field : DEL_YN [삭제여부]
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *	- field : CNTRT_NO [계약번호]
+	 *	- field : CMPT_CD [구성품코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUEqpCntrtCmptUprcUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("UEqpCntrtCmptUprcUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기계약구성품단가세부목록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_NO [계약번호]
+	 *	- field : CMPT_CD [구성품코드]
+	 *	- field : DEL_YN [삭제여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : CMPT_UPRC_LIST
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : CMPT_CD [구성품코드]
+	 *		- field : CMPT_UPRC [구성품단가]
+	 *		- field : RTN_ITM_YN [반납품목여부]
+	 *		- field : DEL_YN [삭제여부]
+	 * </pre>
+	 */
+	public IDataSet dSInqEqpCntrtCmptUprcDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SInqEqpCntrtCmptUprcDtlLst", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("CMPT_UPRC_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]임대R계약검색</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NM [계약명]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RENTR_CNRTR_LIST
+	 *		- field : CMPHS_CNTRT_NM [계약명]
+	 *		- field : CMPHS_CNTRT_STA_DT [계약시작일자]
+	 *		- field : CMPHS_CNTRT_END_DT [계약종료일자]
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : EQP_MDL_CD [단말기코드]
+	 *		- field : EQP_MDL_NM [단말기명]
+	 *		- field : CNTRT_PRD [계약기간]
+	 * </pre>
+	 */
+	public IDataSet dSInqRentRCntrtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SInqRentRCntrtLst", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RENTR_CNRTR_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기계약구성품단가수정및등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-24 09:53:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPT_CD [구성품코드]
+	 *	- field : CNTRT_NO [계약번호]
+	 *	- field : CMPT_UPRC [구성품단가]
+	 *	- field : RTN_ITM_YN [반납품목여부]
+	 *	- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *	- field : DEL_YN [삭제여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIUEqpCntrtCmptUprcUpdRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("IUEqpCntrtCmptUprcUpdRgst", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,605 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpInMgmt">
+	<select id="SInqEqpInObjListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.SInqEqpInObjListPaging 입고대상목록 */
+/* IO: 김상오,2015-09-11T13:40:54(김상오,2015-08-20T16:10:40) */
+SELECT  PA.*
+  FROM  (SELECT ROW_NUMBER() OVER(ORDER BY A.CNSL_DT ASC) AS ROWNO
+    ,  A.CNSL_DT /*상담일자*/
+    ,(SELECT ORG_NM FROM TB_EP_BAS_ORG_MGMT WHERE DEL_YN = 'N' AND ORG_ID = B.AFFIL_ORG_ID) affil_org_id /*조직*/
+    ,B.AGN_ORG_CD  /*ukey*/
+    ,( SELECT DEALCO_NM FROM TB_DEALCO WHERE DEALCO_CD = B.AFFIL_AGN AND DEL_YN = 'N') AFFIL_AGN  /*소속 대리점*/
+    ,B.DEALCO_NM /*상담처명*/
+    ,EQP_SER_NO    /*상담관리 일련번호*/
+    ,EQP_MDL_CD     /*모델*/       
+    ,(SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = A.EQP_MDL_CD) EQP_MDL_NM
+    ,EQP_COLOR_CD  /*색상*/        
+    ,DPSTR   /*고객명*/
+    ,SUBSTR(CTZ_NO , 0,6) BIRTH /*생년월일*/
+    ,(   select ORG_NM from TB_EP_BAS_ORG_MGMT where org_id = A.IN_PROC_CHRGR_ID ) IN_PROC_CHRGR_ID /*입고처리자*/
+    ,IN_CONF_DT  /*입고확정일자*/
+    ,A.IN_CONF_YN /*입고여부*/
+    ,CNSL_MGMT_NO   /*상담관리번호*/       
+    ,IN_PROC_RSN    /*의견*/       
+    ,'' PRC_CHECK  /*체크박스용*/
+    ,A.CLCT_DT	 /*회수일자*/
+    ,A.EQP_ST    /*등급*/
+    ,DECODE(A.PAY_MTHD,'01',A.PAY_DT,'') as PAY_DT_1 /*송금일자*/
+    ,DECODE(A.PAY_MTHD,'02',A.PAY_DT,'') as PAY_DT_2 /*요금공제일자*/
+    , A.SCRB_MTHD /*가입방법*/
+  FROM TB_EP_CST_CONSULT_MGMT A  
+  	 , TB_DEALCO B
+WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+  AND B.EFF_STA_DT <= A.CNSL_DT
+  AND B.EFF_END_DT >= A.CNSL_DT
+  AND A.DEL_YN = 'N'
+  AND B.DEL_YN = 'N'
+  AND A.MOV_YN = 'Y'
+  AND A.PRCH_CL = 'C'
+]]><isEqual property="SR_GUBUN_1" compareValue="RE"><![CDATA[
+  /*재감정*/  
+]]><isEqual property="SR_GUBUN_2" compareValue="IO"><![CDATA[
+/*입고대상*/
+]]><isEqual property="SR_GUBUN_3" compareValue="0"><![CDATA[
+  AND A.CNSL_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 	/*접수일자*/					    					    
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_3" compareValue="1"><![CDATA[
+  AND A.CLCT_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 	/*회수일자*/					    
+]]></isEqual><![CDATA[
+  AND A.IN_CONF_YN = 'C'   
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_2" compareValue="IC"><![CDATA[
+/*입고확인*/
+  AND A.IN_CONF_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'Y'   
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_2" compareValue="IE"><![CDATA[
+/*입고제외*/
+  AND A.IN_CONF_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'N'   
+]]></isEqual><![CDATA[
+  AND A.SKN_CL = 'Y'
+]]></isEqual><![CDATA[
+
+]]><isEqual property="SR_GUBUN_1" compareValue="NO"><![CDATA[
+/*일반감정*/  
+]]><isEqual property="SR_GUBUN_2" compareValue="IO"><![CDATA[
+/*입고대상*/
+  AND A.CNSL_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'C'   
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_2" compareValue="IC"><![CDATA[
+/*입고확인*/
+  AND A.IN_CONF_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'Y'   
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_2" compareValue="IE"><![CDATA[
+/*입고제외*/
+  AND A.IN_CONF_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'N'   
+]]></isEqual><![CDATA[
+AND A.SKN_CL = 'N'
+]]></isEqual><![CDATA[
+
+
+
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+	   B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+       A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR"><![CDATA[      
+       A.DPSTR LIKE '%'||#DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+       A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+)PA
+WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInqEqpInObjListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.SInqEqpInObjListTotCnt 입고대상조회총건수 */
+/* IO: 김상오,2015-09-11T13:41:40(김상오,2015-08-20T16:10:40) */
+SELECT 
+       COUNT(*) AS TOTAL_CNT
+  FROM TB_EP_CST_CONSULT_MGMT A  
+  	 , TB_DEALCO B
+WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+  AND B.EFF_STA_DT <= A.CNSL_DT
+  AND B.EFF_END_DT >= A.CNSL_DT
+  AND A.DEL_YN = 'N'
+  AND B.DEL_YN = 'N'
+  AND A.MOV_YN = 'Y'
+  AND A.PRCH_CL = 'C'
+]]><isEqual property="SR_GUBUN_1" compareValue="RE"><![CDATA[
+  /*재감정*/  
+]]><isEqual property="SR_GUBUN_2" compareValue="IO"><![CDATA[
+/*입고대상*/
+]]><isEqual property="SR_GUBUN_3" compareValue="0"><![CDATA[
+  AND A.CNSL_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 	/*접수일자*/					    					    
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_3" compareValue="1"><![CDATA[
+  AND A.CLCT_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 	/*회수일자*/					    
+]]></isEqual><![CDATA[
+  AND A.IN_CONF_YN = 'C'   
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_2" compareValue="IC"><![CDATA[
+/*입고확인*/
+  AND A.IN_CONF_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'Y'   
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_2" compareValue="IE"><![CDATA[
+/*입고제외*/
+  AND A.IN_CONF_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'N'   
+]]></isEqual><![CDATA[
+  AND A.SKN_CL = 'Y'
+]]></isEqual><![CDATA[
+
+]]><isEqual property="SR_GUBUN_1" compareValue="NO"><![CDATA[
+/*일반감정*/  
+]]><isEqual property="SR_GUBUN_2" compareValue="IO"><![CDATA[
+/*입고대상*/
+  AND A.CNSL_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'C'   
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_2" compareValue="IC"><![CDATA[
+/*입고확인*/
+  AND A.IN_CONF_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'Y'   
+]]></isEqual><![CDATA[
+]]><isEqual property="SR_GUBUN_2" compareValue="IE"><![CDATA[
+/*입고제외*/
+  AND A.IN_CONF_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+  AND A.IN_CONF_YN = 'N'   
+]]></isEqual><![CDATA[
+AND A.SKN_CL = 'N'
+]]></isEqual><![CDATA[
+
+
+
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+	   B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+       A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR"><![CDATA[      
+       A.DPSTR LIKE '%'||#DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+       A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqEqpProdDtlList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.SInqEqpProdDtlList 입고대상상품상세리스트 */
+/* IO: 김상오,2015-08-25T13:37:45(김상오,2015-08-24T17:23:39) */
+SELECT '' CNSL_MGMT_NO
+      ,'' PRCH_MGMT_NO
+      ,ROWNUM SEQ
+      , A.OUTS_MCN_CL
+      , '1' BYGRD
+      , A.EQP_MDL_CD
+      , A.BATR_CD
+      , A.QTY
+      , 0 NRL_QTY
+      , 0 HLD_QTY
+      , A.UPRC AS PRICE 
+FROM TB_EP_BAS_PROD_DTL A
+   , TB_EQP_MDL B
+WHERE A.EQP_MDL_CD = B.EQP_MDL_CD
+AND A.EQP_MDL_CD = #EQP_MDL_CD#
+AND A.BYGRD = '1'
+AND A.DEL_YN = 'N'
+/*  AND B.DEL_YN = 'N'  ERD 에는 있는대 현재 테이블에는 없음 20150824 */
+AND A.FRDT <= TO_CHAR(SYSDATE,'YYYYMMDD')
+AND A.TODT >= TO_CHAR(SYSDATE,'YYYYMMDD')]]>
+	</select>
+	<select id="SInqCnslMgmtNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.SInqCnslMgmtNo 상담관리번호시퀀스 */
+/* IO: 김상오,2015-08-25T10:42:08(김상오,2015-08-24T17:57:56) */
+SELECT 'CON'||LPAD(TO_CHAR(SQ01_TB_EP_CST_CONSULT_MGMT.NEXTVAL),9,'0') CNSL_MGMT_NO
+FROM DUAL]]>
+	</select>
+	<insert id="ICnslMgmtDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.ICnslMgmtDtl 상담관리상세등록 */
+/* IO: 김상오,2015-08-25T14:32:24(김상오,2015-08-25T13:47:27) */
+INSERT INTO TB_EP_CST_CONSULT_DTL (
+ CNSL_MGMT_NO     
+ ,CNSL_SER_NO     
+ ,EQP_MDL_CD      
+ ,CMPT_PROD_CD    
+ ,DTL_CL          
+ ,CL_CD           
+ ,QTY             
+ ,NORM_QTY        
+ ,HLD_QTY         
+ ,DDCT_AMT        
+ ,DEL_YN          
+ ,UPDATE_COUNT    
+ ,FS_REG_USER_ID 
+ ,FS_REG_DTM     
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM 
+ ,SKN_SMPL_QTY
+)
+VALUES(
+ #CNSL_MGMT_NO#  /* CNSL_MGMT_NO     */    
+ ,#SEQ#  /* CNSL_SER_NO     */
+ ,#EQP_MDL_CD#   /* EQP_MDL_CD      */
+ ,#BATR_CD#  /* CMPT_PROD_CD    */
+ ,#OUTS_MCN_CL#       /* DTL_CL          */
+ ,'1'            /* CL_CD           */
+ ,#QTY#          /* QTY             */
+ ,#NRL_QTY#      /* NORM_QTY        */
+ ,#HLD_QTY#      /* HLD_QTY         */
+ ,(CASE WHEN TO_NUMBER(#HLD_QTY#) >= 1 THEN 0 ELSE TO_NUMBER(#PRICE#) END) /* DDCT_AMT        */ 
+ ,'N'            /* DEL_YN          */ 
+ ,1              /* UPDATE_COUNT    */ 
+ ,#USERID#        /* FS_REG_USER_ID */ 
+ ,SYSDATE        /* FS_REG_DTM     */ 
+ ,#USERID#       /* LS_CHG_USER_ID*/ 
+ ,SYSDATE        /* LS_CHG_DTM    */ 
+ ,''             /* SKN_SMPL_QTY    */ 
+)]]>
+	</insert>
+	<insert id="ICnslMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.ICnslMgmt 상담관리등록 */
+/* IO: 김상오,2015-09-08T18:18:40(김상오,2015-08-25T16:31:33) */
+INSERT INTO TB_EP_CST_CONSULT_MGMT (   
+ CNSL_MGMT_NO
+,EQP_MDL_CD
+,EQP_SER_NO
+,CNSL_DT
+,CNSL_DEALCO_CD
+,EQP_COLOR_CD
+,ONING_DT
+,EQP_ST
+,USE_PRD_DDCT_AMT
+,INR_CORR_YN
+,PWR_SYS
+,CALL_QULT_TEST
+,DATA_PRFM
+,SCRN_TEST
+,FUNC_TEST
+,LOSS_EQP_YN
+,RWD_RTN_OBJ_YN
+,RENTP_YN
+,WET_YN
+,USIM_EQPCHG_YN
+,OTHRCO_FORGN_EQP_YN
+,SUGG
+,EVALCNSLR_AUTCT_YN
+,FULLSET_YN
+,CNSL_AMT
+,PRCH_CL
+,CTZ_NO
+,DPSTR
+,BANK_CD
+,ACCO_NO
+,TEL_NO
+,ZIPCD_1
+,ZIPCD_2
+,ADDR
+,ETC_ADDR
+,MOV_YN
+,DEL_YN
+,UPDATE_COUNT
+,FS_REG_DTM
+,FS_REG_USER_ID
+,LS_CHG_DTM
+,LS_CHG_USER_ID
+,FEE_DEDC_YN
+,SVC_NO
+,SVC_MGMT_NO
+,IMEI
+,IN_CONF_YN
+,IN_CONF_DT
+,IN_PROC_RSN
+,ETC_CMPT
+,POLY_OBJ_YN
+,POLY_OBJ_CD
+,PROGR_ST
+,SKN_CL
+,SKN_JDG_AMT
+,EQP_PRC
+,STRD_INCEN
+,STRD_INCEN_SCOP_AMT
+,CUST_GRP
+,XCL_MODE
+)
+VALUES(
+  #CNSL_MGMT_NO#                                  /*CNSL_MGMT_NO*/           
+ ,TRIM(#EQP_MDL_CD#)                              /*EQP_MDL_CD*/            
+ ,TRIM(#EQP_SER_NO#)                        /*EQP_SER_NO*/   
+ ,NVL(TRIM(#CNSL_DT#),TO_CHAR(SYSDATE,'YYYYMMDD'))/*CNSL_DT*/             
+ ,TRIM(#CNSL_DEALCO_CD#)                          /*CNSL_DEALCO_CD*/         
+ ,TRIM(#EQP_COLOR_CD#)                            /*EQP_COLOR_CD*/           
+ ,NVL(substr(TRIM(#ONING_DT#),0,8),TO_CHAR(SYSDATE,'YYYYMMDD')) /*ONING_DT*/           
+ ,'C'                                             /*EQP_ST*/             
+ ,NVL(#USE_PRD_DDCT_AMT#,0)                      /*USE_PRD_DDCT_AMT*/   
+ ,'N'                                             /*INR_CORR_YN*/        
+ ,'N'                                             /*PWR_SYS*/            
+ ,'N'                                             /*CALL_QULT_TEST*/     
+ ,'N'                                             /*DATA_PRFM*/          
+ ,'N'                                             /*SCRN_TEST*/          
+ ,'N'                                             /*FUNC_TEST*/          
+ ,'N'                                             /*LOSS_EQP_YN*/        
+ ,'N'                                             /*RWD_RTN_OBJ_YN*/     
+ ,'N'                                             /*RENTP_YN*/           
+ ,'N'                                             /*WET_YN*/             
+ ,'N'                                             /*USIM_EQPCHG_YN*/     
+ ,NVL(#OTHRCO_FORGN_EQP_YN#,'N')                  /*OTHRCO_FORGN_EQP_YN*/
+ ,'Excel Upload(IN)'                              /*SUGG*/               
+ ,''                              /*EVALCNSLR_AUTCT_YN*/ 
+ ,''                                              /*FULLSET_YN*/         
+ ,NVL(#CNSL_AMT#,0)                               /*CNSL_AMT*/           
+ ,'C'                                             /*PRCH_CL*/            
+ ,TRIM(#CTZ_NO#)                                  /*CTZ_NO*/             
+ ,TRIM(#DPSTR#)                                   /*DPSTR*/              
+ ,CASE LENGTH(TRIM(#BANK_CD#)) WHEN 2 THEN '0'||TRIM(#BANK_CD#) ELSE TRIM(#BANK_CD#)  END                                    /*BANK_CD*/             
+ ,TRIM(#ACCO_NO#)                                 /*ACCO_NO*/             
+ ,TRIM(#TEL_NO#)                                  /*TEL_NO*/             
+ ,TRIM(#ZIPCD_1#)                                 /*ZIPCD_1*/            
+ ,TRIM(#ZIPCD_2#)                                 /*ZIPCD_2*/            
+ ,#ADDR#                                          /*ADDR*/               
+ ,#ETC_ADDR#                                      /*ETC_ADDR*/           
+ ,'Y'                                             /*MOV_YN*/             
+ ,'N'                                             /*DEL_YN*/             
+ ,1                                               /*UPDATE_COUNT*/       
+ ,sysdate                                         /*FS_REG_DTM*/        
+ ,#USERID#                                        /*FS_REG_USER_ID*/    
+ ,sysdate                                         /*LS_CHG_DTM*/       
+ ,#USERID#                                        /*LS_CHG_USER_ID*/   
+ ,TRIM(#FEE_DEDC_YN#)                             /*FEE_DEDC_YN*/        
+ ,TRIM(#SVC_NO#)                                  /*SVC_NO*/             
+ ,TRIM(#SVC_MGMT_NO#)                             /*SVC_MGMT_NO*/        
+ ,TRIM(#IMEI#)                                    /*IMEI*/               
+ ,'C'                                             /*IN_CONF_YN*/         
+ ,''                                              /*IN_CONF_DT*/         
+ ,'Excel Upload('||#PRC_GB#||')'                  /*IN_PROC_RSN*/        
+ ,#ETC_CMPT#                                      /*ETC_CMPT*/           
+ ,''                                              /*POLY_OBJ_YN*/        
+ ,''                                              /*POLY_OBJ_CD*/        
+ ,'02'                                            /*PROGR_ST*/           
+ ,NVL(#SKN_CL#,'N')                               /*SKN_CL*/             
+ , 0
+ , 0
+ , 0
+ , 0
+ ,#CUST_GRP#                                      /*CUST_GRP*/
+ ,#XCL_MODE#                                      /*XCL_MODE*/
+)]]>
+	</insert>
+	<update id="UCnslMgmtRSN" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.UCnslMgmtRSN 의견저장 */
+/* IO: 김상오,2015-08-26T17:55:36(김상오,2015-08-26T16:37:34) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET IN_PROC_RSN = #IN_PROC_RSN#
+   	  ,UPDATE_COUNT = UPDATE_COUNT+1
+      ,LS_CHG_DTM = sysdate
+      ,LS_CHG_USER_ID = #USERID#	
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UEqpInConf" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.UEqpInConf 입고확인등록 */
+/* IO: 김상오,2015-08-26T17:56:59(김상오,2015-08-26T17:36:07) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET IN_CONF_YN = 'Y'
+   	  ,IN_CONF_DT = TO_CHAR(SYSDATE,'YYYYMMDD')
+   	  ,IN_PROC_RSN = #IN_PROC_RSN#  
+   	  ,UPDATE_COUNT = UPDATE_COUNT+1
+      ,LS_CHG_DTM = sysdate
+      ,LS_CHG_USER_ID = #USERID#	
+      ,PROGR_ST = '11' 
+      ,IN_PROC_CHRGR_ID = #USERID#
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UEqpRegCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.UEqpRegCncl 입고등록취소 */
+/* IO: 김상오,2015-08-26T18:37:43(김상오,2015-08-26T18:22:19) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET IN_CONF_YN = 'C'
+   	  ,IN_CONF_DT = ''
+   	  ,IN_PROC_RSN = #IN_PROC_RSN#
+   	  ,UPDATE_COUNT = UPDATE_COUNT+1
+      ,LS_CHG_DTM = sysdate
+      ,LS_CHG_USER_ID = #USERID#	
+      ,PROGR_ST = '02'  
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UEqpInExl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.UEqpInExl 입고제외 */
+/* IO: 김상오,2015-08-26T18:40:18(김상오,2015-08-26T18:36:56) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET IN_CONF_YN = 'N'
+   	  ,IN_CONF_DT = TO_CHAR(SYSDATE,'YYYYMMDD')
+   	  ,IN_PROC_RSN = #IN_PROC_RSN#  
+   	  ,UPDATE_COUNT = UPDATE_COUNT+1
+      ,LS_CHG_DTM = sysdate
+      ,LS_CHG_USER_ID = #USERID#	
+      ,PROGR_ST = '12' 
+      ,IN_PROC_CHRGR_ID = #USERID#	
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<insert id="ICnslMgmtSkn" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.ICnslMgmtSkn 재감정상담관리등록 */
+/* IO: 김상오,2015-09-08T18:19:01(김상오,2015-08-25T16:31:33) */
+INSERT INTO TB_EP_CST_CONSULT_MGMT (   
+ CNSL_MGMT_NO
+,EQP_MDL_CD
+,EQP_SER_NO
+,CNSL_DT
+,CNSL_DEALCO_CD
+,EQP_COLOR_CD
+,ONING_DT
+,EQP_ST
+,USE_PRD_DDCT_AMT
+,INR_CORR_YN
+,PWR_SYS
+,CALL_QULT_TEST
+,DATA_PRFM
+,SCRN_TEST
+,FUNC_TEST
+,LOSS_EQP_YN
+,RWD_RTN_OBJ_YN
+,RENTP_YN
+,WET_YN
+,USIM_EQPCHG_YN
+,OTHRCO_FORGN_EQP_YN
+,SUGG
+,EVALCNSLR_AUTCT_YN
+,FULLSET_YN
+,CNSL_AMT
+,PRCH_CL
+,CTZ_NO
+,DPSTR
+,BANK_CD
+,ACCO_NO
+,TEL_NO
+,ZIPCD_1
+,ZIPCD_2
+,ADDR
+,ETC_ADDR
+,MOV_YN
+,DEL_YN
+,UPDATE_COUNT
+,FS_REG_DTM
+,FS_REG_USER_ID
+,LS_CHG_DTM
+,LS_CHG_USER_ID
+,FEE_DEDC_YN
+,SVC_NO
+,SVC_MGMT_NO
+,IMEI
+,IN_CONF_YN
+,IN_CONF_DT
+,IN_PROC_RSN
+,ETC_CMPT
+,POLY_OBJ_YN
+,POLY_OBJ_CD
+,PROGR_ST
+,SKN_CL
+,STRD_INCEN
+,STRD_INCEN_SCOP_AMT
+,SKN_EQP_ST
+,SKN_JDG_AMT
+,CUST_GRP
+,EQP_PRC
+,XCL_MODE
+)
+VALUES(
+  #CNSL_MGMT_NO#                                  /*CNSL_MGMT_NO*/           
+ ,TRIM(#EQP_MDL_CD#)                              /*EQP_MDL_CD*/            
+ ,TRIM(#EQP_SER_NO#)                        /*EQP_SER_NO*/   
+ ,NVL(TRIM(#CNSL_DT#),TO_CHAR(SYSDATE,'YYYYMMDD'))/*CNSL_DT*/             
+ ,TRIM(#CNSL_DEALCO_CD#)                          /*CNSL_DEALCO_CD*/         
+ ,TRIM(#EQP_COLOR_CD#)                            /*EQP_COLOR_CD*/           
+ ,NVL(substr(TRIM(#ONING_DT#),0,8),TO_CHAR(SYSDATE,'YYYYMMDD')) /*ONING_DT*/           
+ ,TRIM(#EQP_ST#)                                    /*EQP_ST*/             
+ ,NVL(#USE_PRD_DDCT_AMT#,0)                      /*USE_PRD_DDCT_AMT*/   
+ ,'N'                                             /*INR_CORR_YN*/        
+ ,'N'                                             /*PWR_SYS*/            
+ ,'N'                                             /*CALL_QULT_TEST*/     
+ ,'N'                                             /*DATA_PRFM*/          
+ ,'N'                                             /*SCRN_TEST*/          
+ ,'N'                                             /*FUNC_TEST*/          
+ ,'N'                                             /*LOSS_EQP_YN*/        
+ ,'N'                                             /*RWD_RTN_OBJ_YN*/     
+ ,'N'                                             /*RENTP_YN*/           
+ ,'N'                                             /*WET_YN*/             
+ ,'N'                                             /*USIM_EQPCHG_YN*/     
+ ,NVL(#OTHRCO_FORGN_EQP_YN#,'N')                  /*OTHRCO_FORGN_EQP_YN*/
+ ,'Excel Upload(IN)'                              /*SUGG*/               
+ ,''                              /*EVALCNSLR_AUTCT_YN*/ 
+ ,''                                              /*FULLSET_YN*/         
+ ,NVL(#CNSL_AMT#,0)                               /*CNSL_AMT*/           
+ ,'C'                                             /*PRCH_CL*/            
+ ,TRIM(#CTZ_NO#)                                  /*CTZ_NO*/             
+ ,TRIM(#DPSTR#)                                   /*DPSTR*/              
+ ,CASE LENGTH(TRIM(#BANK_CD#)) WHEN 2 THEN '0'||TRIM(#BANK_CD#) ELSE TRIM(#BANK_CD#)  END   /*BANK_CD*/             
+ ,TRIM(#ACCO_NO#)                                 /*ACCO_NO*/             
+ ,TRIM(#TEL_NO#)                                  /*TEL_NO*/             
+ ,TRIM(#ZIPCD_1#)                                 /*ZIPCD_1*/            
+ ,TRIM(#ZIPCD_2#)                                 /*ZIPCD_2*/            
+ ,#ADDR#                                          /*ADDR*/               
+ ,#ETC_ADDR#                                      /*ETC_ADDR*/           
+ ,'Y'                                             /*MOV_YN*/             
+ ,'N'                                             /*DEL_YN*/             
+ ,1                                               /*UPDATE_COUNT*/       
+ ,sysdate                                         /*FS_REG_DTM*/        
+ ,#USERID#                                        /*FS_REG_USER_ID*/    
+ ,sysdate                                         /*LS_CHG_DTM*/       
+ ,#USERID#                                        /*LS_CHG_USER_ID*/   
+ ,TRIM(#FEE_DEDC_YN#)                             /*FEE_DEDC_YN*/        
+ ,TRIM(#SVC_NO#)                                  /*SVC_NO*/             
+ ,TRIM(#SVC_MGMT_NO#)                             /*SVC_MGMT_NO*/        
+ ,TRIM(#IMEI#)                                    /*IMEI*/               
+ ,'C'                                             /*IN_CONF_YN*/         
+ ,''                                              /*IN_CONF_DT*/         
+ ,'Excel Upload('||#PRC_GB#||')'                  /*IN_PROC_RSN*/        
+ ,#ETC_CMPT#                                      /*ETC_CMPT*/           
+ ,''                                              /*POLY_OBJ_YN*/        
+ ,''                                              /*POLY_OBJ_CD*/        
+ ,'02'                                            /*PROGR_ST*/           
+ ,'Y'                                             /*SKN_CL*/             
+ , 0                                              /*STRD_INCEN*/
+ , 0                                              /*STRD_INCEN_SCOP_AMT*/
+ ,TRIM(#EQP_ST#)                                 /*SKN_EQP_ST*/
+ ,NVL(#USE_PRD_DDCT_AMT#,0)                      /*SKN_JDG_AMT*/ 
+ ,#CUST_GRP#                                      /*CUST_GRP*/
+ ,NVL(#USE_PRD_DDCT_AMT#,0)                      /*EQP_PRC*/
+ ,#XCL_MODE#                                      /*XCL_MODE*/
+)]]>
+	</insert>
+	<insert id="ICnslMgmtDtlSkn" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.ICnslMgmtDtlSkn 재감정상담관리상세등록 */
+/* IO: 김상오,2015-08-27T19:01:38(김상오,2015-08-27T18:57:36) */
+INSERT INTO TB_EP_CST_CONSULT_DTL (
+ CNSL_MGMT_NO     
+ ,CNSL_SER_NO     
+ ,EQP_MDL_CD      
+ ,CMPT_PROD_CD    
+ ,DTL_CL          
+ ,CL_CD           
+ ,QTY             
+ ,NORM_QTY        
+ ,HLD_QTY         
+ ,DDCT_AMT        
+ ,DEL_YN          
+ ,UPDATE_COUNT    
+ ,FS_REG_USER_ID 
+ ,FS_REG_DTM     
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM 
+ ,SKN_SMPL_QTY
+)
+VALUES(
+ #CNSL_MGMT_NO#  /* CNSL_MGMT_NO     */    
+ ,#SEQ#  /* CNSL_SER_NO     */
+ ,#EQP_MDL_CD#   /* EQP_MDL_CD      */
+ ,#BATR_CD#  /* CMPT_PROD_CD    */
+ ,#OUTS_MCN_CL#       /* DTL_CL          */
+ ,'1'            /* CL_CD           */
+ ,#QTY#          /* QTY             */
+ ,#NRL_QTY#      /* NORM_QTY        */
+ ,#HLD_QTY#      /* HLD_QTY         */
+ ,(CASE WHEN TO_NUMBER(#HLD_QTY#) >= 1 THEN 0 ELSE TO_NUMBER(#PRICE#) END) /* DDCT_AMT        */ 
+ ,'N'            /* DEL_YN          */ 
+ ,1              /* UPDATE_COUNT    */ 
+ ,#USERID#        /* FS_REG_USER_ID */ 
+ ,SYSDATE        /* FS_REG_DTM     */ 
+ ,#USERID#       /* LS_CHG_USER_ID*/ 
+ ,SYSDATE        /* LS_CHG_DTM    */ 
+ ,#HLD_QTY#      /* SKN_SMPL_QTY    */ 
+)]]>
+	</insert>
+</sqlMap>

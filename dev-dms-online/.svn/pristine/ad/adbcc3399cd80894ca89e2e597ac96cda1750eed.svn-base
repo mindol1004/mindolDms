@@ -1,0 +1,174 @@
+package dms.pr.prbimbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]임대폰감정등록</li>
+ * <li>설  명 : <pre>[PU]임대폰감정등록</pre></li>
+ * <li>작성일 : 2015-07-21 16:26:56</li>
+ * <li>작성자 : 이영진 (newnofixing)</li>
+ * </ul>
+ *
+ * @author 이영진 (newnofixing)
+ */
+public class PPRReqpJdgRgst extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PPRReqpJdgRgst(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]임대폰감정등록조회</pre>
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-07-23 12:27:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 *	- field : IN_DT [단말기입고일]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_REQP_JDG_LIST
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *		- field : INSP_CL_CD [항목구분]
+	 *		- field : INSP_ITM_CD [아이템항목구분]
+	 *		- field : INSP_DRL_ITM_CD [상세아이템항목구분]
+	 *		- field : INDF_AMT [손해배상금액]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_JDG_SEQ [단말기감정순번]
+	 *		- field : EQP_JDG_DT [단말기감정일]
+	 *		- field : EQP_JDG_RSLT_CD [단말기감정결과코드]
+	 *		- field : EQP_CMP_AMT_TOT [단말기배상금합계]
+	 *		- field : JDG_APRV_YN [감정승인여부]
+	 *		- field : JDG_CHRGR_NO [감정담당자번호]
+	 *		- field : JDG_CHRGR_NM [감정담당자명]
+	 *		- field : JDG_APRV_DT [감정승인일자]
+	 *		- field : EQP_IN_DT [입고일]
+	 *		- field : PEN [배상금]
+	 *		- field : USE_YN [필드1]
+	 *		- field : DEL_YN [필드1]
+	 * </pre>
+	 */
+    public IDataSet pInqReqpJdgRgstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            responseData = callSharedBizComponentByDirect("pr.PRSIMBase", "fInqReqpJdgRgstLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]임대폰감정저장</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-07-23 12:27:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_REQP_JDG_LIST
+	 *		- field : EQP_IN_DT [입고일]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_JDG_SEQ [단말기감정일련번호]
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *		- field : INSP_DRL_ITM_CD [점검세부항목코드]
+	 *		- field : PEN [변상금]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_COLOR_CD [단말기칼라코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : BOX_NO [박스번호]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : EQP_JDG_DT [단말기감정일]
+	 *		- field : EQP_JDG_RSLT_CD [단말기감정결과코드]
+	 *		- field : EQP_CMP_AMT_TOT [변상금총액]
+	 *		- field : JDG_APRV_YN [감정승인여부]
+	 *		- field : JDG_CHRGR_NO [감정담당자번호]
+	 *		- field : JDG_CHRGR_NM [감정담당자명]
+	 *		- field : IN_PLC_CD [매입처]
+	 *		- field : DEAL_CO_NM [매입처명]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : USE_YN [사용여부]
+	 *	- record : RS_REQP_JDG_LIST2
+	 *		- field : EQP_IN_DT [입고일]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_JDG_SEQ [단말기감정일련번호]
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *		- field : INSP_DRL_ITM_CD [점검세부항목코드]
+	 *		- field : PEN [변상금]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_COLOR_CD [단말기칼라코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : BOX_NO [박스번호]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : EQP_JDG_DT [단말기감정일]
+	 *		- field : EQP_JDG_RSLT_CD [단말기감정결과코드]
+	 *		- field : EQP_CMP_AMT_TOT [변상금총액]
+	 *		- field : JDG_APRV_YN [감정승인여부]
+	 *		- field : JDG_CHRGR_NO [감정담당자번호]
+	 *		- field : JDG_CHRGR_NM [감정담당자명]
+	 *		- field : IN_PLC_CD [매입처]
+	 *		- field : DEAL_CO_NM [매입처명]
+	 *		- field : DEL_YN [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet pSaveReqpJdg(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IRecordSet rs = requestData.getRecordSet("RS_REQP_JDG_LIST");
+        IRecordSet rs2 = requestData.getRecordSet("RS_REQP_JDG_LIST2");
+        CommonArea ca = getCommonArea(onlineCtx);
+    
+    	try {
+    	    requestData.putFieldMap(rs2.getRecordMap(0));
+    	    requestData.putField("userNo", ca.getUserNo());
+    	    callSharedBizComponentByDirect("pr.PRSIMBase", "fRegReqpJdg", requestData, onlineCtx);
+    		
+    		for (int i=0; i<rs.getRecordCount(); i++) {
+    			requestData.putFieldMap(rs.getRecordMap(i));
+    			callSharedBizComponentByDirect("pr.PRSIMBase", "fRegReqpJdgDtl", requestData, onlineCtx);
+    		}
+    		
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+    	// 4. 결과값 리턴
+    	responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+    	
+        return responseData;
+    }
+  
+}

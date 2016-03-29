@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCnslMgmt">
+	<select id="SScrbPrstLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SScrbPrstLst 가입현황 조회 */
+/* IO: 박홍서,2015-08-06T10:51:40(박홍서,2015-08-06T10:51:40) */
+SELECT  A.NR_CNTRT_DT
+       ,A.CNTRT_NO
+       ,A.SVC_MGMT_NO
+       ,A.NR_CNTRTR_NM
+       ,A.SVC_NO
+       ,D.EQP_MDL_NM
+       ,A.RENTAL_SER_NUM
+       ,E.DMS_PEN_AMT
+       ,A.AGN_CD
+       ,B.DEAL_CO_NM AS AGN_NM
+       ,A.FS_REG_USER_ID
+       ,A.FS_REG_DTM
+       ,A.LS_CHG_USER_ID
+       ,A.LS_CHG_DTM
+  FROM  TB_NR_CNTRT A
+       ,TB_DEAL_CO B
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_POLY D
+       ,TB_RENTAL_PEN E
+ WHERE  A.NR_CNTRT_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+   AND  A.AGN_CD = B.DEAL_CO_CD
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+   AND  C.CNTRT_NO = E.CNTRT_NO
+   AND  C.PEN_POLY_NO = E.PEN_POLY_NO
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+ ORDER BY A.AGN_CD, A.CNTRT_NO]]>
+	</select>
+	<select id="SScrbPrstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SScrbPrstPaging 가입현황 페이징 조회 */
+/* IO: 박홍서,2015-08-06T10:57:01(박홍서,2015-08-06T10:53:49) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.AGN_CD, A.CNTRT_NO) AS ROWNO
+               ,A.NR_CNTRT_DT
+               ,A.CNTRT_NO
+               ,A.SVC_MGMT_NO
+               ,A.NR_CNTRTR_NM
+               ,A.SVC_NO
+               ,D.EQP_MDL_NM
+               ,A.RENTAL_SER_NUM
+               ,E.DMS_PEN_AMT
+               ,A.AGN_CD
+               ,B.DEAL_CO_NM AS AGN_NM
+               ,A.FS_REG_USER_ID
+               ,A.FS_REG_DTM
+               ,A.LS_CHG_USER_ID
+               ,A.LS_CHG_DTM
+          FROM  TB_NR_CNTRT A
+               ,TB_DEAL_CO B
+               ,TB_RENTAL_CNTRT C
+               ,TB_RENTAL_POLY D
+               ,TB_RENTAL_PEN E
+         WHERE  A.NR_CNTRT_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+           AND  A.AGN_CD = B.DEAL_CO_CD
+           AND  A.CNTRT_NO = C.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+           AND  C.CNTRT_NO = E.CNTRT_NO
+           AND  C.PEN_POLY_NO = E.PEN_POLY_NO
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SScrbPrstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SScrbPrstTotCnt 가입현황 총건수 조회 */
+/* IO: 박홍서,2015-08-06T10:56:40(박홍서,2015-08-06T10:56:40) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_NR_CNTRT A
+       ,TB_DEAL_CO B
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_POLY D
+       ,TB_RENTAL_PEN E
+ WHERE  A.NR_CNTRT_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+   AND  A.AGN_CD = B.DEAL_CO_CD
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+   AND  C.CNTRT_NO = E.CNTRT_NO
+   AND  C.PEN_POLY_NO = E.PEN_POLY_NO
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

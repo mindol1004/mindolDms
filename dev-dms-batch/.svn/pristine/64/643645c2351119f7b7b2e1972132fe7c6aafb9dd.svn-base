@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR012">
+	<select id="SClaimLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR012.SClaimLst 렌탈매출등록을위한청구조회 */
+/* IO: 진병수,2015-08-27T09:18:08(진병수,2015-08-04T15:01:21) */
+SELECT SQ01_TB_SALE.NEXTVAL AS SALE_NO 
+     , E.ASSET_NO
+     , C.CNTRT_NO
+     , '501802'          AS SALE_DEPT_CD
+     , A.INV_DT          AS SALE_DT
+     , 'RENT'            AS SALE_ITM_CD    /*매출항목코드*/
+     , A.INV_AMT * 1.1   AS SALE_AMT
+     , A.INV_AMT * 1.0   AS SPLY_PRC
+     , A.INV_AMT * 0.1   AS SURTAX_AMT
+     , A.SVC_MGMT_NO
+     , A.RENTAL_SER_NO
+     , 'N'               AS DEL_YN
+  FROM TF_INV_DTL        A
+     , TB_NR_CNTRT       C
+     , TB_RENTAL_CNTRT   R
+     , TB_EQP_CNTRT      E
+ WHERE A.IF_PROC_DT = NVL(#PROC_DT#,TO_CHAR(SYSDATE-1,'YYYYMMDD'))
+   AND A.SALE_ITM_CD    = 'CRRNTUS'
+   AND C.SVC_MGMT_NO   = TO_CHAR(A.SVC_MGMT_NO  )
+   AND C.RENTAL_SER_NO = TO_CHAR(A.RENTAL_SER_NO)
+   AND R.CNTRT_NO      = C.CNTRT_NO
+   AND E.CNTRT_NO      = R.CNTRT_NO]]>
+	</select>
+	<insert id="ISaleInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.ISaleInfo 매출등록 */
+/* IO: 진병수,2015-08-24T11:24:55(진병수,2015-08-04T15:05:26) */
+INSERT INTO TB_SALE
+            (
+              SALE_NO
+            , ASSET_NO
+            , CNTRT_NO
+            , SALE_DEPT_CD
+            , SALE_DT
+            , SALE_ITM_CD
+            , SALE_AMT
+            , SPLY_PRC
+            , SURTAX_AMT
+            , DEL_YN
+            , FS_REG_USER_ID
+            , FS_REG_DTM
+            , LS_CHG_USER_ID
+            , LS_CHG_DTM
+            )
+            VALUES
+            (
+              #SALE_NO#
+            , #ASSET_NO#
+            , #CNTRT_NO#
+            , #SALE_DEPT_CD#
+            , #SALE_DT#
+            , #SALE_ITM_CD#
+            , #SALE_AMT#
+            , #SPLY_PRC#
+            , #SURTAX_AMT#
+            , 'N'    
+            , 'BAT'  
+            , SYSDATE
+            , 'BAT'  
+            , SYSDATE            
+            )]]>
+	</insert>
+</sqlMap>

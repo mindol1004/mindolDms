@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR007">
+	<select id="SEqpSKN" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR007.SEqpSKN SKN여신에서 채무정보 조회 */
+/* IO: 진병수,2015-11-27T10:54:02(진병수,2015-08-10T09:49:43) */
+WITH SKN AS
+(
+          SELECT AGN_CD || 'A000' AS AGN_CD
+               , PAY_YM
+               , PAY_YM_TS 
+               , 'KN' AS CRD_CD
+               , '1000000010'  AS PROXY_DEALCO_CD 
+               , SUM(AGN_CRD_AMT) AS AMT
+               , TRUNC(SUM (AGN_CRD_AMT*100/110)) AS DEBT_ITM_AMT
+               , SUM (AGN_CRD_AMT) - TRUNC(SUM (AGN_CRD_AMT*100/110)) AS DEBT_SURTAX               
+            FROM TB_NR_SKN_CRD
+           WHERE PAY_YM = SUBSTR(NVL(#PROC_DT#,TO_CHAR(SYSDATE,'YYYYYMMDD')),1,6) 
+             AND AGN_SALE_AMT  > 0
+             AND AGN_CRD_AMT > 0
+             AND AGN_SALE_AMT >= AGN_CRD_AMT
+           GROUP BY AGN_CD, PAY_YM, PAY_YM_TS             
+           UNION ALL 
+          SELECT AGN_CD || 'A000'
+               , PAY_YM
+               , PAY_YM_TS 
+               , 'KD'
+               , NULL
+               , SUM(CRD_SALE_DAMT) 
+               , TRUNC(SUM (CRD_SALE_DAMT*100/110)) 
+               , SUM (CRD_SALE_DAMT) - TRUNC(SUM (CRD_SALE_DAMT*100/110)) 
+            FROM TB_NR_SKN_CRD
+           WHERE PAY_YM = SUBSTR(NVL(#PROC_DT#,TO_CHAR(SYSDATE,'YYYYYMMDD')),1,6)
+             AND AGN_SALE_AMT  > 0
+             AND CRD_SALE_DAMT > 0
+           GROUP BY AGN_CD, PAY_YM, PAY_YM_TS
+           UNION ALL
+          SELECT AGN_CD || 'A000' AS AGN_CD
+               , PAY_YM
+               , PAY_YM_TS 
+               , 'KN' AS CRD_CD
+               , '1000000010'  AS PROXY_DEALCO_CD
+               , SUM(AGN_SALE_AMT) AS AMT
+               , TRUNC(SUM (AGN_SALE_AMT*100/110)) AS DEBT_ITM_AMT
+               , SUM (AGN_SALE_AMT) - TRUNC(SUM (AGN_SALE_AMT*100/110)) AS DEBT_SURTAX  
+            FROM TB_NR_SKN_CRD A
+           WHERE PAY_YM = SUBSTR(NVL(#PROC_DT#,TO_CHAR(SYSDATE,'YYYYYMMDD')),1,6)
+             AND AGN_SALE_AMT  > 0
+             AND CRD_SALE_DAMT < 0
+             GROUP BY AGN_CD, PAY_YM, PAY_YM_TS           
+)  
+, SLIP_DEL AS
+(
+   SELECT  A.OP_CL_CD, A.DEBT_XCL_YM, A.XCL_CL, A.DEBT_DEALCO_CD, A.XCL_ITM_CL, A.DEBT_PRCH_TS,  DECODE(NVL(B.SLIP_ST_CD,'05'),'05','Y','N') AS DEL_YN
+     FROM  TB_XCL_DEBT A
+          ,TB_SLIP B
+    WHERE  A.DEBT_XCL_YM = SUBSTR(NVL(#PROC_DT#,TO_CHAR(SYSDATE,'YYYYYMMDD')),1,6)
+      AND  A.DEBT_SLIP_NO = B.SLIP_NO (+)        
+)
+
+SELECT 'NR'     AS OP_CL_CD /*업무구분코드*/
+      , PAY_YM  AS DEBT_XCL_YM    /*채무정산년월*/
+      , CRD_CD  AS XCL_ITM_CL
+      , DEALCO_CD         AS DEBT_DEALCO_CD
+      , AGN_CD            AS DEBT_AGN_CD
+      , DEALCO_BLICENS_NO AS DEBT_BIZ_REG_NO
+      , '1'    AS XCL_CL
+      , TO_NUMBER(PAY_YM_TS) AS DEBT_PRCH_TS
+      , PROXY_DEALCO_CD
+      , DEBT_SURTAX
+      , DEBT_ITM_AMT
+      , NULL              AS DEBT_SLIP_DT
+      , NULL              AS DEBT_CNCL_SLIP_NO
+      , NULL              AS DEBT_CNCL_DT      
+   FROM SKN A
+      , TB_DEALCO C
+  WHERE C.AGN_ORG_CD = A.AGN_CD
+    AND ('NR', PAY_YM, CRD_CD, DEALCO_CD, 'IN', PAY_YM_TS)
+        NOT IN (SELECT OP_CL_CD, DEBT_XCL_YM, XCL_CL, DEBT_DEALCO_CD, XCL_ITM_CL, DEBT_PRCH_TS  
+                  FROM SLIP_DEL WHERE DEL_YN = 'N')]]>
+	</select>
+	<insert id="IXclDebt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR007.IXclDebt 채무정보입력 */
+/* IO: 진병수,2015-10-08T17:19:41(진병수,2015-08-10T09:53:17) */
+INSERT INTO TB_XCL_DEBT
+            (
+             OP_CL_CD
+           , DEBT_XCL_YM
+           , XCL_CL
+           , DEBT_DEALCO_CD
+           , DEBT_AGN_CD
+           , DEBT_BIZ_REG_NO           
+           , XCL_ITM_CL
+           , DEBT_ITM_AMT
+           , DEBT_SURTAX
+           , DEBT_SLIP_NO
+           , DEBT_SLIP_DT
+           , DEBT_ORGL_SLIP_NO
+           , DEBT_CNCL_SLIP_NO
+           , DEBT_CNCL_DT
+           , DEBT_ADJ_BF_AMT
+           , DEBT_ADJ_DAMT    
+           , DEBT_PRCH_TS
+           , PROXY_DEALCO_CD       
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+            , LS_CHG_USER_ID
+            , LS_CHG_DTM
+            )
+     VALUES (
+             #OP_CL_CD#
+           , #DEBT_XCL_YM#
+           , #XCL_CL#
+           , #DEBT_DEALCO_CD#
+           , #DEBT_AGN_CD#
+           , #DEBT_BIZ_REG_NO#
+           , #XCL_ITM_CL#
+           , #DEBT_ITM_AMT#
+           , #DEBT_SURTAX#
+           , #DEBT_SLIP_NO#
+           , #DEBT_SLIP_DT#
+           , #DEBT_ORGL_SLIP_NO#
+           , #DEBT_CNCL_SLIP_NO#
+           , #DEBT_CNCL_DT#
+           , NVL(#DEBT_ADJ_BF_AMT#,0)
+           , NVL(#DEBT_ADJ_DAMT#,  0)  
+           , #DEBT_PRCH_TS#
+           , #PROXY_DEALCO_CD#       
+           , nvl(#USER_NO#,'BAT')
+           , nvl(#FS_REG_DTM#,sysdate)  
+           , nvl(#USER_NO#,'BAT')
+           , nvl(#LS_CHG_DTM#,sysdate)           
+            )]]>
+	</insert>
+	<delete id="DXclDebt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR007.DXclDebt 채무정보삭제 */
+/* IO: 진병수,2015-10-29T15:56:42(진병수,2015-09-15T09:36:58) */
+DELETE TB_XCL_DEBT                  
+ WHERE OP_CL_CD  = NVL(#OP_CL_CD#, 'NR')
+   AND DEBT_XCL_YM = TO_CHAR(TO_DATE(NVL(#PROC_DT#,TO_CHAR(SYSDATE,'YYYYMMDD')),'YYYYMMDD'),'YYYYMM')
+   AND XCL_ITM_CL IN ('KD', 'KN') 
+   AND (
+           DEBT_SLIP_NO IS NULL 
+       OR  DEBT_SLIP_NO IN (SELECT SLIP_NO
+                              FROM TB_SLIP
+                             WHERE NVL(SLIP_ST_CD,'05') = '05'
+                           )
+      )]]>
+	</delete>
+</sqlMap>

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRAgnClctComMgnt">
+	<select id="SAgnClctTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnClctComMgnt.SAgnClctTotCnt 대리점회수수수료정산정보총건수 */
+/* IO: 김혁범,2015-11-27T16:05:47(김혁범,2015-08-05T17:23:14) */
+SELECT  COUNT(1)AS TOTAL_CNT
+  FROM( 
+       SELECT  ROW_NUMBER() OVER(ORDER BY IA.DEBT_DEALCO_CD ASC)  AS  ROWNO
+  		        ,IA.* 
+  		   FROM  (
+                  SELECT  A.DEBT_AGN_CD  AS DEBT_DEALCO_CD            	 /* 채무거래처코드 */
+                		 ,A.DEBT_ITM_AMT         		                 /* 채무항목금액 */
+                		 ,B.ORG_NM              		                 /* 채권거래처명 */
+                		 ,A.DEBT_XCL_YM					                 /* 채무정산년월 */
+                		 ,C.TAX_BILL_NO                                  /*세금계산서번호*/
+                		 ,C.TAX_BILL_ST_CD 								 /*세금계산서상태코드*/
+                		 ,A.DEBT_SLIP_NO          AS SLIP_NO
+                		 ,NVL(C.SLIP_ST_CD, '00') AS SLIP_ST_CD
+                		 ,A.DEBT_BIZ_REG_NO                            /*사업자번호*/
+                		 ,#XCL_YM# AS YYYYMM
+                		 ,SUBSTR(#XCL_YM#,0,4) AS YYYY
+                    FROM  TB_XCL_DEBT A
+                	     ,TB_DEALCO B
+                         ,TB_SLIP C
+          		   WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            		 AND  A.OP_CL_CD = 'NR'                     		 /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */  
+            		 AND  A.XCL_ITM_CL = 'ER'                       		 /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:사용료*/
+            		 AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+]]><isNotEmpty prepend="AND" property="AGN_ORG_CD"><![CDATA[
+                          A.DEBT_DEALCO_CD = #AGN_ORG_CD#                /* 채권거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                          A.DEBT_XCL_YM = #XCL_YM#               	     /* 채무정산년월 */
+]]></isNotEmpty><![CDATA[			
+				) IA
+         ) PA]]>
+	</select>
+	<select id="SAgnClctLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnClctComMgnt.SAgnClctLstPaging 대리점회수수수료정산정보조회 */
+/* IO: 안진갑,2016-02-18T16:25:11(김혁범,2015-08-05T17:23:41) */
+SELECT  PA.*
+  FROM  (
+  		 SELECT  ROW_NUMBER() OVER(ORDER BY IA.DEBT_DEALCO_CD ASC)  AS  ROWNO
+  		        ,IA.* 
+  		   FROM  (
+                  SELECT  A.DEBT_DEALCO_CD  AS DEBT_DEALCO_CD            	 /* 채무거래처코드 */
+                		 ,A.DEBT_ITM_AMT         		                 /* 채무항목금액 */
+                		 ,B.ORG_NM              		                 /* 채권거래처명 */
+                		 ,A.DEBT_XCL_YM					                 /* 채무정산년월 */
+                		 ,C.TAX_BILL_NO                                  /*세금계산서번호*/
+                		 ,C.TAX_BILL_ST_CD 								 /*세금계산서상태코드*/
+                		 ,A.DEBT_SLIP_NO          AS SLIP_NO
+                		 ,NVL(C.SLIP_ST_CD, '00') AS SLIP_ST_CD
+                		 ,A.DEBT_BIZ_REG_NO                            /*사업자번호*/
+                		 ,#XCL_YM# AS YYYYMM
+                		 ,SUBSTR(SLIP_DT,0,4) AS YYYY
+                		 ,(SELECT DEALCO_FISCL_ST_CD FROM TB_DEALCO WHERE DEALCO_CD = A.DEBT_DEALCO_CD ) AS DEALCO_FISCL_ST_CD /*ERP거래처상태코드*/
+                         ,ROUND(A.DEBT_ITM_AMT/10000,0) AS DEBT_ITM_AMT_CNT  
+                         ,B.DEALCO_BLICENS_NO
+                         ,B.AGN_ORG_CD
+                    FROM  TB_XCL_DEBT A
+                	     ,TB_DEALCO B
+                         ,TB_SLIP C
+          		   WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            		 AND  A.OP_CL_CD = 'NR'                     		 /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */  
+            		 AND  A.XCL_ITM_CL = 'ER'                       		 /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:사용료*/
+            		 AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+]]><isNotEmpty prepend="AND" property="AGN_ORG_CD"><![CDATA[
+                          A.DEBT_DEALCO_CD = #AGN_ORG_CD#                /* 채권거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                          A.DEBT_XCL_YM = #XCL_YM#               	     /* 채무정산년월 */
+]]></isNotEmpty><![CDATA[			
+				) IA
+         ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAgnClctLstDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnClctComMgnt.SAgnClctLstDtlLst 대리점회수수수료정산정보상세 */
+/* IO: 김혁범,2015-12-07T13:32:41(김혁범,2015-08-06T15:31:45) */
+SELECT  A.CNTRT_NO            /* 계약번호 */
+       ,B.SVC_MGMT_NO         /* 서비스관리번호 */
+       ,B.EQP_SER_NO          /* 일련번호 */
+       ,B.AGN_CD              /* 대리점 코드 */
+       ,D.ORG_NM              /* 거래처명 */
+       ,E.RTN_REG_DT          /* 회수일자 */
+       ,C.XCL_AMT             /* 수수료 */
+       ,C.XCL_DT              /* 정산일자 */
+       ,B.NEW_CNTRT_DT        /* 계약일 */ 
+       ,C.XCL_SLIP_NO         /* 전표번호 */                       
+  FROM  TB_RENTAL_CNTRT  A
+       ,TB_NR_CNTRT  B
+       ,TB_ETC_XCL  C 
+       ,TB_DEALCO  D
+       ,TB_EQP_CLCT_OBJ E
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  SUBSTR(C.XCL_DEALCO_CD,1,6) = SUBSTR(D.AGN_ORG_CD,1,6)
+   AND  D.AGN_ORG_CD LIKE '%A000'
+   AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+   AND  B.EQP_SER_NO = E.EQP_SER_NO
+   AND  SUBSTR(C.XCL_DT, 1, 6) = #XCL_YM#
+   AND  A.OP_CL_CD = 'NR'     /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */
+   AND  C.OP_CL_CD = 'NR'
+   AND  C.XCL_ITM_CD = 'ER'   /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:UKey사용료, KN:SKN_대리점_단말기정산, PE:단말기위약금, JD:손해배상금*/
+   AND  C.XCL_DEALCO_CD = #DEBT_DEALCO_CD#]]>
+	</select>
+	<select id="SAgnClctAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnClctComMgnt.SAgnClctAllExcel 대리점회수수수료전체엑셀다운로드 */
+/* IO: 김혁범,2015-11-09T10:38:00(안진갑,2015-09-24T10:03:59) */
+SELECT B.SVC_MGMT_NO         AS "서비스관리번호"        /* 서비스관리번호 */
+      ,B.EQP_SER_NO          AS "일련번호"    /* 일련번호 */
+      ,D.DEALCO_BLICENS_NO   AS "사업자번호"       
+      ,D.ORG_NM              AS "거래처명"    /* 거래처명 */
+      ,NVL(TO_CHAR(TO_DATE(B.NEW_CNTRT_DT,'YYYYMMDD'),'YYYY-MM-DD'),'')        AS "계약일"    /* 계약일 */       
+      ,NVL(TO_CHAR(TO_DATE(C.XCL_DT,'YYYYMMDD'),'YYYY-MM-DD'),'')              AS "정산일자"    /* 정산일자 */
+      ,C.XCL_AMT             AS "수수료"    /* 수수료 */  
+      ,C.XCL_SLIP_NO AS "전표번호"/* 전표번호 */
+      ,NVL((SELECT  CM_CD_NM 
+          FROM  TB_CM_CD 
+         WHERE  CM_GRP_CD_ID = 'DMS153' 
+           AND  CM_CD_ID = C.XCL_SLIP_NO),'미발행') AS  "전표상태"
+ FROM  TB_RENTAL_CNTRT  A
+      ,TB_NR_CNTRT  B
+      ,TB_ETC_XCL  C 
+      ,TB_DEALCO  D
+      ,TB_CM_CD E
+      ,TB_SLIP F
+WHERE  A.CNTRT_NO = B.CNTRT_NO
+  AND  B.CNTRT_NO = C.CNTRT_NO
+  AND  C.XCL_DEALCO_CD = D.AGN_ORG_CD(+)
+  AND  C.XCL_ST_CD = E.CM_CD_ID(+)
+  AND  C.XCL_SLIP_NO = F.SLIP_NO(+)
+  AND  E.CM_GRP_CD_ID(+) = 'DMS153'
+  AND  SUBSTR(C.XCL_DT, 1, 6) = #XCL_YM#
+  AND  A.OP_CL_CD = 'NR'      /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */
+  AND  C.XCL_ITM_CD = 'ER'    /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:UKey사용료, KN:SKN_대리점_단말기정산, PE:단말기위약금, JD:손해배상금*/]]>
+	</select>
+	<select id="SAgnClctComSumTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnClctComMgnt.SAgnClctComSumTotCnt 대리점회수수수료정산정보총금액 */
+/* IO: 김혁범,2015-12-07T14:31:10(김혁범,2015-10-06T10:53:04) */
+SELECT  NVL(SUM(PA.DEBT_ITM_AMT),0) AS M_PRC
+  FROM
+      (
+       SELECT  ROW_NUMBER() OVER(ORDER BY IA.DEBT_DEALCO_CD ASC)  AS  ROWNO
+  		        ,IA.* 
+  		 FROM  (
+                  SELECT  A.DEBT_AGN_CD  AS DEBT_DEALCO_CD            	 /* 채무거래처코드 */
+                		 ,A.DEBT_ITM_AMT         		                 /* 채무항목금액 */
+                		 ,B.ORG_NM              		                 /* 채권거래처명 */
+                		 ,A.DEBT_XCL_YM					                 /* 채무정산년월 */
+                		 ,C.TAX_BILL_NO                                  /*세금계산서번호*/
+                		 ,C.TAX_BILL_ST_CD 								 /*세금계산서상태코드*/
+                		 ,A.DEBT_SLIP_NO          AS SLIP_NO
+                		 ,NVL(C.SLIP_ST_CD, '00') AS SLIP_ST_CD
+                		 ,A.DEBT_BIZ_REG_NO                            /*사업자번호*/
+                		 ,'' AS YYYYMM
+                    FROM  TB_XCL_DEBT A
+                	     ,TB_DEALCO B
+                         ,TB_SLIP C
+          		   WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            		 AND  A.OP_CL_CD = 'NR'                     		 /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */  
+            		 AND  A.XCL_ITM_CL = 'ER'                       		 /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:사용료*/
+            		 AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+]]><isNotEmpty prepend="AND" property="AGN_ORG_CD"><![CDATA[
+                          A.DEBT_DEALCO_CD = #AGN_ORG_CD#                /* 채권거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                          A.DEBT_XCL_YM = #XCL_YM#               	     /* 채무정산년월 */
+]]></isNotEmpty><![CDATA[
+            	)IA
+       )PA]]>
+	</select>
+	<select id="SAgnClctComDtlSumTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnClctComMgnt.SAgnClctComDtlSumTotCnt 대리점회수수수료상세총금액,총건수 */
+/* IO: 김혁범,2015-10-21T11:30:07(김혁범,2015-10-21T11:23:17) */
+SELECT  COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.XCL_AMT),0) AS M_PRC /*총금액*/
+  FROM  
+      (
+       SELECT  A.CNTRT_NO            /* 계약번호 */
+              ,B.SVC_MGMT_NO         /* 서비스관리번호 */
+              ,B.EQP_SER_NO          /* 일련번호 */
+              ,B.AGN_CD              /* 대리점 코드 */
+              ,D.ORG_NM              /* 거래처명 */
+              ,E.RTN_REG_DT          /* 회수일자 */
+              ,C.XCL_AMT             /* 수수료 */
+              ,C.XCL_DT              /* 정산일자 */
+              ,B.NEW_CNTRT_DT        /* 계약일 */ 
+              ,C.XCL_SLIP_NO         /* 전표번호 */                       
+         FROM  TB_RENTAL_CNTRT  A
+              ,TB_NR_CNTRT  B
+              ,TB_ETC_XCL  C 
+              ,TB_DEALCO  D
+              ,TB_EQP_CLCT_OBJ E
+        WHERE  A.CNTRT_NO = B.CNTRT_NO
+          AND  B.CNTRT_NO = C.CNTRT_NO
+          AND  SUBSTR(C.XCL_DEALCO_CD,1,6) = SUBSTR(D.AGN_ORG_CD,1,6)
+          AND  D.AGN_ORG_CD LIKE '%A000'
+          AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+          AND  B.EQP_SER_NO = E.EQP_SER_NO
+          AND  SUBSTR(C.XCL_DT, 1, 6) = #XCL_YM#
+          AND  A.OP_CL_CD = 'NR'     /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */
+          AND  C.XCL_ITM_CD = 'ER'   /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:UKey사용료, KN:SKN_대리점_단말기정산, PE:단말기위약금, JD:손해배상금*/
+          AND  C.XCL_DEALCO_CD = #DEBT_DEALCO_CD#
+      )PA]]>
+	</select>
+</sqlMap>

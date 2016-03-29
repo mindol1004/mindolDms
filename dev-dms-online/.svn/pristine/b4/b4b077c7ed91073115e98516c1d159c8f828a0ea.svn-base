@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRUnpdBondDisProcMgmt">
+	<select id="SUnpdBondDisProcTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.SUnpdBondDisProcTotCnt 채권추심미납채권조회총건수 */
+/* IO: 김혁범,2015-12-16T18:26:21(김혁범,2015-11-11T09:50:23) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM
+      (  
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.INSU_INV_NO ASC) AS ROWNO
+                ,B.UKEY_SVC_MGMT_NO /*서비스관리번호*/
+                ,(SELECT TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(A.INV_PROC_DT),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') FROM DUAL) AS FR_INV_PROC_DT /*최초미납일*/
+                ,(SELECT TRUNC(MONTHS_BETWEEN(TO_DATE(A.INV_PROC_DT,'YYYYMMDD'),SYSDATE)) FROM DUAL) AS INV_PROC_DATE/*미납기간*/
+                ,SUM(A.UNPD_RENTAL_FEE+A.DMG_CMP_UNRTN_AMT+A.ARR_ADD_AMT+A.MID_TERM_PEN_AMT+A.RTN_DELAY_PEN_AMT+A.DMG_CMP_BKAG_AMT) AS SUM_AMT/*미납금액 6개CASE금액합계*/
+                ,A.INSU_COLS_SLIP_NO/*전표번호*/
+                ,NVL(E.SLIP_NO,'00')AS SLIP_ST_CD/*전표처리상태*/
+                ,A.INV_PROC_DT/*처리일자*/
+                ,D.INVE_ST_CD /*제각상태*/
+                ,C.CNTRT_NO
+           FROM  TB_INSU_INV A
+                ,TB_INSU_UKEY B 
+                ,TB_EQP_CNTRT C 
+                ,TB_EQP_ASSET D 
+                ,TB_SLIP E
+          WHERE  A.INSU_INV_NO = B.UKEY_INSU_NO(+)
+            AND  B.CNTRT_NO = C.CNTRT_NO(+)
+            AND  C.ASSET_NO = D.ASSET_NO(+)
+            AND  A.INSU_COLS_SLIP_NO = E.SLIP_NO(+)
+            AND  D.INVE_ST_CD = '71'/*제각대상*/
+]]><isNotEmpty prepend="AND" property="INV_PROC_DATE"><![CDATA[
+                 (SELECT TRUNC(MONTHS_BETWEEN(TO_DATE(#UKEY_INV_STA_DT#,'YYYYMMDD'),SYSDATE))
+                    FROM DUAL) = #INV_PROC_DATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="UKEY_SVC_MGMT_NO"><![CDATA[
+                 B.UKEY_SVC_MGMT_NO = #UKEY_SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="UKEY_INV_STA_DT"><![CDATA[
+                 TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(#UKEY_INV_STA_DT#),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') BETWEEN #UKEY_INV_STA_DT# AND #UKEY_INV_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="INSU_COLS_SLIP_NO"><![CDATA[
+                 A.INSU_COLS_SLIP_NO = #INSU_COLS_SLIP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+                 D.INVE_ST_CD = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="INV_PROC_STA_DT"><![CDATA[
+                 A.INV_PROC_DT BETWEEN #INV_PROC_STA_DT# AND #INV_PROC_END_DT#
+]]></isNotEmpty><![CDATA[
+     GROUP BY  A.INSU_INV_NO, B.UKEY_SVC_MGMT_NO, A.INV_PROC_DT, D.INVE_ST_CD ,A.INSU_COLS_SLIP_NO
+               ,NVL(E.SLIP_NO,'00'),C.CNTRT_NO
+        )]]>
+	</select>
+	<select id="SUnpdBondDisProcLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.SUnpdBondDisProcLstPaging 채권추심미납채권조회 */
+/* IO: 김혁범,2015-12-16T18:26:33(김혁범,2015-11-11T09:51:11) */
+SELECT  * 
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.INSU_INV_NO ASC) AS ROWNO
+                ,B.UKEY_SVC_MGMT_NO /*서비스관리번호*/
+                ,(SELECT TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(A.INV_PROC_DT),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') FROM DUAL) AS FR_INV_PROC_DT /*최초미납일*/
+                ,(SELECT TRUNC(MONTHS_BETWEEN(TO_DATE(A.INV_PROC_DT,'YYYYMMDD'),SYSDATE)) FROM DUAL) AS INV_PROC_DATE/*미납기간*/
+                ,SUM(A.UNPD_RENTAL_FEE+A.DMG_CMP_UNRTN_AMT+A.ARR_ADD_AMT+A.MID_TERM_PEN_AMT+A.RTN_DELAY_PEN_AMT+A.DMG_CMP_BKAG_AMT) AS SUM_AMT/*미납금액 6개CASE금액합계*/
+                ,A.INSU_COLS_SLIP_NO/*전표번호*/
+                ,NVL(E.SLIP_NO,'00')AS SLIP_ST_CD/*전표처리상태*/
+                ,A.INV_PROC_DT/*처리일자*/
+                ,D.INVE_ST_CD /*제각상태*/
+                ,C.CNTRT_NO
+           FROM  TB_INSU_INV A
+                ,TB_INSU_UKEY B 
+                ,TB_EQP_CNTRT C 
+                ,TB_EQP_ASSET D 
+                ,TB_SLIP E
+          WHERE  A.INSU_INV_NO = B.UKEY_INSU_NO(+)
+            AND  B.CNTRT_NO = C.CNTRT_NO(+)
+            AND  C.ASSET_NO = D.ASSET_NO(+)
+            AND  A.INSU_COLS_SLIP_NO = E.SLIP_NO(+)
+            AND  D.INVE_ST_CD = '71'/*제각대상*/
+]]><isNotEmpty prepend="AND" property="INV_PROC_DATE"><![CDATA[
+                 (SELECT TRUNC(MONTHS_BETWEEN(TO_DATE(#UKEY_INV_STA_DT#,'YYYYMMDD'),SYSDATE))
+                    FROM DUAL) = #INV_PROC_DATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="UKEY_SVC_MGMT_NO"><![CDATA[
+                 B.UKEY_SVC_MGMT_NO = #UKEY_SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="UKEY_INV_STA_DT"><![CDATA[
+                 TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(#UKEY_INV_STA_DT#),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') BETWEEN #UKEY_INV_STA_DT# AND #UKEY_INV_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="INSU_COLS_SLIP_NO"><![CDATA[
+                 A.INSU_COLS_SLIP_NO = #INSU_COLS_SLIP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+                 D.INVE_ST_CD = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="INV_PROC_STA_DT"><![CDATA[
+                 A.INV_PROC_DT BETWEEN #INV_PROC_STA_DT# AND #INV_PROC_END_DT#
+]]></isNotEmpty><![CDATA[
+     GROUP BY  A.INSU_INV_NO, B.UKEY_SVC_MGMT_NO, A.INV_PROC_DT, D.INVE_ST_CD ,A.INSU_COLS_SLIP_NO
+               ,NVL(E.SLIP_NO,'00'),C.CNTRT_NO
+        )
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

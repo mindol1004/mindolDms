@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.EPR001">
+	<update id="USlip" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR001.USlip 전표상태동기화 */
+/* IO: 진병수,2015-08-26T10:36:10(진병수,2015-08-26T10:33:09) */
+UPDATE TB_SLIP
+   SET LS_CHG_USER_ID = 'BAT'
+     , LS_CHG_DTM     = SYSDATE
+     , SLIP_TRMS_YN  = #SLIP_STD_CD#
+ WHERE SLIP_NO       = #SLIP_NO#]]>
+	</update>
+	<select id="SSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR001.SSlip 전표데이터조회 */
+/* IO: 진병수,2015-08-26T10:55:24(진병수,2015-08-26T10:55:18) */
+SELECT *
+  FROM TB_SLIP
+ WHERE NVL(SLIP_TRMS_YN, 'V') = 'V' /*전표상태 : 승인이 안된 모든것 */]]>
+	</select>
+</sqlMap>

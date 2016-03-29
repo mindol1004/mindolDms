@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.BIF018">
+	<insert id="IInsuInvObj" parameterClass="map" ><![CDATA[/* Biz: dms.inf.BIF018.IInsuInvObj 보증보험청구대상 입력 */
+/* IO: 이영진,2015-08-11T15:27:06(이영진,2015-07-29T10:19:57) */
+INSERT  
+  INTO  TF_INSU_INV_OBJ
+       (
+        IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,INSU_SVC_NO
+       ,CUST_TYP_CD
+       ,CTZ_COPREG_NO
+       ,CUST_NM
+       ,BLICENS_NO
+       ,INSU_MGMT_NO
+       ,SVC_MGMT_NO
+       ,RENTAL_SER_NO
+       ,RENTAL_SCRB_DT
+       ,RENTAL_TERM_DT
+       ,TTUL_CHG_DT
+       ,INSU_SCUR_NO
+       ,INSU_STA_DT
+       ,INSU_END_DT
+       ,INSU_SCRB_AMT
+       ,INSU_INV_AMT
+       ,FST_ARR_DT
+       ,CUST_CNTC_TEL_NO
+       ,CUST_ZIPCD
+       ,CUST_BAS_ADDR
+       ,CUST_DTL_ADDR
+       ,ACNT_BAS_ADDR
+       ,ACNT_DTL_ADDR
+       ,TEEN_NM
+       ,TEEN_CTZ_REG_NO
+       ,PSNL_RGEN_YN
+       ,PSNL_RGEN_STEP
+       ,PSNL_RGEN_RIBR_YN
+       ,PSNL_RGEN_RIBR_AMT
+       ,BRC_EXM_YN
+       ,NEWLINE
+       ,PROC_ST_CD
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       ) 
+VALUES 
+       (
+        #IF_PROC_DT#
+       ,#IF_FILE_NM#
+       ,#IF_SEQ#
+       ,#INSU_SVC_NO#
+       ,#CUST_TYP_CD#
+       ,#CTZ_COPREG_NO#
+       ,#CUST_NM#
+       ,#BLICENS_NO#
+       ,#INSU_MGMT_NO#
+       ,#SVC_MGMT_NO#
+       ,#RENTAL_SER_NO#
+       ,#RENTAL_SCRB_DT#
+       ,#RENTAL_TERM_DT#
+       ,#TTUL_CHG_DT#
+       ,#INSU_SCUR_NO#
+       ,#INSU_STA_DT#
+       ,#INSU_END_DT#
+       ,#INSU_SCRB_AMT#
+       ,#INSU_INV_AMT#
+       ,#FST_ARR_DT#
+       ,#CUST_CNTC_TEL_NO#
+       ,#CUST_ZIPCD#
+       ,#CUST_BAS_ADDR#
+       ,#CUST_DTL_ADDR#
+       ,#ACNT_BAS_ADDR#
+       ,#ACNT_DTL_ADDR#
+       ,#TEEN_NM#
+       ,#TEEN_CTZ_REG_NO#
+       ,#PSNL_RGEN_YN#
+       ,#PSNL_RGEN_STEP#
+       ,#PSNL_RGEN_RIBR_YN#
+       ,#PSNL_RGEN_RIBR_AMT#
+       ,#BRC_EXM_YN#
+       ,#NEWLINE#
+       ,'09'
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+       )]]>
+	</insert>
+	<insert id="IInsuRentalInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.BIF018.IInsuRentalInfo 보증보험렌탈정보 입력 */
+/* IO: 이영진,2015-08-11T19:37:54(이영진,2015-08-03T17:37:15) */
+INSERT  
+  INTO  TF_INSU_RENTAL_INFO
+       (
+        IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,PRDPAY_DT
+       ,RENTAL_USE_FEE
+       ,RENTAL_USE_FEE_ADD_AMT
+       ,MID_TERM_PEN
+       ,DMG_CMP_AMT
+       ,UNPD_RENTAL_USE_FEE
+       ,UNPD_RENTAL_USE_FEE_ADD_AMT
+       ,UNPD_MID_TERM_PEN
+       ,UNPD_DMG_CMP_AMT
+        ) 
+VALUES 
+       (
+       ,#IF_PROC_DT#
+       ,#IF_FILE_NM#
+       ,#IF_SEQ#
+       ,#PRDPAY_DT#
+       ,#RENTAL_USE_FEE#
+       ,#RENTAL_USE_FEE_ADD_AMT#
+       ,#MID_TERM_PEN#
+       ,#DMG_CMP_AMT#
+       ,#UNPD_RENTAL_USE_FEE#
+       ,#UNPD_RENTAL_USE_FEE_ADD_AMT#
+       ,#UNPD_MID_TERM_PEN#
+       ,#UNPD_CMP_AMT#
+       )]]>
+	</insert>
+	<select id="SInsuRentalInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.BIF018.SInsuRentalInfo 보증보험렌탈정보 조회 */
+/* IO: 이영진,2015-08-11T19:39:59(이영진,2015-08-03T19:24:53) */
+SELECT 
+        IF_PROC_DT,IF_FILE_NM,IF_SEQ
+       ,SUBSTR(INSU_RENTAL_INFO,1,8) AS PRDPAY_DT
+       ,SUBSTR(INSU_RENTAL_INFO,9,6) AS RENTAL_USE_FEE
+       ,SUBSTR(INSU_RENTAL_INFO,15,5) AS RENTAL_USE_FEE_ADD_AMT
+       ,SUBSTR(INSU_RENTAL_INFO,20,7) AS MID_TERM_PEN
+       ,SUBSTR(INSU_RENTAL_INFO,27,7) AS DMG_CMP_AMT
+       ,SUBSTR(INSU_RENTAL_INFO,34,6) AS UNPD_RENTAL_USE_FEE
+       ,SUBSTR(INSU_RENTAL_INFO,40,5) AS UNPD_RENTAL_USE_FEE_ADD_AMT
+       ,SUBSTR(INSU_RENTAL_INFO,45,7) AS UNPD_MID_TERM_PEN
+       ,SUBSTR(INSU_RENTAL_INFO,52,7) AS UNPD_CMP_AMT
+  FROM (
+        SELECT IF_PROC_DT,IF_FILE_NM,IF_SEQ
+               ,MAX(DECODE(CNT,1,C1,2,C2,3,C3,4,C4,5,C5,6,C6,7,C7,8,C8,9,C9,10
+               ,C10,11,C11,12,C12,13,C13)) INSU_RENTAL_INFO
+          FROM (
+            SELECT
+            A.*,B.CNT
+            FROM
+            (
+                SELECT 
+                         IF_PROC_DT
+                        ,IF_FILE_NM
+                        ,IF_SEQ
+                        ,SUBSTR(INSU_RENTAL_INFO,1,58) AS C1
+                        ,SUBSTR(INSU_RENTAL_INFO,59,58) AS C2
+                        ,SUBSTR(INSU_RENTAL_INFO,117,58) AS C3
+                        ,SUBSTR(INSU_RENTAL_INFO,175,58) AS C4
+                        ,SUBSTR(INSU_RENTAL_INFO,233,58) AS C5
+                        ,SUBSTR(INSU_RENTAL_INFO,291,58) AS C6
+                        ,SUBSTR(INSU_RENTAL_INFO,349,58) AS C7
+                        ,SUBSTR(INSU_RENTAL_INFO,407,58) AS C8
+                        ,SUBSTR(INSU_RENTAL_INFO,465,58) AS C9
+                        ,SUBSTR(INSU_RENTAL_INFO,523,58) AS C10
+                        ,SUBSTR(INSU_RENTAL_INFO,581,58) AS C11
+                        ,SUBSTR(INSU_RENTAL_INFO,639,58) AS C12
+                        ,SUBSTR(INSU_RENTAL_INFO,697,58) AS C13
+                  FROM TF_INSU_BILL_OBJ
+                 WHERE PROC_ST_CD = '09'
+            ) A,
+            (
+                SELECT LEVEL CNT
+                FROM DUAL
+                CONNECT BY LEVEL <= 13
+            ) B
+        ) A
+        GROUP BY CNT,IF_PROC_DT,IF_FILE_NM,IF_SEQ
+ ) A
+ WHERE TRIM(INSU_RENTAL_INFO) IS NOT NULL]]>
+	</select>
+</sqlMap>

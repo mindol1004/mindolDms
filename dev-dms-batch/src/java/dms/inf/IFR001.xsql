@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.IFR001">
+	<insert id="IEqpInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.IFR001.IEqpInfo IF단말기모델정보입력 */
+/* IO: 이영진,2015-09-01T14:12:01(이영진,2015-07-29T10:19:57) */
+INSERT  
+  INTO  TF_EQP_INFO
+   	   (
+        IF_PROC_DT
+   	   ,IF_FILE_NM
+       ,IF_SEQ
+       ,EQP_MDL_CD
+       ,EQP_MDL_NM
+       ,PET_NM
+       ,MFACT_CD
+       ,DSTRB_EQP_YN
+       ,EQP_COLOR
+       ,PROC_ST_CD
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       ,FS_REG_USER_ID
+        ) 
+VALUES 
+       (
+        #IF_PROC_DT#
+       ,#IF_FILE_NM#
+       ,#IF_SEQ#
+       ,#EQP_MDL_CD#
+       ,#EQP_MDL_NM#
+       ,#PET_NM#
+       ,#MFACT_CD#
+       ,#DSTRB_EQP_YN#
+       ,#EQP_COLOR#
+       ,'09'
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       )]]>
+	</insert>
+	<select id="SIfSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.IFR001.SIfSeq 인터페이스시퀀스 */
+/* IO: 안한모,2015-08-13T15:11:09(이영진,2015-08-05T10:01:23) */
+SELECT  
+        NVL(MAX(IF_SEQ)+1,1) IF_SEQ 
+  FROM TF_EQP_INFO 
+ WHERE IF_PROC_DT = #IF_PROC_DT# AND IF_SNO = #IF_SNO#]]>
+	</select>
+</sqlMap>

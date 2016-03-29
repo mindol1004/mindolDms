@@ -1,0 +1,130 @@
+package dms.ep.epscsbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [DU]입금관리</li>
+ * <li>설  명 : <pre>입금관리</pre></li>
+ * <li>작성일 : 2015-09-15 17:31:09</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class DEPDpstMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DEPDpstMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[DM]송금대상매입조회목록총건수</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 17:31:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : TOTAL_CNT [총건수]
+	 * </pre>
+	 */
+	public IDataSet dSInqSendAmtObjPrchListTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출     
+        IRecord record = dbSelectSingle("SInqSendAmtObPrchjListTotCnt", requestData, onlineCtx);
+        
+        responseData.putFieldMap(record);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]송금대상매입조회목록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 17:31:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqSendAmtObjPrchListPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqSendAmtObjPrchListPaging", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("SEND_AMT_OBJ_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>송금대상매입상세조회목록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-16 11:10:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqSendAmtObjPrchDtlList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqSendAmtObjPrchDtlList", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("SEND_AMT_OBJ_DTL_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>송금대상목록에러체크조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 17:31:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqSendAmtObjErrChkList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqSendAmtObjErrChkList", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("EQP_ERR_CHK_LIST", rsReturn);
+    
+        return responseData;
+    }
+  
+}

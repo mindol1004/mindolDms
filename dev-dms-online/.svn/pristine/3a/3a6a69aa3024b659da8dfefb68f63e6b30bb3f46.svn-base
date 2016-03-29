@@ -1,0 +1,223 @@
+package dms.nr.nrbplbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]손해배상금정책 관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-07-10 09:43:26</li>
+ * <li>작성자 : 안진갑 (bella21cjk)</li>
+ * </ul>
+ *
+ * @author 안진갑 (bella21cjk)
+ */
+public class PNRCmpPolyMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRCmpPolyMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:29:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : OP_CL_CD [업무구분]
+	 *	- field : EQP_MDL_CD [단말기 코드]
+	 *	- field : EFF_PRD_FR_DT [유효시작일자]
+	 *	- field : EFF_PRD_TO_DT [유효종료일자]
+	 *	- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMP_POLY_LIST
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : UNRTN [미반납]
+	 *		- field : EFF_PRD_FR_DT [유효기간시작일]
+	 *		- field : EFF_PRD_TO_DT [유효기간종료일]
+	 *		- field : FS_REG_DT [등록일]
+	 * </pre>
+	 */
+	public IDataSet pInqCmpPolyLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSPLBase", "fInqCmpPolyLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:29:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMP_POLY_DTL
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *		- field : INSP_DRL_ITM_CD [점검세부항목코드]
+	 *		- field : INDF_AMT [변상금]
+	 *		- field : RMK [비고]
+	 *		- field : USE_YN [사용여부]
+	 *	- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EFF_PRD_FR_DT [유효기간시작일]
+	 *	- field : EFF_PRD_TO_DT [유효기간종료일]
+	 *	- field : OP_CL_CD [업무구분코드]
+	 *	- field : UNRTN [미반납]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveCmpPoly(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. 입력 RS설정
+			requestData.putField("USER_NO", ca.getUserNo());
+			// 2. 레코드셋 상태에 따른 분기
+			if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // INSERT
+				callSharedBizComponentByDirect("nr.NRSPLBase", "fRegCmpPoly", requestData, onlineCtx);
+			} else if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // UPDATE
+				callSharedBizComponentByDirect("nr.NRSPLBase", "fUpdCmpPoly", requestData, onlineCtx);
+			} else if ( "D".equals(ca.getTrnPtrnDvcd()) ) { // DELETE
+			    callSharedBizComponentByDirect("nr.NRSPLBase", "fDelCmpPoly", requestData, onlineCtx);
+			}
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-07-10 11:29:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EPQ_CONS_PEN
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상정책번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : INSP_CL_CD [구분]
+	 *		- field : INSP_ITM_CD [항목]
+	 *		- field : INSP_DRL_ITM_CD [점검항목]
+	 *		- field : INDF_AMT [금액]
+	 *		- field : RMK [비고]
+	 *		- field : USE_YN [사용여부]
+	 *		- field : MGMT_ITEM_CD1 [관리코드1]
+	 *		- field : MGMT_ITEM_CD2 [관리코드2]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpConsPen(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSPLBase", "fInqEqpConsPen", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-07-10 11:29:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMP_POLY_DTL
+	 *		- field : DMG_CMP_AMT_POLY_NO [손해배상금정책번호]
+	 *		- field : INSP_CL_CD [구분]
+	 *		- field : INSP_ITM_CD [항목]
+	 *		- field : INSP_DRL_ITM_CD [세부상목]
+	 *		- field : INDF_AMT [손해배상금]
+	 *		- field : RMK [비고]
+	 *		- field : USE_YN [사용여부]
+	 * </pre>
+	 */
+	public IDataSet pInqCmpPolyDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSPLBase", "fInqCmpPolyDtl", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+	    return responseData;
+	}
+  
+}

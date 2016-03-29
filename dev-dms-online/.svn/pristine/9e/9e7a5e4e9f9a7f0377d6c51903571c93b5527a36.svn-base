@@ -1,0 +1,172 @@
+package dms.nr.nrbxmbase.biz;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]대리점단말기정산정보관리</li>
+ * <li>설  명 : <pre>대리점단말기정산정보관리PU</pre></li>
+ * <li>작성일 : 2015-08-18 10:06:09</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PNRAgnEqpStlMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRAgnEqpStlMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>대리점단말기정산정보조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_PROC_DT [정산월]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : SLIP_TS [전표차수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : PRCHCO_CD [대리점코드]
+	 *		- field : PRCHCO_NM [대리점명]
+	 *		- field : XCL_PROC_DT [정산월]
+	 *		- field : SLIP_TS [전표차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_DT [전표처리일]
+	 *		- field : PRCH_AMT [정산금액]
+	 *		- field : PAY_YM [지급년월]
+	 *		- field : AGN_CRD_AMT [대리점여신금액]
+	 *		- field : AGN_SALE_AMT [대리점매출금액]
+	 *		- field : CRD_SALE_DAMT [여신매출차액]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnEqpStlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnEqpStlLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산정보상세</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_PROC_DT [정산월]
+	 *	- field : PRCHCO_CD [대리점코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_DTL
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : PRCH_DT [매입일자]
+	 *		- field : PRCH_AMT [매입금액]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnEqpStlDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnEqpStlDtl", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산전표생성</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : PRCHCO_CD [대리점코드]
+	 *		- field : PRCHCO_NM [대리점명]
+	 *		- field : XCL_PROC_DT [정산월]
+	 *		- field : SLIP_TS [전표차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_DT [전표처리일]
+	 *		- field : PRCH_AMT [정산금액]
+	 *		- field : PAY_YM [지급년월]
+	 *		- field : AGN_CRD_AMT [대리점여신금액]
+	 *		- field : AGN_SALE_AMT [대리점매출금액]
+	 *		- field : CRD_SALE_DAMT [여신매출차액]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveAgnEqpStlSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            // 1. 입력 RS설정
+            requestData.putField("USERNO", ca.getUserNo());
+            requestData.putField("SLIP_TYPE", "AGENCY_AMT_AP");
+                
+            // 2. 레코드셋 상태에 따른 분기
+            if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // 전표생성
+                callSharedBizComponentByDirect("nr.NRSXMBase", "fRegSlip", requestData, onlineCtx);
+            } else if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // 전표취소
+                
+            }
+                
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+  
+}

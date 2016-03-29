@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DBIEqpMdlMgmt">
+	<select id="SEqpMdlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.SEqpMdlTotCnt 단말기총건수 */
+/* IO: 이영진,2015-07-07T14:32:50(개발자,2015-06-29T11:21:22) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_MDL       /* 단말기모델 */ 
+ WHERE  DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+        EQP_MDL_NM LIKE '%'||#EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        EQP_MDL_CD LIKE '%'||#EQP_MDL_CD#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="MFACT_CD"><![CDATA[
+        MFACT_CD   = #MFACT_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SEqpMdlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.SEqpMdlPaging 단말기모델목록 */
+/* IO: 이영진,2015-07-08T12:39:49(개발자,2015-06-29T11:30:56) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY EQP_MDL_CD ASC) AS ROWNO  
+                ,EQP_MDL_CD                                             /* 모델코드 */
+                ,EQP_MDL_NM                                             /* 모델명 */
+                ,EQP_CL_CD                                              /* 모델종류코드 */
+                ,NW_MTHD_CD                                             /* 네트웍방식 */
+                ,MFACT_CD                                               /* 제조사코드 */
+                ,MFACT_NM				                                /* 제조사명 */
+                ,FST_RGST_DT                                            /* 출시일 */
+                ,CNSG_DT                                                /* 단종일 */
+                ,DEL_YN                                                 /* 삭제여부 */
+                ,FS_REG_USER_ID                                         /* 최초등록사용자ID */  
+                ,TO_CHAR(FS_REG_DTM, 'YYYYMMDD') AS FS_REG_DTM  		/* 최초등록일시 */
+                ,LS_CHG_USER_ID                                         /* 최종등록사용자ID */
+                ,TO_CHAR(LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM  /* 최종등록일시 */ 
+          FROM  TB_EQP_MDL A                                            /* 단말기모델 */
+               ,(SELECT CM_CD_ID, CM_CD_NM MFACT_NM FROM TB_CM_CD 
+                  WHERE CM_GRP_CD_ID = 'DMS101') IV1          
+          WHERE  DEL_YN = 'N'
+                AND A.MFACT_CD = IV1.CM_CD_ID(+)   
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+                 EQP_MDL_NM LIKE '%'||#EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                 EQP_MDL_CD LIKE '%'||#EQP_MDL_CD#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="MFACT_CD"><![CDATA[
+                 MFACT_CD   = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IEqpMdl" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.IEqpMdl 단말기모델등록 */
+/* IO: 이영진,2015-07-01T08:45:29(이영진,2015-06-30T18:01:51) */
+INSERT
+  INTO  TB_EQP_MDL                              /* 단말기모델 */ 
+       (
+        EQP_MDL_CD                              /* 단말기모델코드 */
+       ,EQP_MDL_NM                              /* 단말기모델명 */ 
+       ,EQP_CL_CD                               /* 단말기구분코드 */  
+       ,NW_MTHD_CD                              /* NETWORK방식코드 */ 
+       ,MFACT_CD                                /* 제조사코드 */
+       ,FST_RGST_DT                             /* 출시일 */
+       ,CNSG_DT                                 /* 단종일 */
+       ,DEL_YN                                  /* 삭제여부 */
+       ,FS_REG_USER_ID                          /* 최초등록사용자ID */
+       ,FS_REG_DTM                              /* 최초등록일시 */
+       ,LS_CHG_USER_ID                          /* 최종변경사용ID */
+       ,LS_CHG_DTM                              /* 최종변경일시 */ 
+        )
+VALUES
+       (
+        #EQP_MDL_CD#                             /* 단말기모델코드 */
+       ,#EQP_MDL_NM#                             /* 단말기모델명 */
+       ,#EQP_CL_CD#                              /* 단말기구분코드 */  
+       ,#NW_MTHD_CD#  						     /* NETWORK방식코드 */ 
+       ,#MFACT_CD#                               /* 제조사코드 */
+       ,#FST_RGST_DT#                            /* 출시일 */
+       ,#CNSG_DT#                                /* 단종일 */
+       ,#DEL_YN#                                 /* 삭제여부 */
+       ,#USERNO#                                 /* 최초등록사용자ID */
+       ,SYSDATE                                  /* 최초등록일시 */
+       ,#USERNO#                                 /* 최종변경사용ID */
+       ,SYSDATE                                  /* 최종변경일시 */ 
+        )]]>
+	</insert>
+	<select id="SEqpMdlListChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.SEqpMdlListChk 모델저장사전체크 */
+/* IO: 이영진,2015-06-30T18:10:41(박강일,2014-08-22T09:27:44) */
+SELECT  
+        COUNT(1) AS ROW_CNT   /* 사전체크 카운트 */
+  FROM  TB_EQP_MDL                /* 단말기모델 */
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#]]>
+	</select>
+	<update id="UEqpMdl" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.UEqpMdl 단말기모델수정 */
+/* IO: 이영진,2015-07-01T08:46:51(이영진,2015-07-01T08:46:32) */
+UPDATE 
+        TB_EQP_MDL                                          /* SC화면 */
+   SET  EQP_MDL_NM=#EQP_MDL_NM#                             /* 단말기모델명 */   
+       ,MFACT_CD=#MFACT_CD#                                 /* 제조사코드 */ 
+       ,FST_RGST_DT=#FST_RGST_DT#                           /* 출시일 */
+       ,CNSG_DT=#CNSG_DT#                                   /* 단종일 */  
+       ,LS_CHG_USER_ID=#USERNO#                             /* 최종변경사용자ID */  
+       ,LS_CHG_DTM=SYSDATE                                  /* 최종변경일시 */ 
+ WHERE  EQP_MDL_CD= #EQP_MDL_CD#                            /* 단말기모델코드 */]]>
+	</update>
+	<update id="DEqpMdl" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.DEqpMdl 단말기모델삭제 */
+/* IO: 이영진,2015-07-01T09:00:46(이영진,2015-07-01T08:48:29) */
+UPDATE	TB_EQP_MDL					/* 단말기모델 */
+  SET  DEL_YN = 'Y'            		/* 삭제여부 */
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD# 	/* 단말기모델코드  */]]>
+	</update>
+</sqlMap>

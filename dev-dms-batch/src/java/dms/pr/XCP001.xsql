@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.XCP001">
+	<select id="SDeprDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.XCP001.SDeprDtlLst 임대감가상각상세조회_회계 */
+/* IO: 김상오,2015-10-12T18:41:00(김상오,2015-10-12T18:41:00) */
+WITH
+/* ■■CASE 감가상각대상 RAW_DATA 산출 ■■ */  
+RAW_DATA AS
+(
+  SELECT 'AC'              AS DEPR_CL
+  		 ,NVL(#STD_YM#,TO_CHAR(SYSDATE,'YYYYMM')) AS DEPR_STRD_YM         /* 감가상각기준년월 */
+         ,'PR'                                AS DEPR_DEPT_CD           /* 감가상각부서코드 */
+         ,A.ASSET_NO                                                        /* 자산번호 */
+         ,A.FISCL_SVCL                            AS DEPR_DTL_SVCL          /* 회계내용연수 */
+         ,EQP_PRCH_AMT/*C.SPLY_PRC*/                              AS DEPR_OBJ_AMT           /* 공급가격 */
+         ,TO_DATE(A.EQP_PRCH_DT, 'YYYYMMDD')      AS RENT_STA_DT            /* 대여시작일  */
+         ,TO_CHAR(TO_DATE(A.EQP_PRCH_DT, 'YYYYMMDD'),'YYYYMM') AS RENT_STA_YM   /* 대여시작월  */
+         ,ADD_MONTHS(TO_DATE(A.EQP_PRCH_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1 AS DEPR_END_DT                              /* 대여종료일  */
+         ,TO_CHAR(ADD_MONTHS(TO_DATE(A.EQP_PRCH_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'YYYYMM') AS DEPR_END_YM            /* 대여종료월  */
+         ,TO_CHAR(ADD_MONTHS(TO_DATE(A.EQP_PRCH_DT,'YYYYMMDD'), A.FISCL_SVCL*12) -1,'DD') AS DEPR_END_DD                /* 대여종료일수 */
+         ,ADD_MONTHS(TO_DATE(A.EQP_PRCH_DT,'YYYYMMDD'), A.FISCL_SVCL*12) - TO_DATE(A.EQP_PRCH_DT,'YYYYMMDD') AS ALL_DAY_CNT /* 대여전체일수 */
+         ,LAST_DAY(TO_DATE(#STD_YM#,'YYYYMM')) AS MONTH_LASTDAY                                                         /* 기준월의 마지막일자 */
+         ,EQP_PRCH_AMT/*C.SPLY_PRC*/ / (ADD_MONTHS(TO_DATE(A.EQP_PRCH_DT,'YYYYMMDD'), A.FISCL_SVCL*12) - TO_DATE(A.EQP_PRCH_DT,'YYYYMMDD')) AS UNIT_AMT  /* 일단가:공급가격/전체일수 */
+         ,(LAST_DAY(TO_DATE(#STD_YM#,'YYYYMM')) - TO_DATE(A.EQP_PRCH_DT, 'YYYYMMDD')) + 1 AS LIFE_DAY_CNT              /* 전체일수:기준월마지막일기준 */
+         ,MONTHS_BETWEEN(TO_DATE(#STD_YM#,'YYYYMM'),TO_DATE(SUBSTR(A.EQP_PRCH_DT,1,6),'YYYYMM') ) +1 AS DEPR_DTL_TS /* 감가상각상세차수(월수) */       
+    FROM TB_EQP_ASSET A        /* PR_단말기자산 */
+         ,TB_EQP_IN B
+       /*,TB_PRCH C  */           /* NR 매입 추후에 씀 */
+   WHERE A.OP_CL_CD  = 'PR'
+     AND A.ASSET_NO  = B.ASSET_NO
+     AND A.FISCL_SVCL> 0
+     AND A.INVE_ST_CD <> '70'
+     AND B.IN_DTL_CD = '10'
+     /* AND  A.PRCH_NO   = C.PRCH_NO  NR 매입 추후에 씀 */
+     AND EQP_PRCH_AMT   > 0       /* 매입취소는 감가상가제외 C.SPLY_PRC */
+       AND NOT EXISTS(SELECT  * FROM TB_SLIP_DTL   
+                     WHERE  A.ASSET_NO = ASSET_NO 
+                      )   /* 전표진행데이터 제외 */ 
+     AND A.DEL_YN = 'N'
+     AND B.DEL_YN = 'N'     
+     
+)
+/* ■■CASE 2 감가상각 데이터  RAW_DATA의 MONTH_DATA 산출 ■■ */  
+,MONTH_DATA AS
+(
+  SELECT  RD.*
+         ,CASE WHEN RENT_STA_YM = DEPR_STRD_YM THEN (LAST_DAY(TO_DATE(DEPR_STRD_YM,'YYYYMM')) - RENT_STA_DT) +1         /* 일수:기준마직막날 - 감가상각기준년월 +1 */         
+               WHEN DEPR_END_YM = DEPR_STRD_YM THEN TO_NUMBER(DEPR_END_DD)                                              /* 대여종료일자 일수  */
+               ELSE LAST_DAY(TO_DATE(DEPR_STRD_YM,'YYYYMM')) - TO_DATE(DEPR_STRD_YM||'01','YYYYMMDD') +1                /* 해당월의 일수      */
+          END MONTH_DAY_CNT
+   FROM  RAW_DATA   RD
+)     
+/* ■■CASE 3 DATA 산출 ■■ */  
+SELECT  A.*
+       ,ROUND(DEPR_OBJ_AMT - (UNIT_AMT*LIFE_DAY_CNT))  AS DEPR_DTL_REM_AMT                     /* 감가상각상세잔여금액 */
+       ,ROUND(UNIT_AMT*LIFE_DAY_CNT)                   AS DEPR_DTL_SUM_AMT                     /* 감가상각상세누계금액 */
+       ,ROUND(UNIT_AMT*MONTH_DAY_CNT)                  AS DEPR_DTL_AMT                         /* 감가상각상세금액(현재월(일수)의 감가상각금액) */
+       ,ROUND((UNIT_AMT*LIFE_DAY_CNT) - (UNIT_AMT*MONTH_DAY_CNT)) AS DEPR_DTL_CROVR_SUM_AMT    /* 감가상각상세이월누계금액 : 감가상각상세누계금액-감가상각상세금액 */
+       ,0 AS DEPR_DTL_ACNTB_AMT   /* 감가상각상세장부금액 */
+  FROM  MONTH_DATA A  ]]>
+	</select>
+	<insert id="IDeprDtl" parameterClass="map" ><![CDATA[/* Biz: dms.pr.XCP001.IDeprDtl 임대감가상각상세등록 */
+/* IO: 김상오,2015-10-06T14:14:57(진병수,2015-08-04T20:37:05) */
+MERGE INTO  TB_CLS_DEPR_DTL USING  DUAL
+        ON (DEPR_CL       = #DEPR_CL#
+       AND  DEPR_STRD_YM  = #DEPR_STRD_YM#
+       AND  DEPR_DEPT_CD  = #DEPR_DEPT_CD#
+       AND  ASSET_NO      = #ASSET_NO#
+           )
+WHEN  MATCHED THEN
+       UPDATE SET  
+            DEPR_OBJ_AMT      = #DEPR_OBJ_AMT#          /* 감가상각대상금액 */
+           ,DEPR_DTL_REM_AMT  = #DEPR_DTL_REM_AMT#      /* 감가상각상세잔여금액 */
+           ,DEPR_DTL_AMT      = #DEPR_DTL_AMT#          /* 감가상각상세금액 */
+           ,DEPR_DTL_SUM_AMT  = #DEPR_DTL_SUM_AMT#      /* 감가상각상세누계금액 */
+           ,DEPR_DTL_CROVR_SUM_AMT = #DEPR_DTL_CROVR_SUM_AMT# /* 감가상각상세이월누계금액 */
+           ,DEPR_DTL_ACNTB_AMT= #DEPR_DTL_ACNTB_AMT#   	/* 감가상각상세장부금액 */
+           ,DEPR_DTL_TS       = #DEPR_DTL_TS#           /* 감가상각상세차수 */
+           ,LS_CHG_USER_ID    = NVL(#USER_NO#,'BAT')
+           ,LS_CHG_DTM        = SYSDATE
+WHEN  NOT MATCHED THEN
+    INSERT(
+            DEPR_CL			    /* 감가상각구분 */
+           ,DEPR_STRD_YM		/* 감가상각기준년월 */
+           ,DEPR_DEPT_CD		/* 감가상각부서코드 */
+           ,ASSET_NO			/* 자산번호 */
+           ,DEPR_DTL_SVCL		/* 감가상각상세내용연수 */
+           ,DEPR_OBJ_AMT		/* 감가상각대상금액 */
+           ,DEPR_DTL_REM_AMT	/* 감가상각상세잔여금액 */
+           ,DEPR_DTL_AMT		/* 감가상각상세금액(현재월(일수)의 감가상각금액) */
+           ,DEPR_DTL_SUM_AMT	/* 감가상각상세누계금액 */
+           ,DEPR_DTL_CROVR_SUM_AMT /* 감가상각상세이월누계금액 */
+           ,DEPR_DTL_ACNTB_AMT  /* 감가상각상세장부금액 */
+           ,DEPR_DTL_TS			/* 감가상각상세차수 */
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+       	   ,LS_CHG_USER_ID
+       	   ,LS_CHG_DTM
+         )
+  VALUES (
+            #DEPR_CL#
+           ,#DEPR_STRD_YM#
+           ,#DEPR_DEPT_CD#
+           ,#ASSET_NO#
+           ,#DEPR_DTL_SVCL#
+           ,#DEPR_OBJ_AMT#
+           ,#DEPR_DTL_REM_AMT#
+           ,#DEPR_DTL_AMT#
+           ,#DEPR_DTL_SUM_AMT#
+           ,#DEPR_DTL_CROVR_SUM_AMT# /* 감가상각상세이월누계금액 */
+           ,#DEPR_DTL_ACNTB_AMT#   	/* 감가상각상세장부금액 */
+           ,#DEPR_DTL_TS#
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+         )]]>
+	</insert>
+	<select id="SDeprLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.XCP001.SDeprLst 임대감가상각조회_회계 */
+/* IO: 김상오,2015-10-06T15:58:57(진병수,2015-08-06T20:29:03) */
+SELECT DEPR_STRD_YM
+     , DEPR_DEPT_CD
+     , SUM(DEPR_DTL_AMT)     AS DEPR_AMT
+     , SUM(DEPR_DTL_SUM_AMT) AS DEPR_SUM_AMT
+     , SUM(DEPR_DTL_CROVR_SUM_AMT) AS DEPR_CROVR_SUM_AMT
+  FROM TB_CLS_DEPR_DTL
+ WHERE DEPR_STRD_YM = NVL(#STD_YM#, TO_CHAR(SYSDATE, 'YYYYMM'))  
+ /* AND   OP_CL_CD  = 'PR' */
+ AND   DEPR_DEPT_CD = 'PR'	/*Eco 사업팀 : 임시사용*/
+ GROUP BY DEPR_STRD_YM, DEPR_DEPT_CD]]>
+	</select>
+	<insert id="IDepr" parameterClass="map" ><![CDATA[/* Biz: dms.pr.XCP001.IDepr 임대감가상각등록 */
+/* IO: 김상오,2015-10-06T14:15:03(진병수,2015-08-06T20:30:03) */
+MERGE INTO  TB_CLS_DEPR USING  DUAL
+        ON (DEPR_STRD_YM  = #DEPR_STRD_YM#
+       AND  DEPR_DEPT_CD  = #DEPR_DEPT_CD#
+           )
+WHEN  MATCHED THEN
+       UPDATE SET  
+            DEPR_AMT			= #DEPR_AMT#
+           ,DEPR_SUM_AMT		= #DEPR_SUM_AMT#
+           ,DEPR_CROVR_SUM_AMT	= #DEPR_CROVR_SUM_AMT#
+           ,LS_CHG_USER_ID    	= NVL(#USER_NO#,'BAT')
+           ,LS_CHG_DTM       	= SYSDATE
+WHEN  NOT MATCHED THEN
+    INSERT(
+            DEPR_STRD_YM
+           ,DEPR_DEPT_CD
+           ,DEPR_CL				/* 감가상각구분:AC(회계) */
+           ,DEPR_AMT
+           ,DEPR_SUM_AMT
+           ,DEPR_CROVR_SUM_AMT	/* 감가상각이월누계금액 */
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+       	   ,LS_CHG_USER_ID
+       	   ,LS_CHG_DTM
+         )
+  VALUES (
+            #DEPR_STRD_YM#
+           ,#DEPR_DEPT_CD#
+           ,'AC'					/* 감가상각구분:AC(회계) */              
+           ,#DEPR_AMT#
+           ,#DEPR_SUM_AMT#
+           ,#DEPR_CROVR_SUM_AMT#	/* 감가상각이월누계금액 */              
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+         )]]>
+	</insert>
+	<update id="UAssetDeprInfo" parameterClass="map" ><![CDATA[/* Biz: dms.pr.XCP001.UAssetDeprInfo 임대자산감가상각금액업데이트 */
+/* IO: 김상오,2015-10-06T14:15:09(진병수,2015-08-11T17:30:31) */
+UPDATE  TB_EQP_ASSET
+   SET  FISCL_ACNTB_AMT    = #DEPR_DTL_REM_AMT#  /* 회계장부금액=감가상각상세잔여금액>>향후확인필 */
+       ,FISCL_REMPRC       = #DEPR_DTL_REM_AMT#  /* 회계잔존가  =감가상각상세잔여금액 */
+       ,FISCL_DEPR_SUM_AMT = #DEPR_DTL_SUM_AMT#  /* 회계감가상각누계금액 = 감가상각상세누계금액 */
+       ,LS_CHG_USER_ID     = NVL(#USER_NO#,'BAT')
+       ,LS_CHG_DTM         = SYSDATE
+WHERE  ASSET_NO            = #ASSET_NO#]]>
+	</update>
+	<delete id="DBatDepr" parameterClass="map" ><![CDATA[/* Biz: dms.pr.XCP001.DBatDepr 임대기준년월 감가상각 배치전삭제 */
+/* IO: 김상오,2015-11-25T15:56:21(문재웅,2015-08-20T15:10:25) */
+/* 해당월 감가상각 존재시 데이터 삭제(매입취소자료 및 전표미진행자료삭제) */
+BEGIN
+  /* 매입취소자료존재시 감가상각진행자료 삭제 */
+  DELETE FROM TB_CLS_DEPR_DTL
+   WHERE ASSET_NO  IN (
+                 SELECT  A.ASSET_NO 
+                   FROM  TB_EQP_ASSET A
+                        /*,TB_PRCH B*/
+                  WHERE  OP_CL_CD = 'PR'
+                  /*AND A.PRCH_NO   = B.PRCH_NO*/
+                    AND  A.EQP_PRCH_AMT  < 0  /* 매입취소 */
+                      )    
+     AND DEPR_STRD_YM = NVL(#STD_YM#, TO_CHAR(SYSDATE, 'YYYYMM'))
+     AND DEPR_DEPT_CD = 'PR'	/* OP_CL_CD 로사용*/    
+     ;
+     
+  /* NR_마감감가상각 NULL,전표삭제(05) 경우 삭제처리 */   
+  DELETE FROM TB_CLS_DEPR 
+  WHERE (DEPR_SLIP_NO IN(SELECT SLIP_NO FROM TB_SLIP WHERE SLIP_ST_CD IN('05') OR SLIP_ST_CD IS NULL) 
+         OR DEPR_SLIP_NO IS NULL
+        )
+    AND  DEPR_STRD_YM = NVL(#STD_YM#, TO_CHAR(SYSDATE, 'YYYYMM'))
+    AND  DEPR_DEPT_CD = 'PR'	/* OP_CL_CD 로사용*/
+    ;
+END;]]>
+	</delete>
+</sqlMap>

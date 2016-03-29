@@ -1,0 +1,71 @@
+package dms.ep.epsbibase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]사용자관리</li>
+ * <li>설  명 : <pre>사용자관리</pre></li>
+ * <li>작성일 : 2015-09-16 14:18:30</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FEPUserMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPUserMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>사용자조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-09-16 14:18:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DEALCO_CD [거래처코드]
+	 *	- field : USER_NO [사용자번호]
+	 *	- field : DUTYP_CD [근무지코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_USER_LIST
+	 *		- field : USER_NO [사용자ID]
+	 *		- field : USER_NM [사용자명]
+	 * </pre>
+	 */
+	public IDataSet fInqUserMgmtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            
+            // 1. DU lookup
+            DEPUserMgmt dEPUserMgmt = (DEPUserMgmt) lookupDataUnit(DEPUserMgmt.class);
+            // 2. 업무 DM호출
+            responseData = dEPUserMgmt.dSUserMgmtLst(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+  
+}

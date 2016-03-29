@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpTransportMgmt">
+	<update id="UEqpTransprotSave" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpTransportMgmt.UEqpTransprotSave SKN물류외입고확정 */
+/* IO: 장미진,2015-09-11T17:51:00(장미진,2015-09-10T17:11:24) */
+UPDATE  TB_EQP_CLCT_OBJ                    				  /* 수정화면 */
+   SET  EQP_CLCT_OBJ_NO = #EQP_CLCT_OBJ_NO# 			/*단말운송번호*/	
+       ,IN_OBJ_DTL_CD = '03'							/*재고상태코드 = 물류센터회수상태로*/
+       ,RTN_REG_DT = #HDLV_SND_DT#						/*반납등록일자*/
+       ,SKN_CLCT_DT = #EQP_RCV_DT#						/*회수일자*/
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  OP_CL_CD = 'NR'
+   AND  EQP_SER_NO = #EQP_SER_NO#]]>
+	</update>
+	<select id="SInqEqpTransportLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpTransportMgmt.SInqEqpTransportLstPaging SKN물류외입고정보조회 */
+/* IO: 장미진,2015-09-11T15:20:19(장미진,2015-09-11T12:30:58) */
+SELECT
+        *
+  FROM  (SELECT  ROW_NUMBER() OVER (ORDER BY A.ASSET_NO ASC) AS ROWNO 
+                ,A.ASSET_NO		/*자산번호*/
+                ,A.EQP_MDL_CD		/*단말기모델코드*/
+                ,B.EQP_MDL_NM		/*단말기모델명*/
+                ,A.EQP_SER_NO		/*단말기일련번호*/
+                ,A.EQP_RCV_DT		/*단말기수령일자*/
+                ,A.WAYBIL_NO		/*운송장번호*/
+                ,A.HDLVCO_CD		/*택배사코드*/
+                ,C.DEALCO_NM AS HDLVCO_NM
+                ,A.HDLV_AMT		/*택배금액*/
+                ,A.HDLV_SNDR_NM	/*택배발송자명*/
+                ,A.HDLV_SND_DT	/*택배발송일자*/
+                ,A.HDLV_SND_RSN	/*택배발송사유*/
+           FROM  TB_EQP_WAYBIL A
+                ,TB_EQP_MDL B
+                ,TB_DEALCO C
+          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+            AND  A.HDLVCO_CD = C.DEALCO_CD                
+]]><isNotEmpty prepend="AND" property="ST_DT"><![CDATA[
+                 A.EQP_RCV_DT BETWEEN #ST_DT# AND #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ST_DT_SEND"><![CDATA[
+                 A.HDLV_SND_DT BETWEEN #ST_DT_SEND# AND #ED_DT_SEND#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+                 A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="WAYBIL_NO"><![CDATA[
+                 A.WAYBIL_NO = #WAYBIL_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="HDLV_SNDR_NM"><![CDATA[
+                 A.HDLV_SNDR_NM LIKE '%'||#HDLV_SNDR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+)PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInqEqpTransportLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpTransportMgmt.SInqEqpTransportLstTotCnt SKN물류외입고정보총건수 */
+/* IO: 장미진,2015-09-11T13:30:45(장미진,2015-09-11T12:32:11) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_EQP_WAYBIL 
+]]><dynamic prepend="WHERE"><![CDATA[  
+]]><isNotEmpty prepend="AND" property="ST_DT"><![CDATA[
+                 EQP_RCV_DT BETWEEN #ST_DT# AND #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ST_DT_SEND"><![CDATA[
+                 HDLV_SND_DT BETWEEN #ST_DT_SEND# AND #ED_DT_SEND#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                 EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+                 EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="WAYBIL_NO"><![CDATA[
+                 WAYBIL_NO = #WAYBIL_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="HDLV_SNDR_NM"><![CDATA[
+                 WAYBIL_NO = #WAYBIL_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="HDLV_SNDR_NM"><![CDATA[
+                 HDLV_SNDR_NM LIKE '%'||#HDLV_SNDR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SEqpTransGetAssetNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpTransportMgmt.SEqpTransGetAssetNo SKN물류외입고자산번호확인 */
+/* IO: 장미진,2015-09-11T20:02:08(장미진,2015-09-11T17:36:31) */
+SELECT  A.ASSET_NO
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D       
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  A.OP_CL_CD = 'NR'           /*신규 계약*/
+   AND  A.INVE_ST_CD = '20'         /*출고상태*/
+   AND  D.EQP_RTN_YN = 'S' /*바뀔수있음*/
+   AND  D.OP_TYP_CD IN ('02','07')  /*해지 , 중도해지*/
+   AND  A.EQP_SER_NO =#EQP_SER_NO#]]>
+	</select>
+	<select id="SEqpTransportSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpTransportMgmt.SEqpTransportSeq SKN물류외입고등록번호채번 */
+/* IO: 장미진,2015-09-11T18:03:52(이준우,2015-07-28T10:17:37) */
+SELECT  'EW'||LPAD(SQ01_TB_EQP_WAYBIL.NEXTVAL,10,'0') AS EQP_WAYBIL_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IEqpTransportInfoSave" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpTransportMgmt.IEqpTransportInfoSave 단말기운송정보입력 */
+/* IO: 장미진,2015-09-11T18:08:30(이준우,2015-07-20T13:06:46) */
+INSERT
+INTO TB_EQP_WAYBIL
+  (
+     EQP_WAYBIL_NO
+    ,ASSET_NO
+    ,EQP_MDL_CD
+    ,EQP_SER_NO
+    ,EQP_RCV_DT
+    ,WAYBIL_NO
+	,HDLVCO_CD
+	,HDLV_AMT
+	,HDLV_SNDR_NM
+	,HDLV_SND_DT
+	,HDLV_SND_RSN
+    ,DEL_YN
+	,FS_REG_USER_ID    
+	,FS_REG_DTM
+	,LS_CHG_USER_ID
+	,LS_CHG_DTM
+
+  ) VALUES
+  (
+     #EQP_WAYBIL_NO#
+    ,#ASSET_NO#
+    ,#EQP_MDL_CD#
+    ,#EQP_SER_NO#
+    ,#EQP_RCV_DT#
+    ,#WAYBIL_NO#
+	,#HDLVCO_CD#
+	,#HDLV_AMT#
+	,#HDLV_SNDR_NM#
+	,#HDLV_SND_DT#
+	,#HDLV_SND_RSN#
+    ,'N'
+    ,#USER_NO#
+    ,SYSDATE
+    ,#USER_NO#
+    ,SYSDATE
+  )]]>
+	</insert>
+</sqlMap>

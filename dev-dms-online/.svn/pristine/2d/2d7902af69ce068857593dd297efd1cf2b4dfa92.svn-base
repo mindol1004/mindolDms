@@ -1,0 +1,256 @@
+package dms.sc.scbbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.util.StringUtils;
+import fwk.code.internal.HpcCode;
+import fwk.utils.HpcUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: FSCUserAutrRolMgmt</li>
+ * <li>설  명 : 사용자권한역할관리</li>
+ * <li>작성일 : 2014-08-11 09:25:21</li>
+ * <li>작성자 : 심상준 (simair)</li>
+ * </ul>
+ *
+ * @author 심상준 (simair)
+ */
+public class FSCUserAutrRolMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+    /**
+	 * Default Constructor
+	 */
+	public FSCUserAutrRolMgmt() {
+		super();
+	}
+
+	/**
+	 * 사용자권한역할목록조회
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqUsrAutrRolLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IRecordSet listRs = null;
+
+		try {
+			// 1. DU lookup
+			DSCUserAutrRolMgmt dTB_USER_AUTR_ROL01 = (DSCUserAutrRolMgmt) lookupDataUnit(DSCUserAutrRolMgmt.class);
+			// 2. LISTDM호출
+			responseData = dTB_USER_AUTR_ROL01.dSUserRolListInq(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 사용자권한역할등록
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegUsrAutrRol(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+
+		try {
+			// 1. DU lookup
+			DSCUserAutrRolMgmt dTB_USER_AUTR_ROL01 = (DSCUserAutrRolMgmt) lookupDataUnit(DSCUserAutrRolMgmt.class);
+			//  2. Validation DM호출
+			IDataSet valDS = dTB_USER_AUTR_ROL01.dSUserRolChk(requestData, onlineCtx);
+			if ( Integer.parseInt(valDS.getField("AUTR_ROL_ID_CNT")) > 0 ) {
+				throw new BizRuntimeException("DMS00003"); //중복입력 된 데이터가 존재합니다.
+			}
+			// 3. 업무 DM호출
+			responseData = dTB_USER_AUTR_ROL01.dIUserRolReg(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 사용자권한역할수정
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdUsrAutrRol(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			// 1. DU lookup
+			DSCUserAutrRolMgmt dTB_USER_AUTR_ROL01 = (DSCUserAutrRolMgmt) lookupDataUnit(DSCUserAutrRolMgmt.class);
+			DSCAutrRolHis dBUSCAutrRolHis = (DSCAutrRolHis) lookupDataUnit(DSCAutrRolHis.class);
+			// 2. DM호출
+			dBUSCAutrRolHis.dIAutrRolHis(requestData, onlineCtx);
+			dTB_USER_AUTR_ROL01.dUUserRolUpd(requestData, onlineCtx);
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 사용자권한역할삭제
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDelUsrAutrRol(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			// 1. DU lookup
+			DSCUserAutrRolMgmt dTB_USER_AUTR_ROL01 = (DSCUserAutrRolMgmt) lookupDataUnit(DSCUserAutrRolMgmt.class);
+			DSCAutrRolHis dBUSCAutrRolHis = (DSCAutrRolHis) lookupDataUnit(DSCAutrRolHis.class);
+			// 2. DM호출
+			//권한삭제시 이력등록 
+			//삭제시점의 변경사용자정보 및 변경시간을 최종사용자컬럼에 입력한다.
+			requestData.putField("P_DEL_YN","Y"); //삭제여부컬럼추가  
+			dBUSCAutrRolHis.dIAutrRolHis(requestData, onlineCtx);
+			//권한삭제
+			dTB_USER_AUTR_ROL01.dDUserRolDel(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 사용자권한역할복사
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fCpUserAutrRol(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			// 1. DU lookup
+			DSCUserAutrRolMgmt dTB_USER_AUTR_ROL01 = (DSCUserAutrRolMgmt) lookupDataUnit(DSCUserAutrRolMgmt.class);
+			// 2. 업무 DM호출
+			responseData = dTB_USER_AUTR_ROL01.dIUserRolCopy(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 사용자데이터권한역할조회
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqUsrDataRolLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet listRs = null;
+		int totalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DSCUserAutrDataRolMgmt dTB_DATA_AUTR_ROL01 = (DSCUserAutrDataRolMgmt) lookupDataUnit(DSCUserAutrDataRolMgmt.class);
+
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dTB_DATA_AUTR_ROL01.dSUserDataRolCnt(requestData, onlineCtx);
+			totalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+			// 3. LISTDM호출
+			responseData = dTB_DATA_AUTR_ROL01.dSUserDataRolListInq(reqDs, onlineCtx);
+			listRs = responseData.getRecordSet("RS_USER_DATA_ROL_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(listRs, reqDs, totalCnt);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+
+		return responseData;
+	}
+
+	/**
+	 * 사용자 접근가능한 브랜드 및 가맹점조회
+	 *
+	 * @author 임지후 (jihooyim)
+	 * @since 2014-08-11 09:25:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqUsrDataRolBrndMchtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet rsBrnd = new DataSet();
+		IDataSet rsMcht = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+
+			// CA 영역의 사용자구분코드 와 공통코드의 전체조회가능 관리항목과 비교
+			HpcCode cmCd = HpcUtils.getCode("DMS002", ca.getUserClCd());
+
+			//시스템관리자인 경우는 전체 브랜드 및 가맹점에 접근할 수 있으므로 빈값을 반환한다. 화면에서 브랜드검색, 가맹점검색 팝업을 사용하도록 한다.             
+			if ( !StringUtils.equalsIgnoreNull("Y", cmCd.getMgmtItemCd1()) ) {
+				// 1. DU lookup
+				DSCUserAutrDataRolMgmt dTB_USER_AUTR_ROL01 = (DSCUserAutrDataRolMgmt) lookupDataUnit(DSCUserAutrDataRolMgmt.class);
+				// 2. 업무 DM호출
+				//브랜드리스트 조회 
+				// CA 영역의 권한 가지는 브랜드, 가맹점, 회사 셋팅
+				String[] sBrndList = ca.getAutrBrndLst().toArray(new String[ca.getAutrBrndLst().size()]);
+
+				if ( (StringUtils.equals("ALL", requestData.getField("FLAG")) || StringUtils.equals("BRND", requestData.getField("FLAG"))) && sBrndList.length > 0) {
+					//값이 있는 경우만 조회한다. 
+					reqDs.putField("BRND_LIST", sBrndList);
+					rsBrnd = dTB_USER_AUTR_ROL01.dInqUsrDataRolBrndLst(reqDs, onlineCtx);
+					responseData.putRecordSet("RS_AUTR_BRND", rsBrnd.getRecordSet("RS_AUTR_BRND"));
+				}
+				//가맹점리스트 조회 
+				String[] sMchtList = ca.getAutrMchtLst().toArray(new String[ca.getAutrMchtLst().size()]);
+
+				if ( (StringUtils.equals("ALL", requestData.getField("FLAG")) || StringUtils.equals("MCHT", requestData.getField("FLAG"))) && sMchtList.length > 0) {
+					//값이 있는 경우만 조회한다. 
+					reqDs.putField("MCHT_LIST", sMchtList);
+					rsMcht = dTB_USER_AUTR_ROL01.dInqUsrDataRolMchtLst(reqDs, onlineCtx);
+					responseData.putRecordSet("RS_AUTR_MCHT", rsMcht.getRecordSet("RS_AUTR_MCHT"));
+				}
+			}
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+}

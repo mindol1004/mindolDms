@@ -1,0 +1,456 @@
+package dms.ep.epscsbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [DU]입고관리</li>
+ * <li>설  명 : <pre>[DU]입고관리</pre></li>
+ * <li>작성일 : 2015-08-19 09:56:31</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ *
+ * @author 김상오 (myneti99)
+ */
+public class DEPEqpInMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DEPEqpInMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>단말기입고대상조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-19 09:57:41
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dInqEqpInObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+	    try {       
+	    	IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+
+	    	
+	    	reqDs.putField("DPSTR_ENPT", HpcUtils.encodeByAES(reqDs.getField("DPSTR")));
+	    	// 1.쿼리문 호출
+	    	IRecord record  = dbSelectSingle("SInqEqpInObjListTotCnt", requestData, onlineCtx);
+
+	    	reqDs.putField("TOTAL_CNT", record.get("TOTAL_CNT"));
+	    	int intTotalCnt = Integer.parseInt(record.get("TOTAL_CNT"));  
+	    	PagenateUtils.setPagenatedParamsToDataSet(reqDs);	//카운트 셋
+	    	
+	    	IRecordSet rsPagingList  = dbSelect("SInqEqpInObjListPaging", reqDs, onlineCtx);
+	    	// 2.결과값 셋팅
+            responseData.putRecordSet("RS_EQP_IN_OBJ_LIST", rsPagingList);
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);	//리스트 셋
+			
+            
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]의견저장</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-21 16:15:58
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUInProcRsn(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+	    int cnt = 0;
+	    int chkCnt = 0;
+	    IRecordSet rs = requestData.getRecordSet("RS_EQP_IN_OBJ_LIST");
+	    IRecord rc = null;
+	    for (int i = 0; i < rs.getRecordCount(); i++) {
+	    	 rc = rs.getRecord(i);
+	    	 
+			if("1".equals(rc.get("PRC_CHECK"))){
+				chkCnt++;
+				requestData.putField("IN_PROC_RSN", rc.get("IN_PROC_RSN"));
+				requestData.putField("PRC_CHECK", rc.get("PRC_CHECK"));
+				requestData.putField("CNSL_MGMT_NO", rc.get("CNSL_MGMT_NO"));
+				cnt += dbUpdate("DEPEqpInMgmt.UCnslMgmtRSN", requestData, onlineCtx);   
+			}
+		}
+	    responseData.putField("CHK_CNT", chkCnt+"");
+	    responseData.putField("PROC_CNT", cnt+"");
+	    if(cnt < chkCnt){
+	    	throw new BizRuntimeException("DMS00009");
+	    }
+	    
+		return responseData;
+	}
+
+	/**
+	 * <pre>[DM]단말기입고대상등록</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-19 09:56:31
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_IN_OBJ_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : DPSTR [고객명]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CON_PLC_NM [상담처명]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : EQP_ST [단말기등급]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : LOSS_EQP_YN [분실단말기여부]
+	 *		- field : RWD_RTN_OBJ_YN [보상반납대상여부]
+	 *		- field : RENTP_YN [임대폰여부]
+	 *		- field : USIM_EQPCHG_YN [USIM기변여부]
+	 *		- field : OTHRCO_FORGN_EQP_YN [타사/해외단말기여부]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : FEE_DEDC_YN [요금공제여부]
+	 *		- field : SKN_JDG_AMT [매입금액]
+	 *		- field : PRCH_CL [검수구분]
+	 *		- field : CHECK_DT [검수일자]
+	 *		- field : CUST_YN [고객의사]
+	 *		- field : CUST_DT [고객확인일자]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : Column5 [예금주]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : BANK_NM [은행명]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : ZIPCD_1 [우편번호1]
+	 *		- field : ZIPCD_2 [우편번호2]
+	 *		- field : ADDR [주소]
+	 *		- field : ETC_ADDR [기타주소]
+	 *		- field : SUGG [의견]
+	 *		- field : Column15 [T_관리번호]
+	 *		- field : BATTERY [배터리]
+	 *		- field : CHARGER [충전기]
+	 *		- field : ZENDER [젠더]
+	 *		- field : EARPHONES [이어폰]
+	 *		- field : CASE [충전 Case]
+	 *		- field : USB [USB CABLE]
+	 *		- field : MEMORY [메모리카드]
+	 *		- field : DTL_1 [구성품_1]
+	 *		- field : DTL_2 [구성품_2]
+	 *		- field : DTL_3 [구성품_3]
+	 *		- field : OTHER [기타구성품]
+	 *		- field : CUST_GRP [단체명]
+	 *		- field : PRC_GB [처리구분]
+	 *		- field : ERR_DESC [ERROR]
+	 *		- field : SKN_CL [SKN구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEqpInObjListReg(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    try {       
+	    	IRecordSet xls = requestData.getRecordSet("RS_EQP_IN_OBJ_LIST");
+	    	
+	    	Map mMgmt = null;
+			Map mProdDtl = null;
+			Map mConNo = null;
+			String sConNo = "";
+			String sConPlcCd = "";
+			String sPrcGb = "";
+			for (int i = 0; i < xls.getRecordCount(); i++) {
+				
+				mMgmt = xls.getRecordMap(i);
+				sConPlcCd = mMgmt.get("CNSL_DEALCO_CD").toString();
+				sPrcGb = mMgmt.get("PRC_GB").toString();
+				//거래처 코드별로 번호생성  (일반) , 재감정 처리구분상태로 코드생성
+				if ("11030".equals(sConPlcCd) || ("UC".equals(sPrcGb) || "UN".equals(sPrcGb)) ) {
+					sConNo = "T" + mMgmt.get("T_MGMT_NO").toString();//티관리번호
+				} else if ("11050".equals(sConPlcCd) || ("T".equals(sPrcGb))) {
+					sConNo = "U" + mMgmt.get("T_MGMT_NO").toString();
+				} else {
+					// SQ01_TB_EP_CST_CONSULT_MGMT  CNSL_MGMT_NO
+					mConNo = (Map) dbSelectSingle("SInqCnslMgmtNo", mMgmt, onlineCtx);
+					sConNo = mConNo.get("CNSL_MGMT_NO").toString();
+				}
+//				System.out.println("sConNo:"+sConNo);
+				//상품상세 리스트 
+				IRecordSet rsProdDtl =dbSelect("SInqEqpProdDtlList", mMgmt, onlineCtx);
+//				System.out.println("rsProdDtl.getRecordCount() :"+rsProdDtl.getRecordCount());
+				for (int j = 0; j < rsProdDtl.getRecordCount(); j++) {
+					mProdDtl = rsProdDtl.getRecordMap(j);
+//					System.out.println("상품상세 등록맵 mProdDtl:"+mProdDtl);
+					//상담관리 값 인풋
+					mProdDtl.put("CNSL_MGMT_NO", sConNo);
+
+//					System.out.println("mProdDtl.get(OUTS_MCN_CL):"+mProdDtl.get("OUTS_MCN_CL"));
+//					System.out.println("BATTERY :"+mMgmt.get("BATTERY"));
+//					System.out.println("BATTERY int:"+Integer.parseInt(mMgmt.get("BATTERY").toString()) );
+					//OUTS_MCN_CL  주변기기구분   (DTL_CL : ASIS)
+					// 널처리 
+					mMgmt.put("BATTERY"   , StringUtils.nvlObject(mMgmt.get("BATTERY"  ), ""));
+					mMgmt.put("CHARGER"   , StringUtils.nvlObject(mMgmt.get("CHARGER"  ), ""));
+					mMgmt.put("ZENDER"    , StringUtils.nvlObject(mMgmt.get("ZENDER"   ), ""));
+					mMgmt.put("EARPHONES" , StringUtils.nvlObject(mMgmt.get("EARPHONES"), ""));
+					mMgmt.put("CASE"      , StringUtils.nvlObject(mMgmt.get("CASE"     ), ""));
+					mMgmt.put("USB"       , StringUtils.nvlObject(mMgmt.get("USB"      ), ""));
+					mMgmt.put("MEMORY"    , StringUtils.nvlObject(mMgmt.get("MEMORY"   ), ""));
+					
+					if ("1".equals(mProdDtl.get("OUTS_MCN_CL"))) {
+						if (Integer.parseInt(mMgmt.get("BATTERY").toString()) > 0) {
+							mProdDtl.put("HLD_QTY", 1);
+						}
+					}
+					if ("2".equals(mProdDtl.get("OUTS_MCN_CL"))) {
+						if (Integer.parseInt(mMgmt.get("BATTERY").toString()) > 1) {
+							mProdDtl.put("HLD_QTY", Integer.parseInt(mMgmt.get(
+									"BATTERY").toString()) - 1);
+						}
+					}
+					if ("4".equals(mProdDtl.get("OUTS_MCN_CL").toString())) {
+						if (mMgmt.get("CHARGER").toString().endsWith("Y")) {
+							mProdDtl.put("HLD_QTY", 1);
+						}
+					}
+					if ("5".equals(mProdDtl.get("OUTS_MCN_CL").toString())) {
+						if (mMgmt.get("ZENDER").toString().endsWith("Y")) {
+							mProdDtl.put("HLD_QTY", 1);
+						}
+					}
+					if ("6".equals(mProdDtl.get("OUTS_MCN_CL").toString())) {
+						if (mMgmt.get("EARPHONES").toString().endsWith("Y")) {
+							mProdDtl.put("HLD_QTY", 1);
+						}
+					}
+					if ("6".equals(mProdDtl.get("OUTS_MCN_CL").toString())) {
+						if (mMgmt.get("EARPHONES").toString().endsWith("Y")) {
+							mProdDtl.put("HLD_QTY", 1);
+						}
+					}
+					if ("7".equals(mProdDtl.get("OUTS_MCN_CL").toString())) {
+						if (mMgmt.get("CASE").toString().endsWith("Y")) {
+							mProdDtl.put("HLD_QTY", 1);
+						}
+					}
+					if ("8".equals(mProdDtl.get("OUTS_MCN_CL").toString())) {
+						if (mMgmt.get("USB").toString().endsWith("Y")) {
+							mProdDtl.put("HLD_QTY", 1);
+						}
+					}
+					if ("9".equals(mProdDtl.get("OUTS_MCN_CL").toString())) {
+						if (mMgmt.get("MEMORY").toString().endsWith("Y")) {
+							mProdDtl.put("HLD_QTY", 1);
+						}
+					}
+					mProdDtl.put("USERID", requestData.getField("USERID"));
+//					System.out.println("\n mProdDtl:"+mProdDtl);
+					//TB_EP_CST_CONSULT_DTL  상담관리 상세 테이블 등록
+					if ("UN".equals(sPrcGb) || "N".equals(sPrcGb)) {
+						dbInsert("DEPEqpInMgmt.ICnslMgmtDtlSkn", mProdDtl, onlineCtx);   //("CSTADV00600.addConsultDtlXls", mProdDtl, onlineCtx);
+					} else {
+						dbInsert("DEPEqpInMgmt.ICnslMgmtDtl", mProdDtl, onlineCtx);   //("CSTADV00600.addConsultDtlXls", mProdDtl, onlineCtx);
+					}
+
+				}
+
+				//CNSL_MGMT_NO 상담관리번호
+				mMgmt.put("CNSL_MGMT_NO", sConNo);
+				mMgmt.put("USERID", requestData.getField("USERID"));
+				mMgmt.put("USE_PRD_DDCT_AMT", "0");
+				mMgmt.put("CNSL_AMT", "0");
+				mMgmt.put("ETC_CMPT", "");
+				
+				mMgmt.put("CTZ_NO"   , StringUtils.nvlObject(mMgmt.get("CTZ_NO"  ), ""));
+				mMgmt.put("DPSTR"   , StringUtils.nvlObject(mMgmt.get("DPSTR"  ), ""));
+				mMgmt.put("ACCO_NO"    , StringUtils.nvlObject(mMgmt.get("ACCO_NO"   ), ""));
+				mMgmt.put("ADDR" , StringUtils.nvlObject(mMgmt.get("ADDR"), ""));
+				mMgmt.put("ETC_ADDR"      , StringUtils.nvlObject(mMgmt.get("ETC_ADDR"     ), ""));
+				mMgmt.put("SVC_NO"       , StringUtils.nvlObject(mMgmt.get("SVC_NO"      ), ""));
+				mMgmt.put("TEL_NO"    , StringUtils.nvlObject(mMgmt.get("TEL_NO"   ), ""));
+				
+				//암호화 , 마스킹처
+				mMgmt.put("CTZ_NO_ENPT", HpcUtils.encodeByAES(mMgmt.get("CTZ_NO").toString()));
+				mMgmt.put("CTZ_NO", HpcUtils.maskingJuminNo(mMgmt.get("CTZ_NO").toString()));
+				
+				mMgmt.put("DPSTR_ENPT", HpcUtils.encodeByAES(mMgmt.get("DPSTR").toString()));
+				mMgmt.put("DPSTR", HpcUtils.maskingName(mMgmt.get("DPSTR").toString()));
+				
+				mMgmt.put("ACCO_NO_ENPT", HpcUtils.encodeByAES(mMgmt.get("ACCO_NO").toString()));
+				mMgmt.put("ACCO_NO", HpcUtils.maskingName(mMgmt.get("ACCO_NO").toString()));
+				
+//				mMgmt.put("ADDR_ENPT", HpcUtils.encodeByAES(mMgmt.get("ADDR").toString()));
+//				mMgmt.put("ADDR", HpcUtils.maskingAddress(mMgmt.get("ADDR").toString()));
+				
+				mMgmt.put("ETC_ADDR_ENPT", HpcUtils.encodeByAES(mMgmt.get("ETC_ADDR").toString()));
+				mMgmt.put("ETC_ADDR", HpcUtils.maskingAddrDtl(mMgmt.get("ETC_ADDR").toString()));
+				
+				mMgmt.put("SVC_NO_ENPT", HpcUtils.encodeByAES(mMgmt.get("SVC_NO").toString()));
+				mMgmt.put("SVC_NO", HpcUtils.maskingTelNo(mMgmt.get("SVC_NO").toString()));
+				
+				mMgmt.put("TEL_NO_ENPT", HpcUtils.encodeByAES(mMgmt.get("TEL_NO").toString()));
+				mMgmt.put("TEL_NO", HpcUtils.maskingTelNo(mMgmt.get("TEL_NO").toString()));
+				
+				
+//				mMgmt.put("CNSL_MGMT_NO", mConNo.get("CON_MGMT_NO"));
+//				System.out.println("상담관리 등록\n mMgmt :"+mMgmt);
+				//상담관리 TB_EP_CST_CONSULT_MGMT 등록
+				if ("UN".equals(sPrcGb) || "N".equals(sPrcGb)) {
+					dbInsert("DEPEqpInMgmt.ICnslMgmtSkn", mMgmt, onlineCtx);   //("CSTADV00600.addConsultDtlXls", mProdDtl, onlineCtx);
+				} else {
+					int cnt =  dbInsert("DEPEqpInMgmt.ICnslMgmt", mMgmt, onlineCtx);
+//					System.out.println(">>>>>>>>>>>>> cnt "+cnt);
+				}
+
+			}
+			
+	    	// 2.결과값 셋팅
+            //responseData.putRecordSet("RS_EQP_IN_OBJ_LIST", ist);
+            
+        }
+        catch ( BizRuntimeException e ) {
+//        	System.out.println(">>>>>>>>>>> msg : "+e.getMessageId());
+            throw e;
+        } 	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]입고확정등록</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-26 17:25:17
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUpdEqpInChkList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		int cnt = 0;
+	    int chkCnt = 0;
+	    IRecordSet rs = requestData.getRecordSet("RS_EQP_IN_OBJ_LIST");
+	    IRecord rc = null;
+	    for (int i = 0; i < rs.getRecordCount(); i++) {
+	    	 rc = rs.getRecord(i);
+	    	 
+			if("1".equals(rc.get("PRC_CHECK"))){
+				chkCnt++;
+				requestData.putField("IN_PROC_RSN", rc.get("IN_PROC_RSN"));
+				requestData.putField("PRC_CHECK", rc.get("PRC_CHECK"));
+				requestData.putField("CNSL_MGMT_NO", rc.get("CNSL_MGMT_NO"));
+				cnt += dbUpdate("DEPEqpInMgmt.UEqpInConf", requestData, onlineCtx);   
+			}
+		}
+	    responseData.putField("CHK_CNT", chkCnt+"");
+	    responseData.putField("PROC_CNT", cnt+"");
+	    if(cnt < chkCnt){
+	    	throw new BizRuntimeException("DMS00009");
+	    }
+	    
+		return responseData;
+	}
+
+	/**
+	 * <pre>[DM]입고등록취소</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-26 18:20:53
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUpdEqpRegCncl(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		int cnt = 0;
+	    int chkCnt = 0;
+	    IRecordSet rs = requestData.getRecordSet("RS_EQP_IN_OBJ_LIST");
+	    IRecord rc = null;
+	    
+	    for (int i = 0; i < rs.getRecordCount(); i++) {
+	    	 rc = rs.getRecord(i);
+	    	 
+			if("1".equals(rc.get("PRC_CHECK"))){
+				chkCnt++;
+				requestData.putField("IN_PROC_RSN", rc.get("IN_PROC_RSN"));
+				requestData.putField("PRC_CHECK", rc.get("PRC_CHECK"));
+				requestData.putField("CNSL_MGMT_NO", rc.get("CNSL_MGMT_NO"));
+				cnt += dbUpdate("DEPEqpInMgmt.UEqpRegCncl", requestData, onlineCtx);   
+			}
+		}
+	    responseData.putField("CHK_CNT", chkCnt+"");
+	    responseData.putField("PROC_CNT", cnt+"");
+	    if(cnt < chkCnt){
+	    	throw new BizRuntimeException("DMS00009");
+	    }
+	    
+		return responseData;
+	}
+
+	/**
+	 * <pre>[DM]입고제외처리</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-19 09:56:31
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUEqpInExl(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		int cnt = 0;
+	    int chkCnt = 0;
+	    IRecordSet rs = requestData.getRecordSet("RS_EQP_IN_OBJ_LIST");
+	    IRecord rc = null;
+	    
+	    for (int i = 0; i < rs.getRecordCount(); i++) {
+	    	 rc = rs.getRecord(i);
+	    	 
+			if("1".equals(rc.get("PRC_CHECK"))){
+				chkCnt++;
+				requestData.putField("IN_PROC_RSN", rc.get("IN_PROC_RSN"));
+				requestData.putField("PRC_CHECK", rc.get("PRC_CHECK"));
+				requestData.putField("CNSL_MGMT_NO", rc.get("CNSL_MGMT_NO"));
+				cnt += dbUpdate("DEPEqpInMgmt.UEqpInExl", requestData, onlineCtx);   
+			}
+		}
+	    responseData.putField("CHK_CNT", chkCnt+"");
+	    responseData.putField("PROC_CNT", cnt+"");
+	    if(cnt < chkCnt){
+	    	throw new BizRuntimeException("DMS00009");
+	    }
+	    
+		return responseData;
+	}
+  
+}

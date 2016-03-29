@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRLoanMgmt">
+	<select id="SSKNLoanLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanLst SKN여신 조회 */
+/* IO: 박홍서,2015-07-23T09:32:20(박홍서,2015-07-23T09:21:21) */
+SELECT  AGN_CD
+      , PAY_YM
+      , PAY_YM_TS
+      , AGN_NM
+      , CRD_AMT
+      , FS_REG_USER_ID
+      , FS_REG_DTM
+      , LS_CHG_USER_ID
+      , LS_CHG_DTM
+  FROM  TB_NR_SKN_CRD
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+        AGN_NM LIKE '%'||#AGN_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_YM_TS"><![CDATA[
+        PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+        PAY_YM >= #PAY_FR_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_TO_YM"><![CDATA[
+        PAY_YM <= #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SSKNLoanPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanPaging SKN여신 페이징 조회 */
+/* IO: 박홍서,2015-07-23T09:40:40(박홍서,2015-07-23T09:40:40) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY PAY_YM DESC, AGN_CD ASC) AS ROWNO
+              , AGN_CD
+              , PAY_YM
+              , PAY_YM_TS
+              , AGN_NM
+              , CRD_AMT
+              , FS_REG_USER_ID
+              , FS_REG_DTM
+              , LS_CHG_USER_ID
+              , LS_CHG_DTM
+          FROM  TB_NR_SKN_CRD
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+                AGN_NM LIKE '%'||#AGN_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_YM_TS"><![CDATA[
+                PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+                PAY_YM >= #PAY_FR_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_TO_YM"><![CDATA[
+                PAY_YM <= #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSKNLoanTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanTotCnt SKN여신 총건수 조회 */
+/* IO: 박홍서,2015-07-23T09:42:39(박홍서,2015-07-23T09:42:39) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_NR_SKN_CRD
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+        AGN_NM LIKE '%'||#AGN_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_YM_TS"><![CDATA[
+        PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+        PAY_YM >= #PAY_FR_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_TO_YM"><![CDATA[
+        PAY_YM <= #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,108 @@
+package dms.ep.epbrpbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]미착내역관리</li>
+ * <li>설  명 : <pre>미착내역관리</pre></li>
+ * <li>작성일 : 2015-11-30 17:07:39</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class PEPTransitMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPTransitMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>미착내역조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-11-30 17:07:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_DTM [기준년월]
+	 *	- field : CNSL_MGMT_NO [접수관리번호]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : TOTAL_CNT [총건수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_TRANSIT_LIST
+	 *		- field : CON_DT [처리일자]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_DT [접수일자]
+	 *		- field : CLCT_DT [반영일자]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [단말기 일련번호]
+	 *		- field : SKN_EQP_ST [미착AP등급]
+	 *		- field : XCL_AMT [미착AP매입금액]
+	 *		- field : DEDC_TYP_CD [미착AP유형]
+	 *		- field : INVE_SLIP_NO [미착AP번호]
+	 *		- field : INVE_SLIP_DT [미착AP기산일]
+	 *		- field : INVE_TYP_CD [AP처리구분]
+	 *		- field : C_SKN_EQP_ST [확정AP등급]
+	 *		- field : C_XCL_AMT [확정AP매입가]
+	 *		- field : SKN_SMPL_JDG_DAMT [확정AP평가손실금액]
+	 *		- field : C_DEDC_TYP_CD [확정AP유형]
+	 *		- field : C_INVE_SLIP_NO [확정AP번호]
+	 *		- field : C_INVE_SLIP_DT [확정AP기산일]
+	 *		- field : N_XCL_AMT [반제 반환금액]
+	 *		- field : M_INVE_CNCL_SLIP_NO [미착반제 AP번호]
+	 *		- field : C_INVE_CNCL_SLIP_NO [확정반제 AP번호]
+	 *		- field : N_INVE_CNCL_SLIP_DT [반제AP 기산일]
+	 *		- field : AR_SALE_AMT [AR매출가]
+	 *		- field : AR_XCL_SLIP_NO [AR매출번호]
+	 *		- field : AR_XCL_SLIP_DT [AR기산일]
+	 *		- field : AR_SELL_DEALCO_NM [AR매출처]
+	 *		- field : DIS_YN [재고여부]
+	 *		- field : TS_YN [미착]
+	 *		- field : SELL_YN [판매여부]
+	 *		- field : PAY_SLIP_DT [지급전표기산일]
+	 *		- field : PAY_SLIP_NO [지급전표번호]
+	 * </pre>
+	 */
+	public IDataSet pInqTransitList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqTransitList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+  
+}

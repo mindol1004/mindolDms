@@ -1,0 +1,414 @@
+package dms.ep.epscsbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]취소재고반제전표생성</li>
+ * <li>설  명 : <pre>취소재고반제전표생성</pre></li>
+ * <li>작성일 : 2015-11-17 16:50:16</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class FEPCnclInveRevdSlipRgst extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPCnclInveRevdSlipRgst(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]취소재고반제전표생성</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-11-17 16:52:00
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegCnclInveRevdSlipRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqData = new DataSet();
+        IDataSet resData = new DataSet();
+        IDataSet tmpData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        String sCurrDt = DateUtils.getCurrentDate(); // 현재일자
+    
+        try {
+            //반제전표 자동 생성 
+            //1.계좌송금,재고의 정산 테이블에서 각 단말기의 정산내역을 조회한다.
+            //2.조회건중에 취소정산건은 포함안한다.
+            //3.계좌송금,재고의 상세정산정보 및 정상정보를 생선한다.(각유형별로)
+            
+            DEPCnclInveRevdSlipRgst dEPCnclInveRevdSlipRgst = (DEPCnclInveRevdSlipRgst) lookupDataUnit(DEPCnclInveRevdSlipRgst.class);
+
+            String accoArrivCnclFlag = ""; //계좌송금확정취소여부
+            String accoNotArrivCnclFlag = ""; //계좌송금미착취소여부
+            String accoE4UArrivCnclFlag = ""; //계좌송금에코4유취소여부
+            String arrivCnclFlag = ""; //확정재고취소여부 
+            String notArrivCnclFlag = ""; //미착재고취소여부
+            String strAccoXclNo = "";
+            String strInveXclNo = "";
+            IRecordSet rsList = requestData.getRecordSet("RQ_RVED_SLIP_LIST");
+            reqData.putFieldMap(requestData.getFieldMap());
+            // 반제전표용자료생성
+            IRecordSet rsAccoNotArrivList = null;
+            IRecordSet rsAccoArrivList = null;
+            IRecordSet rsAccoE4UArrivList = null;
+            IRecordSet rsNotArrivList = null;
+            IRecordSet rsArrivList = null;
+            IRecordSet rsAccoXclList = null;
+            IRecordSet rsInveXclList = null;
+            IRecordSet rsInveList = null;
+            for(int i = 0; i < rsList.getRecordCount(); i++){
+                reqData.putFieldMap(rsList.getRecordMap(i));
+                //1.계좌송금정산자료조회
+                resData = new DataSet();
+                if(reqData.getField("PRCH_MGMT_NO") != null && !"".equals(reqData.getField("PRCH_MGMT_NO").toString())){
+                    resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveAccoRmtXclInfo(reqData, onlineCtx);
+                }else if(reqData.getField("CNSL_MGMT_NO") != null && !"".equals(reqData.getField("CNSL_MGMT_NO").toString())){
+                    resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveAccoRmtXclInfo(reqData, onlineCtx);
+                }
+                if(resData != null && resData.getRecordSetCount() > 0 && resData.getRecordSet("RS_CNCL_INVE_ACCO_XCL_INFO") != null && resData.getRecordSet("RS_CNCL_INVE_ACCO_XCL_INFO").getRecordCount() > 0){
+                    rsInveList = resData.getRecordSet("RS_CNCL_INVE_ACCO_XCL_INFO");
+                    accoArrivCnclFlag = "N";
+                    accoNotArrivCnclFlag = "N";
+                    accoE4UArrivCnclFlag = "N";
+                    for(int j = 0; j < rsInveList.getRecordCount(); j++){
+                        tmpData.putFieldMap(rsInveList.getRecordMap(j));
+                        if("Y".equals(tmpData.getField("CNCL_SLIP_YN").toString())){//
+                            if("20".equals(tmpData.getField("INVE_TYP_CD").toString())){//미착재고
+                                accoNotArrivCnclFlag = "Y";
+                            }else if("30".equals(tmpData.getField("INVE_TYP_CD").toString())){//에코4유재고
+                                accoE4UArrivCnclFlag = "Y";
+                            }else{
+                                accoArrivCnclFlag = "Y";
+                            }
+                        }
+                    }
+                    for(int j = 0; j < rsInveList.getRecordCount(); j++){
+                        tmpData.putFieldMap(rsInveList.getRecordMap(j));
+                        if("20".equals(tmpData.getField("INVE_TYP_CD").toString()) && "N".equals(tmpData.getField("CNCL_SLIP_YN").toString()) && "N".equals(accoNotArrivCnclFlag)){
+                            //미착재고
+                            if(rsAccoNotArrivList == null) {
+                                rsAccoNotArrivList = new RecordSet("RS_CNCL_INVE_EQP_XCL_INFO",rsInveList.getRecordMap(j));
+                            }else{
+                                rsAccoNotArrivList.addRecord(rsInveList.getRecord(j));
+                            }
+                        }else if("30".equals(tmpData.getField("INVE_TYP_CD").toString()) && "N".equals(tmpData.getField("CNCL_SLIP_YN").toString()) && "N".equals(accoE4UArrivCnclFlag)){
+                            //에코4유
+                            if(rsAccoE4UArrivList == null) {
+                                rsAccoE4UArrivList = new RecordSet("RS_CNCL_INVE_EQP_XCL_INFO",rsInveList.getRecordMap(j));
+                            }else{
+                                rsAccoE4UArrivList.addRecord(rsInveList.getRecord(j));
+                            }
+                        }else if("10".equals(tmpData.getField("INVE_TYP_CD").toString()) && "N".equals(tmpData.getField("CNCL_SLIP_YN").toString()) && "N".equals(accoArrivCnclFlag)){
+                            //확정재고
+                            if(rsAccoArrivList == null) {
+                                rsAccoArrivList = new RecordSet("RS_CNCL_INVE_EQP_XCL_INFO",rsInveList.getRecordMap(j));
+                            }else{
+                                rsAccoArrivList.addRecord(rsInveList.getRecord(j));
+                            }
+                        }
+                    }
+                }
+                //2.재고정산자료조회
+                resData = new DataSet();
+                if(reqData.getField("CNSL_MGMT_NO") != null && !"".equals(reqData.getField("CNSL_MGMT_NO").toString())){
+                    resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveEqpXclSlipInfoCnsl(reqData, onlineCtx);
+                }else if(reqData.getField("PRCH_MGMT_NO") != null && !"".equals(reqData.getField("PRCH_MGMT_NO").toString())){
+                    resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveEqpXclSlipInfo(reqData, onlineCtx);
+                }
+                if(resData != null && resData.getRecordSetCount() > 0 && resData.getRecordSet("RS_CNCL_INVE_EQP_XCL_INFO") != null && resData.getRecordSet("RS_CNCL_INVE_EQP_XCL_INFO").getRecordCount() > 0){
+                    rsInveList = resData.getRecordSet("RS_CNCL_INVE_EQP_XCL_INFO");
+                    notArrivCnclFlag = "N";
+                    arrivCnclFlag = "N";
+                    for(int j = 0; j < rsInveList.getRecordCount(); j++){
+                        tmpData.putFieldMap(rsInveList.getRecordMap(j));
+                        if("Y".equals(tmpData.getField("CNCL_SLIP_YN").toString())){//
+                            if("20".equals(tmpData.getField("INVE_TYP_CD").toString())){//미착재고
+                                notArrivCnclFlag = "Y";
+                            }else{
+                                arrivCnclFlag = "Y";
+                            }
+                        }
+                    }
+                    for(int j = 0; j < rsInveList.getRecordCount(); j++){
+                        tmpData.putFieldMap(rsInveList.getRecordMap(j));
+                        if("20".equals(tmpData.getField("INVE_TYP_CD").toString()) && "N".equals(tmpData.getField("CNCL_SLIP_YN").toString()) && "N".equals(notArrivCnclFlag)){
+                            //미착재고
+                            if(rsNotArrivList == null) {
+                                rsNotArrivList = new RecordSet("RS_CNCL_INVE_EQP_XCL_INFO",rsInveList.getRecordMap(j));
+                            }else{
+                                rsNotArrivList.addRecord(rsInveList.getRecord(j));
+                            }
+                        }else if("10".equals(tmpData.getField("INVE_TYP_CD").toString()) && "N".equals(tmpData.getField("CNCL_SLIP_YN").toString()) && "N".equals(arrivCnclFlag)){
+                            //확정재고
+                            if(rsArrivList == null) {
+                                rsArrivList = new RecordSet("RS_CNCL_INVE_EQP_XCL_INFO",rsInveList.getRecordMap(j));
+                            }else{
+                                rsArrivList.addRecord(rsInveList.getRecord(j));
+                            }
+                        }
+                    }
+                }
+            }
+            // 1-1. 계좌송금확정재고자료생성
+            if(rsAccoArrivList != null && rsAccoArrivList.getRecordCount() > 0){
+                //일련번호채번
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveAccoRmtXclSeq(tmpData, onlineCtx);
+                strAccoXclNo = resData.getField("ACCO_RMT_XCL_NO").toString();
+                for(int i = 0; i < rsAccoArrivList.getRecordCount(); i++){
+                    reqData = new DataSet();
+                    reqData.putField("ACCO_RMT_XCL_NO",strAccoXclNo);
+                    reqData.putField("ACCO_RMT_XCL_DTL_SEQ",i+1);
+                    reqData.putField("CNSL_MGMT_NO",rsAccoArrivList.get(i, "CNSL_MGMT_NO").toString());
+                    reqData.putField("PRCH_MGMT_NO",rsAccoArrivList.get(i, "PRCH_MGMT_NO").toString());
+                    reqData.putField("INVE_TYP_CD",rsAccoArrivList.get(i, "INVE_TYP_CD").toString());
+                    reqData.putField("EQP_MDL_CD",rsAccoArrivList.get(i, "EQP_MDL_CD").toString());
+                    reqData.putField("EQP_SER_NO",rsAccoArrivList.get(i, "EQP_SER_NO").toString());
+                    reqData.putField("XCL_AMT",rsAccoArrivList.get(i, "XCL_AMT"));
+                    if(rsAccoArrivList.get(i,"XCL_AMT") != null && !"".equals(rsAccoArrivList.get(i,"XCL_AMT").toString()) && !"0".equals(rsAccoArrivList.get(i,"XCL_AMT").toString())){
+                        reqData.putField("XCL_AMT", Long.parseLong(rsAccoArrivList.get(i,"XCL_AMT").toString())*-1);
+                    }
+                    reqData.putField("ACCO_RMT_SLIP_DT",rsAccoArrivList.get(i, "ACCO_RMT_SLIP_DT"));
+                    reqData.putField("ACCO_RMT_SLIP_NO",rsAccoArrivList.get(i, "ACCO_RMT_SLIP_NO"));
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    //정산상세등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveAccoRmtXclDtlRgst(reqData, onlineCtx);
+                }
+                //합계금액추출
+                reqData = new DataSet();
+                reqData.putField("ACCO_RMT_XCL_NO",strAccoXclNo);
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveAccoRmtXclSumList(reqData, onlineCtx);
+                rsAccoXclList = resData.getRecordSet("ACCO_RMT_XCL_SUM_LIST");
+                //정산등록
+                if(rsAccoXclList != null && rsAccoXclList.getRecordCount() > 0 && Long.parseLong(rsAccoXclList.get(0, "ACCO_RMT_XCL_CNT").toString()) > 0){
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    reqData.putField("ACCO_RMT_AMT", rsAccoXclList.get(0, "ACCO_RMT_AMT")); //정산 금액
+                    reqData.putField("ACCO_RMT_XCL_CNT", rsAccoXclList.get(0, "ACCO_RMT_XCL_CNT")); //정산 건수
+                    reqData.putField("XCL_STRD_STA_DT", sCurrDt);
+                    reqData.putField("XCL_STRD_END_DT", sCurrDt);
+                    reqData.putField("INVE_TYP_CD", "10");
+                    reqData.putField("CNCL_SLIP_YN", "Y");
+                    reqData.putField("XCL_DEALCO_CD", "");
+                    // 정산등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveAccoRmtXcl(reqData, onlineCtx);
+                }
+            }
+            // 1-2. 계좌송금미착재고자료생성
+            if(rsAccoNotArrivList != null && rsAccoNotArrivList.getRecordCount() > 0){
+                //일련번호채번
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveAccoRmtXclSeq(tmpData, onlineCtx);
+                strAccoXclNo = resData.getField("ACCO_RMT_XCL_NO").toString();
+                for(int i = 0; i < rsAccoNotArrivList.getRecordCount(); i++){
+                    reqData = new DataSet();
+                    reqData.putField("ACCO_RMT_XCL_NO",strAccoXclNo);
+                    reqData.putField("ACCO_RMT_XCL_DTL_SEQ",i+1);
+                    reqData.putField("CNSL_MGMT_NO",rsAccoNotArrivList.get(i, "CNSL_MGMT_NO").toString());
+                    reqData.putField("PRCH_MGMT_NO",rsAccoNotArrivList.get(i, "PRCH_MGMT_NO").toString());
+                    reqData.putField("INVE_TYP_CD",rsAccoNotArrivList.get(i, "INVE_TYP_CD").toString());
+                    reqData.putField("EQP_MDL_CD",rsAccoNotArrivList.get(i, "EQP_MDL_CD").toString());
+                    reqData.putField("EQP_SER_NO",rsAccoNotArrivList.get(i, "EQP_SER_NO").toString());
+                    reqData.putField("XCL_AMT",rsAccoNotArrivList.get(i, "XCL_AMT"));
+                    if(rsAccoNotArrivList.get(i,"XCL_AMT") != null && !"".equals(rsAccoNotArrivList.get(i,"XCL_AMT").toString()) && !"0".equals(rsAccoNotArrivList.get(i,"XCL_AMT").toString())){
+                        reqData.putField("XCL_AMT", Long.parseLong(rsAccoNotArrivList.get(i,"XCL_AMT").toString())*-1);
+                    }
+                    reqData.putField("ACCO_RMT_SLIP_DT",rsAccoArrivList.get(i, "ACCO_RMT_SLIP_DT"));
+                    reqData.putField("ACCO_RMT_SLIP_NO",rsAccoArrivList.get(i, "ACCO_RMT_SLIP_NO"));
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    //정산상세등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveAccoRmtXclDtlRgst(reqData, onlineCtx);
+                }
+                //합계금액추출
+                reqData = new DataSet();
+                reqData.putField("ACCO_RMT_XCL_NO",strAccoXclNo);
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveAccoRmtXclSumList(reqData, onlineCtx);
+                rsAccoXclList = resData.getRecordSet("ACCO_RMT_XCL_SUM_LIST");
+                //정산등록
+                if(rsAccoXclList != null && rsAccoXclList.getRecordCount() > 0 && Long.parseLong(rsAccoXclList.get(0, "ACCO_RMT_XCL_CNT").toString()) > 0){
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    reqData.putField("ACCO_RMT_AMT", rsAccoXclList.get(0, "ACCO_RMT_AMT")); //정산 금액
+                    reqData.putField("ACCO_RMT_XCL_CNT", rsAccoXclList.get(0, "ACCO_RMT_XCL_CNT")); //정산 건수
+                    reqData.putField("XCL_STRD_STA_DT", sCurrDt);
+                    reqData.putField("XCL_STRD_END_DT", sCurrDt);
+                    reqData.putField("INVE_TYP_CD", "20");
+                    reqData.putField("CNCL_SLIP_YN", "Y");
+                    reqData.putField("XCL_DEALCO_CD", "");
+                    // 정산등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveAccoRmtXcl(reqData, onlineCtx);
+                }
+            }
+            // 1-3. 계좌송금에코4유재고자료생성
+            if(rsAccoE4UArrivList != null && rsAccoE4UArrivList.getRecordCount() > 0){
+                //일련번호채번
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveAccoRmtXclSeq(tmpData, onlineCtx);
+                strAccoXclNo = resData.getField("ACCO_RMT_XCL_NO").toString();
+                for(int i = 0; i < rsAccoE4UArrivList.getRecordCount(); i++){
+                    reqData = new DataSet();
+                    reqData.putField("ACCO_RMT_XCL_NO",strAccoXclNo);
+                    reqData.putField("ACCO_RMT_XCL_DTL_SEQ",i+1);
+                    reqData.putField("CNSL_MGMT_NO",rsAccoE4UArrivList.get(i, "CNSL_MGMT_NO").toString());
+                    reqData.putField("PRCH_MGMT_NO",rsAccoE4UArrivList.get(i, "PRCH_MGMT_NO").toString());
+                    reqData.putField("INVE_TYP_CD",rsAccoE4UArrivList.get(i, "INVE_TYP_CD").toString());
+                    reqData.putField("EQP_MDL_CD",rsAccoE4UArrivList.get(i, "EQP_MDL_CD").toString());
+                    reqData.putField("EQP_SER_NO",rsAccoE4UArrivList.get(i, "EQP_SER_NO").toString());
+                    reqData.putField("XCL_AMT",rsAccoE4UArrivList.get(i, "XCL_AMT"));
+                    if(rsAccoE4UArrivList.get(i,"XCL_AMT") != null && !"".equals(rsAccoE4UArrivList.get(i,"XCL_AMT").toString()) && !"0".equals(rsAccoE4UArrivList.get(i,"XCL_AMT").toString())){
+                        reqData.putField("XCL_AMT", Long.parseLong(rsAccoE4UArrivList.get(i,"XCL_AMT").toString())*-1);
+                    }
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    //정산상세등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveAccoRmtXclDtlRgst(reqData, onlineCtx);
+                }
+                //합계금액추출
+                reqData = new DataSet();
+                reqData.putField("ACCO_RMT_XCL_NO",strAccoXclNo);
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveAccoRmtXclSumList(reqData, onlineCtx);
+                rsAccoXclList = resData.getRecordSet("ACCO_RMT_XCL_SUM_LIST");
+                //정산등록
+                if(rsAccoXclList != null && rsAccoXclList.getRecordCount() > 0 && Long.parseLong(rsAccoXclList.get(0, "ACCO_RMT_XCL_CNT").toString()) > 0){
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    reqData.putField("ACCO_RMT_AMT", rsAccoXclList.get(0, "ACCO_RMT_AMT")); //정산 금액
+                    reqData.putField("ACCO_RMT_XCL_CNT", rsAccoXclList.get(0, "ACCO_RMT_XCL_CNT")); //정산 건수
+                    reqData.putField("XCL_STRD_STA_DT", sCurrDt);
+                    reqData.putField("XCL_STRD_END_DT", sCurrDt);
+                    reqData.putField("INVE_TYP_CD", "30");
+                    reqData.putField("CNCL_SLIP_YN", "Y");
+                    reqData.putField("XCL_DEALCO_CD", "");
+                    // 정산등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveAccoRmtXcl(reqData, onlineCtx);
+                }
+            }            
+            // 2-1. 확정재고자료생성
+            if(rsArrivList != null && rsArrivList.getRecordCount() > 0){
+                //일련번호채번
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveInveXclSeq(tmpData, onlineCtx);
+                strInveXclNo = resData.getField("INVE_XCL_NO").toString();
+                for(int i = 0; i < rsArrivList.getRecordCount(); i++){
+                    reqData = new DataSet();
+                    reqData.putField("INVE_XCL_NO",strInveXclNo);
+                    reqData.putField("INVE_XCL_DTL_SEQ",i+1);
+                    reqData.putField("CNSL_MGMT_NO",rsArrivList.get(i, "CNSL_MGMT_NO").toString());
+                    reqData.putField("PRCH_MGMT_NO",rsArrivList.get(i, "PRCH_MGMT_NO").toString());
+                    reqData.putField("CNSL_DT",rsArrivList.get(i, "CNSL_DT").toString());
+                    reqData.putField("PRCH_DT",rsArrivList.get(i, "PRCH_DT").toString());
+                    reqData.putField("XCL_AMT",rsArrivList.get(i, "XCL_AMT"));
+                    if(rsArrivList.get(i,"XCL_AMT") != null && !"".equals(rsArrivList.get(i,"XCL_AMT").toString()) && !"0".equals(rsArrivList.get(i,"XCL_AMT").toString())){
+                        reqData.putField("XCL_AMT", Long.parseLong(rsArrivList.get(i,"XCL_AMT").toString())*-1);
+                    }
+                    if(rsArrivList.get(i,"ASMT_DMG_AMT") != null && !"".equals(rsArrivList.get(i,"ASMT_DMG_AMT").toString()) && !"0".equals(rsArrivList.get(i,"ASMT_DMG_AMT").toString())){
+                        reqData.putField("ASMT_DMG_AMT", Long.parseLong(rsArrivList.get(i,"ASMT_DMG_AMT").toString())*-1);
+                    }
+                    reqData.putField("INVE_SLIP_DT",rsArrivList.get(i, "INVE_SLIP_DT").toString());
+                    reqData.putField("INVE_SLIP_NO",rsArrivList.get(i, "INVE_SLIP_NO").toString());
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    //정산상세등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveXclDtlRgst(reqData, onlineCtx);
+                }
+                //합계금액추출
+                reqData = new DataSet();
+                reqData.putField("INVE_XCL_NO",strInveXclNo);
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveXclSumList(reqData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                //정산등록
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    reqData.putField("INVE_SLIP_ST", "00");
+                    reqData.putField("CNCL_SLIP_YN", "Y");
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    reqData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    reqData.putField("ASMT_DMG_AMT", rsInveXclList.get(0, "ASMT_DMG_AMT")); //손실금액
+                    reqData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    reqData.putField("INVE_TYP_CD", "10");
+                    reqData.putField("XCL_STRD_DT", sCurrDt); //정산 기준 일자
+                    // 정산등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveXclRgst(reqData, onlineCtx);
+                }
+            }
+            // 2-2. 미착재고자료생성
+            if(rsNotArrivList != null && rsNotArrivList.getRecordCount() > 0){
+                //일련번호채번
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveInveXclSeq(tmpData, onlineCtx);
+                strInveXclNo = resData.getField("INVE_XCL_NO").toString();
+                for(int i = 0; i < rsNotArrivList.getRecordCount(); i++){
+                    reqData = new DataSet();
+                    reqData.putField("INVE_XCL_NO",strInveXclNo);
+                    reqData.putField("INVE_XCL_DTL_SEQ",i+1);
+                    reqData.putField("CNSL_MGMT_NO",rsNotArrivList.get(i, "CNSL_MGMT_NO").toString());
+                    reqData.putField("PRCH_MGMT_NO",rsNotArrivList.get(i, "PRCH_MGMT_NO").toString());
+                    reqData.putField("CNSL_DT",rsNotArrivList.get(i, "CNSL_DT").toString());
+                    reqData.putField("PRCH_DT",rsNotArrivList.get(i, "PRCH_DT").toString());
+                    reqData.putField("XCL_AMT",rsNotArrivList.get(i, "XCL_AMT"));
+                    if(rsNotArrivList.get(i,"XCL_AMT") != null && !"".equals(rsNotArrivList.get(i,"XCL_AMT").toString()) && !"0".equals(rsNotArrivList.get(i,"XCL_AMT").toString())){
+                        reqData.putField("XCL_AMT", Long.parseLong(rsNotArrivList.get(i,"XCL_AMT").toString())*-1);
+                    }
+                    if(rsNotArrivList.get(i,"ASMT_DMG_AMT") != null && !"".equals(rsNotArrivList.get(i,"ASMT_DMG_AMT").toString()) && !"0".equals(rsNotArrivList.get(i,"ASMT_DMG_AMT").toString())){
+                        reqData.putField("ASMT_DMG_AMT", Long.parseLong(rsNotArrivList.get(i,"ASMT_DMG_AMT").toString())*-1);
+                    }
+                    reqData.putField("INVE_SLIP_DT",rsNotArrivList.get(i, "INVE_SLIP_DT").toString());
+                    reqData.putField("INVE_SLIP_NO",rsNotArrivList.get(i, "INVE_SLIP_NO").toString());
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    //정산상세등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveXclDtlRgst(reqData, onlineCtx);
+                }
+                //합계금액추출
+                reqData = new DataSet();
+                reqData.putField("INVE_XCL_NO",strInveXclNo);
+                resData = dEPCnclInveRevdSlipRgst.dSInqCnclInveXclSumList(reqData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                //정산등록
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    reqData.putField("INVE_SLIP_ST", "00");
+                    reqData.putField("CNCL_SLIP_YN", "Y");
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    reqData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    reqData.putField("ASMT_DMG_AMT", rsInveXclList.get(0, "ASMT_DMG_AMT")); //손실금액
+                    reqData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    reqData.putField("INVE_TYP_CD", "20");
+                    reqData.putField("XCL_STRD_DT", sCurrDt); //정산 기준 일자
+                    // 정산등록
+                    dEPCnclInveRevdSlipRgst.dICnclInveXclRgst(reqData, onlineCtx);
+                }
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+
+        return responseData;
+    }
+  
+}

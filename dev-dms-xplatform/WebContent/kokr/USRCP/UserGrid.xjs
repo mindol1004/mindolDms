@@ -1,0 +1,1275 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  UserGrid.xjs
+ * 03. js 설명 : Extends Grid(User Object)
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+class UserGrid extends Grid
+{
+
+/*******************************************************************************
+ * 멤버변수
+ ******************************************************************************/
+	private var CONST_ASC_MARK = "▼";
+	private var CONST_DESC_MARK = "▲";
+ 
+	private var CUR_FORMAT_STR;
+	private var aRealColSize;
+	
+	private var aFilterDs;	//Filter용으로 생성된 데이타셋을 담고 있는 배열객체
+	private var _showFilter  = "false";	//Filter용 변수
+	
+	private var _draw 	= false; //Grid 를 다시 그릴지 여부 (처음에 한번 그린다음에 true로 바뀜		
+	private var uv_ClickHeadCellIdx  = -1;		//Grid를 클릭시에 Cell Index를 기억
+	private var uv_FilterDatasetName = "";		//Filter용 Dataset생성시 이름을 기억
+	
+	private var iNumberCellIdx;		//Number Cell Index
+	private var iStatusCellIdx;		//Status Cell Index
+	private var iCheckCellIdx;		//Checkbox Cell Index
+	private var isDraw = false;
+	
+	// 그리드 모양을 정하기 위해 필요한 변수 ------------------------
+	public var _number 	= "true"; //줄번호(size=40)
+	public var _status 	= "false"; //상태표시(size=40)
+	public var _check 	= "false"; //checkbox(size=30)
+	public var _checkColumnName = "_checkcol";
+	public var _checkedallevent = "false"; //데이타셋에 지정된 event 를 checkall 시에 작동 시킬지 여부를 판별
+	public var _nodataimage = "true";
+	/* 기능제한함(2014.12.01, 김민수차장 요청)
+	public var _required= ""; //필수 항목 컬럼들(구분자: ^ )
+	public var _requiredimage= "false"; //_required 가 있는경우 HeadText에 required 이미지 표시여부
+	*/
+	// ------------------------------------------------------------------
+	// 그리드 추가기능을 정하기 위해 필요한 변수 -------------------
+	public var _sort 	= "true"; //헤더정렬
+	public var _tooltip	= "true"; //툴팁
+	
+	// ------------------------------------------------------------------
+/*******************************************************************************
+ * 생성자 && OnDraw
+ ******************************************************************************/
+	
+	/**
+	 * 생성자 
+	 * 생성에 필요한 값들을 정의하자
+	 * @param sName - 객체이름
+	 * @param iLeft
+	 * @param iTop
+	 * @param iRight
+	 * @param iBottom
+	 */
+	function UserGrid( sName, iLeft, iTop, iRight, iBottom ) {
+
+		if( !ufn_isNull(sName) )
+			this.name = sName;
+		if( !ufn_isNull(iLeft) )
+			this.position.left = iLeft;
+		if( !ufn_isNull(iTop) )
+			this.position.top = iTop;
+		if( !ufn_isNull(iRight) )
+			this.position.right = iRight;
+		if( !ufn_isNull(iBottom) )
+			this.position.bottom = iBottom;
+		
+		//초기 상태값
+		this.tooltiptype 	= "hover";
+		this.autoenter  	= "select";
+		this.cellsizingtype = "col";
+		this.cellmovingtype = "col";
+		this.autofittype    = "col";
+		this.hideendline    = "col";
+		//this.fillareatype   = "linerow";
+	}
+
+	/**
+	 * 객체를 그릴때마다 기본적으로 호출되는 함수
+	 */
+	function OnDraw(Canvas, EventArgs)	
+	{
+		DefaultDraw(Canvas.getPainter());	
+		
+		//ds가 추가되고 다시 draw될때는 draw여부에 따라 막아둠
+		if(_draw==true)	return;
+		
+		reDraw();
+
+		_draw = true;
+	}
+	
+	function init() {
+	
+		trace("init() this.onmousemove.clear()"+this.onmousemove.clear());
+		if(_tooltip=="true") {
+			trace("init() this.onmousemove.addHandler(usrGrid_onmousemove)"+this.onmousemove.addHandler(usrGrid_onmousemove));
+		}		
+		
+	}
+	
+	function reDraw() {
+
+		var nColCount = 0;
+		var i = 0;
+		var idx = 0;
+		var nHeadCount = 0;
+		var nBodyCount = 0;
+		var nFixCount = 0;
+		var sBand;
+		
+		this.usecontrolkey = false;
+				
+		//2015.01.09 grid의 css class가 지정되어있지 않은 경우 기본 border값 설정 (grid의 border 값이 적용되지 않는 현상)
+		if(this.class ==""){
+			this.border="1 solid #687084, 1 solid #e4e4e4, 1 solid #e4e4e4, 1 solid #e4e4e4";		
+		}
+		//----------------------------------------------------------------------------------
+		//그리드에서 공통으로 사용하는 이벤트 핸들링 start
+				
+		try {
+			
+			if( this.onheadclick.length ==1 ){
+				//화면에서 사용자가 지정한 head클릭이벤트가 있는 경우 
+				var userFuncObj =  this.onheadclick.getHandler(0);
+				this.onheadclick.clear();
+				this.onheadclick.addHandler(usrGrid_onheadclick);
+				this.onheadclick.addHandler(userFuncObj);
+				
+			} else 
+			{
+				this.onheadclick.addHandler(usrGrid_onheadclick);
+			}
+			this.onmousewheel.addHandler(usrGrid_onmousewheel);
+			
+			if(_tooltip=="true") {
+				this.onmousemove.addHandler(usrGrid_onmousemove);
+			}
+						
+			if( !ufn_isNull(this.binddataset) && !ufn_isNull( eval(this.binddataset) ) ) {
+				var bindDs = eval(this.binddataset);
+				bindDs.onload.addHandler(usrGridBindDataset_onload);	//컬럼추가
+			}
+			
+			//2015.02.04 더블클릭이벤트를 엔터키클릭시에도 발생할 수 있도록 추가 			
+			if( this.oncelldblclick.length ==1 ){
+				this.onkeyup.addHandler(usrGrid_onkeyup);
+			}
+			//201.04.28 ctrl-c 클립보드 복사기능 추가, 심상준
+			this.onkeydown.addHandler(usrGrid_onkeydown);
+			
+		} catch(e) {			
+		}
+		//그리드에서 공통으로 사용하는 이벤트 핸들링 end
+		//----------------------------------------------------------------------------------
+		
+		// ------------------------------------------------------------------
+		// 그리드에서 축소/확대에 사용하는 변수
+		this.userright  = this.right;
+		this.userbottom = this.bottom;
+		// ------------------------------------------------------------------
+		//number	== (page_size*(page-1))+num
+		
+		//_number이 true 일때 No Column을 추가한다.		
+		//2015.01.12 _number,_status 값이 "true"이거나 "desc"인 경우 page를 적용하여 asc, desc설정하기   
+		if(_number=="true" || _number=="desc" )
+		{
+			nColCount = this.getFormatColCount();
+			if ( nColCount == 0 ) {
+				this.insertContentsCol(i);
+			} else {
+				if(this.getFormatColProperty(i, "band")=="left")
+				{
+					this.insertContentsCol("left", i);
+				} else {
+					this.insertContentsCol(i);
+				}
+			}
+			if(this.getFormatRowCount()==0)
+			{
+				this.insertContentsRow("Head", i);
+				this.insertContentsRow("Body", i);
+			}else if(this.getFormatRowCount()>1)
+			{
+				//Head의 RowCount가 1이 아닐 경우 Row를 Merge한다.
+				for(idx=0;idx<this.getFormatRowCount();idx++)
+				{
+					if(this.getFormatRowProperty(idx, "band")=="head")
+					{
+						nHeadCount++;
+					}
+					
+					if(this.getFormatRowProperty(idx, "band")=="body")
+					{
+						nBodyCount++;
+					}
+				}
+				this.mergeContentsCell("head",0,i,nHeadCount-1,i,i,false);
+				
+				this.mergeContentsCell("body",0,i,nBodyCount-1,i,i,false);
+			}
+			this.setCellProperty("Head", i, "text", "No");
+			//this.setCellProperty("Body", i, "expr", "currow+1");
+		
+			//2015.01.12 _number,_status 값이 "true"이거나 "desc"인 경우 page를 적용하여 asc, desc설정하기   	
+			//스크롤로 paging을 하는 경우 or 페이지네비게이터로 클릭하여 해당페에지에 접근하는 경우 
+			var sRowNumEpr = "";
+			if(this.onvtracklast.length > 0){
+				 sRowNumEpr = (_number=="true") ? "currow+1" : "total_record_cnt-currow";				
+			} else {
+				 sRowNumEpr = (_number=="true") ? "(page_size*(page-1))+(currow+1)" : "total_record_cnt-(((page-1)*page_size)+currow)";				
+			}					
+				
+			this.setCellProperty("Body", i, "expr",  sRowNumEpr);
+			
+			this.setCellProperty("Body", i, "align", "center&#32;middle;");
+								
+			var sBackground  = this.getCellProperty("body", i, "background");
+			var sBackground2 = this.getCellProperty("body", i, "background2");
+			
+			this.setCellProperty("body", i, "background"	, sBackground);
+			this.setCellProperty("body", i, "background2"	, sBackground2);
+			
+			//사이즈지정
+			this.setCellProperty("Body", i, "autosizecol", "limitmax");
+			this.setFormatColProperty( i,"size","40" );
+			
+			
+			iNumberCellIdx = i; //idx 값 기억해두자
+			i++;
+		}
+		
+		//2015.01.12 _number,_status 값이 "true"이거나 "desc"인 경우 page를 적용하여 asc, desc설정하기   	
+		//_status true 일때 상태 Column을 추가한다.
+		if(_status=="true" || _status=="desc" )
+		{
+			nColCount = this.getFormatColCount();
+			if ( nColCount == 0 ) {
+				this.insertContentsCol(i);
+			} else {
+				if(this.getFormatColProperty(i, "band")=="left")
+				{
+					this.insertContentsCol("left", i);
+				} else {
+					this.insertContentsCol(i);
+				}
+			}
+			
+			if(this.getFormatRowCount()==0)
+			{
+				this.insertContentsRow("Head", i);
+				this.insertContentsRow("Body", i);
+			}else if(this.getFormatRowCount()>1)
+			{
+				//Head의 RowCount가 1이 아닐 경우 Row를 Merge한다.
+				for(idx=0;idx<this.getFormatRowCount();idx++)
+				{
+					if(this.getFormatRowProperty(idx, "band")=="head")
+					{
+						nHeadCount++;
+					}
+					
+					if(this.getFormatRowProperty(idx, "band")=="body")
+					{
+						nBodyCount++;
+					}
+				}
+				this.mergeContentsCell("head",0,i,nHeadCount-1,i,i,false);
+				
+				this.mergeContentsCell("body",0,i,nBodyCount-1,i,i,false);
+			}
+ 			this.setCellProperty("Head", i, "text", "No");
+			
+			//this.setCellProperty("Body", i, "displaytype", "image");
+ 			var sDispExpr = "expr:"
+				+ "getRowType(currow)==0 ? 'normal':"
+				+ "getRowType(currow)==2 ? 'image':"
+				+ "getRowType(currow)==4 ? 'image':"
+				+ "getRowType(currow)==8 ? 'image':'number'";
+
+ 			this.setCellProperty("Body", i, "displaytype", sDispExpr);
+			this.setCellProperty("Body", i, "align", "center&#32;middle;");
+			
+			//dataset rowtype 가지고 상태 icon 을 표시하게 하자.
+			if( !ufn_isNull(this.binddataset) ) {
+				
+				//2015.01.12 _number,_status 값이 "true"이거나 "desc"인 경우 page를 적용하여 asc, desc설정하기   
+				//스크롤로 paging을 하는 경우 or 페이지네비게이터로 클릭하여 해당페에지에 접근하는 경우 
+				var sRowNumEpr = "";
+				if(this.onvtracklast.length > 0){
+					 sRowNumEpr = (_status=="true") ? "currow+1" : "total_record_cnt-currow";				
+				} else {
+					 sRowNumEpr = (_status=="true") ? "(page_size*(page-1))+(currow+1)" : "total_record_cnt-(((page-1)*page_size)+currow)";				
+				}
+				
+				var sExpr = ""
+				+ "getRowType(currow)==0 ? '':"
+				+ "getRowType(currow)==2 ? 'theme://Img/ico_grid_add.png':"
+				+ "getRowType(currow)==4 ? 'theme://Img/ico_grid_edit.png':"
+				+ "getRowType(currow)==8 ? 'theme://Img/ico_grid_del.png':"
+				+ sRowNumEpr;				
+			//	+ "getRowType(currow)==8 ? 'theme://Img/ico_grid_del.png':currow+1";
+
+				this.setCellProperty("Body", i, "expr", sExpr);
+			}
+			
+			var sBackground  = this.getCellProperty("body", i, "background");
+			var sBackground2 = this.getCellProperty("body", i, "background2");
+			
+			this.setCellProperty("body", i, "background"	, sBackground);
+			this.setCellProperty("body", i, "background2"	, sBackground2);
+			
+			//사이즈지정
+			this.setCellProperty("Body", i, "autosizecol", "limitmax");
+			this.setFormatColProperty( i,"size","40" );
+			
+			
+			iStatusCellIdx = i; //idx 값 기억해두자
+			i++;
+		}
+		
+		//_check Property가 true일때 checkbox Column을 추가한다.
+		if(_check=="true" && !ufn_isNull(_checkColumnName))
+		{
+			nColCount = this.getFormatColCount();
+			if ( nColCount == 0 ) {
+				this.insertContentsCol(i);
+			} else {
+				if(this.getFormatColProperty(i, "band")=="left")
+				{
+					this.insertContentsCol("left", i);
+				} else {
+					this.insertContentsCol(i);
+				}
+			}
+			
+			if(this.getFormatRowCount()==0)
+			{
+				this.insertContentsRow("Head", i);
+				this.insertContentsRow("Body", i);
+			}else if(this.getFormatRowCount()>1)
+			{
+				//Head의 RowCount가 1이 아닐 경우 Row를 Merge한다.
+				for(idx=0;idx<this.getFormatRowCount();idx++)
+				{
+					if(this.getFormatRowProperty(idx, "band")=="head")
+					{
+						nHeadCount++;
+					}
+					
+					if(this.getFormatRowProperty(idx, "band")=="body")
+					{
+						nBodyCount++;
+					}
+				}
+				this.mergeContentsCell("head",0,i,nHeadCount-1,i,i,false);
+				
+				this.mergeContentsCell("body",0,i,nBodyCount-1,i,i,false);
+			}
+
+			this.setCellProperty("Head", i, "displaytype", "checkbox");
+			this.setCellProperty("Head", i, "edittype", "checkbox");
+
+			
+			this.setCellProperty("Body", i, "displaytype", "checkbox");
+			this.setCellProperty("Body", i, "edittype", "checkbox");
+			this.setCellProperty("Body", i, "text", "bind:"+_checkColumnName);/**/
+			//this.setCellProperty("Body", i, "expr", "arrChk[currow]");/**/
+			this.setCellProperty("Body", i, "align", "center&#32;middle;");
+			
+			var sBackground  = this.getCellProperty("body", i, "background");
+			var sBackground2 = this.getCellProperty("body", i, "background2");
+			
+			this.setCellProperty("body", i, "background"	, sBackground);
+			this.setCellProperty("body", i, "background2"	, sBackground2);
+			
+			//사이즈지정
+			this.setCellProperty("Body", i, "autosizecol", "limitmax");
+			this.setFormatColProperty( i,"size","30" );
+			
+			
+			iCheckCellIdx = i; //idx 값 기억해두자
+			i++;
+		}
+		
+		if (_nodataimage == "true") {
+			this.nodataimage = "URL('theme://Img/ico_WFDA_nodata.png')";
+		} else {
+			this.nodataimage = "";
+		}
+		
+		//필수항목일때 헤더 모양을 변경
+		/* 기능제한함(2014.12.01, 김민수차장 요청)
+        if( !ufn_isNull( _required ) && _requiredimage == "true" ) {
+			var aRequired = _required.split("^");
+            var idx;
+			//trace("aRequired.length : "+aRequired.length);
+			
+			for( var i=0; i<aRequired.length; i++ ) {
+				var sColNm = aRequired[i];				
+				
+                for(var j=0; j<this.getCellCount("Head"); j++)
+                {
+                    var iCellIdx = this.getBindCellIndex("body",sColNm);
+                    if( iCellIdx == this.getCellProperty("Head", j,"col"))
+                        idx = j;
+                }
+                
+                this.setCellProperty("Head", idx, "class", "cellPoint");  
+				//this.setCellProperty("Head", idx, "background", "url('theme://images/bg_required.png')");  
+			}
+		}
+		*/
+		
+		// 현재 모양을 기억 ----------------------------------------
+		aFilterDs = new Array();
+		CUR_FORMAT_STR = this.getCurFormatString();
+		aRealColSize = new Array();
+		for( var i=0; i<this.getFormatColCount(); i++ ) {
+			aRealColSize.push( this.getRealColSize(i) );
+		}
+		// 현재 모양을 기억 ----------------------------------------
+	}
+	
+	
+/*******************************************************************************
+ * Event 영역
+ ******************************************************************************/	
+	/*----------------------------------------------------------------------------------------------
+	 * 설명   : enterkey 입력시 해당 그리드에 등록된 사용자 더블클릭이벤트 호출
+	 * param   : obj - UserGrid
+				   e    - KeyEventInfo
+	 * return  : void
+	-----------------------------------------------------------------------------------------------*/
+	function usrGrid_onkeyup(obj:UserGrid, e:KeyEventInfo)
+	{
+		if(e.keycode ==KEYCODE_ENTER){  
+			try{
+				obj.oncelldblclick.fireEvent(obj,new GridClickEventInfo());
+			} catch(e){
+			}
+		}
+	}	
+	/**
+	 * @desc : ToolTip 으로 표시할 내용을 정리해서 뿌리자.
+	 */
+	function usrGrid_onmousemove(obj:Grid,e:GridMouseEventInfo)
+	{
+		var objBindDs 		= eval(this.binddataset);
+		var bindText 		= obj.getCellProperty("body", e.cell, "text");
+		var bindToolTipText = obj.getCellProperty("body", e.cell, "tooltiptext");
+		
+		if( !ufn_isNull(bindToolTipText) ) {
+			var sText = "";
+		
+			var aBindText = String(bindToolTipText).split(":");
+			if( aBindText.length != 2 ) {
+				sText = ufn_isNull( bindToolTipText ) ? "" : bindToolTipText;
+			} else {
+				sText = objBindDs.getColumn(e.row, aBindText[1]);
+				sText = ufn_isNull( sText ) ? "" : sText;
+			}
+			
+			obj.tooltiptype = "hover";
+			obj.tooltiptext = sText;
+
+		} else if(!ufn_isNull(bindText) && ufn_isNull(bindToolTipText) && bindText.indexOf("expr:") == -1) { 
+			var sText = "";
+			var aBindText = String(bindText).split(":");
+			if( aBindText.length != 2 ) {
+				sText = ufn_isNull( bindText ) ? "" : bindText;  
+			} else {				 
+				sText = obj.getCellText(e.row,e.cell);
+				sText = ufn_isNull( sText ) ? "" : sText;  
+			}
+			obj.tooltiptype = "hover";
+			obj.tooltiptext = sText;
+			
+		} else {
+		
+			obj.tooltiptype = "";
+			obj.tooltiptext = "";
+		}	
+	}
+	
+	/**
+	 * @desc : head click event handler( Checkbox check/uncheck, Sort )
+	 */
+	function usrGrid_onheadclick(obj:UserGrid, e:GridClickEventInfo) {	
+		//trace("usrGrid_onheadclick>>>>>>>");
+		//trace("_showFilter:"+_showFilter);
+		if ( _showFilter == "true") { 
+			uv_ClickHeadCellIdx = e.cell;		//Cell Index기억
+			gfn_showGridFilter(obj, e);
+		} else {
+			var sDisPlayType = this.getCellProperty("head",e.cell,"displaytype");
+			//trace("sDisPlayType:" + sDisPlayType + ":"+_sort);
+			
+			if( sDisPlayType=="checkbox" ) {
+				ufn_checkAll(obj, e.cell);
+			} else if( sDisPlayType != "checkbox" ) {
+				if( _sort == "true" )
+					ufn_gridSort(obj, e);
+			}
+		}
+	}
+	
+	/**
+	 * @desc : head click event handler( Checkbox check/uncheck, Sort )
+	 */
+	function usrGrid_onmousewheel(obj:Grid, e:MouseWheelEventInfo) {
+		//trace("usrGrid_onmousewheel>>>>>>>");
+		if ( e.shiftKey && e.amount > 0 ) {
+			obj.hscrollbar.pos -= obj.hscrollbar.page;
+			return true;
+		} else if ( e.shiftKey && e.amount < 0 ) {
+			obj.hscrollbar.pos += obj.hscrollbar.page;
+			return true;
+		}
+	}
+
+	/**
+	 * @desc : bind dataset 의 경우 공통 checkbox 에 check 를 위한 check cloumn(array) 를 추가
+	 */
+	function usrGridBindDataset_onload(obj:Dataset,e:DSLoadEventInfo)
+	{ 
+		//trace("usrGridBindDataset_onload>>>>>");
+		if ( _check == "true" && !ufn_isNull(_checkColumnName) ) {
+			if( iCheckCellIdx > -1){
+				this.setCellProperty("Head", iCheckCellIdx, "text", "0");
+			}
+
+			if ( ufn_isNull(obj.getColumnInfo(_checkColumnName))) {
+				obj.addColumn( _checkColumnName, "string" );
+				for(var i=0, size=obj.rowcount ; i<size ; i++) {
+					obj.setColumn(i, _checkColumnName, "0");
+				}
+				obj.applyChange();
+			}
+		}
+		
+		//Sort 초기화
+		ufn_clearSort();
+		
+		//필터 초기화
+		if ( _showFilter = "true" ) {
+			ufn_hideHeadAppendFilter();
+		}
+	}
+
+/*******************************************************************************
+ * 기본 함수
+ ******************************************************************************/
+	/**
+	 * body cell index로 binding 된 컬럼명을 얻어온다.
+	 * @param {number} index body cell index
+	 */
+	private function ufn_getBindColumnNameByIndex(objGrid, index) 
+	{
+		var text = objGrid.getCellProperty("body", index, "text");
+		var columnid = "";
+
+		if ( !ufn_isNull(text) )
+		{
+			if ( text.search(/^BIND\(/) > -1 ) 
+			{	
+				columnid = text.replace(/^BIND\(/, "");
+				columnid = columnid.substr(0, columnid.length-1);
+			} 
+			else if ( text.search(/^bind:/) > -1 ) 
+			{
+				columnid = text.replace(/^bind:/, "");
+			}
+		}
+		
+		return columnid;
+	}
+
+	/**
+	 * head cell에 match되는 body cell을 얻어온다
+	 * @param {number} headCellIndex head cell index
+	 */
+	private function ufn_getBodyCellIndex(objGrid, headCellIndex) 
+	{	
+		// Max Head Row Index
+		var maxHeadRow = 0;
+		for (var i=0, len=objGrid.getCellCount("head"); i<len; i++) 
+		{
+			var row = objGrid.getCellProperty("head", i, "row");
+			if (maxHeadRow < row) 
+			{
+				maxHeadRow = row;
+			}
+		}
+		// Max Body Row Index
+		var maxBodyRow = 0;
+		for (var i=0, len=objGrid.getCellCount("body"); i<len; i++) 
+		{
+			var row = objGrid.getCellProperty("body", i, "row");
+			if (maxBodyRow < row) 
+			{
+				maxBodyRow = row;
+			}
+		}
+		
+		if (maxHeadRow == 0 && maxBodyRow == 0) 
+		{
+			return headCellIndex;
+		}
+		//trace("maxHeadRow==="+maxHeadRow+":::maxBodyRow==="+maxBodyRow);	
+		// Body Row 가 1개 이상일 경우
+		// Head의 row 가 Body의 row 보다 클 경우 차이 row 를 뺀 것을 대상으로 찾고
+		// Body의 row 가 Head의 row 보다 크거나 같을 경우 row index가 같은 대상을 찾는다.			
+		var cellIndex = -1;
+		var sRow = -1;
+		var nRow = parseInt(objGrid.getCellProperty("head", headCellIndex, "row"));
+		var nCol = parseInt(objGrid.getCellProperty("head", headCellIndex, "col"));
+		var nColspan = parseInt(objGrid.getCellProperty("head", headCellIndex, "colspan"));				
+		
+		if (maxHeadRow > maxBodyRow) 
+		{
+			sRow = nRow - (maxHeadRow - maxBodyRow);
+			sRow = (sRow < 0 ? 0 : sRow);
+		}
+		else 
+		{
+			sRow = nRow;
+		}
+		
+		var cRow, cCol, cColspan;
+		for (var i=0, len=objGrid.getCellCount("body"); i<len; i++) 
+		{
+			cRow = parseInt(objGrid.getCellProperty("body", i, "row"));
+			cCol = parseInt(objGrid.getCellProperty("body", i, "col"));	
+			cColspan = parseInt(objGrid.getCellProperty("body", i, "colspan"));					
+			// 실제로 매칭되는 body cell 이 없지만 colspan으로 첫번째 항목을 찾을 경우..
+			//if (sRow == cRow && nCol <= cCol && cCol < (nCol + nColspan)) 
+			if (sRow == cRow && nCol == cCol && nColspan == cColspan) 
+			{		
+				cellIndex = i;
+				//cellIndex = -1;
+				break;
+			}
+		}
+		return cellIndex;
+	}
+
+	/**
+	 * @desc   : Dataset이 있으면 Dataset을, 없으면 
+	 * @param  : obj - Grid Object
+	 * @return : Dataset object
+	 */
+	 private function ufn_getDataset(sDsName)
+	 {
+		if(ufn_isNull(sDsName)) return;
+
+		if( isValidObject(sDsName)) {
+			//trace("이미존재하는 데이타셋");
+			return eval(sDsName);
+		}
+
+		var objDataset = new Dataset();
+
+		objDataset.name = sDsName;
+		this.parent.addChild(sDsName, objDataset);
+
+		return objDataset;
+	}
+	
+	/**
+	 * @desc   : 입력값이 null에 해당하는지 여부
+	 * @param  : sValue 체크할 문자열( 예 : null 또는 undefined 또는 "" 또는 "abc" )
+	 * @return : true - sValue가 undefined, null, NaN, "", Array.length = 0인 경우
+				 false - 이외의 경우
+	 */
+	private function ufn_isNull(sValue){
+		if (new String(sValue).valueOf() == "undefined") 
+			return true;
+		if (sValue == null)
+			return true;
+		if (("x"+sValue == "xNaN") && (new String(sValue.length).valueOf() == "undefined"))
+			return true;
+		if (sValue.length == 0)
+			return true;
+		return false;
+	}
+	
+/*******************************************************************************
+ * 추가 기능함수
+ * ufn_gridSort 			: Grid Sorting하는 함수(Header Sorting여부 표시 포함)
+ * ufn_clearSort            : Grid sort초기화
+ * ufn_checkAll 			: 해당되는 idx 에 있는 cell 의 checkbox 를 전체 선택/해제.
+ * ufn_isRequiredColumn		: 필수항목 입력여부를 검증한다.
+ * ufn_createFilterPopup	: Grid Filter기능구현
+ * ufn_createFilterGrid  	: Grid Filter기능구현
+ * ufn_createFilterDataset	: Grid Filter기능구현
+ * ufn_gridFilterCloseUp	: Grid Filter기능구현
+ * ufn_getFilterString   	: Grid Filter기능구현
+ ******************************************************************************/
+	/**
+	 * @desc Grid Sorting하는 함수(Header Sorting여부 표시 포함)
+	 * @param obj:Grid : Grid Object ( 예 : Grid00 )
+	 * @param e:GridClickEventInfo : Click Event Object ( Grid Onclick Envent의 Argument e )
+	 * @return 성공 = true, 실패 = false
+	 */
+	private function ufn_gridSort(obj, e)
+	{
+		var bindDs = eval(obj.binddataset);
+		if(bindDs.rowcount == 0) return false;
+
+		var nCell  = e.cell;
+		if(ufn_isNull(obj.getCellProperty("body", nCell, "text"))) return false;
+
+		var BodyColId = String(obj.getCellProperty("body", e.col,"text")).split(":");
+
+		if(BodyColId[0] != "bind") return false;
+
+		for(var i=0; i<obj.getCellCount("head"); i++){
+			if(obj.getCellText(-1, i) == "undefined")	continue;
+
+			var strHeadText = obj.getCellText(-1, i);
+
+			if(i == e.cell){
+				if(strHeadText.substr(strHeadText.length - 1) == CONST_ASC_MARK){
+					obj.setCellProperty( "head", i, "text", strHeadText.substr(0, strHeadText.length - 2) + " " + CONST_DESC_MARK);
+					bindDs.keystring = "S:-" + BodyColId[1];
+				}
+				else if(strHeadText.substr(strHeadText.length - 1) == CONST_DESC_MARK){
+					obj.setCellProperty( "head", i, "text", strHeadText.substr(0, strHeadText.length - 2));
+					bindDs.keystring = "";
+				}
+				else{
+					obj.setCellProperty( "head", i, "text", strHeadText + " " + CONST_ASC_MARK);
+					bindDs.keystring = "S:+" + BodyColId[1];
+				}
+			} else {	// 정렬표시 삭제
+				if (strHeadText.substr(strHeadText.length - 1) == CONST_ASC_MARK || strHeadText.substr(strHeadText.length - 1) == CONST_DESC_MARK)
+					obj.setCellProperty( "head", i, "text", strHeadText.substr(0, strHeadText.length - 2));
+			}
+		}
+		
+		obj.setCellPos(e.col);
+		bindDs.rowposition = 0;
+	}
+	
+	/**
+	 * @desc Grid sort초기화
+	 * @param  없음
+	 * @return 없음
+	 */
+	private function ufn_clearSort()
+	{	 
+		var bindDs = eval(this.binddataset);
+		for(var i=0; i<this.getCellCount("head"); i++){
+			var strHeadText = this.getCellText(-1, i);
+			if(strHeadText == "undefined")	continue;
+
+			// 정렬표시 삭제
+			if (strHeadText.substr(strHeadText.length - 1) == CONST_ASC_MARK || strHeadText.substr(strHeadText.length - 1) == CONST_DESC_MARK) {
+				this.setCellProperty( "head", i, "text", strHeadText.substr(0, strHeadText.length - 2));
+			}
+		}
+		bindDs.keystring = "";
+	}
+	
+	/**
+	 * @desc 해당되는 idx 에 있는 cell 의 checkbox 를 전체 선택/해제.
+	 * @param iCellIdx Cell Index
+	 * @param isCheck 체크 여부 (true / false)
+	 */
+	private function ufn_checkAll( obj, iCellIdx ) {
+		
+		//0.초기값 설정
+		if( ufn_isNull( isCheck ) ) isCheck = "1"; //기본값 true
+			
+		var sEditType 	= obj.getCellProperty ( "Body", iCellIdx, "edittype" );
+		var objDS  		= eval(obj.binddataset);
+
+
+		//1.하나라도 해당이 되지 않으면 무시
+		if( iCellIdx == -1 || sEditType != "checkbox" ) return;
+
+		//2.Head셋팅
+		var isCheck = obj.getCellProperty("head", iCellIdx, "text");
+		if (ufn_isNull(isCheck)) isCheck = "0";
+		
+		if (isCheck == "0") {	
+			isCheck = "1";
+		} else {
+			isCheck = "0";
+		}
+		this.setCellProperty("head", iCellIdx, "text", isCheck);		
+		//3.Body셋팅
+		if( _checkedallevent == "false" ) objDS.enableevent  = false;
+		var sColNm = ufn_getBindColumnNameByIndex(obj, iCellIdx);
+		for(var i=0 ; i< objDS.rowcount ; i++){
+			objDS.setColumn( i, sColNm, isCheck);
+		}
+		if( _checkedallevent == "false" ) objDS.enableevent  = true;
+	}
+	
+	//--------------- Grid Excel 필터 구현 - 시작(gfn_showGridFilter에서 호출) ---------------------
+	/**
+	 * @desc Grid Filter용 PopupDiv 생성
+	 * @param  없음
+	 * @return 없음
+	 */
+	private function ufn_createFilterPopup(objGrid:Grid, nCell, objParent)
+	{
+		var oTempDs = eval(objGrid.binddataset);
+		//2015.08.19 필터 체크박스 전체 DS 카피하여 목록 만듦
+		var oOrgDs = gfn_makeDataSet("ds_tempDs");
+		oOrgDs.copyData(oTempDs);
+		var nCellCnt = objGrid.getCellCount("body");
+		var nBodyCell = ufn_getBodyCellIndex(objGrid, nCell);
+		
+		var sColId = objGrid.getCellProperty("body",nBodyCell,"text").split(":")[1];
+		
+	    //필터데이터셋 생성함수 호출
+		//var objDs = this.ufn_createFilterDataset(oOrgDs, sColId);
+		//데이타셋 생성
+		var objForm = form;
+		var sName1 = sColId + "_dataset_" + this.name;
+		uv_FilterDatasetName = sName1;	//Filter Dataset 기억
+		var objDs = objForm.all[sName1];
+	
+		// Add Object to Parent Form  
+		if(ufn_isNull(objDs)){
+			objDs = new Dataset(); 
+			objDs.name = sName1;
+			objForm.addChild(sName1, objDs);
+			objDs.addColumn("CHECK_VALUE", "string");
+			objDs.addColumn("CODE", "string"); //sColId
+			objDs.addColumn("CODE_NM", "string");			
+			//필터용 dataset목록 추가(컬럼명으로 셋팅)
+		}
+		this.aFilterDs[this.aFilterDs.length] = sColId;	
+		
+		//objDs.clearData();
+		//그리드바인드데이터셋의 필터대상값 row 추가  
+		var nOrgDsCnt = oOrgDs.getRowCount();
+		var sVal = "";
+		var bEmptyValue = false;
+		var nRow;
+		var sCodeNm = "";
+		var sCombodataset = objGrid.getCellProperty( "body",nCell , "combodataset");
+		var sCombocodecol = objGrid.getCellProperty( "body",nCell , "combocodecol");
+		var sCombodatacol = objGrid.getCellProperty( "body",nCell , "combodatacol");	
+
+		for(var i=0;i<nOrgDsCnt;i++){
+			sVal = oOrgDs.getColumn(i, sColId);
+			
+			//빈값인 경우 마지막행에 추가하기 위해 flag처리 
+			if(gfn_isEmpty(sVal) && !bEmptyValue ){
+				bEmptyValue = true;
+			}	
+			
+			//중복 데이타 제거
+			if(objDs.findRow("CODE",sVal) >= 0 || gfn_isEmpty(sVal) ){
+			 continue;
+			}
+					
+			//행추가 
+			nRow = objDs.addRow();
+			//id
+			objDs.setColumn(nRow,"CODE",sVal);
+			
+			if(!gfn_isEmpty(sCombodataset)){
+				sCodeNm = eval(sCombodataset).lookup(sCombocodecol,sVal,sCombodatacol);    
+			} else {
+				sCodeNm = sVal;
+			}
+			objDs.setColumn(nRow,"CODE_NM",sCodeNm);
+			objDs.setColumn(nRow,"CHECK_VALUE",1); //초기값 "체크함" //2015.07.22 체크함으로 수정
+			
+		}
+		//맨위에 전체보기 값 추가 
+		//objDs.insertRow(0);
+		//objDs.setColumn(0,"CODE","%");
+		//objDs.setColumn(0,"CODE_NM","(모두 선택)         ");		
+		//objDs.setColumn(0,"CHECK_VALUE",1); 
+		
+		//빈 값인 경우 (필드 값 없음) 으로 설정하여 맨끝에 추가하기   
+		if(bEmptyValue){
+			nRow = objDs.addRow();
+			objDs.setColumn(nRow,"CODE","");
+			objDs.setColumn(nRow,"CODE_NM","(필드 값 없음)");
+			objDs.setColumn(nRow,"CHECK_VALUE",0); 
+		}
+			
+		//trace(objDs.saveXML());
+		//.필터되어 없는데이타 제거
+		/*for(var j= objDs.rowcount - 1;j>=0;j--){
+			if(oOrgDs.findRow(sColId, objDs.getColumn(j, "menuId")) < 0){
+				objDs.deleteRow(j);
+			}
+		}		
+		*/
+		//popupDiv 고유id 생성
+		var sName = sColId + "_pdiv_" + objGrid.name;
+		//필터대상 그리드 컬럼의 width이며 최소 150px 보장		
+		//필터 최대값 전역변수에 저장
+		var MaxColValue =objDs.getMax("CODE_NM");
+		var popDivWidth = objGrid.getRealColSize(nBodyCell); 
+		popDivWidth = popDivWidth < 150 ? 150 : popDivWidth;
+		popDivWidth = (typeof(MaxColValue)=="string" &&  MaxColValue.length > 15) ?   popDivWidth + ((MaxColValue.length-10)*10) : popDivWidth;
+		
+		//popupDiv가 이미 존재하는 경우 바로 보여주기  
+		if(objParent.all[sName] != null) {
+			//frame size의 변경을 고려한 width 초기화
+			objParent.all[sName].position.width = popDivWidth;
+			return objParent.all[sName];
+		}	
+		
+		//popupDiv 생성		
+		var objPopupDiv = new PopupDiv();  
+		objPopupDiv.init(sName, 0, 0, popDivWidth, 150); //popDiv의  height는 150으로 고정
+		objParent.addChild(sName, objPopupDiv); 
+		objPopupDiv.style.border = "1 solid #bbbbbbff";
+		objPopupDiv.scrollbars = "none";  //scroll 없음. div내부에 그리드에만 scroll 부여
+		//팝업div 종료시 이벤트 추가 
+		objPopupDiv.oncloseup.addHandler(ufn_gridFilterCloseUp);
+		
+		// Show Object  
+		objPopupDiv.show(); 	
+				
+		//그리드 생성함수 호출
+		//this.ufn_createFilterGrid(objPopupDiv, sColId, objDs,objGrid,nBodyCell);	
+		var objPopGrid = new Grid();
+		var sGridName = sColId + "_grid";
+		var gridWidth = popDivWidth-4;
+	
+		objPopGrid.init(sGridName, 2, 2, gridWidth, 146);
+		objPopupDiv.addChild(sGridName, objPopGrid); 
+		objPopGrid.selecttype = "multirow";
+		objPopGrid.anchor = "all";
+		objPopGrid.cursor = "hand";
+		objPopGrid.scrollbars = 'autoboth';
+		objPopGrid.autosizingtype = "both";
+		objPopGrid.style.border = "1 solid #e4e4e4ff";
+		//addChild 이후 호출해야 정상동작함.
+		objPopGrid.createFormat();	
+		
+		//head/body/summ 영역 구성
+		objPopGrid.appendContentsRow("body");
+		objPopGrid.appendContentsCol();
+	
+		//Col Size 설정
+		objPopGrid.setFormatColProperty(0,"size",20);
+		objPopGrid.setFormatColProperty(1,"size",gridWidth-20);
+		
+		//row Size 설정
+		objPopGrid.setFormatRowProperty(0,"size",21);
+		
+		//컬럼별  셀속성 설정
+		//1.체크박스 컬럼속성 설정
+		objPopGrid.setCellProperty("body", 0, "text", "bind:CHECK_VALUE");
+		objPopGrid.setCellProperty("body", 0, "displaytype", "checkbox");
+		objPopGrid.setCellProperty("body", 0, "edittype","checkbox" );
+	
+		//2.데이터값 컬럼속성 설정 	
+		objPopGrid.setCellProperty("body", 1, "text", "bind:CODE_NM");
+		var sDisplayType = gfn_isEmpty(objGrid.getCellProperty( "body",nCell , "displaytype" ))? "normal" : objGrid.getCellProperty( "body",nCell , "displaytype" );
+		var sMask = gfn_isEmpty(objGrid.getCellProperty( "body",nCell , "mask" ))? "" : objGrid.getCellProperty( "body",nCell , "mask" );		
+		objPopGrid.setCellProperty("body", 1, "displaytype", "text");  
+		//objPopGrid.setCellProperty("body", 1, "selectbackground", "");
+		//objPopGrid.setCellProperty("body", 1, "displaytype", sDisplayType);
+		//objPopGrid.setCellProperty("body", 1, "mask", sMask  );
+		objPopGrid.setCellProperty("body", 1, "align", "left middle");					
+		//row 클릭시 이벤트 추가 
+		objPopGrid.oncellclick.addHandler(ufn_gridFilterCellClick);
+		
+		// Show Object  
+		objPopGrid.show(); 
+		objPopGrid.redraw();
+		objPopGrid.binddataset = objDs.name;
+		
+		
+		return objPopupDiv;
+				
+	}
+	
+	/**
+	 * @desc Grid Filter용 PopupDiv에 보여줄 데이타셋 생성
+	 * @param  없음
+	 * @return 없음
+	 */
+	private function ufn_createFilterDataset(oOrgDs, sColId,objGrid:Grid)
+	{		
+	}
+	
+	/**
+	 * @desc Grid Filter용 PopupDiv에 보여줄 그리드 생성
+	 * @param  없음
+	 * @return 없음
+	 */
+	private function ufn_createFilterGrid(objPopupDiv, sColId, objDs,objGrid:Grid,nCell)
+	{	
+	}
+
+
+	/**
+	 * @desc Grid Filter용 PopupDiv 의 oncloseup event 실행 함수
+	 * @param  없음
+	 * @return 없음
+	 */
+	private function ufn_gridFilterCloseUp(obj:PopupDiv, e:EventInfo)
+	{
+		//trace("ufn_gridFilterCloseUp>>>>>>>>");
+		var sFilter = "";
+		var nCnt = this.aFilterDs.length;
+		var nChk = 0;
+
+		for(var i=0;i<nCnt;i++){
+			var sSubFilter = this.ufn_getFilterString(this.parent, this.aFilterDs[i]);
+		
+			if(sSubFilter != ""){
+				
+				if(nChk == 0){
+					sFilter += "(" + sSubFilter + ")";
+				}else{
+					sFilter += ("&&" + "(" + sSubFilter + ")");
+				}
+				
+				nChk++;
+			}
+		}
+		
+		//필터링 할 데이타셋에 필터속성 설정
+		eval(this.binddataset).filter(sFilter);
+		
+	}
+	
+	/**
+	 * @desc Grid Filter용 - 각컬럼의 filter 데이타셋의 선택정보를 filter string으로 만듬.
+	 * @param  없음
+	 * @return 없음
+	 */
+	private function ufn_getFilterString(objForm, sColId)
+	{
+		var sSubFilter = "";
+		var objDs = form.all[sColId + "_dataset_" + this.name];
+
+		objDs.filter("CHECK_VALUE==1");
+		
+		var nDsCnt = objDs.rowcount;
+		//필터컬럼 이미지변경
+		if ( uv_FilterDatasetName == objDs.name ) {
+			if ( nDsCnt > 0 ) {
+				this.setCellProperty("Head", uv_ClickHeadCellIdx, "expandimage", "url('theme://Img/img_common_filter_S.png')");
+			} else {
+				this.setCellProperty("Head", uv_ClickHeadCellIdx, "expandimage", "url('theme://Img/img_common_filter_D.png')");
+			}
+		}
+		var code = "";
+		for(var i=0;i<nDsCnt;i++){
+			code = objDs.getColumn(i, "CODE");
+			
+		//	if(CODE=="%") {
+		//		continue;
+		//	}
+			if(sSubFilter==""){
+			
+				if( code == ""){
+					sSubFilter  = sColId + "=='" + code + "' || "+sColId + "== ' ' || " + sColId + "== null ";
+				} else {				
+					sSubFilter  = sColId + "=='" + code + "' ";
+				}	
+			} else {
+				if( code == ""){
+					sSubFilter  += "|| " + sColId + "=='" + code + "' || "+sColId + "== ' ' || " + sColId + "== null ";
+				} else {				
+					sSubFilter  += "|| " + sColId + "=='" + code + "' ";
+				}					
+			}
+		}
+		
+		objDs.filter("");
+		
+		return sSubFilter;
+		
+	}
+	/**
+	 * @desc Grid Filter용 - 필터 row 클릭시 이벤트 
+	 * @param  없음
+	 * @return 없음
+	 */
+	private function ufn_gridFilterCellClick(obj:Grid, e:GridClickEventInfo)
+	{
+		var objDs = eval(obj.binddataset);
+		var sVal = objDs.getColumn(e.row, 1);
+		var chkVal = objDs.getColumn(e.row, 0);
+		var opChkVal;
+		
+		if(chkVal==1){
+			opChkVal=0;
+		} else {
+			opChkVal=1;
+		}
+		
+		if(e.cell==1) objDs.setColumn(e.row, "CHECK_VALUE", opChkVal);
+		
+		/*		
+		if(e.cell==0){
+			if(sVal=="%"){	//전체선택시
+				for(var i=0 ; i< objDs.rowcount ; i++) {
+					objDs.setColumn(i, "CHECK_VALUE", chkVal);
+				}
+			} 
+		} else if(e.cell==1){
+			
+			if(sVal=="%"){	//전체선택시
+				for(var i=0 ; i< objDs.rowcount ; i++) {
+					objDs.setColumn(i, "CHECK_VALUE", opChkVal);
+				}
+			} else {
+				objDs.setColumn(e.row, "CHECK_VALUE", opChkVal);
+			}
+		}		
+		
+		//전체선택값 확인 	
+		if(objDs.getCaseCount("CHECK_VALUE==0",1,objDs.getRowCount()) < objDs.getRowCount()-1 ){
+		    objDs.setColumn(0, "CHECK_VALUE", 0);
+		} 
+		if(objDs.getCaseCount("CHECK_VALUE==1",1,objDs.getRowCount()) == objDs.getRowCount()-1 ){
+		    objDs.setColumn(0, "CHECK_VALUE",1);
+		} 
+	*/
+		//cell focus 체크박스 선택하는 컬럼으로 변경
+		obj.setCellPos(0);
+	}
+	//--------------- Grid Excel, 필터 구현 - 끝 --------------------------------------------
+	
+/*******************************************************************************
+ * 외부 호출 함수
+ ******************************************************************************/
+ 	/**
+	 * @desc 필수항목 입력여부를 검증한다.
+	 * @param sRequired 입력컬럼
+	 * @return 제대로 값이 반환되었는지 여부
+	 */
+	public function ufn_isRequiredColumn( sRequired ) {
+
+		if( ufn_isNull( sRequired ) ) sRequired = _required;
+		if( ufn_isNull( sRequired ) ) return true;
+		
+		//trace(sRequired);
+		
+		var objBindDs      = eval(this.binddataset);
+		var nBindRowCnt = objBindDs.rowcount;
+		
+		var aRequired    = sRequired.split("^");
+		var nRequiredCnt = aRequired.length;
+		
+		if( objBindDs != undefined ) {
+			for( var iRow=0; iRow<nBindRowCnt; iRow++ ) {
+
+				for( var i=0; i<nRequiredCnt; i++ ) {
+					var sColNm = aRequired[i];				
+					var iCellIdx = this.getBindCellIndex("Body",sColNm) 
+
+					var sHeadText = this.getCellProperty("Head", iCellIdx, "text");
+					var sColVal = String( objBindDs.getColumn( iRow, sColNm ) ).trim();
+
+					if( ufn_isNull(sColVal) ) {
+						var sWarnMsg = (iRow+1) + "번째 줄의 " + sHeadText + " 컬럼값이 비어있습니다." ;
+						//메세지 구현함수 호출
+						gfn_message("A", sWarnMsg);
+						
+						objBindDs.selectRow( iRow );
+						this.setCellPos( iCellIdx );
+						this.setFocus();
+						
+						return false;
+					}
+				}
+				
+			}
+		}
+		
+		return true;
+	}
+	
+ 	/**
+	 * Grid head append filter 보이기
+	 * @param {Grid} grid 대상 Grid Component
+	 */
+	public function ufn_showHeadAppendFilter()
+	{
+		_showFilter = "true";		
+		
+		var nHeadCnt = this.getCellCount("head");
+		for( i=0; i<nHeadCnt; i++ ) {
+			var nBodyCellIdx = ufn_getBodyCellIndex(this, i);
+			//2015.02.02 nBodyCellIdx가 0보다 크거나 같을 때로 변경 
+			if ( nBodyCellIdx >= 0 ) {
+				var arrBodyColId    = String(this.getCellProperty("body", nBodyCellIdx,"text")).split(":");				
+				//trace("this.name:"+this.name+">>>nHeadCnt:"+nHeadCnt+">>>nBodyCellIdx:"+nBodyCellIdx+">>>arrBodyColId[1]:"+arrBodyColId[1]);
+				if(arrBodyColId[0] != "bind" || (this._check && this._checkColumnName == arrBodyColId[1] )) {  //2015.02.05 체크컬럼은 제외하기 
+					continue;
+				} else {								
+					this.setCellProperty("Head", i, "expandimage", "url('theme://Img/img_common_filter_D.png')");
+					this.setCellProperty("Head", i, "expandshow", "show");
+					this.setCellProperty("Head", i, "expandsize", "20");
+				}
+			}
+		}
+	}
+
+	/**
+	 * Grid head append filter 감추기
+	 * @param {Grid} grid 대상 Grid Component
+	 */
+	public function ufn_hideHeadAppendFilter()
+	{
+		//trace("hideHeadAppendFilter>>>>>>>>");
+		_showFilter = "false";
+		
+		//헤더 해지
+		var nHeadCnt = this.getCellCount("head");
+		//trace("nHeadCnt:"+nHeadCnt);
+		for( i=0; i<nHeadCnt; i++ ) {
+			this.setCellProperty("Head", i, "expandshow", "hide");
+		}
+		
+		//필터Dataset 필터해지
+		/* 2015.08.19 필터 해지시 기존체크박스 유지안함
+		var nCnt = this.aFilterDs.length;
+		for(var i=0;i<nCnt;i++){
+			var objDs = form.all[this.aFilterDs[i] + "_dataset_" + this.name];
+			for(var i=0; i<objDs.rowcount; i++){
+				objDs.setColumn(i,"CHECK_VALUE",0);
+			}
+			
+			//if ( !ufn_isNull(objDs) ) {
+			//	objDs.clearData();
+			//}
+		}
+		*/
+		//필터 해지
+		var sFilter = "";
+		eval(this.binddataset).filter(sFilter);
+	}
+
+	/**
+	 * _showFilter값 확인하기.
+	 */
+	public function ufn_getStatusFilter()
+	{
+		return _showFilter;
+	}
+	
+	function usrGrid_onkeydown(obj:UserGrid, e:KeyEventInfo)
+	{
+		if(e.ctrlKey == true && e.keycode == 67) {
+			system.setClipboard("CF_UNICODETEXT",obj.tooltiptext);
+		}
+	}
+	
+} // UserGrid Class End
+]]></Script>

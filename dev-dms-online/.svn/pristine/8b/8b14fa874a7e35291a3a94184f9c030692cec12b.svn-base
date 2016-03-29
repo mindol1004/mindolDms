@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCntrtPenMgmt">
+	<select id="SCntrtPenLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPenMgmt.SCntrtPenLstPaging 계약위약금조회 */
+/* IO: 김혁범,2015-07-23T15:43:13(이민재,2015-07-17T11:19:21) */
+SELECT * 
+  FROM(
+      SELECT ROW_NUMBER() OVER(ORDER BY A.PEN_POLY_NO ASC) AS ROWNO
+            ,A.CNTRT_NO          AS CNTRT_NO            /*계약번호*/
+            ,B.SVC_MGMT_NO       AS SVC_MGMT_NO   		/*서비스관리번호*/         
+            ,B.SCRBR_NM          AS SCRBR_NM   			/*가입자이름*/          
+            ,B.LINE_NO           AS LINE_NO        		/*이동전화번호*/          
+            ,A.PEN_GUBUN         AS PEN_GUBUN    		/*위약금유형*/
+            ,D.CM_CD_NM          AS PEN_GUBUN_NM        /*위약금유형명*/        
+            ,A.PEN               AS PEN     			/*위약금*/         
+            ,B.EQP_MDL_NM        AS EQP_MDL_NM   		/*모델명*/         
+            ,B.PET_NM            AS PET_NM    			/*펫네임*/         
+            ,C.CNTRT_PRD         AS CNTRT_PRD      		/*계약기간*/             
+            ,C.CNTRT_STA_DT      AS CNTRT_FR_DT   		/*계약시작일*/         
+            ,C.CNTRT_END_DT      AS CNTRT_TO_DT   		/*계약종료일*/         
+            ,B.CCTR_DT           AS CCTR_DT    			/*해지일*/          
+            ,B.SALE_AGN_NM       AS SALE_AGN_NM   		/*대리점명*/         
+            ,B.CNTRT_ST          AS CNTRT_ST   			/*계약상태*/         
+            ,B.EQP_STAT          AS EQP_STAT   			/*단말상태*/
+            ,E.CM_CD_NM          AS CNTRT_ST_NM     	/*계약상태명*/
+            ,F.CM_CD_NM          AS EQP_STAT_NM    		/*단말상태명*/
+            ,G.CM_CD_NM          AS CNTRT_PRD_NM   		/*계약기간명*/
+        FROM TB_RENTAL_PEN A
+             JOIN TB_NR_CNTRT B ON (A.CNTRT_NO = B.CNTRT_NO)
+             JOIN TB_RENTAL_CNTRT C ON (B.CNTRT_NO = C.CNTRT_NO)
+             LEFT  OUTER JOIN TB_CM_CD D ON (D.CM_CD_ID = PEN_GUBUN AND D.CM_GRP_CD_ID = 'DMS114') /*위약금유형*/
+             LEFT  OUTER JOIN TB_CM_CD E ON (E.CM_CD_ID = CNTRT_ST AND E.CM_GRP_CD_ID = 'DMS115') /*계약상태*/
+             LEFT  OUTER JOIN TB_CM_CD F ON (F.CM_CD_ID = EQP_STAT AND F.CM_GRP_CD_ID = 'DMS116') /*단말상태*/
+             LEFT  OUTER JOIN TB_CM_CD G ON (G.CM_CD_ID = CNTRT_PRD AND G.CM_GRP_CD_ID = 'DMS112') /*계약기간명*/
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CCTR_FR_DT"><![CDATA[
+CCTR_DT BETWEEN #CCTR_FR_DT# AND #CCTR_TO_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PEN_GUBUN" compareValue="%"><![CDATA[
+PEN_GUBUN = #PEN_GUBUN#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="SCRBR_NM"><![CDATA[
+SCRBR_NM LIKE '%' || #SCRBR_NM# || '%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="LINE_NO"><![CDATA[
+LINE_NO LIKE  #LINE_NO# || '%' 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SALE_AGN_CD"><![CDATA[
+SALE_AGN_CD = #SALE_AGN_CD#	
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[
+ )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCntrtPenTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPenMgmt.SCntrtPenTotCnt 계약위약금총건수 */
+/* IO: 김혁범,2015-07-23T15:10:52(이민재,2015-07-17T11:19:39) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM TB_RENTAL_PEN A
+JOIN TB_NR_CNTRT B ON (A.CNTRT_NO = B.CNTRT_NO)
+JOIN TB_RENTAL_CNTRT C ON (B.CNTRT_NO = C.CNTRT_NO)
+LEFT  OUTER JOIN TB_CM_CD D ON (D.CM_CD_ID = PEN_GUBUN AND D.CM_GRP_CD_ID = 'DMS113') /*위약금유형*/
+LEFT  OUTER JOIN TB_CM_CD E ON (E.CM_CD_ID = CNTRT_ST AND E.CM_GRP_CD_ID = 'DMS115') /*계약상태*/
+LEFT  OUTER JOIN TB_CM_CD F ON (F.CM_CD_ID = EQP_STAT AND F.CM_GRP_CD_ID = 'DMS116') /*단말상태*/
+LEFT  OUTER JOIN TB_CM_CD G ON (G.CM_CD_ID = CNTRT_PRD AND G.CM_GRP_CD_ID = 'DMS112') /*계약기간명*/
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CCTR_FR_DT"><![CDATA[
+CCTR_DT BETWEEN #CCTR_FR_DT# AND #CCTR_TO_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PEN_GUBUN" compareValue="%"><![CDATA[
+PEN_GUBUN = #PEN_GUBUN#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="SCRBR_NM"><![CDATA[
+SCRBR_NM LIKE '%' || #SCRBR_NM# || '%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="LINE_NO"><![CDATA[
+LINE_NO LIKE  #LINE_NO# || '%' 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SALE_AGN_CD"><![CDATA[
+SALE_AGN_CD = #SALE_AGN_CD#	
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SCntrtPenDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPenMgmt.SCntrtPenDtl 계약위약금상세조회 */
+/* IO: 김혁범,2015-07-23T14:22:30(이민재,2015-07-17T11:20:08) */
+SELECT  B.SVC_MGMT_NO         AS SVC_MGMT_NO   		/*서비스관리번호*/         
+         ,B.SCRBR_NM          AS SCRBR_NM   		/*가입자이름*/          
+         ,B.LINE_NO           AS LINE_NO        	/*이동전화번호*/          
+         ,A.PEN_GUBUN         AS PEN_GUBUN    		/*위약금유형*/
+         ,D.CM_CD_NM          AS PEN_GUBUN_NM       /*위약금유형명*/        
+         ,A.PEN               AS PEN     			/*위약금*/         
+         ,B.EQP_MDL_NM        AS EQP_MDL_NM   		/*모델명*/         
+         ,B.PET_NM            AS PET_NM    			/*펫네임*/         
+         ,C.CNTRT_PRD         AS CNTRT_PRD      	/*계약기간*/             
+         ,C.CNTRT_STA_DT      AS CNTRT_FR_DT   		/*계약시작일*/         
+         ,C.CNTRT_END_DT      AS CNTRT_TO_DT   		/*계약종료일*/         
+         ,B.CCTR_DT           AS CCTR_DT    		/*해지일*/          
+         ,B.SALE_AGN_NM       AS SALE_AGN_NM   		/*대리점명*/         
+         ,B.CNTRT_ST          AS CNTRT_ST   		/*계약상태*/         
+         ,B.EQP_STAT          AS EQP_STAT   		/*단말상태*/
+         ,E.CM_CD_NM          AS CNTRT_ST_NM     	/*계약상태명*/
+         ,F.CM_CD_NM          AS EQP_STAT_NM    	/*단말상태명*/
+         ,G.CM_CD_NM          AS CNTRT_PRD_NM   	/*계약기간명*/    
+  FROM TB_RENTAL_PEN A
+       JOIN TB_NR_CNTRT B ON (A.CNTRT_NO = B.CNTRT_NO)
+       JOIN TB_RENTAL_CNTRT C ON (B.CNTRT_NO = C.CNTRT_NO)
+       LEFT  OUTER JOIN TB_CM_CD D ON (D.CM_CD_ID = PEN_GUBUN AND D.CM_GRP_CD_ID = 'DMS113') /*위약금유형*/
+       LEFT  OUTER JOIN TB_CM_CD E ON (E.CM_CD_ID = CNTRT_ST AND E.CM_GRP_CD_ID = 'DMS115') /*계약상태*/
+       LEFT  OUTER JOIN TB_CM_CD F ON (F.CM_CD_ID = EQP_STAT AND F.CM_GRP_CD_ID = 'DMS116') /*단말상태*/
+       LEFT  OUTER JOIN TB_CM_CD G ON (G.CM_CD_ID = CNTRT_PRD AND G.CM_GRP_CD_ID = 'DMS112') /*계약기간명*/
+ WHERE A.CNTRT_NO = #CNTRT_NO#]]>
+	</select>
+</sqlMap>

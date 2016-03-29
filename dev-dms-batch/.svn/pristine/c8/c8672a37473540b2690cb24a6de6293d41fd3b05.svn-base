@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.DBP101">
+	<select id="SXclRent" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP101.SXclRent 랜트료정산리스트 */
+/* IO: 김상오,2015-09-17T17:25:32(김상오,2015-09-17T15:14:54) */
+SELECT A.ASSET_NO
+       ,A.CNTRT_NO
+       ,A.RENT_YM as SALE_DT
+       ,A.RENTAL_FEE as SALE_AMT
+       ,C.RENT_STA_DT
+       ,C.RENT_END_SCHD_DT
+       ,C.RENT_END_DT
+  FROM TB_EQP_CNTRT_DTL A
+       ,TB_RENTAL_CNTRT B 
+       ,TB_EQP_CNTRT C 
+       ,TB_EQP_ASSET D
+ WHERE A.CNTRT_NO = B.CNTRT_NO
+   AND A.CNTRT_NO = C.CNTRT_NO
+   AND A.ASSET_NO = C.ASSET_NO
+   AND A.ASSET_NO = D.ASSET_NO
+   AND B.OP_CL_CD = 'PR' 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN = 'N'      
+   AND A.RENT_YM = #IN_DT#
+ ORDER BY A.RENT_YM]]>
+	</select>
+	<select id="SXclCmp" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP101.SXclCmp 손해배상금,재상품화 정산리스트 */
+/* IO: 김상오,2015-09-15T18:36:15(김상오,2015-08-10T15:55:27) */
+SELECT
+       A.ASSET_NO
+      ,B.CNTRT_NO
+      ,A.EQP_JDG_DT   as SALE_DT
+      ,A.EQP_CMP_AMT_TOT as SALE_AMT 
+      ,A.EQP_RECMC_YN
+      ,C.EQP_RECMC_CMMS
+FROM  TB_EQP_JDG A , TB_EQP_CNTRT B , TB_RENTAL_CNTRT C , TB_EQP_ASSET D
+WHERE A.ASSET_NO = B.ASSET_NO
+AND A.ASSET_NO = D.ASSET_NO
+AND B.CNTRT_NO = C.CNTRT_NO
+AND C.OP_CL_CD = 'PR' 
+AND A.DEL_YN = 'N'
+AND B.DEL_YN = 'N'
+AND C.DEL_YN = 'N'
+AND D.DEL_YN = 'N'
+AND A.EQP_JDG_DT LIKE #IN_DT#||'%'
+]]><isEqual prepend="AND" property="RE_CMC" compareValue="Y"><![CDATA[
+       A.EQP_RECMC_YN = #RE_CMC#
+]]></isEqual><![CDATA[]]>
+	</select>
+	<select id="SXclDlv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP101.SXclDlv 운송료정산리스트 */
+/* IO: 김상오,2015-09-15T18:36:35(김상오,2015-08-10T15:58:35) */
+SELECT
+        A.ASSET_NO
+       ,B.CNTRT_NO
+       ,A.HDLV_AMT as SALE_AMT
+       ,A.HDLV_SND_DT as SALE_DT
+FROM  TB_EQP_WAYBIL A, TB_EQP_CNTRT B , TB_RENTAL_CNTRT C , TB_EQP_ASSET D
+WHERE A.ASSET_NO = B.ASSET_NO
+AND A.ASSET_NO = D.ASSET_NO
+AND B.CNTRT_NO = C.CNTRT_NO
+AND C.OP_CL_CD = 'PR'   
+AND A.DEL_YN = 'N'
+AND B.DEL_YN = 'N'
+AND C.DEL_YN = 'N'
+AND D.DEL_YN = 'N'
+AND A.HDLV_SND_DT like #IN_DT#||'%']]>
+	</select>
+	<insert id="IXclSale" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP017.IXclSale 랜트료매출정산등록 */
+/* IO: 김상오,2015-09-03T17:51:10(김상오,2015-08-25T09:52:40) */
+INSERT INTO TB_SALE
+(
+  SALE_NO
+  ,ASSET_NO
+  ,CNTRT_NO
+  ,SALE_DEPT_CD
+  ,SALE_DT 
+  ,SALE_ITM_CD
+  ,SALE_DEALCO_CD
+  ,SALE_CL_CD
+  ,ACNT_CD
+  ,SALE_ST_CD
+  ,SALE_AMT
+  ,SPLY_PRC
+  ,SURTAX_AMT
+  ,SURTAX_CL
+  ,TAXBILL_NO
+  ,TAXBILL_DT
+  ,UPD_TAXBILL_NO
+  ,XCL_SCHD_DT
+  ,XCL_PROC_DT
+  ,XCL_SLIP_NO
+  ,SALE_ADJ_OBJ_SYS_ID
+  ,SALE_ADJ_BF_AMT
+  ,SALE_ADJ_DAMT
+  ,DEL_YN
+  ,FS_REG_USER_ID
+  ,LS_CHG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_DTM
+)
+VALUES
+(
+  SQ01_TB_SALE.NEXTVAL
+  ,#ASSET_NO#
+  ,#CNTRT_NO#
+  ,#SALE_DEPT_CD#
+  ,#SALE_DT#
+  ,#SALE_ITM_CD#
+  ,#SALE_PLC_CD#
+  ,#SALE_CL_CD#
+  ,#ACNT_CD#
+  ,#SALE_ST_CD#
+  ,#SALE_AMT#
+  ,#SPLY_PRC#
+  ,#SURTAX_AMT#
+  ,''
+  ,''
+  ,''
+  ,''
+  ,''
+  ,''
+  ,''
+  ,''
+  ,0
+  ,0
+  ,'N'
+  ,#USER_ID#
+  ,#USER_ID#
+  ,SYSDATE
+  ,SYSDATE
+)]]>
+	</insert>
+	<update id="UXclSale" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP017.UXclSale 정산데이터삭제플래그 */
+/* IO: 김상오,2015-09-03T17:45:01(김상오,2015-08-12T18:11:19) */
+update TB_SALE
+SET DEL_YN = 'Y'
+WHERE SALE_DT = #IN_DT#
+and SALE_ITM_CD = #SALE_ITM_CD#
+and DEL_YN = 'N']]>
+	</update>
+	<insert id="IEtcXcl" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP017.IEtcXcl 기타매출정산등록 */
+/* IO: 김상오,2015-08-25T10:02:25(김상오,2015-08-25T10:02:25) */
+INSERT INTO TB_ETC_XCL
+  (
+     ETC_XCL_NO
+    ,ASSET_NO
+    ,CNTRT_NO
+    ,XCL_DEPT_CD  
+    ,XCL_DT       
+    ,XCL_ITM_CD   
+    ,XCL_DEALCO_CD
+    ,XCL_CL_CD 
+    ,ACNT_CD
+    ,XCL_ST_CD
+    ,XCL_AMT
+    ,SPLY_PRC
+    ,SURTAX_AMT
+    ,SURTAX_CL
+    ,TAXBILL_NO
+    ,TAXBILL_DT
+    ,UPD_TAXBILL_NO
+    ,XCL_SCHD_DT
+    ,XCL_PROC_DT
+    ,XCL_SLIP_NO
+    ,DEL_YN
+    ,FS_REG_USER_ID
+    ,LS_CHG_USER_ID
+    ,FS_REG_DTM
+    ,LS_CHG_DTM    
+  )
+  VALUES
+  (
+     SQ01_TB_ETC_XCL.NEXTVAL         
+    ,#ASSET_NO#   
+    ,#CNTRT_NO#
+    ,#SALE_DEPT_CD#   
+    ,#SALE_DT#        
+    ,#SALE_ITM_CD#     
+    ,#SALE_DEALCO_CD# 
+    ,#SALE_CL_CD#  
+    ,#ACNT_CD#      
+    ,#SALE_ST_CD#   
+    ,#SALE_AMT#     
+    ,#SPLY_PRC#
+    ,#SURTAX_AMT#
+    ,''
+    ,''
+    ,''
+    ,''
+    ,''
+    ,''
+    ,''
+    ,'N' 
+    ,#USER_ID#  
+    ,#USER_ID#  
+    ,SYSDATE
+    ,SYSDATE        
+    )  ]]>
+	</insert>
+	<update id="UEtcXclDel" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP017.UEtcXclDel 기타정산삭제플래그 */
+/* IO: 김상오,2015-08-17T17:06:32(김상오,2015-08-13T16:21:27) */
+UPDATE TB_ETC_XCL
+SET DEL_YN = 'Y'
+WHERE XCL_DT like #IN_DT#||'%'
+and XCL_ITM_CD = #SALE_ITM_CD#
+and DEL_YN = 'N']]>
+	</update>
+	<select id="SXclJN" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP101.SXclJN 손해배상금단말미반납항목리스트 */
+/* IO: 김상오,2015-09-17T15:32:54(김상오,2015-09-17T15:18:08) */
+SELECT A.ASSET_NO
+       ,A.CNTRT_NO
+       ,D.EQP_LOSS_DT as SALE_DT
+       ,A.REMPRC as SALE_AMT
+       ,C.RENT_STA_DT
+       ,C.RENT_END_SCHD_DT
+       ,C.RENT_END_DT
+  FROM TB_EQP_CNTRT_DTL A
+       ,TB_RENTAL_CNTRT B 
+       ,TB_EQP_CNTRT C 
+       ,TB_EQP_ASSET D
+ WHERE A.CNTRT_NO = B.CNTRT_NO
+   AND A.CNTRT_NO = C.CNTRT_NO
+   AND A.ASSET_NO = C.ASSET_NO
+   AND A.ASSET_NO = D.ASSET_NO
+   AND B.OP_CL_CD = 'PR' 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.RENT_YM = #IN_DT#
+   AND D.EQP_LOSS_DT like #IN_DT#||'%'
+ ORDER BY A.RENT_YM]]>
+	</select>
+</sqlMap>

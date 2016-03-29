@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DBIBoxBarcdMgmt">
+	<select id="SBoxBarcdDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcdDtlLst 박스바코드 상세조회 */
+/* IO: 이하나,2015-09-17T15:15:52(개발자,2015-06-29T13:47:04) */
+SELECT  MGMT_BARCD AS MGMT_BAR_CD
+       ,BOX_BARCD AS BOX_BAR_CD
+       ,'' AS S_GB
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TB_BOX_BARCD_DTL
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="MGMT_BAR_CD" prepend="AND"><![CDATA[
+        MGMT_BARCD = #MGMT_BAR_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_BAR_CD" prepend="AND"><![CDATA[
+        BOX_BARCD = #BOX_BAR_CD#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<insert id="IBoxBarcd" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.IBoxBarcd 박스바코드 입력 */
+/* IO: 박홍서,2015-07-09T15:54:23(박홍서,2015-07-09T15:54:23) */
+INSERT
+  INTO  TB_BOX_BARCD
+       (
+        BOX_BARCD
+       ,OP_CL_CD
+       ,BOX_ST_CD
+       ,BOX_ST_SCL_CD
+       ,MAX_QTY
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+        #BOX_BAR_CD#
+       ,#OP_CL_CD#
+       ,#BOX_ST_CD#
+       ,#BOX_ST_SCL_CD#
+       ,#MAX_QTY#
+       ,#USER_NO#
+       ,SYSDATE
+       ,#USER_NO#
+       ,SYSDATE
+      )]]>
+	</insert>
+	<update id="UBoxBarcdSet" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.UBoxBarcdSet 박스바코드 세팅 */
+/* IO: 박홍서,2015-07-10T17:42:29(개발자,2015-06-29T17:04:42) */
+MERGE INTO  TB_BOX_BARCD_DTL A
+     USING  DUAL
+        ON (
+            A.MGMT_BARCD = #MGMT_BAR_CD#
+           )
+WHEN MATCHED THEN
+    UPDATE
+       SET  BOX_BARCD = #BOX_BAR_CD#
+           ,LS_CHG_USER_ID = #USER_NO#
+           ,LS_CHG_DTM     = SYSDATE
+WHEN NOT MATCHED THEN
+    INSERT (
+            MGMT_BARCD
+           ,BOX_BARCD
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+           )
+   VALUES
+          (
+            #MGMT_BAR_CD#
+           ,#BOX_BAR_CD#
+           ,#USER_NO#
+           ,SYSDATE
+           ,#USER_NO#
+           ,SYSDATE
+          )]]>
+	</update>
+	<select id="SBoxBarcdSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcdSeq 박스바코드 채번 */
+/* IO: 박홍서,2015-08-12T10:01:30(박홍서,2015-07-02T09:10:16) */
+SELECT  #BOX_CD#||LPAD(SQ01_TB_BOX_BARCD.NEXTVAL,9,0) AS BOX_BAR_CD
+  FROM  DUAL]]>
+	</select>
+	<select id="SBoxBarcd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcd 박스바코드 조회 */
+/* IO: 이하나,2015-09-09T15:12:08(박홍서,2015-07-13T09:31:11) */
+SELECT  BOX_BARCD AS BOX_BAR_CD
+       ,OP_CL_CD
+       ,BOX_ST_CD
+       ,BOX_ST_SCL_CD
+       ,MAX_QTY
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TB_BOX_BARCD
+]]><dynamic prepend="WHERE"><![CDATA[ 
+]]><isNotEmpty property="BOX_BAR_CD" prepend="AND"><![CDATA[
+        BOX_BARCD = #BOX_BAR_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MGMT_BAR_CD" prepend="AND"><![CDATA[
+        BOX_BARCD IN 
+       (
+         SELECT  BOX_BARCD 
+           FROM  TB_BOX_BARCD_DTL
+          WHERE  MGMT_BARCD = #MGMT_BAR_CD#
+       )
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SEqpseq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SEqpseq 단말기일련번호조회 */
+/* IO: 이영진,2015-08-31T16:21:47(이영진,2015-08-31T16:20:38) */
+SELECT A.EQP_MDL_CD         /* 모델코드 */
+       ,B.EQP_MDL_NM        /* 모델명 */
+       ,A.EQP_SER_NO        /* 일련 번호 */
+       ,A.CNSL_MGMT_NO      /* 상담 관리 번호 */
+       ,A.CNSL_DT           /* 상담일자 */
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,TB_EQP_MDL B
+ WHERE A.EQP_SER_NO = #EQP_SER_NO#
+   AND A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N']]>
+	</select>
+	<select id="SProdInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SProdInfo 박스바코드상품조회 */
+/* IO: 이하나,2015-09-15T15:03:15(이하나,2015-09-14T18:21:15) */
+SELECT A.CNSL_MGMT_NO, 
+       B.PRCH_MGMT_NO,
+       DECODE(B.EQP_SER_NO, NULL, A.EQP_SER_NO, B.EQP_SER_NO) AS EQP_SER_NO,
+       C.EQP_MDL_NM, 
+       DECODE(B.DPSTR, NULL, A.DPSTR, B.DPSTR) AS DPSTR,
+       DECODE(B.PROGR_ST, NULL, A.PROGR_ST, B.PROGR_ST) AS PROGR_ST,
+       DECODE(B.PROGR_ST, NULL, 'C', 'P') AS S_GB,
+       '' AS PROC_GB,
+       '' AS CHECK_YN,
+       DECODE(B.EQP_ST, NULL, A.EQP_ST, B.EQP_ST) AS EQP_ST,
+       DECODE(B.CNSL_DT, NULL, A.CNSL_DT, B.CNSL_DT) AS CNSL_DT,
+       A.SKN_CL
+       ,B.AMT_RMT_YN	/*금액 송금 여부*/
+       ,B.FEE_DEDC_YN	/*요금 공제 여부*/
+       ,B.POLY_OBJ_YN	/*정책 대상 여부*/
+  FROM TB_EP_CST_CONSULT_MGMT A,
+       TB_EP_CST_PRCHS_MGMT B, 
+       TB_EQP_MDL C 
+ WHERE A.EQP_MDL_CD = C.EQP_MDL_CD
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+   AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO# 
+   AND A.DEL_YN      = 'N'
+   AND NVL(B.DEL_YN(+),'N') = 'N']]>
+	</select>
+	<select id="SEpInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SEpInfo 중고폰업무구분 조회 */
+/* IO: 이하나,2015-09-17T14:50:54(이하나,2015-09-17T13:34:31) */
+SELECT  MGMT_BAR_CD, BOX_BAR_CD, MAX(S_GB) AS S_GB
+  FROM (SELECT  MGMT_BARCD AS MGMT_BAR_CD,
+                BOX_BARCD AS BOX_BAR_CD,
+                'C' AS S_GB
+          FROM  TB_BOX_BARCD_DTL A, TB_EP_CST_CONSULT_MGMT B
+         WHERE  A.BOX_BARCD = #BOX_BAR_CD#
+           AND  A.MGMT_BARCD = B.CNSL_MGMT_NO
+           AND  A.BOX_BARCD = B.BOX_NO
+           AND  B.DEL_YN = 'N'
+        UNION
+        SELECT  MGMT_BARCD AS MGMT_BAR_CD,
+                BOX_BARCD AS BOX_BAR_CD,
+                'P' AS S_GB
+          FROM  TB_BOX_BARCD_DTL A, TB_EP_CST_PRCHS_MGMT B
+         WHERE  A.BOX_BARCD = #BOX_BAR_CD#
+           AND  A.MGMT_BARCD = B.CNSL_MGMT_NO
+           AND  A.BOX_BARCD = B.BOX_NO
+           AND  B.DEL_YN = 'N')
+GROUP BY  MGMT_BAR_CD, BOX_BAR_CD]]>
+	</select>
+	<update id="UBoxBarcd" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.UBoxBarcd 박스바코드 수정 */
+/* IO: 이하나,2015-12-10T14:44:44(이하나,2015-12-09T15:23:46) */
+UPDATE  TB_BOX_BARCD
+   SET  QTY = #PROD_QTY#
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #USER_NO#
+ WHERE  BOX_BARCD = #BOX_NO#]]>
+	</update>
+	<select id="SProdPrcCheck" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SProdPrcCheck 단말기진행상태체크 */
+/* IO: 김상오,2016-01-19T13:06:43(김상오,2016-01-13T18:37:11) */
+WITH TMP AS (
+  select 
+  CM_GRP_CD_ID,
+  CM_CD_ID , 
+  MGMT_ITEM_CD4 ,
+  MGMT_ITEM_CD5 ,
+  MGMT_ITEM_CD6 ,
+  MGMT_ITEM_CD7 ,
+  MGMT_ITEM_CD8 ,
+  MGMT_ITEM_CD9 ,
+  MGMT_ITEM_CD10
+  from (
+  SELECT A.CM_GRP_CD_ID      /* 공통그룹코드ID */      ,
+        B.CM_GRP_CD_NM      /* 공통그룹코드명 */      ,
+        A.CM_CD_ID      /* 공통코드ID */      ,
+        A.CM_CD_NM      /* 공통코드명 */      ,
+        A.CM_CD_DESC      /* 공통코드설명 */      ,
+        A.CM_CD_SORT_ORD      /* 공통코드정렬순서 */      ,
+        DECODE(A.USE_YN,'Y','1','N','0') AS USE_YN      /* 사용여부 */      ,
+        A.SUP_CM_GRP_CD_ID      /* 상위공통그룹코드ID */      ,
+        A.SUP_CM_CD_ID      /* 상위공통코드ID */      ,
+        A.MGMT_ITEM_CD1      /* 관리항목코드1 */      ,
+        A.MGMT_ITEM_CD2      /* 관리항목코드2 */      ,
+        A.MGMT_ITEM_CD3      /* 관리항목코드3 */      ,
+        A.MGMT_ITEM_CD4      /* 관리항목코드4 */      ,
+        A.MGMT_ITEM_CD5      /* 관리항목코드5 */
+        ,A.MGMT_ITEM_CD6      /* 관리항목코드6 */      ,
+        A.MGMT_ITEM_CD7      /* 관리항목코드7 */      ,
+        A.MGMT_ITEM_CD8      /* 관리항목코드8 */      ,
+        A.MGMT_ITEM_CD9      /* 관리항목코드9 */      ,
+        A.MGMT_ITEM_CD10      /* 관리항목코드10 */      
+      FROM TB_CM_CD A      /* SC_공통코드 */
+           ,TB_CM_GRP_CD B      /* SC_공통그룹코드 */
+      WHERE A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID
+        AND A.CM_GRP_CD_ID = 'DMS108'
+        AND MGMT_ITEM_CD3 = 'Y'
+  union all
+  SELECT A.CM_GRP_CD_ID      /* 공통그룹코드ID */      ,
+        B.CM_GRP_CD_NM      /* 공통그룹코드명 */      ,
+        A.CM_CD_ID      /* 공통코드ID */      ,
+        A.CM_CD_NM      /* 공통코드명 */      ,
+        A.CM_CD_DESC      /* 공통코드설명 */      ,
+        A.CM_CD_SORT_ORD      /* 공통코드정렬순서 */      ,
+        DECODE(A.USE_YN,'Y','1','N','0') AS USE_YN      /* 사용여부 */      ,
+        A.SUP_CM_GRP_CD_ID      /* 상위공통그룹코드ID */      ,
+        A.SUP_CM_CD_ID      /* 상위공통코드ID */      ,
+        A.MGMT_ITEM_CD1      /* 관리항목코드1 */      ,
+        A.MGMT_ITEM_CD2      /* 관리항목코드2 */      ,
+        A.MGMT_ITEM_CD3      /* 관리항목코드3 */      ,
+        A.MGMT_ITEM_CD4      /* 관리항목코드4 */      ,
+        A.MGMT_ITEM_CD5      /* 관리항목코드5 */
+        ,A.MGMT_ITEM_CD6      /* 관리항목코드6 */      ,
+        A.MGMT_ITEM_CD7      /* 관리항목코드7 */      ,
+        A.MGMT_ITEM_CD8      /* 관리항목코드8 */      ,
+        A.MGMT_ITEM_CD9      /* 관리항목코드9 */      ,
+        A.MGMT_ITEM_CD10      /* 관리항목코드10 */      
+      FROM TB_CM_CD A      /* SC_공통코드 */
+           ,TB_CM_GRP_CD B      /* SC_공통그룹코드 */
+      WHERE A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID
+        AND A.CM_GRP_CD_ID = 'DMS109'
+        AND MGMT_ITEM_CD3 = 'Y'
+  )
+  where CM_CD_ID = #BOX_ST_CD#
+),
+TMP2 AS (
+         select CM_CD_ID, MGMT_ITEM_CD4 AS PROGR_ST from tmp
+  union  select CM_CD_ID, MGMT_ITEM_CD5 AS PROGR_ST from tmp
+  union  select CM_CD_ID, MGMT_ITEM_CD6 AS PROGR_ST from tmp
+  union  select CM_CD_ID, MGMT_ITEM_CD7 AS PROGR_ST from tmp
+  union  select CM_CD_ID, MGMT_ITEM_CD8 AS PROGR_ST from tmp
+  union  select CM_CD_ID, MGMT_ITEM_CD9 AS PROGR_ST from tmp
+  union  select CM_CD_ID, MGMT_ITEM_CD10 AS PROGR_ST from tmp
+)
+SELECT MIN(CHECK_YN) AS CHECK_YN
+  FROM (
+  select DECODE(COUNT(*),0,'N','Y') AS CHECK_YN from tmp2
+   where PROGR_ST = #PROGR_ST#
+  UNION ALL
+  SELECT DECODE(COUNT(*),0,'N','Y') AS CHECK_YN /*업무 check*/
+          FROM
+]]><isEqual property="S_GB" compareValue="P"><![CDATA[
+               TB_EP_CST_PRCHS_MGMT
+]]></isEqual><![CDATA[
+]]><isEqual property="S_GB" compareValue="C"><![CDATA[
+               TB_EP_CST_CONSULT_MGMT
+]]></isEqual><![CDATA[
+         WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]><isEqual property="BOX_ST_CD" compareValue="AR"><![CDATA[
+	]]><isNotEqual property="PROGR_ST" compareValue="12"><![CDATA[
+		   AND RETUR_DEALCO_CL = '1'
+	]]></isNotEqual><![CDATA[ 	
+]]></isEqual><![CDATA[   
+]]><isEqual property="BOX_ST_CD" compareValue="AS"><![CDATA[
+		   AND RETUR_DEALCO_CL = '0'
+]]></isEqual><![CDATA[
+]]><isEqual property="BOX_ST_CD" compareValue="SM"><![CDATA[
+	]]><isEqual property="PROGR_ST" compareValue="21"><![CDATA[
+   		   AND (FEE_DEDC_YN IS NULL OR FEE_DEDC_YN = 0)
+   		   AND (POLY_OBJ_YN IS NULL OR POLY_OBJ_YN = 0)
+	]]></isEqual><![CDATA[
+]]></isEqual><![CDATA[
+]]><isEqual property="BOX_ST_CD" compareValue="DE"><![CDATA[
+	]]><isEqual property="PROGR_ST" compareValue="21"><![CDATA[ 
+   		   AND FEE_DEDC_YN = '1' 
+   		   AND NVL(POLY_OBJ_YN,0) <> '1' 
+	]]></isEqual><![CDATA[
+]]></isEqual><![CDATA[
+]]><isEqual property="BOX_ST_CD" compareValue="PO"><![CDATA[
+	]]><isEqual property="PROGR_ST" compareValue="25"><![CDATA[ 
+   		   AND POLY_OBJ_YN = '1'  
+	]]></isEqual><![CDATA[
+]]></isEqual><![CDATA[
+]]><isEqual property="BOX_ST_CD" compareValue="CO"><![CDATA[
+	]]><isEqual property="PROGR_ST" compareValue="2E"><![CDATA[ 
+   		   AND PROGR_ST = '2E' 
+	]]></isEqual><![CDATA[
+]]></isEqual><![CDATA[   
+
+ ]]><isEqual property="BOX_ST_CD" compareValue="IS"><![CDATA[
+   		   AND SKN_CL = 'Y' 
+]]></isEqual><![CDATA[
+)]]>
+	</select>
+</sqlMap>

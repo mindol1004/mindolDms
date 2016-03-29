@@ -1,0 +1,559 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="AgnCmms" classname="ProgramReg" inheritanceid="" position="absolute 0 0 1038 528" titletext="대리점수수료" style="font:arial,11;" onload="Form_onload" onkeyup="Form_onkeyup">
+    <Layouts>
+      <Layout>
+        <Static id="Static06" text="w&#13;&#10;20" class="tip_guide" visible="false" position2="absolute l:1018 w:20 t:11 h:274" positiontype="position2"/>
+        <Div id="div_search" anchor="left top right" taborder="0" class="bg_search" position="absolute 0 0 1018 40" onkeydown="div_search_onkeydown">
+          <Layouts>
+            <Layout>
+              <Static id="stc_msgInDate" text="정산기준년월" class="sta_WFDA_detail_Label_P" position="absolute 15 9 100 29" anchor="default"/>
+              <Static id="Static08" text="w&#13;&#10;&#13;10" onclick="div_search_Static08_onclick" class="tip_guide" visible="false" position2="absolute l:95 w:10 t:0 h:42" positiontype="position2"/>
+              <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:0 w:15 t:0 h:42" positiontype="position2"/>
+              <CommMonthCalendar id="cmc_toYm" titletext="월력" taborder="0" text="CommMonthCalendar00" scrollbars="none" position="absolute 105 9 180 29"/>
+            </Layout>
+          </Layouts>
+          <InitValue/>
+        </Div>
+        <Static id="stc_subTitle" text="조회결과" class="sub_title" position="absolute 0 50 299 70" anchor="left top" onclick="stc_subTitle01_onclick"/>
+        <Static id="Static00" text="h10" class="tip_guide" visible="false" position2="absolute l:104 w:42 t:0 h:10" positiontype="position2"/>
+        <Button id="btn_search" taborder="8" text="조회" onclick="btn_search_onclick" class="btn_WFSA_Search_M" position="absolute 959 12 1017 39" anchor="top right" style="align:center middle;"/>
+        <Static id="Static14" text="h10" class="tip_guide" visible="false" position2="absolute l:104 w:42 t:30 h:10" positiontype="position2"/>
+        <Static id="Static02" text="h14" class="tip_guide" visible="false" position2="absolute l:4 w:42 t:40 h:14" positiontype="position2"/>
+        <Static id="Static04" text="h8" class="tip_guide" visible="false" position2="absolute l:4 w:42 t:65 h:8" positiontype="position2"/>
+        <Static id="Static13" text="h33" class="tip_guide" visible="false" position2="absolute l:309 w:42 t:40 h:33" positiontype="position2"/>
+        <Button id="btn_excel" taborder="6" onclick="btn_excel_onclick" class="btn_common_excel" position="absolute 996 50 1018 70" anchor="top right" tooltiptext="액셀출력" userautr="sample0021:EXL_AUTR_YN"/>
+        <Button id="btn_filter" taborder="5" class="btn_common_filterTxt" position="absolute 973 50 995 70" tooltiptext="필터" userdata="" onclick="btn_filter_onclick" anchor="top right"/>
+        <Static id="Static01" text="h8" class="tip_guide" visible="false" position2="absolute l:12 w:42 t:73 h:8" positiontype="position2"/>
+        <Static id="Static10" text="h10" class="tip_guide" visible="false" position2="absolute l:499 w:42 t:518 h:10" positiontype="position2"/>
+        <UserGrid id="grd_main" taborder="7" autoenter="select" useinputpanel="false" cellsizingtype="col" autofittype="col" hideendline="col" position="absolute 0 73 1018 517" anchor="all" _number="true" _status="false" _check="false" _checkColumnName="CHECKED" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true" cellmovingtype="col" binddataset="ds_main">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="105"/>
+                <Column size="175"/>
+                <Column size="163"/>
+                <Column size="88"/>
+                <Column size="88"/>
+                <Column size="102"/>
+                <Column size="103"/>
+                <Column size="97"/>
+                <Column size="94"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+                <Row size="24" band="summ"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="정산년월" taborder="undefined"/>
+                <Cell col="1" text="사업자번호" taborder="undefined"/>
+                <Cell col="2" text="법인명" taborder="undefined"/>
+                <Cell col="3" text="공급가액" taborder="undefined"/>
+                <Cell col="4" text="부가세" taborder="undefined"/>
+                <Cell col="5" text="대리점 실지급액" taborder="undefined"/>
+                <Cell col="6" text="전표기산일" taborder="undefined"/>
+                <Cell col="7" text="전표번호" taborder="undefined"/>
+                <Cell col="8" text="전표상태" taborder="undefined"/>
+              </Band>
+              <Band id="body">
+                <Cell displaytype="text" edittype="none" style="align:center;" text="bind:INCEN_STRD_YM" mask="@@@@-@@" calendardisplaynulltype="none"/>
+                <Cell col="1" displaytype="text" edittype="none" style="align:center;" text="bind:INCEN_BIZ_REG_NO"/>
+                <Cell col="2" edittype="none" style="align:left;" text="bind:INCEN_CORP_NM"/>
+                <Cell col="3" displaytype="number" edittype="none" style="align:right;" text="bind:SPLY_PRC"/>
+                <Cell col="4" displaytype="number" edittype="none" style="align:right;" text="bind:SURTAX_AMT"/>
+                <Cell col="5" displaytype="number" edittype="none" style="align:right;" text="bind:INCEN_AMT"/>
+                <Cell col="6" displaytype="date" edittype="none" style="align:center;" text="bind:INCEN_SLIP_DT" calendardisplaynulltype="none"/>
+                <Cell col="7" edittype="none" style="align:center;" text="bind:SLIP_NO"/>
+                <Cell col="8" displaytype="combo" edittype="none" style="align:center;" text="bind:SLIP_ST_CD" combodataset="ds_DMS153" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+              </Band>
+              <Band id="summary">
+                <Cell colspan="3" text="총 인센티브 합계" taborder="undefined"/>
+                <Cell col="3" displaytype="number" style="align:right;" text="expr:getSum(&quot;parseInt(SPLY_PRC)&quot;)"/>
+                <Cell col="4" displaytype="number" style="align:right;" text="expr:getSum(&quot;parseInt(SURTAX_AMT)&quot;)"/>
+                <Cell col="5" displaytype="number" style="align:right;" text="expr:getSum(&quot;parseInt(INCEN_AMT)&quot;)"/>
+                <Cell col="6"/>
+                <Cell col="7"/>
+                <Cell col="8"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Button id="btn_excel_upload" taborder="2" text="Excel 업로드" onclick="btn_excel_upload_onclick" class="btn_common" position="absolute 751 50 832 70" anchor="top right" tooltiptext="Excel업로드"/>
+        <Button id="btn_slipC" taborder="4" text="전표취소" onclick="btn_slip_onclick" class="btn_common" position="absolute 903 50 972 70" anchor="top right"/>
+        <Button id="btn_slipI" taborder="3" text="전표발행" onclick="btn_slip_onclick" class="btn_common" position="absolute 833 50 902 70" anchor="top right"/>
+        <Button id="btn_slipRe" taborder="1" text="전표상태재조회" onclick="btn_slipRe_onclick" class="btn_common" position="absolute 650 50 750 70" anchor="top right"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_main" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false" canrowposchange="ds_frm_canrowposchange">
+        <ColumnInfo>
+          <Column id="ROWNO" type="STRING" size="256"/>
+          <Column id="INCEN_XCL_NO" type="STRING" size="256"/>
+          <Column id="INCEN_STRD_YM" type="STRING" size="256"/>
+          <Column id="INCEN_BIZ_REG_NO" type="STRING" size="256"/>
+          <Column id="INCEN_CORP_NM" type="STRING" size="256"/>
+          <Column id="INCEN_AMT" type="STRING" size="256"/>
+          <Column id="SPLY_PRC" type="STRING" size="256"/>
+          <Column id="SURTAX_AMT" type="STRING" size="256"/>
+          <Column id="INCEN_SLIP_DT" type="STRING" size="256"/>
+          <Column id="INCEN_SLIP_NO" type="STRING" size="256"/>
+          <Column id="INCEN_SLIP_ST" type="STRING" size="256"/>
+          <Column id="SLIP_NO" type="STRING" size="256"/>
+          <Column id="SLIP_ST_CD" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_search" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="INCEN_STRD_YM" type="STRING" size="256"/>
+          <Column id="YYYYMM" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_DMS153" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_GRP_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CHG_DTM" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_DESC" type="STRING" size="256"/>
+          <Column id="CM_CD_SORT_ORD" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="SUP_CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="SUP_CM_CD_ID" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD1" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD2" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD3" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD4" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD5" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD6" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD7" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD8" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD9" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD10" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_cnclSlip" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false" canrowposchange="ds_frm_canrowposchange">
+        <ColumnInfo>
+          <Column id="SLIP_NO" type="STRING" size="256"/>
+          <Column id="YYYY" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="div_search.cmc_toYm" propid="text" datasetid="ds_search" columnid="IN_DT"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 중고폰
+ * 02. 화면 : AgnCmms.xfdl
+ * 03. 화면 설명 : 대리점수수료
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 김윤환
+ * 06. 작성일 : 2015.10.19
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.10.19    김윤환    최초 작성 
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	
+	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "FEP051M");
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+	var strCode =  "DMS153=ds_DMS153=A";
+	
+	gfn_getCodeDs( this
+				  , strCode
+				  ,"fn_afterCodeCallBack");	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{
+	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{	
+	page = 1;
+	page_size = 10000;
+	
+	// 그리드 초기화 
+	gfn_initGrid(grd_main, false, true, true, "row", null);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 페이지 Click시 페이지조회
+ * param   : iTotalRowCount - 전체 Row수
+ * param   : iUnitSelRowNo  - 페이지당 Row수
+ * param   : iCurrPage      - 현재 페이지
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_selectPageExec(iTotalRowCount, iUnitSelRowNo, iCurrPage)
+{
+	//trace("페이징처리::total row="+iTotalRowCount+"::unit row="+iUnitSelRowNo+"::current page="+iCurrPage);
+	//페이징처리
+	page = iCurrPage;
+	fn_searchMain();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+	stc_subTitle.text = "조회결과";		
+	div_search.cmc_toYm.setDate(gfn_left(gfn_today(), 6));	
+	div_search.cmc_toYm.setFocus();
+			
+	//개인정보 조회권한 및 수정권한여부 파라미터 설정 (조회,저장,삭제,출력,엑셀,개인정보)
+	//gfn_setAutrChild(this);
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchMain()
+{	
+	var sSvcID		 = "searchMain";
+	var sTrID		 = "PEPAgnCmmsMgmt_pSAgnCmmsLst";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "ds_main=RS_AGN_CMMS_LIST";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 대리점 수수료 전표발행
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_agnCmmsSlipIns(stardYm)
+{	
+	// 수수료 전표발행 및 전표취소 기준연월
+	div_search.cmc_toYm.setDate(stardYm);	// 대리점 수수료 전표 정산기준년월					
+	ds_search.setColumn(0, "INCEN_STRD_YM",stardYm);
+	
+	var sSvcID		 = "agnCmmsSlipSave";
+	var sTrID		 = "PEPAgnCmmsMgmt_pSaveAgnCmmsSlip";
+	var sPtrn		 = "C";  // 전표발행: C
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 대리점 수수료 전표취소
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_agnCmmsSlipCncl(stardYm)
+{	
+	// 수수료 전표발행 및 전표취소 기준연월
+	div_search.cmc_toYm.setDate(stardYm);	// 대리점 수수료 전표 정산기준년월					
+	ds_search.setColumn(0, "INCEN_STRD_YM",stardYm);
+	
+	var sSvcID		 = "agnCmmsSlipSave";
+	var sTrID		 = "PEPAgnCmmsMgmt_pCnclAgnCmmsSlip";
+	var sPtrn		 = "D";  // 전표발행: C
+	var sInputDs	 = "ncFieldMap=ds_search RS_SLIP_LIST=ds_cnclSlip";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표처리상태 재조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_ReState()
+{
+	var sSvcID		 = "ReState";
+	var sTrID		 = "PEPAgnCmmsMgmt_pInqAgnCmmsSlipReSearh";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+	switch(sSvcID) {
+		case "searchMain": 
+			if ( iErrorCode == 0 ) {				
+				gfn_setGridTitleCountPaging(stc_subTitle, total_record_cnt);
+			}
+			break;
+		case "agnCmmsSlipSave": 
+			if ( iErrorCode == 0 ) {
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+				btn_search_onclick();
+			}
+			break;	
+		case "ReState":
+			if (iErrorCode == 0) {
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+				btn_search_onclick();
+			}
+			break;		
+		default:
+			break;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : search
+-----------------------------------------------------------------------------------------------*/
+function btn_search_onclick(obj:Button,  e:ClickEventInfo)
+{	
+
+	// 필수 입력 항목 Validate Check
+	if (!gfn_getValidateCompList(div_search)) {	
+		return false;
+	}else if(gfn_isNull(div_search.cmc_toYm.getDate())){	
+		gfn_message("A","DMS00002","W","",div_search.stc_msgInDate.text); /*필수입력항목 {0}이/가 누락되었습니다. */
+		div_search.cmc_toYm.setFocus();
+		return false;
+	}
+	
+	//검색조건: 정산기준연월
+	ds_search.setColumn(0, "INCEN_STRD_YM",div_search.cmc_toYm.getDate());
+	
+	fn_searchMain();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid filter
+-----------------------------------------------------------------------------------------------*/
+function btn_filter_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_toggleGridFilter(grd_main);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표상태재조회
+-----------------------------------------------------------------------------------------------*/
+function btn_slipRe_onclick(obj:Button,  e:ClickEventInfo)
+{
+	// 필수 입력 항목 Validate Check
+	if (!gfn_getValidateCompList(div_search)) {	
+		return false;
+	}
+	
+	if(gfn_message("A","전표상태재조회를 진행하시겠습니까?","I","","")){
+		ds_search.setColumn(0, "YYYYMM", div_search.cmc_toYm.getDate());
+		fn_ReState();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 대리점 수수료 Excel업로드 버튼.
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_upload_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var sPram = div_search.cmc_toYm.getDate();
+	var arrArgs = {argAutoSelect:true, argCallProgram:"FEP051M", argParmYyMm:sPram};
+	var sRtnVal = gfn_dialog("FEP052P", arrArgs); //FEP052P 대리점수수료 등록
+	
+	//팝업에서 입력받은 값 리턴
+	if ( !gfn_isNull(sRtnVal) && sRtnVal != "cancel" ) {		
+		div_search.cmc_toYm.setDate(sRtnVal["INCEN_STRD_YM"]);	// 대리점 수수료 정산기준년월					
+		btn_search_onclick();
+	}
+	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 대리점 수수료 전표발행 및 취소 버튼
+-----------------------------------------------------------------------------------------------*/
+function btn_slip_onclick(obj:Button,  e:ClickEventInfo)
+{	
+	if(ds_main.getRowCount()<=0){
+		gfn_message("A","DMS00021","W");	//DMS00021 : 조회된 정보가 없습니다.
+		return false;
+	}else{
+		switch(obj.name){			
+			case "btn_slipI" :				
+				var stardYm = ds_main.getColumn(ds_main.rowposition,"INCEN_STRD_YM"); // 정산기준년월								
+				// 대리점 수수료 전표발행 년,월,총건수,수수료 총액 Msg
+				var xclYy = stardYm.substr(0,4);
+				var xclMm = stardYm.substr(4,2);								
+				//var cmmsXclCnt = gfn_toFixedLocaleString(ds_main.getRowCount(),"");	// 수수료 총 건수				
+				//var cmmsAmt = gfn_toFixedLocaleString(ds_main.getSum("TOTAL_AMT"),"");	// 수수료 총 금액	
+				var cmmsXclCnt = gfn_toFixedLocaleString(ds_main.getCaseCount("SLIP_ST_CD == '00' || SLIP_ST_CD == '05'"),"");	// 수수료 총 건수				
+				var cmmsAmt = gfn_toFixedLocaleString(ds_main.getCaseSum("SLIP_ST_CD == '00' || SLIP_ST_CD == '05'","INCEN_AMT"),"");	// 수수료 총 금액
+				var msgArry = new Array(xclYy,xclMm,cmmsXclCnt,cmmsAmt);				
+				// 체크된 건 중에 (미발행 or 전표삭제)이 아닌건은 전표 발행 제외 => 해당 행(row) 리턴				
+				var nRow = ds_main.findRowExpr("SLIP_ST_CD == '00' || SLIP_ST_CD == '05'");					
+				if(0 > nRow){
+					gfn_message("A","DMS00071","I");// 이미 처리된 건이 있습니다.
+					return false;				
+				}else{
+					if(gfn_message("C","DMS00132","Q","",msgArry)){	// DMS00132 : 해당월({0}년 {1}월) {2}건, 총 금액 {3}원에 대한  전표를 생성 하시겠습니까? 					
+						fn_agnCmmsSlipIns(stardYm);	// 전표발행.						
+					}
+				}								
+				break;
+			case "btn_slipC" :					
+				var incenSlipNo = ds_main.getColumn(ds_main.rowposition,"INCEN_SLIP_NO"); // 전표번호
+				var stardYm = ds_main.getColumn(ds_main.rowposition,"INCEN_STRD_YM"); // 정산기준년월	
+				if("10" != ds_main.getColumn(ds_main.rowposition,"SLIP_ST_CD")){
+					gfn_message("A","DMS00122","I","","해당 건은 전표취소"); // {0} 대상이 아닙니다.
+					return false;
+				}else{
+					if(gfn_message("C","DMS00148","Q","","전표번호:"+incenSlipNo)){	// {0} 전표를 취소하시겠습니까?
+						ds_cnclSlip.clearData();
+						var sRow = ds_cnclSlip.addRow();
+						ds_cnclSlip.setColumn(sRow,"SLIP_NO",incenSlipNo);	// 취소 전표번호
+						ds_cnclSlip.setColumn(sRow,"YYYY",stardYm.substr(0,4));	// 회계연도						
+						fn_agnCmmsSlipCncl(stardYm);	// 전표취소.									
+					}
+				}												
+				break;	
+			default:
+				break;				
+		}	
+	}
+}
+
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 검색 조건에서 엔터키가 눌러졌을때 검색
+-----------------------------------------------------------------------------------------------*/
+function div_search_onkeydown(obj:Div, e:KeyEventInfo)
+{
+	if (e.keycode == KEYCODE_ENTER) {
+		btn_search.setFocus();
+		btn_search_onclick();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Grid의 내용을 Excel로 Export 한다.
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_baseExcelExpert(grd_main,"대리점수수료 목록", "대리점수수료 목록");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   :  form 내에서 esc버튼 클릭시 그리드 데이터셋 초기화 
+ * param   : obj - Form
+ * param   : e  - KeyEventInfo
+ * return  : true/false
+-----------------------------------------------------------------------------------------------*/
+function Form_onkeyup(obj:Form, e:KeyEventInfo)
+{
+ 	if(e.keycode ==KEYCODE_ESC) {	//ESC
+ 		fn_dsClear();
+ 		ds_search.clearData();
+ 		ds_search.addRow(); 		
+ 		div_search.cmc_toYm.setDate(gfn_left(gfn_today(), 6));	
+ 		div_search.cmc_toYm.setFocus();
+// 		fn_afterCodeCallBack();
+ 	}
+}
+
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 데이타셋 clear
+-----------------------------------------------------------------------------------------------*/
+function fn_dsClear(){
+	ds_main.clearData();	
+	fn_setInitGrid();
+	fn_setInitForm();	
+}
+
+
+
+
+
+
+
+
+
+
+]]></Script>
+  </Form>
+</FDL>

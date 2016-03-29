@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRExpartMgmt">
+	<select id="SExpartEqpTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.SExpartEqpTotCnt 매입교품대상조회총건수 */
+/* IO: 양재석,2015-07-29T17:53:33(양재석,2015-07-10T14:26:17) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_EQP_ASSET A
+        ,(SELECT X.*
+            FROM TB_EQP_EXPART X
+           WHERE X.DEL_YN = 'N'
+             AND EQP_EXPART_DT = (SELECT MAX(EQP_EXPART_DT) FROM TB_EQP_EXPART Z WHERE X.ASSET_NO = Z.ASSET_NO AND Z.DEL_YN = 'N')
+        )B
+        ,TB_EQP_IN C
+        ,(SELECT DEAL_CO_NM
+                 ,DEAL_CO_CD
+            FROM TB_DEALCO Y
+           WHERE Y.DEL_YN = 'N'
+]]><isNotEmpty property="IN_PLC_NM"><![CDATA[
+             AND Y.DEAL_CO_NM LIKE #IN_PLC_NM#||'%'
+]]></isNotEmpty><![CDATA[
+        ) D
+        ,TB_EQP_MDL E
+ WHERE  A.ASSET_NO = B.ASSET_NO(+)
+   AND  A.ASSET_NO = C.ASSET_NO
+   AND  C.IN_PLC_CD = D.DEAL_CO_CD
+   AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+   AND  A.DEL_YN = 'N'
+   AND  C.IN_DTL_CD = '10'  /* 매입 */
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+   AND  A.FST_IN_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+   AND  A.FST_IN_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="IN_PLC_CD"><![CDATA[
+   AND  C.IN_PLC_CD = #IN_PLC_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+   AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+   AND  A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_IMEI_NO"><![CDATA[
+   AND  A.EQP_IMEI_NO = #EQP_IMEI_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+   AND  A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+   AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_NM"><![CDATA[
+   AND  E.EQP_MDL_NM LIKE #EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="OP_CL_CD"><![CDATA[
+   AND  A.OP_CL_CD = #OP_CL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SExpartEqpPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.SExpartEqpPaging 매입교품대상조회 */
+/* IO: 양재석,2015-07-29T17:52:42(양재석,2015-07-10T15:05:47) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY IA.FST_IN_DT DESC, IA.ASSET_NO DESC) AS ROWNO
+                 ,IA.ASSET_NO
+                 ,IA.FST_IN_DT AS IN_DT
+                 ,IC.IN_PLC_CD
+                 ,ID.DEAL_CO_NM AS IN_PLC_NM
+                 ,IA.EQP_MDL_CD
+                 ,IE.EQP_MDL_NM                 
+                 ,IA.EQP_COLOR_CD
+                 ,IA.EQP_SER_NO
+                 ,IA.EQP_IMEI_NO
+                 ,IA.INVE_ST_CD
+                 ,IA.LAST_EXPART_DT /* 최종교품일자 */
+                 ,IB.EQP_SER_NO	AS EXPART_EQP_SER_NO 	/* 단말기일련번호 */
+                 ,IB.EQP_IMEI_NO	AS EXPART_EQP_IMEI_NO	/*단말기IMEI번호 */
+                 ,IB.EQP_COLOR_CD	AS EXPART_EQP_COLOR_CD	/* 단말기색상코드 */
+                 ,(SELECT EQP_IN_DT 
+                     FROM TB_EQP_IN 
+                    WHERE ASSET_NO = IB.ASSET_NO
+                      AND EQP_MDL_CD = IB.EQP_MDL_CD
+                      AND EQP_SER_NO = IB.EQP_SER_NO
+                  ) AS EXPART_IN_DT
+           FROM  TB_EQP_ASSET IA
+                 ,(SELECT X.*
+                     FROM TB_EQP_EXPART X
+                    WHERE X.DEL_YN = 'N'
+                      AND EQP_EXPART_DT = (SELECT MAX(EQP_EXPART_DT) FROM TB_EQP_EXPART Z WHERE X.ASSET_NO = Z.ASSET_NO AND Z.DEL_YN = 'N')
+                 )IB
+                 ,TB_EQP_IN IC
+                 ,(SELECT DEAL_CO_NM
+                          ,DEAL_CO_CD
+                     FROM TB_DEALCO Y
+                    WHERE DEL_YN = 'N'
+]]><isNotEmpty property="IN_PLC_NM"><![CDATA[
+                      AND Y.DEAL_CO_NM LIKE #IN_PLC_NM#||'%'
+]]></isNotEmpty><![CDATA[
+                 ) ID
+                 ,TB_EQP_MDL IE
+          WHERE  IA.ASSET_NO = IB.ASSET_NO(+)
+            AND  IA.ASSET_NO = IC.ASSET_NO
+            AND  IC.IN_PLC_CD = ID.DEAL_CO_CD
+            AND  IA.EQP_MDL_CD = IE.EQP_MDL_CD
+            AND  IA.DEL_YN = 'N'
+            AND  IC.IN_DTL_CD = '10'  /* 매입 */
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+            AND  IA.FST_IN_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+            AND  IA.FST_IN_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="IN_PLC_CD"><![CDATA[
+            AND  IC.IN_PLC_CD = #IN_PLC_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  IA.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+            AND  IA.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_IMEI_NO"><![CDATA[
+            AND  IA.EQP_IMEI_NO = #EQP_IMEI_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+            AND  IA.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+            AND  IA.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_NM"><![CDATA[
+            AND  IE.EQP_MDL_NM LIKE #EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="OP_CL_CD"><![CDATA[
+            AND  IA.OP_CL_CD = #OP_CL_CD#
+]]></isNotEmpty><![CDATA[
+        ) PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SChkExpartEqp" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.SChkExpartEqp 동일교품단말기건수 */
+/* IO: 양재석,2015-07-16T17:24:25(양재석,2015-07-16T11:11:37) */
+SELECT COUNT(1) AS ROW_CNT
+  FROM TB_EQP_EXPART 
+ WHERE ASSET_NO = #ASSET_NO#
+   AND EQP_EXPART_DT = TO_CHAR(SYSDATE,'YYYYMMDD')
+   AND DEL_YN = 'N']]>
+	</select>
+	<insert id="IExpartEqpInfoRgt" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.IExpartEqpInfoRgt 교품단말기정보등록 */
+/* IO: 양재석,2015-07-16T18:02:40(양재석,2015-07-16T11:17:15) */
+INSERT
+  INTO TB_EQP_EXPART
+     (
+       ASSET_NO,
+       EQP_EXPART_DT,
+       EQP_MDL_CD,
+       EQP_SER_NO,
+       EQP_IMEI_NO,
+       EQP_COLOR_CD,
+       EXPART_EQP_MDL_CD,
+       EXPART_EQP_SER_NO,
+       EXPART_EQP_IMEI_NO,
+       EXPART_EQP_COLOR_CD,
+       FS_REG_USER_ID,
+       LS_CHG_USER_ID
+    )
+    VALUES
+    (
+       #ASSET_NO#,
+       #EXPART_IN_DT#,
+       #EQP_MDL_CD#,
+       #EQP_SER_NO#,
+       #EQP_IMEI_NO#,
+       #EQP_COLOR_CD#,
+       #EQP_MDL_CD#,
+       #EXPART_EQP_SER_NO#,
+       #EXPART_EQP_IMEI_NO#,
+       #EXPART_EQP_COLOR_CD#,
+       #FS_REG_USER_ID#,
+       #LS_CHG_USER_ID#
+    )]]>
+	</insert>
+	<update id="UExpartEqpAssetInfoUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.UExpartEqpAssetInfoUpd 교품단말기자산정보수정 */
+/* IO: 양재석,2015-07-21T15:28:00(양재석,2015-07-16T14:24:55) */
+UPDATE TB_EQP_ASSET
+   SET EQP_SER_NO      = #EXPART_EQP_SER_NO# /* 단말기일련번호 */
+       ,EQP_IMEI_NO    = #EXPART_EQP_IMEI_NO# /* 단말기IMEI번호 */
+       ,EQP_COLOR_CD    = #EXPART_EQP_COLOR_CD# /* 단말기색상코드 */
+       ,LAST_EXPART_DT  = #LAST_EXPART_DT#/* 최종교품일자 */
+       ,LS_CHG_USER_ID  = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+WHERE ASSET_NO     = #ASSET_NO#]]>
+	</update>
+	<insert id="IExpartEqpInReg" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.IExpartEqpInReg 교품단말기입고등록 */
+/* IO: 양재석,2015-07-20T09:58:52(양재석,2015-07-16T14:38:11) */
+INSERT
+  INTO  TB_EQP_IN        /* 단말기입고 */ 
+       (
+        EQP_IN_NO       /* 단말기입고번호 */
+        ,EQP_IN_DT           /* 입고일자 */
+        ,IN_PLC_CD       /* 입고처코드 */
+        ,ASSET_NO       /* 자산번호 */
+        ,EQP_MDL_CD      /* 단말기모델코드 */
+        ,EQP_SER_NO     /* 단말기일련번호 */
+        ,IN_DTL_CD       /* 입고상세코드 */
+        ,FS_REG_USER_ID  /* 최초등록사용자ID */
+        ,LS_CHG_USER_ID  /* 최종변경사용자ID */
+       )
+VALUES
+       (
+        #EQP_IN_NO#       /* 단말기입고번호 */
+        ,#LAST_EXPART_DT#  /* 입고일자 */
+        ,#IN_PLC_CD#       /* 입고처코드 */
+        ,#ASSET_NO#       /* 자산번호 */
+        ,#EQP_MDL_CD#      /* 단말기모델코드 */
+        ,#EXPART_EQP_SER_NO#     /* 단말기일련번호 */
+        ,#IN_DTL_CD#       /* 입고상세코드 */
+        ,#FS_REG_USER_ID#  /* 최초등록사용자ID */
+        ,#LS_CHG_USER_ID#  /* 최종변경사용자ID */
+       )]]>
+	</insert>
+	<insert id="IExpartEqpOutReg" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.IExpartEqpOutReg 교품단말기출고등록 */
+/* IO: 양재석,2015-07-16T14:56:49(양재석,2015-07-16T14:56:49) */
+INSERT
+  INTO TB_EQP_OUT
+     (
+       EQP_OUT_NO,       /* 단말기출고번호 */
+       EQP_OUT_DT,       /* 출고일자 */
+       ASSET_NO,         /* 자산번호 */
+       EQP_MDL_CD,        /* 단말기모델코드 */
+       EQP_SER_NO,       /* 단말기일련번호 */
+       OUT_DTL_CD,        /* 출고상세코드 */
+       OUT_PLC_CD,        /* 출고처코드 */
+       FS_REG_USER_ID,    /* 최초등록사용자ID */
+       LS_CHG_USER_ID     /* 최종변경사용자ID */
+  )
+VALUES
+  (
+       #EQP_OUT_NO#,       /* 단말기출고번호 */
+       #LAST_EXPART_DT#,    /* 출고일자 */
+       #ASSET_NO#,         /* 자산번호 */
+       #EQP_MDL_CD#,        /* 단말기모델코드 */
+       #EQP_SER_NO#,       /* 단말기일련번호 */
+       #OUT_DTL_CD#,        /* 출고상세코드 */
+       #IN_PLC_CD#,         /* 출고처코드 */
+       #FS_REG_USER_ID#,    /* 최초등록사용자ID */
+       #LS_CHG_USER_ID#     /* 최종변경사용자ID */
+  )]]>
+	</insert>
+	<select id="SEqpOutNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.SEqpOutNum 단말기출고일련번호 */
+/* IO: 양재석,2015-07-16T15:01:52(양재석,2015-07-16T15:00:52) */
+SELECT  'EO'||LPAD(SQ01_TB_EQP_OUT.NEXTVAL,10,'0') AS EQP_OUT_NO
+  FROM  DUAL]]>
+	</select>
+	<select id="SEqpInNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.SEqpInNum 단말기입고일련번호 */
+/* IO: 양재석,2015-07-16T17:13:03(양재석,2015-07-16T17:13:03) */
+SELECT  'EI'||LPAD(SQ01_TB_EQP_IN.NEXTVAL,10,'0') AS EQP_IN_NO
+  FROM  DUAL]]>
+	</select>
+	<select id="SChkExpartEqpInve" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.SChkExpartEqpInve 동일교품단말기자산건수 */
+/* IO: 양재석,2015-07-16T18:01:29(양재석,2015-07-16T17:32:01) */
+SELECT 
+	   COUNT(1) AS ROW_CNT           /* 사전체크 카운트 */
+  FROM TB_EQP_ASSET                  /* 단말기 자산 */
+ WHERE EQP_MDL_CD = #EQP_MDL_CD#     /* 단말기모델코드 */
+  AND  EQP_SER_NO = #EXPART_EQP_SER_NO#   /* 단말기일련번호 */]]>
+	</select>
+	<update id="DExpartEqpInfoDel" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.DExpartEqpInfoDel 교품단말기정보삭제 */
+/* IO: 양재석,2015-07-21T15:26:32(양재석,2015-07-21T13:54:04) */
+UPDATE TB_EQP_EXPART 
+   SET DEL_YN = 'Y'
+       ,LS_CHG_USER_ID  = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE ASSET_NO = #ASSET_NO#
+   AND EQP_EXPART_DT = #EQP_EXPART_DT#
+   AND DEL_YN = 'N']]>
+	</update>
+	<select id="SInqExpartEqpLastExDt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prspmbase.db.DPRExpartMgmt.SInqExpartEqpLastExDt 교품단말기최종교품일_지정일외 */
+/* IO: 양재석,2015-07-21T14:36:06(양재석,2015-07-21T13:58:05) */
+SELECT MAX(EQP_EXPART_DT) AS EQP_EXPART_DT
+  FROM TB_EQP_EXPART
+ WHERE DEL_YN = 'N'
+   AND ASSET_NO = #ASSET_NO#
+   AND EQP_EXPART_DT != #EQP_EXPART_DT#]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,85 @@
+package dms.ep.epssxbase.biz;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]재고정산관리</li>
+ * <li>설  명 : <pre>[FU]재고정산관리</pre></li>
+ * <li>작성일 : 2015-10-14 10:18:26</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class FEPInveXclMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPInveXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]중고단말기재고정산조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:18:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STRD_MTH [기준년월]
+	 *	- field : OP_GB_CD [재고업무구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INVE_XCL_LIST
+	 *		- field : INVE_XCL_NO [재고 정산 번호]
+	 *		- field : XCL_STRD_DT [정산 기준 일자]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : INVE_XCL_CNT [재고 정산 건수]
+	 *		- field : INVE_SLIP_DT [재고 전표 일자]
+	 *		- field : INVE_SLIP_NO [재고 전표 번호]
+	 *		- field : INVE_SLIP_ST [재고 전표 상태]
+	 *		- field : INVE_CNCL_SLIP_DT [재고 취소 전표 일자]
+	 *		- field : INVE_CNCL_SLIP_NO [재고 취소 전표 번호]
+	 *		- field : CHECKED [CHECKED]
+	 * </pre>
+	 */
+	public IDataSet fSInqEpEqpInveXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DEPInveXclMgmt dEPInveXclMgmt = (DEPInveXclMgmt) lookupDataUnit(DEPInveXclMgmt.class);
+            // 2. LISTDM호출
+            responseData = dEPInveXclMgmt.dSInqEpEqpInveXclList(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }    
+
+        return responseData;
+    }
+  
+}

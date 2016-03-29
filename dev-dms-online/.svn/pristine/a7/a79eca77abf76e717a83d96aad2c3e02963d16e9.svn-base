@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCntrtCmpMgmt">
+	<select id="SCntrtCmpLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtCmpMgmt.SCntrtCmpLstPaging 계약손해배상금조회 */
+/* IO: 안진갑,2015-08-03T15:39:57(이민재,2015-07-17T11:27:23) */
+SELECT  *
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY C.CNTRT_NO DESC) AS ROWNO             
+               ,A.ASSET_NO             
+               ,A.EQP_JDG_SEQ       
+               ,A.EQP_JDG_DT                
+               ,A.JDG_CHRGR_NO                
+               ,G.USER_NM AS JDG_CHRGR_NM                       
+               ,A.EQP_IN_DT                                         
+               ,C.SVC_MGMT_NO                
+               ,C.NR_CNTRTR_NM                
+               ,C.SVC_NO                
+               ,A.EQP_CMP_AMT_TOT                
+               ,A.EQP_JDG_RSLT_CD                
+               ,C.EQP_MDL_CD                
+               ,E.EQP_MDL_NM                
+               ,C.PET_NM                
+               ,D.CNTRT_PRD                
+               ,C.RENTAL_CNTRT_STA_DT                
+               ,C.RENTAL_CNTRT_END_DT                
+               ,C.AGN_CD                
+               ,F.DEAL_CO_NM AS AGN_NM                
+               ,C.OP_TYP_CD                
+               ,C.OP_OP_DT           
+          FROM  TB_EQP_JDG A                
+               ,TB_EQP_CNTRT B                
+               ,TH_NR_CNTRT_HST C  
+               ,TB_RENTAL_POLY D
+               ,TB_EQP_MDL E                
+               ,TB_DEAL_CO F                
+               ,TB_USER G          
+         WHERE  A.ASSET_NO = B.ASSET_NO            
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  D.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+           AND  C.EQP_MDL_CD = E.EQP_MDL_CD           
+           AND  C.AGN_CD = F.DEAL_CO_CD            
+           AND  A.JDG_CHRGR_NO = G.USER_NO                            
+           AND  C.OP_TYP_CD = '02' 
+]]><isNotEmpty property="OP_OP_FR_DT" prepend="AND"><![CDATA[
+		        C.OP_OP_DT BETWEEN #OP_OP_FR_DT# AND #OP_OP_TO_DT# 
+]]></isNotEmpty><![CDATA[            
+]]><isNotEmpty property="NR_CNTRTR_NM" prepend="AND"><![CDATA[
+                C.NR_CNTRTR_NM LIKE '%'||#NR_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[                  
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                C.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[                
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+                C.SVC_NO = #SVC_NO#
+]]></isNotEmpty><![CDATA[                      
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+                C.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual property="EQP_JDG_RSLT_CD" prepend="AND" compareValue="%"><![CDATA[
+                A.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[ 
+        ) PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCntrtCmpTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtCmpMgmt.SCntrtCmpTotCnt 계약손해배상금총건수 */
+/* IO: 안진갑,2015-08-03T15:38:34(이민재,2015-07-17T11:27:48) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_JDG A                
+       ,TB_EQP_CNTRT B                
+       ,TH_NR_CNTRT_HST C  
+       ,TB_RENTAL_POLY D
+       ,TB_EQP_MDL E                
+       ,TB_DEAL_CO F                
+       ,TB_USER G          
+ WHERE  A.ASSET_NO = B.ASSET_NO            
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  D.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+   AND  C.EQP_MDL_CD = E.EQP_MDL_CD           
+   AND  C.AGN_CD = F.DEAL_CO_CD            
+   AND  A.JDG_CHRGR_NO = G.USER_NO                            
+   AND  C.OP_TYP_CD = '02' 
+]]><isNotEmpty property="OP_OP_FR_DT" prepend="AND"><![CDATA[
+		C.OP_OP_DT BETWEEN #OP_OP_FR_DT# AND #OP_OP_TO_DT# 
+]]></isNotEmpty><![CDATA[            
+]]><isNotEmpty property="NR_CNTRTR_NM" prepend="AND"><![CDATA[
+        C.NR_CNTRTR_NM LIKE '%'||#NR_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[                  
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+        C.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[                
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+        C.SVC_NO = #SVC_NO#
+]]></isNotEmpty><![CDATA[                      
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+        C.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual property="EQP_JDG_RSLT_CD" prepend="AND" compareValue="%"><![CDATA[
+        A.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SCntrtCmpDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtCmpMgmt.SCntrtCmpDtl 계약손해배상금상세조회 */
+/* IO: 안진갑,2015-08-03T15:42:57(이민재,2015-07-17T11:28:12) */
+WITH INSP AS (
+                 SELECT  * 
+                   FROM (
+                         SELECT  (SELECT  SUP_CM_CD_ID 
+                                    FROM  TB_CM_CD 
+                                   WHERE  CM_GRP_CD_ID = A.SUP_CM_GRP_CD_ID 
+                                     AND  CM_CD_ID = A.SUP_CM_CD_ID 
+                                     AND  ROWNUM = 1) AS INSP_CL_CD
+                                ,SUP_CM_CD_ID AS INSP_ITM_CD                                                                                           
+                                ,CM_CD_ID     AS INSP_DRL_ITM_CD
+                           FROM  TB_CM_CD A
+                          START  WITH CM_GRP_CD_ID = 'DMS105'
+                        CONNECT  BY PRIOR CM_GRP_CD_ID = SUP_CM_GRP_CD_ID
+                            AND  PRIOR CM_CD_ID = SUP_CM_CD_ID
+                  ORDER  BY  CM_GRP_CD_ID,CM_CD_ID
+                        ) CD
+                  WHERE  INSP_CL_CD IS NOT NULL
+             )
+SELECT  A.DMG_CMP_POLY_NO
+       ,B.INSP_CL_CD
+       ,B.INSP_ITM_CD
+       ,A.INSP_DRL_ITM_CD
+       ,A.INDF_AMT
+  FROM  TB_EQP_JDG_DTL A
+       ,INSP B
+ WHERE  A.INSP_DRL_ITM_CD = B.INSP_DRL_ITM_CD
+   AND  A.ASSET_NO = #ASSET_NO#
+   AND  A.EQP_JDG_SEQ = #EQP_JDG_SEQ#
+   AND  A.DEL_YN = 'N'
+ ORDER  BY INSP_DRL_ITM_CD]]>
+	</select>
+</sqlMap>

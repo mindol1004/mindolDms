@@ -1,0 +1,292 @@
+package dms.pr;
+
+import java.math.BigDecimal;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.bat.base.DBSession;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.logging.Log;
+
+import bsh.StringUtil;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>서브 업무명 : BPR101</li>
+ * <li>설  명 : <pre>매출정산등록</pre></li>
+ * <li>작성일 : 2015-08-11 13:09:10</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ */
+public class DBP101 extends AbsBatchComponent {
+	 	private Log log;
+	    private boolean delFlag = false;
+	    private int processCnt = 0;
+	    private String taskNo = "";
+	    private String procFileName = "";
+	    
+	    /**
+	     * 생성자
+	     */
+	    public DBP101() {
+	        super();
+	    }
+
+	    /**
+	     * 배치 전처리 메소드. 
+	     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+	     */
+	    public void beforeExecute(IBatchContext context) {
+	    	Log log = getLog(context);
+
+			processCnt = 0;
+			taskNo = "";
+			procFileName = "";
+	
+			IOnlineContext onlineCtx = makeOnlineContext(context);
+			IDataSet reqDS = new DataSet();
+			IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq",
+					reqDS, onlineCtx);
+			taskNo = resDS.getField("TASK_NO");
+	
+			reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+			reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+			reqDS.putField("TASK_NO", taskNo);
+			reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+			reqDS.putField("GRP_ID", "PR");
+			reqDS.putField("INST_CD", "DMS");
+			reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+			reqDS.putField("PROC_CNT", "0");
+			reqDS.putField("FS_REG_USER_ID", "BAT");
+			reqDS.putField("LS_CHG_USER_ID", "BAT");
+	
+			callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS,
+					onlineCtx);
+	
+			log = getLog(context);
+			if (log.isDebugEnabled()) {
+				log.debug("DBP101(매출정산등록)_컴포넌트 호출 결과:");
+				log.debug(resDS);
+			}
+	    }
+
+	    /**
+	     * 배치 메인 메소드
+	     */
+	    public void execute(final IBatchContext context) {
+	       log = getLog(context);
+//	       log.debug("\n\n >>>>>>>>>>>  매출정산등록 배치 실행    >>>>>>>>>>>>>> ");
+	        IOnlineContext ctx =  getOnlineContextFromOndemand();
+//	        log.debug(">>>>>>>>>>>>>>>   IN_DT : "+context.getInParameter("IN_DT"));
+//	        log.debug(">>>>>>>>>>>>>>>   XCL_GUBUN : "+context.getInParameter("XCL_GUBUN"));
+	        
+	        Map<String, String> param = new HashMap<String, String>();
+	        param.put("IN_DT", context.getInParameter("IN_DT"));
+	        param.put("XCL_GUBUN", context.getInParameter("XCL_GUBUN"));
+	        
+	        // 트랜잭션 시작
+	    	txBegin();  
+	    	dbStartSession();
+	    	dbBeginBatch();
+	        
+	    	DBSession readSession = dbNewSession(context, false, null);
+	    	try {
+	    	    //매출항목코드
+	    	    if("RENT".equals(context.getInParameter("XCL_GUBUN"))){
+	    	        dbSelect("SXclRent", param, makeRecordHandler(context), readSession ); //랜트료 정산 
+	    	    }else if("HD".equals(context.getInParameter("XCL_GUBUN"))){
+	    	        dbSelect("SXclDlv", param, makeRecordHandler(context), readSession); //운송비 정산 
+	    	    }else if("JD".equals(context.getInParameter("XCL_GUBUN"))){
+	    	        dbSelect("SXclCmp", param, makeRecordHandler(context), readSession); //손해배상 정산 
+	    	    }else if("JN".equals(context.getInParameter("XCL_GUBUN"))){
+	    	        dbSelect("SXclJN", param, makeRecordHandler(context), readSession); //손해배상 미반납 정산 
+	    	    }else if("RC".equals(context.getInParameter("XCL_GUBUN"))){
+	    	        param.put("RE_CMC", "Y");
+	    	        dbSelect("SXclCmp", param, makeRecordHandler(context), readSession); //재상품화수수료 정산 
+	    	    }else if("RR".equals(context.getInParameter("XCL_GUBUN"))){
+	    	        dbSelect("SXclCmpt", param, makeRecordHandler(context), readSession); //구성품 정산 
+	    	    }
+	    	    
+//	    	    dbSelect("SXclBond");
+	    	    IRecord map= dbSelectSingle("SXclBond", param, context);
+	    	    dbInsert("IXclBond", map);
+	    	    
+	    	    
+	    	} catch (Exception e) {
+	            throw new BizRuntimeException("M00001", e);
+	        }
+	        
+			// 트랜잭션 커밋
+			dbEndBatch();
+			dbEndSession();
+			txCommit();
+	        
+	      
+	    }
+	    
+	    /**
+	     * 배치 후처리 메소드. 
+	     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+	     */
+	    public void afterExecute(IBatchContext context) {
+	    	IOnlineContext onlineCtx = makeOnlineContext(context);
+			IDataSet reqDS = new DataSet();
+			reqDS.putField("TASK_NO", taskNo);
+			reqDS.putField("PROC_FILE_NM", procFileName);
+			reqDS.putField("LS_CHG_USER_ID", "BAT");
+			if (super.exceptionInExecute == null) {
+				// execute() 정상인 경우
+				reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+			} else {
+				// execute() 에서 에러 발생할 경우
+				reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+				processCnt = 0;
+			}
+			reqDS.putField("PROC_CNT", "" + processCnt);
+			IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fUpdBatTaskOpHst",
+					reqDS, onlineCtx);
+	
+			Log log = getLog(context);
+			if (log.isDebugEnabled()) {
+				log.debug("DBP101(매출정산등록)_컴포넌트 호출 결과:");
+				log.debug(resDS);
+			}
+	    }
+	    
+	    /**
+	     * 매출정산등록
+	     * 
+	     */
+	    public AbsRecordHandler makeRecordHandler(IBatchContext context) {
+	    	AbsRecordHandler rh = new AbsRecordHandler(context) {
+	    		BigDecimal nRentalFee = null;
+	    		BigDecimal sply_prc = null;
+	    		BigDecimal surtax_amt = null;
+	    		BigDecimal sale_amt = null;
+	    		
+				@Override
+				public void handleRecord(IRecord row) {
+					Map<String,Object> map = new HashMap<String, Object>();
+					//등록될 정보 셋팅
+					map.put("SALE_ITM_CD", context.getInParameter("XCL_GUBUN") ); 
+					map.put("IN_DT", context.getInParameter("IN_DT"));
+					map.put("USER_ID", context.getInParameter("USER_ID"));
+					map.put("CNTRT_NO",  row.get("CNTRT_NO"));
+					map.put("SALE_DT", row.get("SALE_DT"));
+					map.put("SALE_AMT", StringUtils.nvlEmpty(row.get("SALE_AMT"),"0"));
+					map.put("ASSET_NO", row.get("ASSET_NO"));
+					map.put("SPLY_PRC", "0");
+					map.put("SURTAX_AMT", "0");
+					map.put("SALE_DEALCO_CD", "501000");
+					map.put("OP_CL_CD", "PR");
+					map.put("XCL_GUBUN", context.getInParameter("XCL_GUBUN"));
+					
+//					log.debug("\n  변경전 >>>>>>>>>>>>>>>>>>>>   map: "+map);
+					//랜트료 매출
+					if("RENT".equals(context.getInParameter("XCL_GUBUN"))){
+						//삭제후 처리
+						if(delFlag == false){
+							dbUpdate("UXclSale", map);
+							dbDelete("DXclBond", map);
+							delFlag = true;
+						}
+						//셀렉트해온 랜트료
+						nRentalFee = row.getBigDecimal("SALE_AMT");
+						//대여종료일이 널이 아니고 정산기준 데이터와 정산기준 일이 맞아야 일할 랜트료 계산 들어감.
+						if(!StringUtils.isEmpty(row.get("RENT_END_DT"))){
+							String strRentEndaDt =    row.get("RENT_END_DT");
+//								strRentEndaDt =    "20150926";//테스트용
+							//해당달의 데이터가 종료일이 있을경우 일할계산
+							if(context.getInParameter("IN_DT").equals(strRentEndaDt.substring(0,6))){
+//								log.debug("IN_DT:"+context.getInParameter("IN_DT")+"/"+strRentEndaDt.substring(0,6));
+									nRentalFee = row.getBigDecimal("SALE_AMT");
+									int useDayCnt = Integer.parseInt(strRentEndaDt.substring(6, 8));
+									double nRFee = useDayCnt * (Double.valueOf(nRentalFee.toString()) / DateUtils.getDaysOfMonth(strRentEndaDt));
+									nRentalFee = new BigDecimal(String.valueOf(nRFee));
+							}
+						}
+						/**
+						 * 20150917
+						 * 렌탈료 산출할때 일할계산시에 소수점 둘째 자리까지 계산해서  일수를 곱하고 십원자리에서 올림으로 계산
+							예를 들어 19982 원은  19990 원으로 청구  부가세는 1999원으로 등록 로직 적용해줘
+							... 왜 일할계산일때지? 물어봐야함.. 
+							20150921 일할계산 아닐때에도 공급가액 세액 매출액 (110%) 계산
+						 */
+						nRentalFee = new BigDecimal(String.valueOf(nRentalFee));
+						//공급가  1 자리 를 올림 처리 해서  공급가 구하기 1의자리 반올림하기 위한 처리.
+						sply_prc = new BigDecimal(String.valueOf(nRentalFee));
+						sply_prc = sply_prc.setScale(0, BigDecimal.ROUND_UP);
+						sply_prc = sply_prc.movePointLeft(1);
+						sply_prc = sply_prc.setScale(0, BigDecimal.ROUND_UP);
+						sply_prc = sply_prc.movePointLeft(-1);
+						//부가세
+						surtax_amt = sply_prc.multiply(new BigDecimal(String.valueOf("0.1"))  );
+						surtax_amt = surtax_amt.setScale(0);
+						//매출액
+						sale_amt = sply_prc.add(surtax_amt);
+						
+//						log.debug(">>>>>>>>>>>>>>>>>>>>>>>   sply_prc :"+sply_prc .toString());
+//						log.debug(">>>>>>>>>>>>>>>>>>>>>>>   surtax_amt :"+surtax_amt .toString());
+//						log.debug(">>>>>>>>>>>>>>>>>>>>>>>   sale_amt :"+sale_amt .toString());
+//						log.debug("\n\n\n");
+//						SALE_AMT
+//						SPLY_PRC
+//						SURTAX_AMT
+						map.put("SPLY_PRC", sply_prc);
+						map.put("SURTAX_AMT", surtax_amt);
+						map.put("SALE_AMT", sale_amt);
+						context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+						dbInsert("IXclSale", map, context);   //랜트료 정산등록
+			        	 
+			        }else {
+			        	//기타 정산
+						if(delFlag == false){
+							dbUpdate("UEtcXclDel", map);
+							dbDelete("DXclBond", map);
+							delFlag = true;
+						}
+						
+						
+						/**
+						 * 기타정산 구분별 세부 로직
+						 */
+						if("RC".equals(context.getInParameter("XCL_GUBUN"))){
+							//재상품화 수수료는 렌탈계약 테이블에서 재상풍화 수수료 필드로 입력.
+							map.put("SALE_AMT", StringUtils.nvlEmpty(row.get("EQP_RECMC_CMMS"), "0") );
+//							log.debug(" 재상품화 수수료  >>>>>>>>>>>>>>>>>>>>  \n  EQP_RECMC_CMMS:"+StringUtils.nvlEmpty(row.get("EQP_RECMC_CMMS"), "0"));
+//							StringUtils.nvl(row.get("EQP_RECMC_CMMS"));
+						}else if("RR".equals(context.getInParameter("XCL_GUBUN"))){
+							//구성품 매출
+//							log.debug(" 재상품화 구성품 코드 :>>>>>>>>>>>>>>>>>>>>  CMPT_CD:"+row.get("CMPT_CD"));
+							//2015-09-22 엑셀에 구성품명을 보여주기위해서 정산구분코드 컬럼에 구성품코드를 넣어준다.
+							map.put("SALE_CL_CD", row.get("CMPT_CD") );
+							
+						}
+						
+//						log.debug("\n 변경후 >>>>>>>>>>>>>>>>>>>>  \n map: "+map);
+						context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+						dbInsert("IEtcXcl", map, context);   //손해배상금, 운송료, 재상품화수수료 정산등록
+
+			        	 
+			        }
+					
+					processCnt++;
+				}
+			};
+	    	return rh;
+	    }
+
+	}

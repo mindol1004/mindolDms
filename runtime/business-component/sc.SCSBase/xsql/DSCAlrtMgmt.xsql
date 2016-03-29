@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCAlrtMgmt">
+	<select id="SAlrtSndNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCAlrtMgmt.SAlrtSndNo 알림발송번호채번 */
+/* IO: 김석영,2014-09-26T09:13:16(김석영,2014-08-22T10:24:11) */
+SELECT 
+        EM_TRAN_PR.NEXTVAL AS EM_TRAN_PR 
+  FROM  DUAL]]>
+	</select>
+	<insert id="ISndMms" parameterClass="map" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCAlrtMgmt.ISndMms MMS발송 */
+/* IO: 김석영,2014-09-26T09:19:36(김석영,2014-09-15T10:28:46) */
+INSERT
+  INTO  EM_TRAN_MMS
+       (
+        MMS_SEQ
+       ,FILE_CNT
+       ,BUILD_YN
+       ,MMS_BODY
+       ,MMS_SUBJECT
+       ,FILE_TYPE1
+       ,FILE_TYPE2
+       ,FILE_TYPE3
+       ,FILE_TYPE4
+       ,FILE_TYPE5
+       ,FILE_NAME1
+       ,FILE_NAME2
+       ,FILE_NAME3
+       ,FILE_NAME4
+       ,FILE_NAME5
+       ,SERVICE_DEP1
+       ,SERVICE_DEP2
+       ,SERVICE_DEP3
+       ,SERVICE_DEP4
+       ,SERVICE_DEP5
+       ,SKN_FILE_NAME
+        )
+VALUES
+       (
+        #MMS_SEQ#
+       ,#FILE_CNT#
+       ,#BUILD_YN#
+       ,#MMS_BODY#
+       ,#MMS_SUBJECT#
+       ,#FILE_TYPE1#
+       ,#FILE_TYPE2#
+       ,#FILE_TYPE3#
+       ,#FILE_TYPE4#
+       ,#FILE_TYPE5#
+       ,#FILE_NAME1#
+       ,#FILE_NAME2#
+       ,#FILE_NAME3#
+       ,#FILE_NAME4#
+       ,#FILE_NAME5#
+       ,#SERVICE_DEP1#
+       ,#SERVICE_DEP2#
+       ,#SERVICE_DEP3#
+       ,#SERVICE_DEP4#
+       ,#SERVICE_DEP5#
+       ,#SKN_FILE_NAME#
+        )]]>
+	</insert>
+	<insert id="ISndSms" parameterClass="map" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCAlrtMgmt.ISndSms SMS발송 */
+/* IO: 김석영,2014-09-26T09:43:06(김석영,2014-09-15T10:29:02) */
+INSERT
+  INTO  EM_TRAN
+       (
+        TRAN_PR        /* PK */
+       ,TRAN_REFKEY    /* 참조용(일반전송시사용안됨) */
+       ,TRAN_ID        /* 참조용(메시지전송시사용안됨) */
+       ,TRAN_PHONE     /* 수신자전화번호 */
+       ,TRAN_CALLBACK  /* 송신자전화번호 */
+       ,TRAN_STATUS    /* 메시지상태 */
+       ,TRAN_DATE      /* 메시지접수시간 */
+       ,TRAN_RSLTDATE  /* 핸드폰전달시간 */
+       ,TRAN_REPORTDATE/* 결과수신시간 */
+       ,TRAN_RSLT      /* 전송결과 */
+       ,TRAN_NET       /*  */
+       ,TRAN_MSG       /* 전송메시지 */
+       ,TRAN_ETC1      /* 임의필드 */
+       ,TRAN_ETC2      /* 임의필드 */
+       ,TRAN_ETC3      /* 임의필드 */
+       ,TRAN_ETC4      /* MMS전송시 mms_seq(그외null) */
+       ,TRAN_TYPE      /* SMS형태구분(4:SMS,5:URL,6:MSM) */
+        )
+VALUES
+       (
+        #TRAN_PR#
+       ,#TRAN_REFKEY#
+       ,#TRAN_ID#
+       ,#TRAN_PHONE#
+       ,#TRAN_CALLBACK#
+       ,#TRAN_STATUS#
+       ,SYSDATE
+       ,#TRAN_RSLTDATE#
+       ,#TRAN_REPORTDATE#
+       ,#TRAN_RSLT#
+       ,#TRAN_NET#
+       ,#TRAN_MSG#
+       ,#TRAN_ETC1#
+       ,#TRAN_ETC2#
+       ,#TRAN_ETC3#
+       ,#TRAN_ETC4#
+       ,#TRAN_TYPE#
+        )]]>
+	</insert>
+	<insert id="IAlrtSndItm" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCAlrtMgmt.IAlrtSndItm 알림발송내역등록 */
+/* IO: 이영진,2015-10-02T17:07:12(김석영,2014-09-26T09:38:23) */
+INSERT
+  INTO  TB_ALRT_SND_ITM
+       (
+        ALRT_SND_REQ_DTM     /* 알림발송요청일시 */
+       ,ALRT_SND_NO          /* 알림발송번호 */
+       ,ALRT_WORK_CL_CD      /* 알림업무구분코드 */
+       ,ALRT_MSG_CD
+       ,REVR_CL_CD           /* 수신자구분코드 */
+       ,RETN_TEL_NO          /* 수신전화번호 */
+       ,RETN_TEL_NO_ENPT     /* 수신전화번호암호화 */
+       ,ALRT_MSG_CTT         /* 알림메시지내용 */
+       ,FS_REG_USER_ID       /* 최초등록사용자ID */
+       ,FS_REG_DTM           /* 최초등록일시 */
+       ,LS_CHG_USER_ID       /* 최종변경사용자ID */
+       ,LS_CHG_DTM           /* 최종변경일시 */
+        )
+VALUES
+       (
+        SYSDATE                        /* 알림발송요청일시 */
+       ,#ALRT_SND_NO#                  /* 알림발송번호 */
+       ,#ALRT_WORK_CL_CD#              /* 알림발송요청번호 */
+       ,#ALRT_MSG_CD#				   /* 알림메시지코드 */
+       ,#REVR_CL_CD#                   /* 수신자구분코드 */
+       ,#RETN_TEL_NO#                  /* 수신전화번호 */
+       ,#RETN_TEL_NO_ENPT#             /* 수신전화번호암호화 */
+       ,#ALRT_MSG_CTT#                 /* 알림메시지내용 */
+       ,#USER_NO#                      /* 최초등록사용자ID */
+       ,SYSDATE                        /* 최초등록일시 */
+       ,#USER_NO#                      /* 최종변경사용자ID */
+       ,SYSDATE                        /* 최종변경일시 */
+        )]]>
+	</insert>
+	<select id="SAlrtSvc" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCAlrtMgmt.SAlrtSvc 알림서비스조회 */
+/* IO: 김석영,2015-02-02T14:52:35(김석영,2014-09-26T09:42:04) */
+SELECT 
+        A.ALRT_SVC_NO           /* 알림서비스번호 */
+       ,A.ALRT_SVC_NM           /* 알림서비스명 */
+       ,A.ALRT_WORK_CL_CD       /* 알림업무구분코드 */
+       ,A.ALRT_CHNL_CL_CD       /* 알림채널구분코드 */
+       ,A.ALRT_CONS_CL_CD       /* 알림제약구분코드 */
+       ,A.RETN_AGR_APLY_YN      /* 수신동의적용여부 */
+       ,A.ALRT_TITE_NM          /* 알림제목명 */
+       ,A.ALRT_MSG_CTT          /* 알림메시지내용 */
+       ,A.ANSW_TEL_NO           /* 회신전화번호 */
+       ,A.ANSW_TEL_NO_ENPT      /* 회신전화번호암호화 */
+       ,A.ANSW_EML_ADDR         /* 회신이메일주소 */
+       ,A.ANSW_EML_ADDR_ENPT    /* 회신이메일주소암호화 */
+       ,A.USE_YN                 /* 사용여부 */
+  FROM  TB_ALRT_SVC A
+ WHERE  A.ALRT_WORK_CL_CD = #ALRT_WORK_CL_CD#
+   AND (
+            A.ALRT_CONS_CL_CD = '10'
+        OR
+           (A.ALRT_CONS_CL_CD = '20' 
+            AND  EXISTS (
+                         SELECT  1 
+                           FROM  TB_ALRT_SVC_REQ_BRND X
+                          WHERE  X.ALRT_SVC_NO = A.ALRT_SVC_NO
+                            AND  X.REQ_BRND_CD = #REQ_BRND_CD# 
+                            AND  X.USE_YN='Y'
+                         )
+            )
+        OR
+           (A.ALRT_CONS_CL_CD = '30' 
+            AND NOT EXISTS (
+                            SELECT  1 
+                              FROM  TB_ALRT_SVC_REQ_BRND Y 
+                             WHERE  Y.ALRT_SVC_NO = A.ALRT_SVC_NO
+                               AND  Y.REQ_BRND_CD = #REQ_BRND_CD#
+                               AND  Y.USE_YN='Y'
+                            )
+            )
+        )]]>
+	</select>
+	<select id="SAlrtSvcSndHstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCAlrtMgmt.SAlrtSvcSndHstPaging 알림서비스발송내역조회 */
+/* IO: 이유미,2014-11-18T13:34:25(이유미,2014-11-17T17:19:37) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.ALRT_SND_REQ_DTM DESC) AS ROWNO
+               ,TO_CHAR(A.ALRT_SND_REQ_DTM, 'YYYY-MM-DD HH24:MI:SS') AS ALRT_SND_REQ_DTM   /* 알림발송요청일시 */ 
+	           ,A.ALRT_SVC_NO                               /* 알림서비스번호 */
+	           ,A.ALRT_SND_REQ_CHNL_CD                      /* 알림발송요청채널코드 */
+	           ,(
+                 SELECT 
+                         CM_CD_NM
+                   FROM  TB_CM_CD L
+                  WHERE  L.CM_CD_ID = A.ALRT_SND_REQ_CHNL_CD
+                    AND  L.CM_GRP_CD_ID = 'SCC018'
+                    AND  L.USE_YN = 'Y'
+                ) AS ALRT_SND_REQ_CHNL_CD_NM                /* 알림발송요청채널코드명 */
+               ,B.ALRT_WORK_CL_CD                           /* 알림업무구분코드 */
+               ,(
+                 SELECT 
+                         CM_CD_NM
+                   FROM  TB_CM_CD L
+                  WHERE  L.CM_CD_ID = B.ALRT_WORK_CL_CD
+                    AND  L.CM_GRP_CD_ID = 'SCC006'
+                    AND  L.USE_YN = 'Y'
+                ) AS ALRT_WORK_CL_CD_NM                     /* 알림업무구분코드명 */
+	           ,A.ALRT_CHNL_CL_CD AS ALRT_CHNL_CL_CD       /* 알림채널구분코드 */ 
+	           ,(
+                 SELECT 
+                         CM_CD_NM
+                   FROM  TB_CM_CD L
+                  WHERE  L.CM_CD_ID = A.ALRT_CHNL_CL_CD
+                    AND  L.CM_GRP_CD_ID = 'SCC007'
+                    AND  L.USE_YN = 'Y'
+                ) AS ALRT_CHNL_CL_CD_NM                     /* 알림채널구분코드명 */
+	           ,A.REVR_CL_CD                                /* 수신자구분 */
+	           ,A.REVR_NO                                   /* 수신자번호 */
+	           ,A.RETN_TEL_NO                               /* 수신전화번호 */ 
+	           ,A.RETN_EML_ADDR                             /* 수신이메일주소 */ 
+	           ,A.ALRT_MSG_CTT                              /* 알림메시지내용 */
+	           ,C.TRAN_RSLT AS SND_ST_CD                    /* 전송결과 */
+	           ,DECODE(NVL(C.TRAN_RSLT,'0'),'0','',
+                (SELECT 
+                         CM_CD_NM
+                   FROM  TB_CM_CD L
+                  WHERE  L.CM_CD_ID = C.TRAN_RSLT
+                    AND  L.CM_GRP_CD_ID = 'SCC017'
+                    AND  L.USE_YN = 'Y'
+                )) AS SND_FAIL_RSN_CTT                      /* 발송실패사유내용 */
+          FROM  TB_ALRT_SND_ITM A, TB_ALRT_SVC B, EM_LOG_$ALRT_SND_REQ_MM$ C
+         WHERE  A.ALRT_SVC_NO = B.ALRT_SVC_NO
+           AND  A.ALRT_SND_REQ_NO = C.TRAN_PR(+)
+           AND  A.ALRT_SND_REQ_DTM >= TO_DATE(#ALRT_SND_REQ_MM#, 'YYYYMM')
+           AND  A.ALRT_SND_REQ_DTM <= LAST_DAY(TO_DATE(#ALRT_SND_REQ_MM#,'YYYYMM'))
+        ]]><isNotEmpty prepend="AND" property="ALRT_SVC_NO"><![CDATA[
+                A.ALRT_SVC_NO LIKE '%'||#ALRT_SVC_NO#||'%'
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEqual prepend="AND" property="REVR_CL_CD" compareValue="%"><![CDATA[
+                A.REVR_CL_CD   = #REVR_CL_CD#
+        ]]></isNotEqual><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="REVR_NO"><![CDATA[
+                A.REVR_NO   = #REVR_NO#
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="RETN_TEL_NO"><![CDATA[
+                A.RETN_TEL_NO_ENPT   = #RETN_TEL_NO_ENPT#
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="RETN_EML_ADDR"><![CDATA[
+                A.RETN_EML_ADDR_ENPT   = #RETN_EML_ADDR_ENPT#
+        ]]></isNotEmpty><![CDATA[
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAlrtSvcSndHstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCAlrtMgmt.SAlrtSvcSndHstTotCnt 알림서비스발송내역건수조회 */
+/* IO: 이유미,2014-11-18T13:55:56(이유미,2014-11-17T17:24:18) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT  /* 전체건수 */
+  FROM  TB_ALRT_SND_ITM A, TB_ALRT_SVC B, EM_LOG_$ALRT_SND_REQ_MM$ C
+ WHERE  A.ALRT_SVC_NO = B.ALRT_SVC_NO
+   AND  A.ALRT_SND_REQ_NO = C.TRAN_PR(+)
+   AND  A.ALRT_SND_REQ_DTM >= TO_DATE(#ALRT_SND_REQ_MM#, 'YYYYMM')
+   AND  A.ALRT_SND_REQ_DTM <= LAST_DAY(TO_DATE(#ALRT_SND_REQ_MM#,'YYYYMM'))
+]]><isNotEmpty prepend="AND" property="ALRT_SVC_NO"><![CDATA[
+        A.ALRT_SVC_NO LIKE '%'||#ALRT_SVC_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="REVR_CL_CD" compareValue="%"><![CDATA[
+        A.REVR_CL_CD    = #REVR_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="REVR_NO"><![CDATA[
+        A.REVR_NO     = #REVR_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RETN_TEL_NO"><![CDATA[
+        A.RETN_TEL_NO_ENPT   = #RETN_TEL_NO_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RETN_EML_ADDR"><![CDATA[
+        A.RETN_EML_ADDR_ENPT  = #RETN_EML_ADDR_ENPT#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SAlrtSndNoNEW" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCAlrtMgmt.SAlrtSndNoNEW 알림발송번호채번 */
+/* IO: 이영진,2015-10-01T14:30:30(김석영,2014-08-22T10:24:11) */
+SELECT 
+        SQ01_TB_ALRT_SND_ITM.NEXTVAL AS ALRT_SND_NO 
+  FROM  DUAL]]>
+	</select>
+	<update id="UAlrtRslt" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCAlrtMgmt.UAlrtRslt 알림발송수정 */
+/* IO: 이영진,2015-10-02T14:31:21(이영진,2015-10-02T14:29:15) */
+UPDATE  
+        TB_ALRT_SND_ITM
+   SET  TRMS_RSLT_CD 		= #TRMS_RSLT_CD#
+   	   ,TRMS_RSLT_YN		= #TRMS_RSLT_YN# 
+       ,LS_CHG_USER_ID 		= #USERNO#
+       ,LS_CHG_DTM 			= SYSDATE /*최종변경일시*/
+ WHERE  ALRT_SND_NO = #ALRT_SND_NO#]]>
+	</update>
+</sqlMap>

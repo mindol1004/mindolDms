@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpJdgDTlInfoRgst">
+	<select id="SReqpJdgDtlRgstLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.SReqpJdgDtlRgstLst 단말기감정내역등록조회 */
+/* IO: 김혁범,2015-09-24T14:37:55(김혁범,2015-08-12T21:05:13) */
+SELECT  *
+  FROM  (
+          SELECT   A.DCP_NO
+                  ,A.EQP_MDL_CD AS DCP_EQP_MDL_CD
+                  ,B.INSP_ITM_CD
+                  ,B.INSP_DTL_ITM_CD AS DCP_INSP_DTL_ITM_CD
+                  ,B.INDF_AMT AS PEN
+                  ,A.OP_CL_CD
+            FROM  TB_DMG_CMP_POLY A
+                 ,TB_DMG_CMP_POLY_DTL_ITM B
+          WHERE  A.DCP_NO = B.DCP_NO
+        )F
+       ,(
+          SELECT  C.EQP_MDL_CD AS JDG_EQP_MDL_CD
+                 ,B.INSP_DTL_ITM_CD AS JDG_INSP_DTL_ITM_CD
+                 ,B.EQP_INDF_AMT
+                 ,B.DEL_YN AS USE_YN
+                 ,A.ASSET_NO
+                 ,A.EQP_JDG_SEQ
+                 ,A.EQP_CMP_AMT_TOT
+                 ,A.EQP_JDG_RSLT_CD
+                 ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.JDG_CHRGR_NO
+                  ) AS JDG_CHRGR_NM  /*감정담당자명*/
+            FROM  TB_EQP_JDG A
+                 ,TB_EQP_JDG_DTL B
+                 ,TB_EQP_ASSET C
+           WHERE  A.ASSET_NO = B.ASSET_NO
+             AND  A.ASSET_NO = C.ASSET_NO
+             AND  A.EQP_JDG_SEQ = B.EQP_JDG_SEQ 
+             AND  A.ASSET_NO =#ASSET_NO#
+        )E
+ WHERE  F.DCP_INSP_DTL_ITM_CD = E.JDG_INSP_DTL_ITM_CD(+)
+AND F.DCP_EQP_MDL_CD        = E.JDG_EQP_MDL_CD(+)
+AND F.OP_CL_CD          = 'NR'
+AND F.DCP_EQP_MDL_CD        = #EQP_MDL_CD#
+ORDER BY INSP_ITM_CD, DCP_INSP_DTL_ITM_CD
+   /*AND '대리점반납일' BETWEEN DCP_EFF_PRD_STA_DT AND DCP_EFF_PRD_END_DT*/]]>
+	</select>
+	<select id="SReqpJdgDtlRgstCLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.SReqpJdgDtlRgstCLst 단말기감정내역등록구성품조회 */
+/* IO: 김혁범,2015-08-24T14:35:57(김혁범,2015-08-12T21:05:59) */
+SELECT  CMPT_CD
+  FROM  TB_CMPT_UPRC
+ WHERE  CNTRT_NO = (
+                      SELECT  CNTRT_NO 
+                        FROM  TB_EQP_CNTRT 
+                       WHERE  ASSET_NO = #ASSET_NO# 
+                         AND  RENT_END_DT IS NULL
+                         AND  ROWNUM = 1
+                   )]]>
+	</select>
+	<update id="UReqpJdgRgst" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.UReqpJdgRgst 단말기감정저장 */
+/* IO: 김혁범,2015-09-23T16:07:17(김혁범,2015-08-12T21:06:49) */
+MERGE INTO  TB_EQP_JDG A
+USING DUAL
+ON (
+         A.ASSET_NO = #ASSET_NO# 
+    AND  A.EQP_JDG_SEQ = #EQP_JDG_SEQ#
+    )
+WHEN MATCHED THEN
+     UPDATE 
+        SET  EQP_JDG_DT = TO_CHAR(SYSDATE,'YYYYMMDD')
+            ,EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+            ,EQP_CMP_AMT_TOT = #EQP_CMP_AMT_TOT#
+            ,JDG_CHRGR_NO = #userNo#
+            ,EQP_IN_DT = #EQP_IN_DT#
+            ,ATCH_FILE_NO = #UPLD_FILE_NO#
+            ,LS_CHG_USER_ID = #userNo#
+            ,LS_CHG_DTM = SYSDATE
+      WHERE  ASSET_NO = #ASSET_NO#
+        AND  EQP_JDG_SEQ = #EQP_JDG_SEQ#
+WHEN NOT MATCHED THEN
+     INSERT
+            ( 
+             ASSET_NO               
+            ,EQP_JDG_SEQ              
+            ,EQP_JDG_DT       
+            ,EQP_JDG_RSLT_CD         
+            ,EQP_CMP_AMT_TOT         
+            ,JDG_CHRGR_NO           
+            ,EQP_IN_DT
+            ,DEL_YN          
+            ,FS_REG_USER_ID     
+            ,FS_REG_DTM        
+            ,LS_CHG_USER_ID  
+            ,LS_CHG_DTM
+            ,ATCH_FILE_NO
+             )	
+     VALUES  
+            (
+             #ASSET_NO#                                            
+            ,#EQP_JDG_SEQ#                                              
+            ,TO_CHAR(SYSDATE,'YYYYMMDD')                               
+            ,#EQP_JDG_RSLT_CD#
+            ,#EQP_CMP_AMT_TOT#
+            ,#userNo#
+            ,#EQP_IN_DT#
+            ,'N'
+            ,#userNo#                                                
+            ,SYSDATE                                                 
+            ,#userNo#                                                 
+            ,SYSDATE                                                  
+            ,#ATCH_FILE_NO#
+             )]]>
+	</update>
+	<update id="UReqpJdgRgstDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.UReqpJdgRgstDtl 단말기감정상세저장 */
+/* IO: 김혁범,2015-09-24T16:56:03(김혁범,2015-08-12T21:07:23) */
+MERGE INTO  TB_EQP_JDG_DTL A
+USING DUAL
+ON (
+    A.ASSET_NO = #ASSET_NO# 
+    AND  A.EQP_JDG_SEQ = #EQP_JDG_SEQ#
+    AND  A.DCP_NO = #DCP_NO#
+    AND  A.INSP_DTL_ITM_CD = #DCP_INSP_DTL_ITM_CD#
+    )
+WHEN MATCHED THEN
+     UPDATE 
+        SET  EQP_INDF_AMT = #PEN#
+            ,DEL_YN = 'N'
+            ,LS_CHG_USER_ID = #userNo#
+            ,LS_CHG_DTM = SYSDATE
+      WHERE  ASSET_NO = #ASSET_NO#
+        AND  EQP_JDG_SEQ = #EQP_JDG_SEQ#
+        AND  DCP_NO = #DCP_NO#
+        AND  INSP_DTL_ITM_CD = #DCP_INSP_DTL_ITM_CD#
+WHEN NOT MATCHED THEN
+     INSERT
+            ( 
+             ASSET_NO               
+            ,EQP_JDG_SEQ              
+            ,DCP_NO       
+            ,INSP_DTL_ITM_CD         
+            ,EQP_INDF_AMT
+            ,DEL_YN
+            ,FS_REG_USER_ID     
+            ,FS_REG_DTM        
+            ,LS_CHG_USER_ID  
+            ,LS_CHG_DTM
+             )	
+     VALUES  
+            (
+             #ASSET_NO#                                            
+            ,#EQP_JDG_SEQ#                                              
+            ,#DCP_NO#                                
+            ,#DCP_INSP_DTL_ITM_CD#
+            ,#PEN#
+            ,'N'
+            ,#userNo#                                                
+            ,SYSDATE                                                 
+            ,#userNo#                                                 
+            ,SYSDATE                                                  
+             )]]>
+	</update>
+	<update id="UEqpAssetRgst" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.UEqpAssetRgst 자산재고상태업데이트 */
+/* IO: 김혁범,2015-08-24T14:37:09(김혁범,2015-08-19T14:49:53) */
+UPDATE  TB_EQP_ASSET  
+   SET  INVE_ST_CD = '40' 		/*재고상태코드*/ /*감정완료*/
+ WHERE  ASSET_NO = #ASSET_NO# 	/*자산번호*/]]>
+	</update>
+	<insert id="IRentalDcp" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.IRentalDcp 손해배상금등록 */
+/* IO: 김혁범,2015-09-23T15:02:35(김혁범,2015-09-09T17:03:50) */
+MERGE INTO  TB_RENTAL_DCP A
+USING DUAL
+ON (
+    A.DCP_NO = #DCP_NO# 
+    AND  A.CNTRT_NO = #CNTRT_NO#
+    AND  A.DCP_CL = '03'
+    )
+WHEN MATCHED THEN
+     UPDATE 
+        SET  LS_CHG_USER_ID = #USERNO#
+            ,LS_CHG_DTM = TO_CHAR(SYSDATE,'YYYYMMDD')
+            ,A.DMS_DMG_CMP_AMT = #EQP_CMP_AMT_TOT#
+      WHERE  DCP_NO = #DCP_NO#
+        AND  CNTRT_NO = #CNTRT_NO#
+        AND  DCP_CL = '03'
+WHEN NOT MATCHED THEN            
+
+INSERT
+(  DCP_NO
+  ,CNTRT_NO
+  ,DCP_CL
+  ,DMG_CMP_OCCR_DT
+  ,DMS_DMG_CMP_AMT
+  ,FS_REG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_USER_ID
+  ,LS_CHG_DTM
+)  
+VALUES  
+(
+   #DCP_NO#
+  ,#CNTRT_NO#
+  ,'03'
+  ,TO_CHAR(SYSDATE,'YYYYMMDD')
+  ,#EQP_CMP_AMT_TOT#
+  ,#USERNO#
+  ,SYSDATE
+  ,#USERNO#
+  ,SYSDATE
+)]]>
+	</insert>
+	<select id="SReqpJdgDtlHolyYn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.SReqpJdgDtlHolyYn 공휴일여부체크 */
+/* IO: 김혁범,2015-09-14T18:21:37(김혁범,2015-09-14T18:19:37) */
+SELECT  HOLY_YN AS HOLY_YN
+  FROM  TB_HOLY 
+ WHERE  SCARL_DT=#RTN_REG_DT#]]>
+	</select>
+	<select id="SReqpJdgDtlHolyDt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.SReqpJdgDtlHolyDt 공휴일 일시 익익영업일구하기 */
+/* IO: 김혁범,2015-09-24T14:49:13(김혁범,2015-09-14T18:20:07) */
+SELECT  MIN(SCARL_DT) AS HOLY_DT
+  FROM  TB_HOLY          
+ WHERE  SCARL_DT >= #RTN_REG_DT#   /* 렌탈계약종료일자+30(영업일) 날자대상인 것 */
+   AND  HOLY_YN = 'N']]>
+	</select>
+	<select id="SReqpJdgDtlRgstLst2" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.SReqpJdgDtlRgstLst2 단말기감정내역등록조회(나머지리스트조회) */
+/* IO: 김혁범,2015-10-01T15:30:56(김혁범,2015-09-22T15:34:55) */
+SELECT  JM.EQP_JDG_SEQ /*단말기감정순번*/
+        ,JM.EQP_JDG_DT /*단말기감정일자*/
+        ,JM.EQP_JDG_RSLT_CD /*단말기감정결과코드*/
+        ,JM.EQP_CMP_AMT_TOT /*단말기배상금액합계*/
+        ,JM.JDG_CHRGR_NO /*감정담당자번호*/
+        ,(SELECT USER_NM 
+            FROM TB_USER 
+           WHERE USER_NO = JM.JDG_CHRGR_NO
+         ) AS JDG_CHRGR_NM /*감정담당자명*/
+        ,JM.JDG_APRV_YN /*감정승인여부*/
+        ,JM.JDG_APRV_DT /*감정승인일자*/    
+        ,JM.FS_REG_DTM /*감정최초등록일자*/
+        ,JM.ATCH_FILE_NO /*첨부파일번호*/
+        ,JM.ASSET_NO
+        ,DECODE(JM.DEL_YN,'Y','0',NULL,'0','1') AS USE_YN	/*사용여부*/
+        ,'' AS CNTRT_NO
+        ,'' AS DCP_NO
+        ,'' AS EQP_IN_DT
+   FROM  TB_EQP_JDG JM 
+  WHERE  JM.ASSET_NO = #ASSET_NO#]]>
+	</select>
+	<update id="UCntrtDcp" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.UCntrtDcp 계약테이블손해배상금업데이트 */
+/* IO: 김혁범,2015-09-23T15:11:30(김혁범,2015-09-23T15:08:38) */
+UPDATE  TB_RENTAL_CNTRT
+   SET  DCP_NO = #DCP_NO#
+ WHERE  CNTRT_NO = #CNTRT_NO#]]>
+	</update>
+	<delete id="DReqpJdgRgstDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.DReqpJdgRgstDtl 감정내역상세 삭제 */
+/* IO: 김혁범,2015-09-25T09:43:16(김혁범,2015-09-24T13:58:56) */
+DELETE  
+  FROM  TB_EQP_JDG_DTL
+WHERE  ASSET_NO = #ASSET_NO#
+  AND  EQP_JDG_SEQ = #EQP_JDG_SEQ#
+  AND  INSP_DTL_ITM_CD = #DCP_INSP_DTL_ITM_CD#
+  AND  DCP_NO = #DCP_NO#]]>
+	</delete>
+	<delete id="DRentalDcp" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoRgst.DRentalDcp 파손->정상 감정시 손해배상금테이블데이터 삭제 */
+/* IO: 김혁범,2015-09-25T09:34:52(김혁범,2015-09-25T09:32:35) */
+DELETE
+  FROM  TB_RENTAL_DCP
+ WHERE  DCP_NO = #DCP_NO#
+   AND  CNTRT_NO = #CNTRT_NO#]]>
+	</delete>
+</sqlMap>

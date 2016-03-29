@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCLginOp">
+	<select id="SUserById" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SUserById 사용자조회(ID) */
+/* IO: 심상준,2015-04-10T14:10:45(김석영,2014-07-30T13:53:56) */
+SELECT  
+        A.USER_NO        /* 사용자번호     */     
+       ,A.USER_NM        /* 사용자명       */   
+       ,A.USER_NM_ENPT   /* 사용자명암호화 */  
+       ,A.USER_CL_CD     /* 사용자구분코드 */     
+       ,A.USER_ST_CD     /* 사용자상태코드 */     
+       ,A.LGIN_ID        /* 로그인ID       */     
+       ,A.PWD_ERR_CNT    /* 비밀번호오류횟수     */     
+       ,A.LS_PWD_CHG_DT  /* 최종비밀번호변경일자 */     
+       ,TO_CHAR(A.LS_LGIN_DTM,'YYYYMMDDHH24MISS') AS LS_LGIN_DTM    /* 최종로그인일시       */     
+       ,A.EML_ADDR       /* 이메일주소   */     
+       ,A.EML_ADDR_ENPT  /* 이메일주소암호화    */        
+       ,A.HP_NO          /* 휴대전화번호 */
+       ,A.HP_NO_ENPT     /* 휴대전화번호암호화   */     
+       ,A.GRPC_JOBR_CD   /* 직급코드     */     
+       ,A.GRPC_JTIL_CD   /* 직책코드     */     
+       ,A.GRPC_DEPT_CD   /* 조직코드     */
+       ,A.GRPC_CO_CD     /* 회사코드     */     
+       ,A.DEALCO_CD        /* 대리점코드   */     
+       ,A.EMP_NO         /* 사원번호     */    
+       ,A.PWD            /* 패스워드      */                 
+  FROM  TB_USER A
+ WHERE  A.LGIN_ID = #LGIN_ID#]]>
+	</select>
+	<select id="SPwd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SPwd 비밀번호확인 */
+/* IO: 심상준,2015-01-14T11:06:05(김석영,2014-07-30T17:02:45) */
+SELECT  
+        A.USER_NO        /* 사용자번호     */     
+       ,A.USER_NM        /* 사용자명       */   
+       ,A.USER_NM_ENPT   /* 사용자명암호화 */  
+       ,A.USER_CL_CD     /* 사용자구분코드 */     
+       ,A.USER_ST_CD     /* 사용자상태코드 */     
+       ,A.LGIN_ID        /* 로그인ID       */     
+       ,A.PWD_ERR_CNT    /* 비밀번호오류횟수     */     
+       ,A.LS_PWD_CHG_DT  /* 최종비밀번호변경일자 */     
+       ,TO_CHAR(A.LS_LGIN_DTM,'YYYYMMDDHH24MISS') AS LS_LGIN_DTM    /* 최종로그인일시       */     
+       ,A.EML_ADDR       /* 이메일주소   */     
+       ,A.EML_ADDR_ENPT  /* 이메일주소암호화    */        
+       ,A.HP_NO          /* 휴대전화번호 */
+       ,A.HP_NO_ENPT     /* 휴대전화번호암호화   */     
+       ,A.GRPC_JOBR_CD   /* 직급코드     */     
+       ,A.GRPC_JTIL_CD   /* 직책코드     */     
+       ,A.GRPC_DEPT_CD   /* 조직코드     */
+       ,A.GRPC_CO_CD     /* 회사코드     */     
+       ,A.DEALCO_CD        /* 대리점코드   */       
+       ,A.EMP_NO         /* 사원번호     */
+  FROM  TB_USER A
+ WHERE  A.USER_NO = #USER_NO#
+   AND  A.USER_ST_CD = '10'  /* 정상 */]]>
+	</select>
+	<select id="SAutrLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SAutrLst 권한목록조회 */
+/* IO: 임지후,2015-01-27T13:47:10(심상준,2014-12-16T14:45:10) */
+SELECT  
+DISTINCT
+         A.MENU_ID              /* 메뉴ID */
+        ,A.MENU_NM              /* 메뉴명 */
+        ,A.MENU_DESC            /* 메뉴설명 */
+        ,A.MENU_LV              /* 메뉴레벨 */
+        ,A.MENU_SORT_ORD        /* 메뉴정렬순서 */
+        ,A.FRM_ID               /* 화면ID */
+        ,B.FRM_NM               /* 화면명 */
+        ,B.FRM_URL              /* 화면URL */
+        ,B.FRM_CL_CD            /* 화면구분코드 */
+        ,A.SUP_MENU_ID           /* 상위메뉴ID */
+   FROM  TB_MENU A              /* SC_메뉴 */ 
+       ,(SELECT
+                 IC.FRM_ID 
+                ,IC.FRM_NM
+                ,IC.FRM_URL
+                ,IC.FRM_CL_CD
+           FROM  TB_USER_AUTR_ROL IB
+                ,TB_FRM IC 
+                ,TB_FRM_AUTR_ROL ID 
+                ,TB_AUTR_ROL IF
+          WHERE  IB.AUTR_ROL_ID = IF.AUTR_ROL_ID 
+            AND  IF.AUTR_ROL_ID = ID.AUTR_ROL_ID 
+            AND  ID.FRM_ID = IC.FRM_ID 
+            AND  IB.USER_NO = #USER_NO#
+            AND  IB.APLY_STA_DT <= TO_CHAR(SYSDATE,'YYYYMMDD') 
+            AND  IB.APLY_END_DT > TO_CHAR(SYSDATE-1,'YYYYMMDD')
+            AND  IB.USE_YN = 'Y'
+            AND  ID.USE_YN = 'Y'
+            AND  IF.USE_YN = 'Y'
+         ) B
+  WHERE  A.FRM_ID = B.FRM_ID(+)
+    AND  ( (A.MENU_LV = 0 AND A.MENU_ID != 'ZZ') OR (A.SUP_MENU_ID = 'ZZ')) 
+  START  WITH  B.FRM_ID IS NOT NULL
+CONNECT  BY PRIOR A.SUP_MENU_ID = A.MENU_ID
+  ORDER  SIBLINGS BY A.MENU_LV, A.MENU_SORT_ORD]]>
+	</select>
+	<update id="ULginHst" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.ULginHst 로그인이력수정 */
+/* IO: 이유미,2014-10-23T18:40:06(김석영,2014-07-30T17:28:08) */
+UPDATE  
+        TB_USER A  /* 사용자 */
+   SET 
+        A.LS_LGIN_DTM = SYSDATE        /* 최종로그인일시 */
+       ,A.LS_CHG_USER_ID = #USER_NO#   /* 최종변경사용자ID */
+       ,A.LS_CHG_DTM = SYSDATE         /* 최종변경일시 */
+]]><isEqual property="LINK_SYSTEM" compareValue="NO"><![CDATA[
+	   ,A.PWD_ERR_CNT = 0              /* 비밀번호오류횟수 */ 
+]]></isEqual><![CDATA[
+ WHERE  USER_NO = #USER_NO#            /* 사용자번호 */]]>
+	</update>
+	<select id="SGwUserInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SGwUserInfo 그룹웨어사용자정보조회 */
+/* IO: 이유미,2014-11-24T19:12:27(김석영,2014-08-01T15:06:20) */
+SELECT 
+        A.NAMEKOR        /* 성명(한글) */
+       ,A.LOGINID        /* 아이디 */
+       ,A.EMAIL          /* 이메일주소 */
+       ,A.MOBILE         /* 휴대전화번호 */
+       ,A.DEPTCODE       /* 부서코드 */
+       ,A.TITCODE        /* 직급코드 */
+       ,A.DUTCODE        /* 직책코드 */
+       ,A.USERCODE       /* 사번 */
+       ,A.COMPANYCODE    /* 회사코드 */
+  FROM  V_LEGACY_USER A  /* 그룹웨어사용자 */
+ WHERE  A.LOGINID = #USER_ID#
+   AND  A.RETIREDDATE IS NULL]]>
+	</select>
+	<insert id="IUser" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.IUser 사용자등록 */
+/* IO: 이유미,2015-01-06T10:26:05(김석영,2014-08-01T15:29:53) */
+INSERT                        
+  INTO  TB_USER   /* 사용자 */
+       (
+        USER_NO         /* 사용자번호           */             
+       ,USER_NM         /* 사용자명             */     
+       ,USER_CL_CD      /* 사용자구분코드       */             
+       ,USER_ST_CD      /* 사용자상태코드       */             
+       ,LGIN_ID         /* 로그인ID      */             
+       ,PWD             /* 비밀번호              */             
+       ,PWD_ERR_CNT     /* 비밀번호오류횟수     */             
+       ,LS_PWD_CHG_DT   /* 최종비밀번호변경일자 */             
+       ,LS_LGIN_DTM     /* 최종로그인일시       */             
+       ,EML_ADDR        /* 이메일주소           */             
+       ,HP_NO           /* 휴대전화번호         */
+       ,HP_NO_ENPT      /* 휴대전화번호암호화   */  
+       ,GRPC_JOBR_CD    /* 직책코드             */             
+       ,GRPC_JTIL_CD    /* 직책코드             */             
+       ,GRPC_DEPT_CD    /* 조직코드             */   
+       ,GRPC_CO_CD      /* 회사코드             */          
+       ,DEALCO_CD        /* 대리점코드   */          
+       ,EMP_NO          /* 사원번호             */             
+       ,FS_REG_USER_ID  /* 최초등록사용자ID */             
+       ,FS_REG_DTM      /* 최초등록일시         */             
+       ,LS_CHG_USER_ID  /* 최종변경사용자ID */             
+       ,LS_CHG_DTM      /* 최종변경일시         */             
+        )                             
+VALUES                        
+       (                             
+        #USER_NO#
+       ,#USER_NM#              
+       ,#USER_CL_CD#           
+       ,#USER_ST_CD#           
+       ,#LGIN_ID#              
+       ,#PWD#                  
+       ,#PWD_ERR_CNT#          
+       ,TO_CHAR(SYSDATE,'YYYYMMDD')        
+       ,#LS_LGIN_DTM#          
+       ,#EML_ADDR#            
+       ,#HP_NO#              
+       ,#HP_NO_ENPT#          
+       ,NVL(#GRPC_JOBR_CD#,' ')                
+       ,NVL(#GRPC_JTIL_CD#,' ')            
+       ,NVL(#GRPC_DEPT_CD#,' ') 
+       ,NVL(#GRPC_CO_CD#,' ')             
+       ,#DEALCO_CD#
+       ,#EMP_NO#                 
+       ,#USER_NO#                      
+       ,SYSDATE                    
+       ,#USER_NO#                      
+       ,SYSDATE                     
+        )]]>
+	</insert>
+	<update id="UGwUserInfo" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.UGwUserInfo 그룹웨어사용자정보동기화 */
+/* IO: 심상준,2015-04-10T10:39:11(김석영,2014-08-04T13:26:01) */
+UPDATE
+        TB_USER A
+   SET  A.LS_CHG_USER_ID = 'SYSTEM'
+       ,A.LS_CHG_DTM = SYSDATE       
+]]><isNotEmpty property="USER_NM"><![CDATA[     
+       ,A.USER_NM = #USER_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="USER_CL_CD"><![CDATA[        
+       ,A.USER_CL_CD = #USER_CL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="USER_ST_CD"><![CDATA[     
+       ,A.USER_ST_CD = #USER_ST_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EML_ADDR"><![CDATA[       
+       ,A.EML_ADDR = #EML_ADDR#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HP_NO"><![CDATA[     
+       ,A.HP_NO    = #HP_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HP_NO_ENPT"><![CDATA[       
+       ,A.HP_NO_ENPT     = #HP_NO_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="GRPC_JOBR_CD"><![CDATA[       
+       ,A.GRPC_JOBR_CD  = NVL(#GRPC_JOBR_CD#,' ')
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="GRPC_JTIL_CD"><![CDATA[           
+       ,A.GRPC_JTIL_CD    = NVL(#GRPC_JTIL_CD#,' ')
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="GRPC_DEPT_CD"><![CDATA[           
+       ,A.GRPC_DEPT_CD  = NVL(#GRPC_DEPT_CD#,' ')
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="GRPC_CO_CD"><![CDATA[           
+       ,A.GRPC_CO_CD     = NVL(#GRPC_CO_CD#,' ')
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EMP_NO"><![CDATA[          
+       ,A.EMP_NO = #EMP_NO#
+]]></isNotEmpty><![CDATA[
+ WHERE  A.USER_NO = #USER_NO#]]>
+	</update>
+	<insert id="IUserAutrRol" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.IUserAutrRol 사용자권한역할등록 */
+/* IO: 김석영,2014-09-26T21:13:31(김석영,2014-08-05T15:19:51) */
+INSERT 
+  INTO  TB_USER_AUTR_ROL
+       (
+        USER_NO          /* 사용자번호 */
+       ,AUTR_ROL_ID      /* 권한역할ID */
+       ,APLY_STA_DT      /* 적용시작일자 */
+       ,APLY_END_DT      /* 적용종료일자 */
+       ,USE_YN           /* 사용여부 */
+       ,FS_REG_USER_ID   /* 최초등록사용자ID */
+       ,FS_REG_DTM       /* 최초등록일시 */
+       ,LS_CHG_USER_ID   /* 최종변경사용자ID */
+       ,LS_CHG_DTM       /* 최종변경일시 */
+        )
+VALUES
+       (
+        #USER_NO#
+       ,#AUTR_ROL_ID#
+       ,TO_CHAR(SYSDATE,'YYYYMMDD')
+       ,'99991231'
+       ,'Y'
+       ,#USER_NO#
+       ,SYSDATE
+       ,#USER_NO#
+       ,SYSDATE
+        )]]>
+	</insert>
+	<delete id="DUserAutrRol" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.DUserAutrRol 사용자권한역할삭제 */
+/* IO: 김석영,2014-09-26T21:10:38(김석영,2014-08-05T15:20:05) */
+DELETE 
+  FROM  TB_USER_AUTR_ROL
+ WHERE  USER_NO = #USER_NO#
+   AND  AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</delete>
+	<select id="SUserAutrRol" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SUserAutrRol 사용자권한역할조회 */
+/* IO: 김석영,2014-09-26T21:22:26(김석영,2014-08-05T15:30:39) */
+SELECT
+        USER_NO           /* 사용자번호 */
+       ,AUTR_ROL_ID       /* 권한역할ID */
+       ,APLY_STA_DT       /* 적용시작일자 */
+       ,APLY_END_DT       /* 적용종료일자 */
+       ,USE_YN            /* 사용여부 */
+  FROM  TB_USER_AUTR_ROL  /* 사용자권한역할 */
+ WHERE  USER_NO = #USER_NO#
+   AND  AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</select>
+	<update id="UUserSt" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.UUserSt 사용자상태변경 */
+/* IO: 김석영,2014-09-26T21:17:42(김석영,2014-08-05T16:15:27) */
+UPDATE
+        TB_USER A
+   SET  A.USER_ST_CD = #USER_ST_CD#
+       ,A.LS_CHG_USER_ID = #USER_NO#
+       ,A.LS_CHG_DTM = SYSDATE
+ WHERE  A.USER_NO = #USER_NO#]]>
+	</update>
+	<select id="SUserNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SUserNo 사용자번호채번 */
+/* IO: 김석영,2014-09-26T21:23:36(김석영,2014-09-12T15:13:32) */
+SELECT 
+        'USR'||LPAD(SQ01_TB_USER.NEXTVAL,9,0) AS USER_NO  /* 사용자번호채번 */
+  FROM  DUAL]]>
+	</select>
+	<select id="SUserByUserNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SUserByUserNo 사용자조회(사용자번호) */
+/* IO: 이유미,2015-01-06T09:57:26(김석영,2014-09-12T15:15:26) */
+SELECT  
+        A.USER_NO        /* 사용자번호           */             
+       ,A.USER_NM        /* 사용자명              */             
+       /*,A.USER_NM_ENPT   /* 사용자명암호화      */             
+       ,A.USER_CL_CD     /* 사용자구분코드      */             
+       ,A.USER_ST_CD     /* 사용자상태코드      */             
+       ,A.LGIN_ID        /* 로그인ID     */             
+       ,A.PWD_ERR_CNT    /* 비밀번호오류횟수    */             
+       ,A.LS_PWD_CHG_DT  /* 최종비밀번호변경일자 */             
+       ,TO_CHAR(A.LS_LGIN_DTM,'YYYYMMDDHH24MISS') AS LS_LGIN_DTM    /* 최종로그인일시       */             
+       ,A.EML_ADDR       /* 이메일주소           */             
+       ,A.HP_NO          /* 휴대전화번호         */             
+       ,A.HP_NO_ENPT     /* 휴대전화번호암호화 */             
+       ,A.GRPC_JOBR_CD   /* 직급코드              */             
+       ,A.GRPC_JTIL_CD   /* 직책코드              */             
+       ,A.GRPC_DEPT_CD   /* 조직코드              */     
+       ,A.GRPC_CO_CD     /* 회사코드              */       
+       ,A.DEALCO_CD        /* 대리점코드   */           
+       ,A.EMP_NO         /* 사원번호               */     
+  FROM  TB_USER A
+ WHERE  A.USER_NO = #USER_NO#
+   AND  A.USER_ST_CD = '10'  /* 정상 */]]>
+	</select>
+	<insert id="IUserAutrRolHis" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.IUserAutrRolHis 사용자권한역할이력등록 */
+/* IO: 이유미,2014-11-24T19:54:53(이유미,2014-11-24T19:52:06) */
+INSERT  
+  INTO TH_USER_AUTR_ROL_HST 
+       (
+        USER_NO        /* 사용자번호 */
+       ,AUTR_ROL_ID    /* 권한역할ID */
+       ,CHG_DTM        /* 변경일시 */
+       ,APLY_STA_DT    /* 적용시작일자*/
+       ,APLY_END_DT    /* 적용종료일자*/
+       ,USE_YN         /* 사용여부 */ 
+       ,DEL_YN         /* 삭제여부 */ 
+       ,FS_REG_USER_ID /* 최초등록사용자ID */ 
+       ,FS_REG_DTM     /* 최초등록일시 */ 
+       ,LS_CHG_USER_ID /* 최종변경사용자ID */
+       ,LS_CHG_DTM     /* 최종변경일시*/
+        )
+SELECT
+        USER_NO	/* 사용자번호 */
+       ,AUTR_ROL_ID    /* 권한역할ID */
+       ,SYSDATE        /* 변경일시 */
+       ,APLY_STA_DT    /* 적용시작일자*/
+       ,APLY_END_DT    /* 적용종료일자*/
+       ,DECODE(USE_YN, '0', 'Y','Y') as USE_YN         /* 사용여부 */ 
+       ,DECODE(USE_YN, 'N', 'Y','N') as DEL_YN
+       ,FS_REG_USER_ID /* 최초등록사용자ID */ 
+       ,FS_REG_DTM     /* 최초등록일시 */ 
+       ,LS_CHG_USER_ID /* 최종변경사용자ID */
+       ,LS_CHG_DTM     /* 최종변경일시*/
+  FROM  TB_USER_AUTR_ROL 
+ WHERE  USER_NO = #USER_NO#
+]]><isNotEmpty property="AUTR_ROL_ID" prepend="AND"><![CDATA[
+        AUTR_ROL_ID = #AUTR_ROL_ID#
+]]></isNotEmpty><![CDATA[]]>
+	</insert>
+	<procedure id="SDataAutrRolByTeamMgr" parameterClass="map" resultClass="hmap" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SDataAutrRolByTeamMgr 데이터권한역할조회(팀장) */
+/* IO: 이유미,2015-01-22T10:14:20(이유미,2014-12-10T17:15:41) */
+SELECT
+         MCHT_NO  AS AUTR_OBJ_CD    /* 권한대상코드 */
+   FROM  TB_MCHT  /* 가맹점 */
+  WHERE
+ ]]><isNotEmpty property="SV_LIST"><![CDATA[
+ ]]><iterate property="SV_LIST" prepend=" SV_CD IN" open="(" conjunction=", " close=")"><![CDATA[
+         #SV_LIST[]#
+ ]]></iterate><![CDATA[
+ ]]></isNotEmpty><![CDATA[
+ ]]><isEmpty property="SV_LIST"><![CDATA[
+         SV_CD = ""
+ ]]></isEmpty><![CDATA[
+GROUP BY MCHT_NO]]>
+	</procedure>
+	<select id="SDataAutrRolBySv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SDataAutrRolBySv 데이터권한역할조회(SV) */
+/* IO: 이유미,2014-12-11T09:24:26(이유미,2014-12-10T17:17:12) */
+SELECT
+        MCHT_NO  AS AUTR_OBJ_CD  /* 권한대상코드 */
+  FROM  TB_MCHT                  /* 가맹점 */
+ WHERE  SV_CD = #GW_USER_CODE#]]>
+	</select>
+	<select id="SSvListByTeamMgr" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCLginOp.SSvListByTeamMgr SV목록조회(팀장) */
+/* IO: 이유미,2015-01-22T09:51:50(이유미,2015-01-22T09:29:22) */
+SELECT  USERCODE as SV_CD  /* 사원번호 */
+  FROM  V_LEGACY_USER
+ WHERE  DEPTCODE = 
+           (SELECT
+                   X.DEPTCODE
+             FROM  V_LEGACY_USER X
+            WHERE  X.USERCODE = #GW_USER_CODE#
+           )
+   AND  RETIREDDATE IS NULL]]>
+	</select>
+</sqlMap>

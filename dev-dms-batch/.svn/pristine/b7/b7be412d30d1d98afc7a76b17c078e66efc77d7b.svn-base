@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.IFT000">
+	<select id="SIfTableList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.IFT000.SIfTableList 인터페이스테이블 목록 */
+/* IO: 안한모,2015-08-13T16:25:33(admin,2015-03-20T13:41:26) */
+SELECT
+        'B' AS REC_CL_CD
+       , $CNAME$
+  FROM  $TABLE_NAME$
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  PROC_ST_CD = '00']]>
+	</select>
+	<delete id="DIfTableLst" parameterClass="map" ><![CDATA[/* Biz: dms.inf.IFT000.DIfTableLst 인터페이스테이블 데이터 삭제 */
+/* IO: 안한모,2015-08-13T16:25:30(이영진,2015-08-10T13:35:41) */
+DELETE  FROM  
+        $TABLE_NAME$
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  PROC_ST_CD = '00']]>
+	</delete>
+	<select id="SColumnInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.IFT000.SColumnInfo 칼럼정보 */
+/* IO: 이영진,2015-08-21T17:30:56(이영진,2015-08-12T11:25:00) */
+SELECT
+        COLUMN_NAME
+       ,DATA_TYPE
+       ,CASE WHEN DATA_TYPE = 'VARCHAR2' THEN DATA_LENGTH
+             ELSE DATA_PRECISION
+        END AS DATA_LENGTH
+  FROM  USER_TAB_COLUMNS
+ WHERE  TABLE_NAME = #TABLE_NAME#
+   AND  SUBSTR(COLUMN_NAME,1,3) != 'IF_'
+   AND  COLUMN_NAME != 'PROC_ST_CD'
+   AND  COLUMN_NAME != 'FS_REG_USER_ID'
+   AND  COLUMN_NAME != 'FS_REG_DTM'
+   AND  COLUMN_NAME != 'LS_CHG_USER_ID'
+   AND  COLUMN_NAME != 'LS_CHG_DTM'
+   AND  COLUMN_NAME NOT LIKE '%_ENPT'
+   ORDER BY COLUMN_ID]]>
+	</select>
+	<select id="SColumnLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.IFT000.SColumnLst 칼럼목록 */
+/* IO: 이영진,2015-08-21T17:31:21(이영진,2015-08-12T13:32:08) */
+SELECT SUBSTR(MAX(SYS_CONNECT_BY_PATH (COLUMN_NAME, ', ')), 2) CNAME
+       FROM 
+       (
+SELECT  COLUMN_NAME
+       ,ROW_NUMBER() OVER (PARTITION BY '' ORDER BY '') rnum
+  FROM  USER_TAB_COLUMNS
+ WHERE  TABLE_NAME = #TABLE_NAME#
+   AND  SUBSTR(COLUMN_NAME,1,3) != 'IF_'
+   AND  COLUMN_NAME != 'PROC_ST_CD'
+   AND  COLUMN_NAME != 'FS_REG_USER_ID'
+   AND  COLUMN_NAME != 'FS_REG_DTM'
+   AND  COLUMN_NAME != 'LS_CHG_USER_ID'
+   AND  COLUMN_NAME != 'LS_CHG_DTM'
+   AND  COLUMN_NAME NOT LIKE '%_ENPT'
+   ORDER BY COLUMN_ID
+        )
+ START WITH rnum = 1
+ CONNECT BY PRIOR rnum = rnum - 1]]>
+	</select>
+</sqlMap>

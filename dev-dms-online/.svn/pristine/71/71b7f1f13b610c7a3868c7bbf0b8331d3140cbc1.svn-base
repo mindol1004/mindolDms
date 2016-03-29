@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpPrchInfoMgmt">
+	<select id="SEqpPrchInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchInfoLstPaging 단말자산취득현황조회M */
+/* IO: 장미진,2015-12-07T18:02:50(장미진,2015-09-22T17:29:59) */
+SELECT  *
+  FROM (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+               ,D.SVC_MGMT_NO    			    	  	/* 서비스관리번호 */
+               ,A.EQP_SER_NO                  			/* 단말기일련번호*/
+               ,E.EQP_MDL_NM   						    /* 모델명 */
+               ,A.EQP_MDL_CD   					      	/* 모델코드 */
+               ,E.CNTRT_PRD     				      	/* 계약기간코드 */
+               ,C.RENTAL_CNTRT_STA_DT 	      			/* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 	      			/* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      		      		/* 매입가 */ 
+               ,D.OP_TYP_CD     				      	/* 계약상태코드 */
+               ,A.INVE_ST_CD					        /* 재고상태코드 */
+               ,F.SLIP_ST_CD					      	/* 전표상태코드*/
+               ,A.ACQR_XCL_SLIP_NO AS SLIP_NO			/* 전표번호*/
+               ,A.ASSET_NO						        /* 자산번호 */
+               ,SUBSTR(F.SLIP_DT,0,4) AS YYYY
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,TB_SLIP F
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.ACQR_XCL_SLIP_NO = F.SLIP_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+           AND  (NOT OP_TYP_CD = '06' OR ACQR_XCL_SLIP_NO IS NOT NULL)		/* 반품해지/기변철회  = 14일이내 */
+           AND  SUBSTR(D.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6) 
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                F.SLIP_ST_CD IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                F.SLIP_ST_CD = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[) PA]]>
+	</select>
+	<select id="SEqpPrchInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchInfoTotCnt 단말자산취득현황총건수 */
+/* IO: 장미진,2015-12-07T18:02:45(장미진,2015-09-22T17:30:29) */
+SELECT  COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.EQP_PRCH_AMT),0) AS M_PRC 
+  FROM (SELECT  A.EQP_PRCH_AMT      		      /* 매입가 */ 
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,TB_SLIP F
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.ACQR_XCL_SLIP_NO = F.SLIP_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+           AND  (NOT OP_TYP_CD = '06' OR ACQR_XCL_SLIP_NO IS NOT NULL)		/* 반품해지/기변철회  = 14일이내 */
+           AND  SUBSTR(D.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6) 
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                F.SLIP_ST_CD IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                F.SLIP_ST_CD = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[) PA]]>
+	</select>
+	<select id="SEqpPrchInfoTotalSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchInfoTotalSlip 단말자산취득전표용G */
+/* IO: 장미진,2015-12-07T18:06:56(장미진,2015-09-23T10:08:26) */
+SELECT  *
+  FROM  (SELECT  COUNT(*)                            AS CNT 
+                ,NVL(SUM(PA.EQP_PRCH_AMT),0)         AS PRC 
+                ,SLIP_NO                   
+                ,NVL(SLIP_ST_CD,'00')                AS SLIP_ST_CD 
+                ,NVL(YYYY, TO_CHAR(SYSDATE,'YYYY'))  AS YYYY 
+          FROM  (SELECT  A.EQP_PRCH_AMT                /* 매입가 */
+                        ,A.ACQR_XCL_SLIP_NO			AS SLIP_NO/*전표번호*/
+                        ,D.SLIP_ST_CD  /*전표상태*/
+                        ,D.SLIP_DT AS YYYY/*전표처리년도*/
+                        ,A.ASSET_NO/* 자산번호 */
+                   FROM  TB_EQP_ASSET A
+                        ,TB_EQP_CNTRT B
+                        ,TB_NR_CNTRT C 
+                        ,TB_SLIP D
+                  WHERE  A.ASSET_NO               = B.ASSET_NO
+                    AND  B.CNTRT_NO                 = C.CNTRT_NO
+                    AND  A.ACQR_XCL_SLIP_NO         = D.SLIP_NO(+)
+                    AND  A.OP_CL_CD                 = 'NR'
+                    AND  (NOT C.OP_TYP_CD = '06' OR A.ACQR_XCL_SLIP_NO IS NOT NULL)		/* 반품해지/기변철회  = 14일이내 */
+                    AND  SUBSTR(C.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6) 
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                         C.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+              )PA
+ GROUP BY  SLIP_NO, SLIP_ST_CD, YYYY  
+ ORDER BY  SLIP_NO DESC) PB
+]]><dynamic prepend="WHERE"><![CDATA[ 
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                PB.SLIP_ST_CD IS NULL OR PB.SLIP_ST_CD='00'
+]]></isEqual><![CDATA[
+]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                PB.SLIP_ST_CD = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SEqpPrchInfoTotalSlipTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchInfoTotalSlipTotCnt 단말자산취득전표용G총건수 */
+/* IO: 장미진,2015-12-07T18:06:46(장미진,2015-09-23T14:18:41) */
+SELECT  NVL(SUM(CNT),0) AS T_CNT
+       ,NVL(SUM(PRC),0) AS T_PRC
+  FROM  (SELECT  COUNT(*)                            AS CNT 
+                ,NVL(SUM(PA.EQP_PRCH_AMT),0)         AS PRC 
+                ,SLIP_NO                   
+                ,NVL(SLIP_ST_CD,'00')                AS SLIP_ST_CD 
+                ,NVL(YYYY, TO_CHAR(SYSDATE,'YYYY'))  AS YYYY 
+          FROM  (SELECT  A.EQP_PRCH_AMT                /* 매입가 */
+                        ,A.ACQR_XCL_SLIP_NO			AS SLIP_NO/*전표번호*/
+                        ,D.SLIP_ST_CD  /*전표상태*/
+                        ,D.SLIP_DT AS YYYY/*전표처리년도*/
+                        ,A.ASSET_NO/* 자산번호 */
+                   FROM  TB_EQP_ASSET A
+                        ,TB_EQP_CNTRT B
+                        ,TB_NR_CNTRT C 
+                        ,TB_SLIP D
+                  WHERE  A.ASSET_NO               = B.ASSET_NO
+                    AND  B.CNTRT_NO                 = C.CNTRT_NO
+                    AND  A.ACQR_XCL_SLIP_NO         = D.SLIP_NO(+)
+                    AND  A.OP_CL_CD                 = 'NR'
+                    AND  (NOT C.OP_TYP_CD = '06' OR A.ACQR_XCL_SLIP_NO IS NOT NULL)		/* 반품해지/기변철회  = 14일이내 */
+                    AND  SUBSTR(C.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6) 
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                         C.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+              )PA
+ GROUP BY  SLIP_NO, SLIP_ST_CD, YYYY  
+ ORDER BY  SLIP_NO DESC) PB
+]]><dynamic prepend="WHERE"><![CDATA[ 
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                PB.SLIP_ST_CD IS NULL OR PB.SLIP_ST_CD='00'
+]]></isEqual><![CDATA[
+]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                PB.SLIP_ST_CD = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SEqpPrchAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchAllExcel 단말자산취득현황전체다운로드 */
+/* IO: 장미진,2015-12-08T10:59:58(장미진,2015-09-23T17:33:52) */
+SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS "NO" 
+       ,D.SVC_MGMT_NO    	   AS "서비스관리번호"
+       ,A.EQP_SER_NO           AS "단말일련번호"
+       ,A.ASSET_NO			   AS "자산번호"
+       ,E.EQP_MDL_NM   		   AS "모델명"
+       ,A.EQP_MDL_CD   		   AS "모델코드"
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS112' 
+            AND CM_CD_ID = E.CNTRT_PRD ) AS "계약기간"
+       ,C.RENTAL_CNTRT_STA_DT  AS "계약시작일"
+       ,C.RENTAL_CNTRT_END_DT  AS "계약종료일"
+       ,A.EQP_PRCH_AMT         AS "매입가"
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS115' 
+            AND CM_CD_ID = D.OP_TYP_CD ) AS "자산상태"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS108' 
+            AND  CM_CD_ID= A.INVE_ST_CD) AS "재고상태"
+       ,F.SLIP_DT  AS "전표일자"
+       ,A.ACQR_XCL_SLIP_NO			AS "전표번호"     
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS153' 
+            AND  CM_CD_ID = F.SLIP_ST_CD	) AS  "전표상태"            
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+       ,TB_SLIP F   
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.ACQR_XCL_SLIP_NO= F.SLIP_NO(+)
+   AND  A.OP_CL_CD = 'NR'
+   AND  (NOT D.OP_TYP_CD = '06' OR A.ACQR_XCL_SLIP_NO IS NOT NULL)		/* 반품해지/기변철회  = 14일이내 */
+   AND  D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#]]>
+	</select>
+	<select id="SEqpPrchAssetNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchAssetNo 단말자산취득전표용자산번호조회 */
+/* IO: 장미진,2015-10-29T17:25:59(장미진,2015-09-25T12:56:10) */
+SELECT  ASSET_NO
+  FROM (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+               ,D.SVC_MGMT_NO    			    	  	/* 서비스관리번호 */
+               ,A.EQP_SER_NO                  			/* 단말기일련번호*/
+               ,E.EQP_MDL_NM   						    /* 모델명 */
+               ,A.EQP_MDL_CD   					      	/* 모델코드 */
+               ,E.CNTRT_PRD     				      	/* 계약기간코드 */
+               ,C.RENTAL_CNTRT_STA_DT 	      			/* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 	      			/* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      		      		/* 매입가 */ 
+               ,D.OP_TYP_CD     				      	/* 계약상태코드 */
+               ,A.INVE_ST_CD					        /* 재고상태코드 */
+               ,F.SLIP_ST_CD					      	/* 전표상태코드*/
+               ,A.ACQR_XCL_SLIP_NO AS SLIP_NO			/* 전표번호*/
+               ,A.ASSET_NO						        /* 자산번호 */
+               ,SUBSTR(F.SLIP_DT,0,4) AS YYYY
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,TB_SLIP F
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.ACQR_XCL_SLIP_NO = F.SLIP_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+           AND  D.OP_TYP_CD NOT IN ('06')
+           AND  SUBSTR(D.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6) 
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+                 F.SLIP_ST_CD = #SLIP_ST_CD#
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+                 F.SLIP_ST_CD IS NULL
+]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[) PA]]>
+	</select>
+</sqlMap>

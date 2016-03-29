@@ -1,0 +1,196 @@
+package dms.ep;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.bat.IBatchContext;
+
+import org.apache.commons.logging.Log;
+
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.bat.base.DBSession;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>서브 업무명 : XCE001</li>
+ * <li>설  명 : <pre>[EP]단말기대금-선할인</pre></li>
+ * <li>작성일 : 2015-10-29 09:06:28</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ */
+public class XCE001 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+    
+    /**
+     * 배치 생성자. 상위클래스 생성자 호출
+     */
+    public XCE001() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        processCnt = 0;
+        taskNo = "";
+        procFileName = "";
+
+        IOnlineContext onlineCtx = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq",reqDS, onlineCtx);
+        taskNo = resDS.getField("TASK_NO");
+
+        reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "EP");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS,
+                onlineCtx);		
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+        // 트랜잭션 시작
+        txBegin();
+        dbStartSession();
+        dbBeginBatch();
+        DBSession readSession = dbNewSession(context, false, null);        
+        /* SQL ParmaMap 설정 */
+        HashMap<String, Object> paramMap = new HashMap<String,Object>();
+        paramMap.put("DCINAD_STRD_YM", context.getInParameter("DCINAD_STRD_YM"));
+                        
+        try {                         
+            dbSelect("SEqpDcinadXclNoLst", paramMap, makeRecordHandlerMainChk(context), context);   // 해당기준년월에 등록 정산목록 삭제 처리.                           
+            dbSelect("SEqpPreDcTotLst", paramMap, makeRecordHandlerMain(context), readSession); // 해당기준년월에 등록 정산목록 등록.
+        } catch (Exception e) {         
+            throw new BizRuntimeException("M00001", e);
+        }
+                
+        // 트랜잭션 커밋
+        dbEndBatch();
+        dbEndSession();
+        txCommit();
+    }
+    
+    
+    /**
+     * 해당 기준년월에 해당되는 단말기대금선할인 정산 목록 삭제.
+     */
+    public AbsRecordHandler makeRecordHandlerMainChk(IBatchContext context) {
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+            @Override
+            public void handleRecord(IRecord row) {                               
+                if(null != row){
+                    dbUpdate("DTbEpDcinadXcl", row, context);   // 단말기대금선할인정산삭제
+                    dbUpdate("DTbEpDcinadXclDtl", row, context); // 단말기대금선할인정산상세삭제           
+                }                                
+            }                    
+        };
+        return rh;
+    }
+    
+    /**
+     * 해당 기준년월에 해당되는 단말기대금선할인 정산 등록
+     */
+    public AbsRecordHandler makeRecordHandlerMain(IBatchContext context) {
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+        DBSession readSession = dbNewSession(context, false, null);
+            @Override
+            public void handleRecord(IRecord row) {                               
+                if(null != row){                   
+                    HashMap<String, Object> paramMap = new HashMap<String,Object>();                    
+                    paramMap.put("DCINAD_XCL_NO", dbSelectSingle("SEqpDcinadXclSeq", null).get("DCINAD_XCL_NO"));
+                    paramMap.put("DCINAD_STRD_YM", context.getInParameter("DCINAD_STRD_YM"));
+                    paramMap.put("REPV_AGN_ORG_CD", row.get("REPV_AGN_ORG_CD"));
+                    paramMap.put("DCINAD_AMT", row.get("DCINAD_AMT"));
+                    paramMap.put("SPLY_PRC", row.get("SPLY_PRC"));
+                    paramMap.put("SURTAX_AMT", row.get("SURTAX_AMT"));
+                    paramMap.put("DCINAD_XCL_CNT", row.get("DCINAD_XCL_CNT"));
+                    paramMap.put("USER_ID", context.getInParameter("USER_ID"));                    
+                    dbInsert("IEqpDcinadXcl", paramMap, context);                    
+                    dbSelect("SEqpDcinadXclDtl", paramMap, makeRecordHandlerSub(context), readSession);    
+                    
+                }                
+                processCnt++; 
+                
+                //if (getCurrentRecordCount()%100 == 0) {
+                if (processCnt%1000 == 0) {
+                    dbEndBatch();
+                    txCommitAndBegin();
+                    dbBeginBatch();
+                }
+                
+            }                    
+        };
+        return rh;
+    }
+    
+    /**
+     * 해당 기준년월에 해당되는 단말기대금선할인 정산 상세 등록
+     */
+    public AbsRecordHandler makeRecordHandlerSub(IBatchContext context) {
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+            @Override
+            public void handleRecord(IRecord row) {                               
+                if(null != row){                    
+                    dbInsert("IEqpDcinadXclDtl", row, context);                    
+                }                
+                processCnt++;         
+                
+                //if (getCurrentRecordCount()%100 == 0) {
+                if (processCnt%1000 == 0) {
+                    dbEndBatch();
+                    txCommitAndBegin();
+                    dbBeginBatch();
+                }
+                
+            }                    
+        };
+        return rh;
+    }
+
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext onlineCtx = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        } else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+            processCnt = 0;
+        }
+        reqDS.putField("PROC_CNT", "" + processCnt);
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fUpdBatTaskOpHst",reqDS, onlineCtx);
+    }
+
+}

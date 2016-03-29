@@ -1,0 +1,292 @@
+package dms.ep.epbsxbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]판매정산관리</li>
+ * <li>설  명 : <pre>판매정산관리 PU</pre></li>
+ * <li>작성일 : 2015-10-13 14:48:50</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PEPSaleXclMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPSaleXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>판매정산관리전표발행</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-13 14:48:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : SELL_DTM [판매일자]
+	 *		- field : SELL_CHG_DTM [변경일자]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SALEPLC_UKEY [매출처U.KEY코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : SELL_DEALCO_CD_UKEY [판매처U.KEY코드]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SALE_QTY [수량]
+	 *		- field : SELL_PRC [판매가]
+	 *		- field : SELL_PCOST [매입가]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [현금금액]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [변경전신용카드수납금액1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [변경전신용카드수납금액2]
+	 *		- field : CRDTCRD_PAY_AMT [카드금액]
+	 *		- field : TOT_PAY_AMT [수납계]
+	 *		- field : AFFIL_AGN [소속대리점]
+	 *		- field : AFFIL_ORG_ID [소속조직ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_NM [U.KEY 대리점]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)]
+	 *		- field : SLIP_DT [전표일자]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST [전표상태]
+	 *		- field : CNCL_SLIP_DT [취소전표일자]
+	 *		- field : CNCL_SLIP_NO [취소전표번호]
+	 *		- field : SLIP_TYPE [전표항목구분]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : SALEPLC_BLICENS_NO [매출처사업자번호]
+	 *		- field : SELL_BLICENS_NO [판매처사업자번호]
+	 *		- field : CUR_CL_CD [화폐 구분 코드]
+	 *		- field : XRATE_APPLY_AMT [환율 적용 금액]
+	 *		- field : XRATE_APPLY_DT [환율 적용 일자]
+	 *		- field : INVE_PCOST_SLIP_NO [원가전표번호]
+	 *		- field : SELL_TYP [판매구분]
+	 *		- field : SURTAX [부가세]
+	 *		- field : SELL_UPRC [공급가액]
+	 *	- field : SLIP_TYPE [전표타입]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveSaleXclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+
+        try {
+            
+            // 1. FM 호출
+            callSharedBizComponentByDirect("ep.EPSSXBase", "fRegSaleXclSlip", requestData, onlineCtx);
+            
+            // 2. 결과값 리턴
+            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+                
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>판매정산관리전표취소</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-13 14:48:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : SELL_DTM [판매일자]
+	 *		- field : SELL_CHG_DTM [변경일자]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SALEPLC_UKEY [매출처U.KEY코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : SELL_DEALCO_CD_UKEY [판매처U.KEY코드]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SALE_QTY [수량]
+	 *		- field : SELL_PRC [판매가]
+	 *		- field : SELL_PCOST [매입가]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [현금금액]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [변경전신용카드수납금액1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [변경전신용카드수납금액2]
+	 *		- field : CRDTCRD_PAY_AMT [카드금액]
+	 *		- field : TOT_PAY_AMT [수납계]
+	 *		- field : AFFIL_AGN [소속대리점]
+	 *		- field : AFFIL_ORG_ID [소속조직ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_NM [U.KEY 대리점]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)]
+	 *		- field : SLIP_DT [전표일자]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST [전표상태]
+	 *		- field : CNCL_SLIP_DT [취소전표일자]
+	 *		- field : CNCL_SLIP_NO [취소전표번호]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : SLIP_TYPE [전표항목구분]
+	 *		- field : SALEPLC_BLICENS_NO [매출처사업자번호]
+	 *		- field : SELL_BLICENS_NO [판매처사업자번호]
+	 *		- field : CUR_CL_CD [화폐 구분 코드]
+	 *		- field : XRATE_APPLY_AMT [환율 적용 금액]
+	 *		- field : XRATE_APPLY_DT [환율 적용 일자]
+	 *		- field : INVE_PCOST_SLIP_NO [원가전표번호]
+	 *		- field : SELL_TYP [판매구분]
+	 *		- field : SURTAX [부가세]
+	 *		- field : SELL_UPRC [공급가액]
+	 *	- field : SLIP_TYPE [전표타입]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveSaleXclSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            
+            // 1. FM 호출
+            callSharedBizComponentByDirect("ep.EPSSXBase", "fRegSaleXclSlipDel", requestData, onlineCtx);
+            
+            // 2. 결과값 리턴
+            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+                
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>판매정산관리전표상태재조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-13 14:48:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_DT [시작일자]
+	 *	- field : END_DT [종료일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqSaleXclSlipReSearh(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fSlipInfoSynchronization", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+	/**
+	 * <pre>판매정산관리</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-10-13 14:48:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_STA_DTM [판매시작일자]
+	 *	- field : SELL_END_DTM [판매종료일자]
+	 *	- field : SELL_DEALCO_CD [판매처코드]
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : SALEPLC [매출처코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_XCL_MGMT_LIST
+	 *		- field : SELL_DTM [판매일자]
+	 *		- field : SELL_CHG_DTM [변경일자]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SALEPLC_UKEY [매출처U.KEY코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : SELL_DEALCO_CD_UKEY [판매처U.KEY코드]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SALE_QTY [수량]
+	 *		- field : SELL_PRC [판매가]
+	 *		- field : SELL_PCOST [매입가]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [현금금액]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [변경전신용카드수납금액1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [변경전신용카드수납금액2]
+	 *		- field : CRDTCRD_PAY_AMT [카드금액]
+	 *		- field : TOT_PAY_AMT [수납계]
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : AFFIL_AGN [소속대리점코드]
+	 *		- field : AFFIL_ORG_ID [소속조직ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_NM [U.KEY 대리점]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)]
+	 *		- field : SLIP_DT [전표일자]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST [전표상태]
+	 *		- field : CNCL_SLIP_DT [취소전표일자]
+	 *		- field : CNCL_SLIP_NO [취소전표번호]
+	 *		- field : SLIP_TYPE [전표항목구분]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : SALEPLC_BLICENS_NO [매출처사업자번호]
+	 *		- field : SELL_BLICENS_NO [판매처사업자번호]
+	 *		- field : CUR_CL_CD [화폐 구분 코드]
+	 *		- field : XRATE_APPLY_AMT [환율 적용 금액]
+	 *		- field : XRATE_APPLY_DT [환율 적용 일자]
+	 *		- field : INVE_PCOST_SLIP_NO [원가전표번호]
+	 *		- field : SLIP_ST_CD [원가전표상태]
+	 *		- field : SELL_TYP [판매구분]
+	 *		- field : SURTAX [부가세]
+	 *		- field : SELL_UPRC [공급가액]
+	 * </pre>
+	 */
+	public IDataSet pInqSaleXclMgmtList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fInqSaleXclMgmtList", requestData, onlineCtx);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	    
+	    return responseData;
+	}
+  
+}

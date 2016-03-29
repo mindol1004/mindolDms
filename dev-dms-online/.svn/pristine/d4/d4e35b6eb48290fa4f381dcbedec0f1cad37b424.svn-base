@@ -1,0 +1,298 @@
+package dms.pr.prsxmbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [DU]렌탈용역계약관리</li>
+ * <li>설  명 : <pre>렌탈용역계약관리</pre></li>
+ * <li>작성일 : 2015-07-20 17:17:32</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class DPRRentalServCntrtMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DPRRentalServCntrtMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>임대폰포괄계약조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:17:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *	- field : STA_IN_DT [계약시작일자]
+	 *	- field : END_IN_DT [계약종료일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMPHS_CNTRT_LIST
+	 *		- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 *		- field : CMPHS_CNTRT_NM [포괄계약명]
+	 *		- field : CMPHS_CNTRT_STA_DT [포괄계약시작일자]
+	 *		- field : CMPHS_CNTRT_END_DT [포괄계약종료일자]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet dSRentphonServCmphsCntrtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출     
+        IRecordSet record = dbSelect("SRentphonServCmphsCntrtLst", requestData, onlineCtx);
+        // 2.결과값 셋팅   
+        
+        responseData.putRecordSet("RS_CMPHS_CNTRT_LIST",record);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]렌탈용역계약상세조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-21 09:26:47
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSRentalServCntrtDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]렌탈용역계약등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-21 09:27:15
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIRentalServCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]렌탈용역계약일련번호조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:17:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : CMPHS_CNTRT_NO [포괄계약번호]
+	 * </pre>
+	 */
+	public IDataSet dSRentalServCntrtNum(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	// 1.쿼리문 호출
+	 		IRecord record = dbSelectSingle("SRentalServCntrtNum", requestData, onlineCtx);
+	 		// 2.결과값 셋팅
+	 		responseData.putFieldMap(record);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]렌탈용역계약수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-21 09:28:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dURentalServCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:17:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIRentphonServCmphsCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("IRentphonServCmphsCntrt", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약일련번호조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-21 16:33:41
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSRentphonServCmphsCntrtNum(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	// 1.쿼리문 호출
+	 		IRecord record = dbSelectSingle("SRentphonServCmphsCntrtNum", requestData, onlineCtx);
+	 		// 2.결과값 셋팅
+	 		responseData.putFieldMap(record);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+  
+}
+
+	/**
+	 * <pre>임대폰포괄계약체크</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-20 17:17:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSIRentphonServCmphsCntrtChk(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+	 		IRecord record = dbSelectSingle("SIRentphonServCmphsCntrtChk", requestData, onlineCtx);
+	 		// 2.결과값 셋팅
+	 		responseData.putFieldMap(record);
+	     		
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약삭제</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-22 15:04:16
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDRentphonServCmphsCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		
+	    try {		
+	    	dbInsert("DRentphonServCmphsCntrt", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-22 15:32:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dURentphonServCmphsCntrt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("URentphonServCmphsCntrt", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 	
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰포괄계약조회총건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-23 14:28:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSRentphonServCmphsToCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		
+		 // 1.쿼리문 호출	    
+  		IRecord record = dbSelectSingle("SRentphonServCmphsToCnt", requestData, onlineCtx);
+  		// 2.결과값 셋팅	    
+  		responseData.putFieldMap(record); 
+
+	    return responseData;
+	}
+}

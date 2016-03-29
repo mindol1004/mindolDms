@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRPenSimul">
+	<select id="SPenBaseInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRPenSimul.SPenBaseInfo 위약금기본정보조회 */
+/* IO: 문재웅,2015-08-12T10:20:15(문재웅,2015-08-10T18:54:47) */
+SELECT  A.RENTAL_CNTRT_STA_DT  		/* 렌탈계약시작일자 */
+       ,A.RENTAL_CNTRT_END_DT      	/* 렌탈계약종료일자 */
+       ,B.TOT_RENTAL_FEE_RT        	/* 총렌탈료비율   */
+       ,B.REM_RENTAL_FEE_RT        	/* 잔여렌탈료비율 */
+       ,B.DAY_RENTAL_FEE_RT        	/* 일렌탈료비율  */
+       ,B.RENTAL_FEE_RT            	/* 렌탈료비율(연체가산 월렌탈료)  */
+       ,B.PEN_POLY_APLY_DT	        /* 위약금정책반영일자:반납지연기준일수 */
+       ,C.RENTAL_PRN               	/* 렌탈원금 */
+       ,C.RENTAL_FEE               	/* 렌탈요금 */
+  FROM  TB_RENTAL_CNTRT A
+       ,TB_PEN_POLY B
+       ,TB_RENTAL_POLY C
+ WHERE  A.CNTRT_NO 		= #CNTRT_NO#	/* 계약번호 */
+   AND  A.PEN_POLY_NO 	= B.PEN_POLY_NO
+   AND  A.RENTAL_POLY_NO= C.RENTAL_POLY_NO]]>
+	</select>
+	<select id="SPenSimul" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRPenSimul.SPenSimul 위약금시뮬레이션조회 */
+/* IO: 문재웅,2015-10-29T18:16:02(문재웅,2015-08-10T18:55:34) */
+/* [쪽지] 렌탈 반납지연위약금 계산 로직 관련_2015.08.04.docx 기준 
+	1.D ~ D+14 이내 반납 :위약금2 면제. D+14일이 휴일인 경우 D+15까지 유예
+	2.D+15 ~ D+30 이내 반납 : 위약금2 일할계산. D+30일이 휴일인 경우 D+31까지 유예
+*/
+
+/* 반납예정일, 반납지연위약금면제기간 FROM,TO(휴일일경우로직 TO 일은 휴일(연휴)끝 익일이 TO 일) */
+WITH PEN_SIMUL_FR AS
+(
+SELECT  #RTN_SCHD_DAY# AS RTN_SCHD_DAY              /* 반납예정일 */
+       ,#TERM_SCHD_DT# AS SMMUL_RENTAL_CNTRT_END_DT /* 해지예정일:계약종료일 */
+       ,TO_CHAR(TO_DATE(#TERM_SCHD_DT#) +1, 'YYYYMMDD') AS RTN_DLY_PEN_EX_PRD_FR_DT 
+       ,(SELECT  MIN(SCARL_DT) FROM  TB_HOLY 
+          WHERE   SCARL_DT >= (TO_DATE(#TERM_SCHD_DT#,'YYYYMMDD') + 14)  
+            AND   HOLY_YN = 'N') AS RTN_DLY_PEN_EX_PRD_TO_DT 
+FROM DUAL
+)
+/* 반납지연위약금적용기간  FROM(반납지연위약금면제기간 TO +1), TO(휴일일경우로직 TO 일은 휴일(연휴)끝 익일이 TO 일)   */
+,PEN_SIMUL AS
+(
+SELECT  A.RTN_SCHD_DAY
+       ,A.SMMUL_RENTAL_CNTRT_END_DT   /* 해지예정일:계약종료일 */
+       ,A.RTN_DLY_PEN_EX_PRD_FR_DT 
+       ,A.RTN_DLY_PEN_EX_PRD_TO_DT 
+       ,TO_CHAR(TO_DATE(RTN_DLY_PEN_EX_PRD_TO_DT) +1,'YYYYMMDD') AS RTN_DLY_PEN_APLY_PRD_FR_DT
+       ,(SELECT  MIN(SCARL_DT) FROM  TB_HOLY 
+          WHERE  SCARL_DT >= TO_CHAR(TO_DATE(A.SMMUL_RENTAL_CNTRT_END_DT) + 30,'YYYYMMDD')
+            AND  HOLY_YN = 'N') AS RTN_DLY_PEN_APLY_PRD_TO_DT
+       ,LAST_DAY(TO_DATE(A.SMMUL_RENTAL_CNTRT_END_DT)) - TO_DATE(SUBSTR(A.SMMUL_RENTAL_CNTRT_END_DT,0,6)||'01') +1   AS MONTH_DAY_CNT  	/* 해지예정일:계약종료일의 월의 최대일수 */
+       ,(SELECT  MIN(SCARL_DT) FROM  TB_HOLY 
+          WHERE  SCARL_DT >= TO_CHAR(TO_DATE(#TERM_SCHD_DT#) + 31,'YYYYMMDD') 
+            AND  HOLY_YN = 'N') AS RENTAL_CNTRT_END_DT_31  /* 손해배상금(미반납) 산정기준일 */
+  FROM  PEN_SIMUL_FR A
+)
+
+SELECT  RTN_SCHD_DAY        /* 반납예정일    */
+       ,RENTAL_FEE          /* 렌탈요금:월렌탈료 */
+       ,DAY_RENTAL_COST_AMT /* 일렌탈료     */
+       ,REM_DAY             /* 반납잔여일수 */
+       ,REM_RENTAL_COST_AMT /* 잔여렌탈료 */
+       ,SUSPR_PEN           /* 중도해지위약금 */
+       ,CASE WHEN SUSPR_PEN > 0 THEN
+         TRUNC( ( OUT_PRC * (36 - DATEDIF_MONTH(RENTAL_CNTRT_STA_DT, TO_CHAR(TO_DATE(RENTAL_CNTRT_END_DT_31),'YYYYMMDD')) ) / 36 ) *1.005, -1) 
+        ELSE 0 END AS UNRTN_AMT  	/* 손해배상금(미반납금액):적용 31일날 기준으로 계산 */
+       ,RTN_DLY_PEN_EX_PRD_FR_DT    /* 반납지연위약금면제기간FROM*/
+       ,RTN_DLY_PEN_EX_PRD_TO_DT    /* 반납지연위약금면제기간TO */
+       ,RTN_DLY_PEN_APLY_PRD_FR_DT  /* 반납지연위약금적용기간FROM */
+       ,RTN_DLY_PEN_APLY_PRD_TO_DT  /* 반납지연위약금적용기간TO */
+       ,CASE WHEN RTN_DLY_CNT > 0 THEN RTN_DLY_CNT ELSE 0 END AS RTN_DLY_CNT   /* 반납지연일수 */
+       ,REAL_DAY_CNT                /* 반납지연위약금 실제기간일수  */
+       ,RTN_DLY_PEN                 /* 반납지연위약금  */
+       ,ARR_ADD_AMT                 /* 연체가산금*/
+  FROM  (
+        SELECT  D.RTN_SCHD_DAY                                    /* 반납예정일 */
+               ,C.RENTAL_PRN                                    /* 렌탈원금   */
+               ,C.RENTAL_FEE                                    /* 렌탈요금:월렌탈료 */
+               ,TRUNC(C.RENTAL_FEE/30) AS DAY_RENTAL_COST_AMT   /* 일렌탈료: 월렌탈료/30 >> 현재정책기준 */
+               ,(TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') - TO_DATE(D.RTN_SCHD_DAY,'YYYYMMDD') + 1)  AS REM_DAY    /* 반납잔여일수:해지예정일-반납예정일+1 */
+               ,TRUNC( (C.RENTAL_FEE/MONTH_DAY_CNT) * (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') - TO_DATE(D.SMMUL_RENTAL_CNTRT_END_DT,'YYYYMMDD') + 1) ) AS REM_RENTAL_COST_AMT  /* 잔여렌탈료:일렌탈료*(반납잔여일수:계약종료일-해지예정일+1) */               
+               ,TRUNC( (C.RENTAL_FEE/MONTH_DAY_CNT) * (TO_DATE(A.RENTAL_CNTRT_END_DT) - TO_DATE(D.SMMUL_RENTAL_CNTRT_END_DT) + 1) * (B.REM_RENTAL_FEE_RT/100)) AS SUSPR_PEN       /* 중도해지위약금:일렌탈료*(반납잔여일수:계약종료일-해지예정일+1) * 잔여렌탈료정책%  */
+               ,D.RTN_DLY_PEN_EX_PRD_FR_DT    /* 반납지연위약금면제기간FR  */
+               ,D.RTN_DLY_PEN_EX_PRD_TO_DT    /* 반납지연위약금면제기간TO  */
+               ,D.RTN_DLY_PEN_APLY_PRD_FR_DT  /* 반납지연위약금적용기간FR  */
+               ,D.RTN_DLY_PEN_APLY_PRD_TO_DT  /* 반납지연위약금적용기간TO  */
+               ,((TO_DATE(D.RTN_SCHD_DAY,'YYYYMMDD') - TO_DATE(D.RTN_DLY_PEN_EX_PRD_FR_DT,'YYYYMMDD')) +1) AS RTN_DLY_CNT  /* 반납지연일수 */
+               ,((TO_DATE(D.RTN_DLY_PEN_APLY_PRD_TO_DT,'YYYYMMDD') - TO_DATE(D.RTN_DLY_PEN_EX_PRD_FR_DT,'YYYYMMDD')) +1) AS REAL_DAY_CNT  /* 반납지연위약금 실제기간일수 */
+               ,CASE WHEN D.RTN_SCHD_DAY <= D.RTN_DLY_PEN_EX_PRD_TO_DT    THEN 0  /* 반납예정일이 반납지연위약금면제기간 내 이면  위약금:0 */
+                     WHEN D.RTN_SCHD_DAY >  D.RTN_DLY_PEN_APLY_PRD_TO_DT  THEN    /* 반납예정일 반납지연위약금적용기간TO 보다 크면 >> 최대위약금: 미반납 프로세스로 진행 */
+                     TRUNC( ((C.RENTAL_FEE/30)*(B.DAY_RENTAL_FEE_RT/100)) * ((TO_DATE(D.RTN_DLY_PEN_APLY_PRD_TO_DT,'YYYYMMDD') - TO_DATE(D.RTN_DLY_PEN_EX_PRD_FR_DT,'YYYYMMDD')) +1), -1) 
+                ELSE TRUNC( ((C.RENTAL_FEE/30)*(B.DAY_RENTAL_FEE_RT/100)) * ((TO_DATE(D.RTN_SCHD_DAY,'YYYYMMDD') - TO_DATE(D.RTN_DLY_PEN_EX_PRD_FR_DT,'YYYYMMDD')) +1), -1)  END AS RTN_DLY_PEN  /* 반납지연위약금:(일렌탈료*반납지연 일렌탈료정책%) * 위약금일수(반납예정일-반납지연위약금면제기간FR)  */
+               ,C.RENTAL_FEE * (B.RENTAL_FEE_RT/100)  AS ARR_ADD_AMT    /* 연체가산금: 월렌탈료*연체렌탈료정책% */
+               ,C.OUT_PRC             	 /* 출고가격 */
+               ,A.RENTAL_CNTRT_STA_DT  	 /* 렌탈계약시작일자 */
+               ,D.RENTAL_CNTRT_END_DT_31 /* 손해배상금(미반납) 산정기준일 */
+          FROM  TB_RENTAL_CNTRT A
+               ,TB_PEN_POLY     B
+               ,TB_RENTAL_POLY  C
+               ,PEN_SIMUL       D
+		     WHERE  A.CNTRT_NO 	 = #CNTRT_NO#	/* 계약번호 */  
+           AND  A.PEN_POLY_NO 	 = B.PEN_POLY_NO
+           AND  A.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+        ) PA]]>
+	</select>
+</sqlMap>

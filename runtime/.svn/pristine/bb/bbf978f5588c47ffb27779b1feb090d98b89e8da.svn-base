@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 프레임워크 DB관련 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+    <!-- 프로젝트에서 개발한 customize 용 클래스들. -->
+    <bean id="nc.hpc.CodeManager"
+        class="fwk.code.internal.CachedHpcCodeManager"
+        init-method="init">
+        <description>코드 제공을 위한 컴포넌트(캐쉬 사용)</description>
+        <property name="cacheManager" ref="nc.core.ICacheManager" />
+        <property name="sqlManager"   ref="hpc.db.ISqlManager" />
+    </bean>
+    
+    <bean id="hpc.db.ISqlManager"
+        class="nexcore.framework.integration.db.internal.XmlSqlManager"
+        init-method="init">
+        <description>XML 기반의 ISqlManager</description>
+        <property name="configFile"          value="config/sql/hpc-sql-config.xml" />
+        <property name="userThreadManager"   ref="nc.core.IUserThreadManager" />
+    </bean>
+    
+    <bean id="nc.hpc.msgResourceBundle" class="fwk.resource.bundle.HpcResourceBundle" init-method="init">
+    	<description>HPC Bundle 메시지를 로딩하기 위한 Resource Bundle</description>
+    	<property name="bundlePath" value="${NEXCORE_HOME}/EarContent/APP-INF/classes/config/parameter"/>
+    	<property name="locale" value="ko"/><!-- KOREAN:ko, ENGLISH:en, CHINA:zh, JAPANESE:ja,  GERMAN:de-->
+    	<property name="bundleName" value="hpcLangBundle"/>
+    </bean>
+      
+</beans>

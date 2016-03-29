@@ -1,0 +1,806 @@
+package dms.nr;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import nexcore.framework.bat.IBatchContext;
+
+import org.apache.commons.logging.Log;
+
+import dms.constants.enums.sapjco.SAP_SLIP_ITEM;
+import dms.constants.enums.sapjco.elem.SAP_SLIP_KINDS;
+import dms.utils.SAPUtils;
+import dms.utils.sapjco.domain.CommonSlipHeader;
+import dms.utils.sapjco.domain.nr.AssetAmtAANRSlip;
+import dms.utils.sapjco.domain.nr.AssetDepreciationNRSlip;
+import dms.utils.sapjco.domain.nr.AssetInvTransferNRSlip;
+import fwk.constants.SlipConstants;
+import fwk.constants.enums.sapjco.SAP_SLIP_ELEM;
+import fwk.constants.enums.sapjco.SAP_SLIP_RETURN;
+import fwk.erfif.sapjco.SapCaller;
+import fwk.erfif.sapjco.domain.CommonSlipItem;
+import fwk.utils.DomainUtils;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>서브 업무명 : XCR002</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-07 15:04:26</li>
+ * <li>작성자 : 진병수 (greatjin)</li>
+ * </ul>
+ */
+public class XCR002 extends AbsBatchComponent {
+    private Log log;
+    private int processCnt = 0;
+    private String taskNo = "";
+    private int totCnt = 0;
+    private String procFileName = "";
+    
+    private String userNo       = "";
+    
+    private String dmsSlipSeq = "";
+    private String sapSlipNo  = "";
+    
+    
+    
+    public XCR002() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+    	log = getLog(context);
+		
+		processCnt = 0;
+		taskNo = "";
+		totCnt = 0;
+		procFileName = "";
+		
+		IOnlineContext    onlineCtx  = makeOnlineContext(context);
+		IDataSet reqDS = new DataSet();
+		IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+		taskNo = resDS.getField("TASK_NO");
+		
+		reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "NR");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("OP_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        IDataSet resDS2 = callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }		
+		
+		
+    }
+    
+    /**
+     * 입력파라미터 준비
+     * @param context
+     * @return
+     */
+    private Map<String, String> prepareInputParam(IBatchContext context)
+    {
+        log = context.getLogger();
+        Map<String, String> paramMap = new HashMap<String, String>();
+        log.debug("prepareInputParam() context :"+context);
+        paramMap.putAll(context.getInParameters());
+        paramMap.put("PROC_DT", context.getInParameter("PROC_DT")); //실행일
+        log.debug("prepareInputParam() paramMap :"+paramMap);
+        return paramMap;
+    }
+
+
+    /**
+     * 배치 메인 메소드
+     * 1. 자산상태를 단말 매각대상으로 변경한다.
+     * 2. 현금(입력),감가상각누계액,유형자산처분손익(잔존가,장부가) - 단말기자산(출고가)
+     */
+    public void execute(final IBatchContext context) {
+    	  // 트랜잭션 시작
+//     	txBegin();  
+//     	dbStartSession();
+//     	dbBeginBatch();
+     	
+     	//입력파라미터를 받음
+     	Map<String, String> paramMap = this.prepareInputParam(context);
+     	paramMap.put("PROC_DT", context.getInParameter("PROC_DT"));
+     	
+     	dbDelete("DDeprDtlTemp", new HashMap());
+     	
+     	//자산이관 정상해지, 중도해지
+     	dbSelect("SSelEqpInfo", paramMap, makeRecordHandler(context), context); //DB 조회
+     	
+     	this.upsertHandler(context, paramMap, "SDtl4IDepr" , "IDepr"         );
+     	//감가상각전표처리(감가상각누계) (선행 혹은 반대처리)
+     	this.fRegAssetDepreciationSlip(paramMap, context);
+     	
+        this.upsertHandler(context, paramMap, "SDispoDtl"  , "IAssetDispoDtl");
+        this.upsertHandler(context, paramMap, "SDtl4IDispo", "IAssetDispo"   );
+
+
+        //자산전환전표처리 (유형자산/재고_D) 자산상태를 바꿈(매각대상으로)
+        this.fRegAssetInvTransferNRSlip(paramMap, context);
+        
+        this.upsertHandler(context, paramMap, "SDispoDtl", "UEqpAsset");
+     	
+     	//처리중차수(0) 업데이트
+     	this.upsertHandler(context, paramMap, "SDtl4UpdateTS"  , "UDeprDtl4DeprTS");
+     	
+ 		// 트랜잭션 커밋
+// 		dbEndBatch();
+// 		dbEndSession();
+// 		txCommit(); 
+     }
+     
+    /**
+     * makeRecordHandler
+     * @param context
+     * @return
+     */
+     public AbsRecordHandler makeRecordHandler(IBatchContext context) {
+     	AbsRecordHandler rh = new AbsRecordHandler(context) {
+     	    
+ 			@Override
+ 			public void handleRecord(IRecord row) {
+ 				context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+ 				SAPUtils.debug("########### : " + row);
+                
+				IDataSet reqDs = new DataSet();
+				reqDs.putFieldMap(row);
+				
+ 				SAPUtils.debug("after dbUpdate ########### : " + reqDs);
+ 				IDataSet resDS2 = callOnlineBizComponent("nr.NRSEABase", "fCalDepr", reqDs, makeOnlineContext(context));
+ 				SAPUtils.debug("after resDS2 ########### : " + resDS2);
+ 				
+ 				IRecordSet rs = resDS2.getRecordSet("RS_LIST");
+ 				if(rs.getRecordCount()>0)
+ 				{
+ 				    Map paramMap = SAPUtils.convertRecord2Map(rs.getRecord(0));
+ 				    
+ 	               //감가상각처리
+ 				    paramMap.put("DEPR_TS", "0"); //금번배치에 처리하기 위한 마킹
+ 				    paramMap.put("MOV_DISPO_CL", "Y".equals(reqDs.getField("NOT_RETURN")) || "Y".equals(reqDs.getField("YET_RETURN"))?"Y":"N");
+ 	                dbUpdate("IDeprDtl", paramMap);
+ 				}
+ 				
+ 				processCnt++;
+ 			}
+ 		};
+     	return rh;
+     }
+     
+     
+     /**
+      * upsertHandler
+      * @param context
+      * @param paramMap
+      * @param selectStmt
+      * @param upsertStmt
+      */
+     private void upsertHandler(IBatchContext context, Map paramMap, String selectStmt, String upsertStmt)
+     {
+         try {
+             context.setAttribute("upsertStmt", upsertStmt);
+             SAPUtils.debug("upsertHandler ("+selectStmt+") ("+upsertStmt+") paramMap" +paramMap);
+             dbSelect(selectStmt, paramMap, upsertRecordHandler(context), context);                  
+         } catch (Exception e) {
+             throw new BizRuntimeException("M00001", e);
+         }
+     }
+     
+     /**
+      * 감가상각
+      *   
+      * @param requestData
+      * @param batchCtx
+      * @return
+      */
+      private IDataSet fRegAssetDepreciationSlip(Map paramMap,  IBatchContext batchCtx) {
+          
+          IDataSet responseData = new DataSet();
+          
+          String zserial = "";
+          String userId  = fLoginId(this.userNo, batchCtx);
+          
+          SAPUtils.debug("fRegAssetDepreciationSlip() paramMap :"+ paramMap);
+          
+          IRecordSet rs = dbSelectMulti("SDepr", paramMap);
+
+          if(rs==null || rs.getRecordCount()==0) return responseData;
+          
+          List<AssetDepreciationNRSlip> slipList = new ArrayList<AssetDepreciationNRSlip>();
+          AssetDepreciationNRSlip one;
+          
+          if(!SAPUtils.hasHeaderName(rs, "SLIP_NO"))
+              rs.addHeader(new RecordHeader("SLIP_NO"));
+          if(!SAPUtils.hasHeaderName(rs, "USER_NO"))
+              rs.addHeader(new RecordHeader("USER_NO"));  
+          if(!SAPUtils.hasHeaderName(rs, "SLIP_YM"))
+              rs.addHeader(new RecordHeader("SLIP_YM"));
+          if(!SAPUtils.hasHeaderName(rs, "DEPR_DEPT_CD"))
+              rs.addHeader(new RecordHeader("DEPR_DEPT_CD"));
+          
+          IRecord tmpRec = null;
+          String deprAmt = null;
+          String allwnAmt = null;
+          
+          for(int i=0;i<rs.getRecordCount();i++)
+          {
+              tmpRec = rs.getRecord(i);
+              SAPUtils.debug("fRegAssetDepreciationSlip() tmpRec :"+ SAPUtils.convertRecord2Map((tmpRec)));
+              
+              zserial = this.fInqSlipSeq();
+              deprAmt  =  StringUtils.nvlEmpty(rs.get(i, "DEPR_AMT"           ), "0") ;
+              allwnAmt =  StringUtils.nvlEmpty(rs.get(i, "DISPO_PRE_PRFITS_AMT"), "0");
+              
+              one = new AssetDepreciationNRSlip(zserial,userId, null, null, deprAmt , allwnAmt, null);
+              if(Long.parseLong(deprAmt)<0)
+              {
+                  one = new AssetDepreciationNRSlip(zserial,userId, null, null, deprAmt , allwnAmt, null, true);
+              }
+              
+              responseData = this.sendSlip(one.getFunctionName(), one.getHeader(), one.getItems());
+              SAPUtils.debug("fRegAssetDepreciationSlip() responseData :"+ responseData);
+
+              slipList.add(one);
+              
+              //slip table update
+              responseData.putField("FISCL_SYS_SEQ", zserial);
+              this.fRegSlipData(responseData, batchCtx);
+              
+              tmpRec.set("SLIP_NO", responseData.getField ("SLIP_NO"));
+              tmpRec.set("USER_NO", this.userNo);
+              tmpRec.set("DEPR_DEPT_CD", "NR");
+              tmpRec.set("SLIP_YM", paramMap.get("DEPR_STRD_YM"));
+              rs.setRecord(i, tmpRec);
+          }
+          fUpdACTable(rs, false, batchCtx);
+          
+          return responseData;
+      }
+      
+      /**
+       * 자산전환
+       */
+      private IDataSet fRegAssetInvTransferNRSlip(Map paramMap,IBatchContext batchCtx) {
+          
+          log = getLog(batchCtx);
+          IDataSet responseData = new DataSet();
+          String zserial = this.fInqSlipSeq();
+          String userId  = fLoginId(this.userNo, batchCtx);
+          String headerTxt = "" ;
+          String itemTxt   = "";
+
+          
+          SAPUtils.debug("fRegAssetInvTransferNRSlip () paramMap:"+paramMap); 
+         
+          IRecordSet rs = dbSelectMulti("SDispo4Slip", paramMap);
+
+          if(rs==null || rs.getRecordCount()==0) return responseData;
+          
+          //List<AssetAmtAANRSlip> slipList = new ArrayList<AssetAmtAANRSlip>();
+          List<AssetInvTransferNRSlip> slipList = new ArrayList<AssetInvTransferNRSlip>();
+          AssetInvTransferNRSlip one;
+          
+          if(!SAPUtils.hasHeaderName(rs, "SLIP_NO"))
+              rs.addHeader(new RecordHeader("SLIP_NO"));
+          if(!SAPUtils.hasHeaderName(rs, "USER_NO"))
+              rs.addHeader(new RecordHeader("USER_NO"));  
+          if(!SAPUtils.hasHeaderName(rs, "SLIP_YM"))
+              rs.addHeader(new RecordHeader("SLIP_YM"));
+          
+          
+          IRecord tmpRec = null;
+          String amt     = null;
+          String descAmt = null;
+          String preAmt  = null;
+          String remAmt  = null;
+          
+          
+          for(int i=0;i<rs.getRecordCount();i++)
+          {
+              tmpRec = rs.getRecord(i);
+              SAPUtils.debug("fRegAssetInvTransferNRSlip() tmpRec :"+ SAPUtils.convertRecord2Map((tmpRec)));
+              
+              zserial = this.fInqSlipSeq();
+              amt     =  StringUtils.nvlEmpty(rs.get(i, "ASSET_DISPO_ACNTB_AMT" ), "0") ;
+              descAmt =  StringUtils.nvlEmpty(rs.get(i, "DISPO_AMT"             ), "0") ;
+              preAmt  =  StringUtils.nvlEmpty(rs.get(i, "DISPO_PRE_PRFITLS_AMT" ), "0") ;
+              remAmt  =  StringUtils.nvlEmpty(rs.get(i, "DISPO_PRFITLS_AMT"     ), "0") ;
+              
+              one = new AssetInvTransferNRSlip(zserial, userId, null, null, amt, descAmt, preAmt, remAmt, headerTxt,itemTxt);
+
+              responseData = this.sendSlip(one.getFunctionName(), one.getHeader(), one.getItems());
+              SAPUtils.debug("fRegAssetInvTransferNRSlip() responseData :"+ responseData);
+
+              slipList.add(one);
+              
+              //slip table update
+              responseData.putField("FISCL_SYS_SEQ", zserial);
+              this.fRegSlipData(responseData, batchCtx);
+              
+              tmpRec.set("SLIP_NO", responseData.getField ("SLIP_NO"));
+              tmpRec.set("USER_NO", this.userNo);
+              tmpRec.set("SLIP_YM", paramMap.get("DEPR_STRD_YM"));
+              
+              Map slipMap = SAPUtils.convertRecord2Map(tmpRec);
+              slipMap.put("DEPR_DEPT_CD", "NR");
+              
+              SAPUtils.debug("fRegAssetInvTransferNRSlip() slipMap :"+ slipMap);
+              
+              dbUpdate("UClsAssetDispo", slipMap);
+              dbUpdate("UClsAssetDispoDtl", slipMap);
+              
+          }
+      
+          return responseData;
+      }
+      
+      /**
+       * 마감자산상각테이블  업데이트
+       * @param recordSet
+       * @param batchCtx
+       * @return
+       */
+      private int fUpdACTable(IRecordSet recordSet, boolean cancelFlag, IBatchContext batchCtx) 
+      {
+          int updateCnt = 0;
+          if(recordSet==null || recordSet.getRecordCount()==0) return updateCnt;
+          
+          Map paramMap = null;
+          for(int i=0; i<recordSet.getRecordCount(); i++)
+          {
+              paramMap = recordSet.getRecordMap(i);
+              SAPUtils.debug("fUpdACTable () paramMap:"+paramMap);
+              
+              if(!cancelFlag) dbUpdate("UClsDepr", paramMap);
+              dbUpdate("UClsDeprDtl", paramMap);
+              
+              updateCnt ++;
+          }
+          return updateCnt;
+      }
+      
+      /**
+       * 해더 맵핑
+       * @param rs
+       * @return
+       */
+       private IRecordSet fMakeItems(CommonSlipItem[] items)
+       {
+           IRecordSet itDmsHeader = new RecordSet(SAP_SLIP_ELEM.SLIP_ITEM.getPart());
+           
+           for(SAP_SLIP_ITEM one: SAP_SLIP_ITEM.values())
+           {
+               itDmsHeader.addHeader(new RecordHeader(one.getSapCol()));
+           }
+           
+           for(CommonSlipItem item:items)
+           {
+               IRecord recordContents = itDmsHeader.newRecord();
+               
+               HashMap map = DomainUtils.invokeDomainToMap(item);
+               
+               for(SAP_SLIP_ITEM one: SAP_SLIP_ITEM.values())
+               {
+                   recordContents.put(one.getSapCol(), map.get(one.getVar()));
+               }
+               
+               itDmsHeader.addRecord(recordContents);
+           }
+           
+           return itDmsHeader;
+       }
+      
+      /**
+       * 전표처리
+       * @param slip
+       * @return
+       */
+       private IDataSet sendSlip(String functionName, CommonSlipHeader header, CommonSlipItem[] items)
+       {
+           IDataSet responseData = new DataSet();
+           IDataSet inDataSet = null;
+           inDataSet  = new DataSet();
+           
+           //fRegSlipLog(functionName, header,items);
+           
+           inDataSet.putRecordSet(SAPUtils.makeHeader(header));
+           inDataSet.putRecordSet(fMakeItems(items));
+           
+           List seqKeys= this.fRegSlipLog(functionName, inDataSet, SAPUtils.makeCallInfo());
+           
+           SapCaller caller = new SapCaller(functionName);
+           
+           responseData = caller.sendData(inDataSet, SAPUtils.makeCallInfo(),false);
+           
+           this.fRegSlipResponseLog(seqKeys, responseData, new String[] {SAP_SLIP_ELEM.SLIP_RETURN.getPart()});
+
+           responseData.putFieldMap(SAPUtils.convertRecord2DataSet(responseData.getRecordSet(SAP_SLIP_ELEM.SLIP_RETURN.getPart()).getRecord(0)).getFieldMap());
+
+           responseData.putField("USER_NO", this.userNo);
+           responseData.putField(SlipConstants.SLIP_NO, getMessageFromSAP(responseData));
+           
+           return responseData;
+       }
+       
+       /**
+        * TransMessage
+       * @param responseData
+       * @return
+       */
+       private String getMessageFromSAP(IDataSet responseData)
+       {
+           return this.getMessageFromSAP(responseData, false);
+       }
+       
+       
+       /**
+       * TransMessage
+       * @param responseData
+       * @return
+       */
+       private String getMessageFromSAP(IDataSet responseData,boolean flagIgnoreError)
+       {
+           String slipNo  = null;
+           IRecordSet  rs  = responseData.getRecordSet(SAP_SLIP_ELEM.SLIP_RETURN.getPart());
+           String messageType= rs.get(0, SAP_SLIP_RETURN.MSGTYP.getSapCol());
+           if(SlipConstants.SAP_SLIP_RETURN_MSG_TYP_SUCCESS.equals(messageType))
+           {
+               slipNo     = rs.get(0, SAP_SLIP_RETURN.BELNR.getSapCol());
+               this.sapSlipNo = slipNo;
+           }
+           else
+           {
+               String message   =  rs.get(0, SAP_SLIP_RETURN.MSG.getSapCol());
+               if(!flagIgnoreError) throw new BizRuntimeException("XYZE0000", new String[] {message});
+           }
+           return slipNo;
+       }
+       
+       /**
+        * sliptable기록
+        * @param requestData
+        * @param batchCtx
+        * @return
+        */
+        private  long fInqSlipLogHstSeq()
+        {
+            Long slipLogHstNo = Calendar.getInstance().getTimeInMillis();
+            
+            IRecord rec  = dbSelectSingle("SSlipLogHstSeq", new HashMap());
+            
+            slipLogHstNo = rec.getLong(0);
+            
+            return slipLogHstNo;
+        }
+       
+       /**
+        * 로깅
+        * @param functionName
+        * @param erpRequestData
+        * @param callInfo
+        */
+       private List<Long> fRegSlipLog(String functionName, IDataSet erpRequestData,HashMap callInfo) {
+           
+           List<Long> seqNums = new ArrayList();
+           String dmsTypeCd = "DE";
+           for (SAP_SLIP_KINDS one:SAP_SLIP_KINDS.values())
+           {
+               if(functionName.equals(one.getFuncName()))
+               {
+                   dmsTypeCd = one.getDmsType();
+                   break;
+               }
+           }
+           
+           Long sequenceKey = this.fInqSlipLogHstSeq();
+           seqNums.add(sequenceKey);
+           
+           Map slipTrmsMap = new HashMap();
+           slipTrmsMap.put("DMS_SLIP_NO", this.dmsSlipSeq);
+           slipTrmsMap.put("SLIP_TRMS_HST_NO", ""+sequenceKey);
+           slipTrmsMap.put("SLIP_TYP_CD",  dmsTypeCd);
+           dbInsert("ISlipTrmsHst", slipTrmsMap);
+           
+           Iterator<String> infoList = callInfo.keySet().iterator();
+           
+           int idxDtl =1;
+           
+           while(infoList.hasNext()) {
+               String key = infoList.next();
+               
+               if("params".equals(key))
+               {
+                   HashMap paramMap = (HashMap) callInfo.get("params");
+                   if(paramMap!=null && paramMap.size()>0)
+                   {
+                       Iterator ir = paramMap.entrySet().iterator();
+                       
+                       while(ir.hasNext())
+                       {
+                           String key4Map = (String) ir.next();
+                           String value4Map = (String) paramMap.get(key4Map);
+                           
+                           //header
+                           Map slipTrmsDtlMap = new HashMap();
+                           slipTrmsDtlMap.put("SLIP_TRMS_HST_NO", ""+sequenceKey);
+                           slipTrmsDtlMap.put("SLIP_TRMS_DTL_HST_NO", ""+idxDtl);
+                           slipTrmsDtlMap.put("SLIP_TRMS_DTL_EVNT", key4Map);
+                           slipTrmsDtlMap.put("SLIP_TRMS_DTL_CONT", value4Map);
+                           dbInsert("ISlipTrmsDtlHst", slipTrmsDtlMap);
+                       }
+                       idxDtl++;
+                   }
+               }
+               else
+               {
+                   String RECORD_SET_ID = key;
+                   String TABLE_ID = (String)callInfo.get(key);
+                   
+                   
+                   /* record set */
+                   IRecordSet recordSet = erpRequestData.getRecordSet(RECORD_SET_ID);
+                   Iterator records = recordSet.getRecords();
+                   
+                   int j=0;
+                   while(records.hasNext()) {
+                       //header
+                       Map slipTrmsDtlMap = new HashMap();
+                       slipTrmsDtlMap.put("SLIP_TRMS_HST_NO", ""+sequenceKey);
+                       slipTrmsDtlMap.put("SLIP_TRMS_DTL_HST_NO", ""+idxDtl);
+                       slipTrmsDtlMap.put("SLIP_TRMS_DTL_EVNT", TABLE_ID);
+                       dbInsert("ISlipTrmsDtlHst", slipTrmsDtlMap);
+                       
+                       Iterator headers = recordSet.getHeaders();
+                       IRecord record = (IRecord)records.next();
+                       int colIdx =1;
+                       while(headers.hasNext())
+                       {
+                           RecordHeader header = (RecordHeader) headers.next();
+                           String headerName   = header.getName();
+                           String value        = record.get(headerName);
+                           
+                           Map slipTrmsDtlDtailMap = new HashMap();
+                           slipTrmsDtlDtailMap.put("SLIP_TRMS_DTL_DTAIL_HST_NO", ""+colIdx);
+                           slipTrmsDtlDtailMap.put("SLIP_TRMS_DTL_DTAIL_HST_EVNT" ,headerName);
+                           slipTrmsDtlDtailMap.put("SLIP_TRMS_DTL_DTAIL_HST_CONT", value);
+                           slipTrmsDtlDtailMap.put("SLIP_TRMS_HST_NO", ""+sequenceKey);
+                           slipTrmsDtlDtailMap.put("SLIP_TRMS_DTL_HST_NO", ""+idxDtl);
+                           dbInsert("ISlipTrmsDtlDtailHst", slipTrmsDtlDtailMap);
+                           
+                           colIdx++;
+                       }
+                       idxDtl++;
+                   }
+               }
+           }
+           
+           seqNums.add((long) idxDtl);
+           
+           return seqNums;
+       }
+       
+       /**
+        * 로깅
+        * @param seqKeys.get(0)
+        * @param erpResponseData
+        * @param rsList
+        */
+       private Long fRegSlipResponseLog(List<Long> seqKeys, IDataSet erpResponseData,String[] rsList) {
+           
+           Long sequenceKey = seqKeys.get(0);
+           
+           Iterator<String> infoFieldList =erpResponseData.getFieldKeys();
+           
+           Long idxDtl = seqKeys.get(1);
+           
+           //필드처리
+           while(infoFieldList.hasNext()) {
+               String key4DS = (String) infoFieldList.next();
+               String value4DS = (String) erpResponseData.getField(key4DS);
+               
+               //header
+               Map slipTrmsDtlMap = new HashMap();
+               slipTrmsDtlMap.put("SLIP_TRMS_HST_NO", ""+sequenceKey);
+               slipTrmsDtlMap.put("SLIP_TRMS_DTL_HST_NO", ""+idxDtl);
+               slipTrmsDtlMap.put("SLIP_TRMS_DTL_EVNT", key4DS);
+               slipTrmsDtlMap.put("SLIP_TRMS_DTL_CONT", value4DS);
+               dbInsert("ISlipTrmsDtlHst", slipTrmsDtlMap);
+               
+               idxDtl++;
+           }
+           
+           for(String key:rsList)
+           {
+               String TABLE_ID = key;
+                   
+               
+               /* record set */
+               IRecordSet recordSet = erpResponseData.getRecordSet(TABLE_ID);
+               Iterator records = recordSet.getRecords();
+               
+               int j=0;
+               while(records.hasNext()) {
+                   //header
+                   Map slipTrmsDtlMap = new HashMap();
+                   slipTrmsDtlMap.put("SLIP_TRMS_HST_NO", ""+sequenceKey);
+                   slipTrmsDtlMap.put("SLIP_TRMS_DTL_HST_NO", ""+idxDtl);
+                   slipTrmsDtlMap.put("SLIP_TRMS_DTL_EVNT", TABLE_ID);
+                   dbInsert("ISlipTrmsDtlHst", slipTrmsDtlMap);
+                   
+                   Iterator headers = recordSet.getHeaders();
+                   IRecord record = (IRecord)records.next();
+                   int colIdx =1;
+                   while(headers.hasNext())
+                   {
+                       RecordHeader header = (RecordHeader) headers.next();
+                       String headerName   = header.getName();
+                       String value        = record.get(headerName);
+                       
+                       Map slipTrmsDtlDtailMap = new HashMap();
+                       slipTrmsDtlDtailMap.put("SLIP_TRMS_DTL_DTAIL_HST_NO", ""+colIdx);
+                       slipTrmsDtlDtailMap.put("SLIP_TRMS_DTL_DTAIL_HST_EVNT" ,headerName);
+                       slipTrmsDtlDtailMap.put("SLIP_TRMS_DTL_DTAIL_HST_CONT", value);
+                       slipTrmsDtlDtailMap.put("SLIP_TRMS_HST_NO", ""+sequenceKey);
+                       slipTrmsDtlDtailMap.put("SLIP_TRMS_DTL_HST_NO", ""+idxDtl);
+                       dbInsert("ISlipTrmsDtlDtailHst", slipTrmsDtlDtailMap);
+                       
+                       colIdx++;
+                   }
+                   idxDtl++;
+               }
+               
+           }
+           
+           return sequenceKey;
+       }
+       
+       /**
+        * sliptable기록
+        * @param requestData
+        * @param batchCtx
+        * @return
+        */
+        private IDataSet fRegSlipData(IDataSet requestData, IBatchContext batchCtx)
+        {
+            IDataSet responseData = new DataSet();
+            requestData.putField("DEAL_TYP_CD", requestData.getField("BU_TYPE"));
+            dbInsert("ISlipData", requestData.getFieldMap());
+            return responseData;
+        }
+        
+        
+      
+      
+      /**
+       * 로그인ID가져오기
+       * @param requestData
+       * @param batchCtx
+       * @return
+       */
+      private String fLoginId(String userNo, IBatchContext batchCtx)
+      {
+          String lginId = "06218";
+          IRecord rec = dbSelectSingle("SUserInfo", SAPUtils.newMap("USER_NO", userNo));
+          if(rec!=null ) lginId = rec.get("EMP_NO");
+          return lginId;
+      }
+      
+      
+      /**
+       * sliptable기록
+       * @param requestData
+       * @param batchCtx
+       * @return
+       */
+       private String fInqSlipSeq()
+       {
+           String slipNo = "";
+           
+           slipNo = ""+Calendar.getInstance().getTimeInMillis();
+           slipNo = "DMS" + slipNo.substring(slipNo.length() -7 ,slipNo.length());
+           
+           IRecord rec  = dbSelectSingle("SSlipSeq", new HashMap());
+           
+           slipNo = rec.get(SlipConstants.SLIP_NO);
+           
+           this.dmsSlipSeq = slipNo;
+           
+           return slipNo;
+       }
+       
+    
+     /**
+      * upsertRecordHandler
+      * @param context
+      * @return
+      */
+      private AbsRecordHandler upsertRecordHandler(IBatchContext context) {
+         AbsRecordHandler rh = new AbsRecordHandler(context) {
+             @Override
+             public void handleRecord(IRecord row) {
+                 String upsertStmt  = context.getAttribute("upsertStmt").toString();
+                 context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+                 SAPUtils.debug("updateRecordHandler()"+upsertStmt+" : " + SAPUtils.convertRecord2Map(row));
+                 if(upsertStmt.startsWith("U"))
+                 {
+                     dbUpdate(upsertStmt, row, context);
+                 }
+                 else if(upsertStmt.startsWith("I"))
+                 {
+                     dbInsert(upsertStmt, row, context);
+                 }
+                 else if(upsertStmt.startsWith("D"))
+                 {
+                     dbDelete(upsertStmt, row, context);
+                 }
+                 processCnt++;
+             }
+         };
+         return rh;
+      }
+     
+     
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext onlineCtx = makeOnlineContext(context);
+        
+        IDataSet reqDS = new DataSet();
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("OP_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+         
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        }else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+            processCnt = 0;
+        }
+         
+        reqDS.putField("PROC_CNT", ""+processCnt);
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fUpdBatTaskOpHst", reqDS, onlineCtx);
+
+        log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("단말기매각등록 BATCH 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+
+}

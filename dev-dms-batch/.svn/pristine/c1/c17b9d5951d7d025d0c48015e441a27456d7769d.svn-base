@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.BPR007">
+	<select id="STfEqpCmptRtn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR007.STfEqpCmptRtn 단말기구성품반납대상IF목록조회 */
+/* IO: 김윤환,2015-08-12T14:55:24(김윤환,2015-08-12T09:44:15) */
+SELECT 
+	   A.IF_PROC_DT		/* IF처리일자 */
+	   ,A.IF_FILE_NM	/* IF파일명 */
+	   ,A.IF_SEQ		/* IF순번 */
+	   ,A.EQP_MDL_CD	/* 단말기모델코드 */
+	   ,A.EQP_SER_NO	/* 단말기일련번호 */
+	   ,A.CMPT_INFO		/* 구성품정보 */
+	   ,A.PROC_ST_CD	/* 처리상태코드 */
+	   ,A.FS_REG_USER_ID	/* 최초등록사용자ID */
+	   ,A.FS_REG_DTM	/* 최초등록일시 */
+	   ,A.LS_CHG_USER_ID	/* 최종변경사용자ID */
+	   ,A.LS_CHG_DTM	/* 최종변경일시 */
+  FROM TF_EQP_CMPT_RTN A
+ WHERE A.PROC_ST_CD = '09']]>
+	</select>
+	<select id="SCmptClctObjSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR007.SCmptClctObjSeq 구성품회수대상번호조회 */
+/* IO: 김윤환,2015-08-12T16:45:30(김윤환,2015-08-12T16:33:59) */
+SELECT 'EC'||LPAD(SQ01_TB_CMPT_CLCT_OBJ.NEXTVAL,10,'0') AS CMPT_CLCT_OBJ_NO FROM DUAL]]>
+	</select>
+	<insert id="ITbCmptClctObj" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR007.ITbCmptClctObj 구성품회수대상정보등록 */
+/* IO: 김윤환,2015-08-12T16:39:13(김윤환,2015-08-12T16:39:13) */
+INSERT 
+  INTO TB_CMPT_CLCT_OBJ
+  (
+	CMPT_CLCT_OBJ_NO	/* 구성품회수대상번호 */
+	,IN_SCHD_DT			/* 입고예정일자 */
+	,EQP_MDL_CD			/* 단말기모델코드 */
+	,EQP_SER_NO			/* 단말기일련번호 */
+	,CMPT_CD			/* 구성품코드 */
+	,CMPT_RTN_YN		/* 구성품반납여부 */
+	,FS_REG_USER_ID		/* 최초등록사용자ID */
+	,FS_REG_DTM			/* 최초등록일시 */
+	,LS_CHG_USER_ID		/* 최종변경사용자ID */
+	,LS_CHG_DTM			/* 최종변경일시 */
+  )VALUES(
+	#CMPT_CLCT_OBJ_NO#	/* 구성품회수대상번호 */
+	,#IN_SCHD_DT#		/* 입고예정일자 */
+	,#EQP_MDL_CD#		/* 단말기모델코드 */
+	,#EQP_SER_NO#		/* 단말기일련번호 */
+	,#CMPT_CD#			/* 구성품코드 */
+	,#CMPT_RTN_YN#		/* 구성품반납여부 */
+	,'SYSTEM'		
+	,SYSDATE	
+	,'SYSTEM'	
+	,SYSDATE	
+  )]]>
+	</insert>
+	<update id="UTfEqpCmptRtn" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR007.UTfEqpCmptRtn 단말기구성품반납대상IF처리상태변경 */
+/* IO: 김윤환,2015-08-12T16:49:37(김윤환,2015-08-12T16:49:37) */
+UPDATE TF_EQP_CMPT_RTN
+   SET PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) */
+	   ,LS_CHG_USER_ID = 'BAT'
+	   ,LS_CHG_DTM = SYSDATE
+ WHERE IF_SEQ = #IF_SEQ#
+   AND IF_FILE_NM = #IF_FILE_NM#]]>
+	</update>
+</sqlMap>

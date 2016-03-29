@@ -1,0 +1,482 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="Form" classname="web_html" inheritanceid="" position="absolute 0 0 511 302" titletext="웹에디터" onload="Form_onload" ontimer="Form_ontimer">
+    <Layouts>
+      <Layout>
+        <Button id="btn_BG" taborder="0" text="BG" onclick="commonGridView_OnClick" position="absolute 376 0 403 20" tooltiptext="배경색" userdata="pdiv_color.grid_color,'BackgroundColor',pdiv_color" style="bordertype:round 3 3  righttop rightbottom;" class="btn_edt_baseBtn"/>
+        <Div id="div_msie" taborder="1" text="div_msie" position="absolute 0 23 511 302" style="border:1 solid #ddddddff ;" scrollbars="none" anchor="all">
+          <Layouts>
+            <Layout>
+              <ActiveX id="obj_msie" position="absolute 0 0 511 279" progid="{8856F961-340A-11D0-A96B-00C04FD705A2}" windowed="true" useautobitmapcache="1" anchor="all" taborder="0" popupstyle="true"/>
+            </Layout>
+          </Layouts>
+        </Div>
+        <Combo id="cbo_editor" taborder="2" value="0" text="에디터" codecolumn="codecolumn" datacolumn="datacolumn" index="0" onitemchanged="cmb_editor_onitemchanged" position="absolute 0 0 72 20">
+          <Dataset id="innerdataset">
+            <ColumnInfo>
+              <Column id="codecolumn" size="256"/>
+              <Column id="datacolumn" size="256"/>
+            </ColumnInfo>
+            <Rows>
+              <Row>
+                <Col id="codecolumn">0</Col>
+                <Col id="datacolumn">에디터</Col>
+              </Row>
+              <Row>
+                <Col id="codecolumn">1</Col>
+                <Col id="datacolumn">HTML</Col>
+              </Row>
+            </Rows>
+          </Dataset>
+        </Combo>
+        <TextArea id="txt_editor" taborder="3" wordwrap="word" position="absolute 0 23 511 302" class="txt_edit_write" titletext="웹에디터" anchor="all"/>
+        <Button id="btn_edt_fonttype" taborder="4" text="Times New Roman" onclick="commonGridView_OnClick" position="absolute 77 0 211 20" tooltiptext="글꼴" userdata="pdiv_font.grid_fontName,'FontName',pdiv_font" class="btn_edt_fonttype"/>
+        <Button id="btn_style01" taborder="6" text="가" onclick="fn_execCommand" position="absolute 271 0 293 20" tooltiptext="굵게" style="bordertype:round 3 3  lefttop leftbottom;font:Dotum,9,bold;" userdata="'Bold'" class="btn_edt_baseBtnBoxBox" onmouseenter="btn_style_onmouseenter"/>
+        <Button id="btn_style03" taborder="7" text="가" onclick="fn_execCommand" position="absolute 313 0 335 20" tooltiptext="기울임" style="padding:0 0 0 -4;font:Dotum,9,italic;" userdata="'Italic'" class="btn_edt_baseBtnBox"/>
+        <Button id="btn_style04" taborder="8" text="가" onclick="commonGridView_OnClick" position="absolute 334 0 356 20" tooltiptext="글꼴색" style="color:red; :disabled {color:#999999ff;}" userdata="pdiv_color.grid_color,'ForeColor',pdiv_color" class="btn_edt_baseBtnBox"/>
+        <Button id="btn_style05" taborder="9" text="가" onclick="commonGridView_OnClick" position="absolute 355 0 377 20" tooltiptext="강조색" userdata="pdiv_color.grid_color,'BackColor',pdiv_color" class="btn_edt_fontBG"/>
+        <Button id="btn_edt_alignLeft" taborder="10" onclick="fn_execCommand" position="absolute 408 0 430 20" tooltiptext="왼쪽정렬" userdata="'JustifyLeft'" class="btn_edt_alignLeft"/>
+        <Button id="btn_edt_alignRight" taborder="11" onclick="fn_execCommand" position="absolute 450 0 472 20" tooltiptext="오른쪽정렬" userdata="'JustifyRight'" class="btn_edt_alignRight"/>
+        <Button id="btn_Url" taborder="12" text="URL" onclick="fn_execCommand" position="absolute 477 0 509 20" tooltiptext="링크" style="align:center middle;" userdata="'CreateLink'" class="btn_edt_baseBtn"/>
+        <Button id="btn_style02" taborder="13" text="가" onclick="fn_execCommand" position="absolute 292 0 314 20" tooltiptext="밑줄" style="font:Dotum,9,underline;" userdata="'Underline'" class="btn_edt_baseBtnBox"/>
+        <PopupDiv id="pdiv_color" text="pdiv_color" visible="false" position="absolute 600 408 712 580" style="border:1 solid #c9c9c9ff ;bordertype:normal 0 0 ;">
+          <Layouts>
+            <Layout>
+              <Grid id="grid_color" taborder="0" binddataset="ds_color" useinputpanel="false" oncellclick="Grid_oncellclick" position="absolute 5 5 105 165" anchor="default" hideendline="both" selecttype="cell" class="grd_edt_colorList">
+                <Formats>
+                  <Format id="default">
+                    <Columns>
+                      <Column size="20"/>
+                      <Column size="20"/>
+                      <Column size="20"/>
+                      <Column size="20"/>
+                      <Column size="20"/>
+                    </Columns>
+                    <Rows>
+                      <Row size="20"/>
+                    </Rows>
+                    <Band id="body" style="selectline: ;">
+                      <Cell celltype="head" style="line: ;background:BIND(column0);background2:BIND(column0);"/>
+                      <Cell col="1" celltype="head" style="line: ;background:BIND(column1);background2:BIND(column1);"/>
+                      <Cell col="2" celltype="head" style="line: ;background:BIND(column2);background2:BIND(column2);"/>
+                      <Cell col="3" celltype="head" style="line: ;background:BIND(column3);background2:BIND(column3);"/>
+                      <Cell col="4" celltype="head" style="line: ;background:BIND(column4);background2:BIND(column4);"/>
+                    </Band>
+                  </Format>
+                </Formats>
+              </Grid>
+            </Layout>
+          </Layouts>
+        </PopupDiv>
+        <PopupDiv id="pdiv_size" text="pdiv_size" visible="false" position="absolute 895 405 937 575">
+          <Layouts>
+            <Layout>
+              <Grid id="grid_fontSize" class="grd_edt_listbox" taborder="0" binddataset="ds_fontSizeName" useinputpanel="false" oncellclick="Grid_oncellclick" position="absolute 0 0 40 168" anchor="default">
+                <Formats>
+                  <Format id="default">
+                    <Columns>
+                      <Column size="40"/>
+                    </Columns>
+                    <Rows>
+                      <Row size="24"/>
+                    </Rows>
+                    <Band id="body">
+                      <Cell celltype="head" style="align:right middle;padding:0 5 0 0;font:BIND(FONTSIZE);" text="bind:FONTSIZENAME"/>
+                    </Band>
+                  </Format>
+                </Formats>
+              </Grid>
+            </Layout>
+          </Layouts>
+        </PopupDiv>
+        <PopupDiv id="pdiv_font" text="pdiv_font" visible="false" position="absolute 724 408 876 652">
+          <Layouts>
+            <Layout>
+              <Grid id="grid_fontName" class="grd_edt_listbox" taborder="0" binddataset="ds_fontName" useinputpanel="false" oncellclick="Grid_oncellclick" position="absolute 0 0 150 242" anchor="default" autofittype="col">
+                <Formats>
+                  <Format id="default">
+                    <Columns>
+                      <Column size="150"/>
+                    </Columns>
+                    <Rows>
+                      <Row size="20"/>
+                    </Rows>
+                    <Band id="body" style="selectfont: ;">
+                      <Cell celltype="head" style="align:left;font:BIND(RFONTNAME);" text="bind:FONTNAME"/>
+                    </Band>
+                  </Format>
+                </Formats>
+              </Grid>
+            </Layout>
+          </Layouts>
+        </PopupDiv>
+        <Button id="btn_edt_alignCenter" taborder="17" onclick="fn_execCommand" position="absolute 429 0 451 20" tooltiptext="가운데정렬" userdata="'JustifyCenter'" class="btn_edt_alignCenter"/>
+        <Static id="sta_grid" visible="false" position="absolute 8 32 70 65"/>
+        <Combo id="cbo_fontSize" taborder="18" position="absolute 216 0 266 20" innerdataset="@ds_fontSizeName" codecolumn="NAME" datacolumn="FONTSIZENAME" index="1" onitemchanged="cbo_fontSize_onitemchanged" value="2" text="10"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_color" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="column0" type="STRING" size="256"/>
+          <Column id="column1" type="STRING" size="256"/>
+          <Column id="column2" type="STRING" size="256"/>
+          <Column id="column3" type="STRING" size="256"/>
+          <Column id="column4" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="column0">#FF0000</Col>
+            <Col id="column1">#FF4646</Col>
+            <Col id="column2">#FF5A5A</Col>
+            <Col id="column3">#FF6E6E</Col>
+            <Col id="column4">#FF8282</Col>
+          </Row>
+          <Row>
+            <Col id="column0">#FF8C00</Col>
+            <Col id="column1">#FF8C46</Col>
+            <Col id="column2">#FF8C5A</Col>
+            <Col id="column3">#FF8C6E</Col>
+            <Col id="column4">#FF8C82</Col>
+          </Row>
+          <Row>
+            <Col id="column0">#FFFF00</Col>
+            <Col id="column1">#FFFF6E</Col>
+            <Col id="column2">#FFFF5A</Col>
+            <Col id="column3">#FFFF6E</Col>
+            <Col id="column4">#FFFF82</Col>
+          </Row>
+          <Row>
+            <Col id="column0">#008000</Col>
+            <Col id="column1">#008046</Col>
+            <Col id="column2">#00805A</Col>
+            <Col id="column3">#00806E</Col>
+            <Col id="column4">#008082</Col>
+          </Row>
+          <Row>
+            <Col id="column0">#0000FF</Col>
+            <Col id="column1">#5050FF</Col>
+            <Col id="column2">#6478FF</Col>
+            <Col id="column3">#648CFF</Col>
+            <Col id="column4">#64A0FF</Col>
+          </Row>
+          <Row>
+            <Col id="column0">#00008C</Col>
+            <Col id="column1">#28288C</Col>
+            <Col id="column2">#50508C</Col>
+            <Col id="column3">#7878AA</Col>
+            <Col id="column4">#A0A0C8</Col>
+          </Row>
+          <Row>
+            <Col id="column0">#9400D3</Col>
+            <Col id="column1">#9E0ADD</Col>
+            <Col id="column2">#A814E7</Col>
+            <Col id="column3">#B21EF1</Col>
+            <Col id="column4">#BC28FB</Col>
+          </Row>
+          <Row>
+            <Col id="column0">#000000</Col>
+            <Col id="column1">#3C3C3C</Col>
+            <Col id="column2">#5A5A5A</Col>
+            <Col id="column3">#787878</Col>
+            <Col id="column4">#FFFFFF</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_fontSizeName" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="NAME" type="STRING" size="256"/>
+          <Column id="FONTSIZE" type="STRING" size="256"/>
+          <Column id="FONTSIZENAME" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="FONTSIZE">7</Col>
+            <Col id="NAME">1</Col>
+            <Col id="FONTSIZENAME">7</Col>
+          </Row>
+          <Row>
+            <Col id="FONTSIZE">10</Col>
+            <Col id="NAME">2</Col>
+            <Col id="FONTSIZENAME">10</Col>
+          </Row>
+          <Row>
+            <Col id="FONTSIZE">12</Col>
+            <Col id="NAME">3</Col>
+            <Col id="FONTSIZENAME">12</Col>
+          </Row>
+          <Row>
+            <Col id="FONTSIZE">14</Col>
+            <Col id="NAME">4</Col>
+            <Col id="FONTSIZENAME">14</Col>
+          </Row>
+          <Row>
+            <Col id="FONTSIZE">18</Col>
+            <Col id="NAME">5</Col>
+            <Col id="FONTSIZENAME">18</Col>
+          </Row>
+          <Row>
+            <Col id="FONTSIZE">24</Col>
+            <Col id="NAME">6</Col>
+            <Col id="FONTSIZENAME">24</Col>
+          </Row>
+          <Row>
+            <Col id="FONTSIZE">32</Col>
+            <Col id="NAME">7</Col>
+            <Col id="FONTSIZENAME">32</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_fontName" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="FONTNAME" type="STRING" size="256"/>
+          <Column id="RFONTNAME" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="FONTNAME">굴림</Col>
+            <Col id="RFONTNAME">굴림,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">돋움</Col>
+            <Col id="RFONTNAME">돋움,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">바탕</Col>
+            <Col id="RFONTNAME">바탕,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">궁서</Col>
+            <Col id="RFONTNAME">궁서,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">휴먼옛체</Col>
+            <Col id="RFONTNAME">휴먼옛체,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">Century Gothic</Col>
+            <Col id="RFONTNAME">Century Gothic,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">Comic Sans MS</Col>
+            <Col id="RFONTNAME">Comic Sans MS,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">Arial</Col>
+            <Col id="RFONTNAME">Arial,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">Arial Narrow</Col>
+            <Col id="RFONTNAME">Arial Narrow,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">System</Col>
+            <Col id="RFONTNAME">System,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">Times New Roman</Col>
+            <Col id="RFONTNAME">Times New Roman,9</Col>
+          </Row>
+          <Row>
+            <Col id="FONTNAME">Verdana</Col>
+            <Col id="RFONTNAME">Verdana,9</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+    </Objects>
+    <Bind/>
+    <Script type="xscript4.0"><![CDATA[/*
+ * File Name   : App_Others_MSIEWebEditor
+ * Description : MSIE(ActiveX)사용하여 웹에디터 만들기
+ */
+
+var cv_objDoc;
+var cv_sHtml;
+
+/*  온로드 */
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	div_msie.obj_msie.Navigate("About:Blank");
+    var sInit = "<head><base target='_Blank'>"
+              + "<style type='text/css'>p{ margin:4;}</style></head>"
+              + "<body style='font-family:arial; font-size:12px; margin:5; border:0;' "
+              + "scroll='auto'  border: 1px solid #959595;></body>";
+           
+    div_msie.obj_msie.Document.write(sInit);    
+	cv_objDoc = div_msie.obj_msie.Document;	
+	cv_objDoc.designMode = "on";
+	//txt_editor.value  = "";
+}
+
+function setInit(bgColor) {
+	this.style.background = bgColor;
+	//div_msie.obj_msie.popupstyle = bPopup;
+}
+
+/*  버튼클릭 */
+function commonGridView_OnClick(obj:Button,  e:ClickEventInfo)
+{		
+	var objGrid = eval(obj.userdata.split(",")[0]);	
+	objGrid.userdata = obj.userdata.split(",")[1] + "," +obj.userdata.split(",")[2];	
+
+	var nX = system.clientToScreenX(obj, 0); 
+	var nY = system.clientToScreenY(obj, obj.position.height);
+	var sRtnVal = this.components[obj.userdata.split(",")[2]].trackPopup(nX, nY);
+	//trace("obj.name==="+obj.name+":::::sRtnVal==="+sRtnVal);
+
+	if ( fn_isNull(sRtnVal) ) {
+		return;
+	} else {
+		var arrRtnVal = sRtnVal.split(",");
+		var sType     = arrRtnVal[0].replace("'","");
+		var sValue    = arrRtnVal[2].replace("'","");
+
+		if ( sType == 'FontName' ) {
+			obj.text = sValue;
+			obj.font = sValue+",9";
+		} else if ( sType == 'ForeColor' ) {
+			obj.color = sValue;
+		//} else if ( sType == 'BackColor' || sType == 'BackgroundColor') {
+		} else if ( sType == 'BackColor' ) {
+			obj.background.color = sValue;
+		}
+	}
+}
+
+/*  oncellclick */
+function Grid_oncellclick(obj:Grid, e:GridClickEventInfo)
+{
+	var objDs = this.all[obj.binddataset];
+			
+	if (obj.userdata.split(",")[0] == "'BackgroundColor'")
+	{		
+		sta_grid.userdata = obj.userdata.split(",")[0] + ", false,'" + objDs.getColumn(e.row , e.cell) + "'";
+		cv_objDoc.body.style.background = objDs.getColumn(e.row, e.cell);
+	}
+	else
+	{
+		sta_grid.userdata = obj.userdata.split(",")[0] + ", false,'" + objDs.getColumn(e.row , e.cell) + "'"; 		
+		fn_execCommand(sta_grid); 	
+	}
+    this.components[obj.userdata.split(",")[1]].closePopup(sta_grid.userdata);     
+}
+
+/*
+ * Function Name : fn_execCommand
+ * Description   : 자바스크립트 execCommand 명령어 처리
+ * Parameter     : Static
+ * Return        : 
+ * Example       : fn_execCommand(obj);
+ */
+function fn_execCommand(obj)
+{
+	eval("cv_objDoc.execCommand("+obj.userdata+")");
+	
+	if ( obj.name == "btn_edt_alignLeft" ) {
+		btn_edt_alignLeft.class   = "btn_edt_alignLeft_S";
+		btn_edt_alignCenter.class = "btn_edt_alignCenter";
+		btn_edt_alignRight.class  = "btn_edt_alignRight";
+	} else if ( obj.name == "btn_edt_alignCenter" ) {
+		btn_edt_alignLeft.class   = "btn_edt_alignLeft";
+		btn_edt_alignCenter.class = "btn_edt_alignCenter_S";
+		btn_edt_alignRight.class  = "btn_edt_alignRight";
+	} else {	//btn_edt_alignRight
+		btn_edt_alignLeft.class   = "btn_edt_alignLeft";
+		btn_edt_alignCenter.class = "btn_edt_alignCenter";
+		btn_edt_alignRight.class  = "btn_edt_alignRight_S";	
+	}
+}
+
+/*  onitemchanged */
+function cmb_editor_onitemchanged(obj:Combo, e:ItemChangeEventInfo)
+{
+	if (obj.index)
+	{
+		txt_editor.value   = cv_objDoc.body.innerHTML;		
+		txt_editor.visible = true;
+		div_msie.visible   = false;
+		fn_btnEnable(false);		
+		txt_editor.setFocus();
+	}		
+	else
+	{
+		cv_objDoc.body.innerHTML 	= txt_editor.value;
+		div_msie.visible  	= true;
+		txt_editor.visible 	= false;
+		fn_btnEnable(true);
+		div_msie.setFocus();
+	}
+}
+
+/*
+ * Function Name : fn_btnEnable
+ * Description   : 버튼 활성화/비활성화 처리
+ * Parameter     : 
+ * Return        : 
+ * Example       : fn_btnEnable(true);
+ */
+function fn_btnEnable(isEnable)
+{
+	btn_edt_fonttype.enable = isEnable;
+	cbo_fontSize.enable = isEnable;
+	
+	btn_style01.enable = isEnable;
+	btn_style02.enable = isEnable;
+	btn_style03.enable = isEnable;
+	btn_style04.enable = isEnable;
+	btn_style05.enable = isEnable;
+	btn_BG.enable = isEnable;
+	btn_edt_alignLeft.enable = isEnable;
+	btn_edt_alignCenter.enable = isEnable;
+	btn_edt_alignRight.enable = isEnable;
+	btn_Url.enable = isEnable;
+}
+
+/*  글꼴 버튼에 mouse over시 object를 최상위로 */
+function btn_font_onmouseenter(obj:Button, e:MouseEventInfo)
+{
+	obj.bringToFront();
+}
+
+function cbo_fontSize_onitemchanged(obj:Combo, e:ItemChangeEventInfo)
+{
+	sta_grid.userdata = "'FontSize', false,'" + cbo_fontSize.value + "'";
+	//trace("sta_grid.userdata==="+sta_grid.userdata);
+	fn_execCommand(sta_grid); 
+}
+
+function fn_isNull(sValue)
+{
+	if(new String(sValue).valueOf() == "undefined" || new String(sValue).valueOf() == "[Undefined]") return true;
+	if(sValue == null) return true;
+	if(("x"+sValue == "xNaN") && (String(sValue.length).valueOf() == "undefined"))
+		return true;
+	if(String(sValue).length == 0) return true;
+  
+    //Trim 기능 추가  
+    var sArg = new String(sValue);
+	if (sArg.replace(/(^\s*)|(\s*$)/g, "").length == 0 ) return true;
+	
+ 	return false;
+}
+
+function getData() {
+	return cv_objDoc.body.innerHTML;
+}
+
+function setData(sHtml) {
+	cv_sHtml = sHtml;
+	setTimer(1,100);
+}
+
+function Form_ontimer(obj:Form, e:TimerEventInfo)
+{
+	if(e.timerid == 1) {
+		obj.killTimer(e.timerid);
+		cv_objDoc.body.innerHTML = cv_sHtml;
+	}
+}
+]]></Script>
+  </Form>
+</FDL>

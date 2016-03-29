@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR017">
+	<select id="SIFInsuScrbChg" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR017.SIFInsuScrbChg 인터페이스테이블 UKEY보증보험정보 조회 */
+/* IO: 안진갑,2015-11-06T10:53:27(안진갑,2015-08-20T12:54:59) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,OP_PROC_CL_CD
+       ,CUST_TYP_CD
+       ,CUST_NM
+       ,CUST_NM_ENPT
+       ,CTZ_COPREG_NO
+       ,CTZ_COPREG_NO_ENPT
+       ,BLICENS_NO
+       ,INSU_MGMT_NO
+       ,INSU_SVC_NO
+       ,SVC_MGMT_NO
+       ,RENTAL_SER_NO
+       ,RENTAL_SCRB_DT
+       ,RENTAL_TERM_DT
+       ,TTUL_CHG_DT
+       ,INSU_SCUR_NO
+       ,INSU_SCRB_AMT AS INSU_FEE
+       ,INSU_STA_DT
+       ,INSU_END_DT
+       ,INSU_TERM_RSN_CD
+       ,INSU_SCRB_ST_CD
+       ,TEEN_YN
+  FROM  TF_INSU_SCRB_CHG
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09'
+ ORDER  BY OP_PROC_CL_CD]]>
+	</select>
+	<update id="UIFInsuScrbChg" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR017.UIFInsuScrbChg 인터페이스테이블상태변경 */
+/* IO: 안진갑,2015-11-06T11:02:53(안진갑,2015-08-20T12:58:13) */
+UPDATE  TF_INSU_SCRB_CHG
+   SET  PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<insert id="IInsuUkey" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR017.IInsuUkey 보증보험Ukey정보등록 */
+/* IO: 안진갑,2015-11-02T16:15:59(안진갑,2015-08-20T13:01:14) */
+INSERT INTO TB_INSU_UKEY
+(
+  UKEY_INSU_NO
+ ,CNTRT_NO
+ ,OP_TYP_CD
+ ,UKEY_CUST_CL
+ ,UKEY_CUST_NM
+ ,UKEY_CUST_NM_ENPT
+ ,UKEY_CTZ_COPREG_NO
+ ,UKEY_CTZ_COPREG_NO_ENPT
+ ,UKEY_BIZ_REG_NO
+ ,UKEY_INSURE_MGMT_NO
+ ,UKEY_SVC_NO
+ ,UKEY_SVC_MGMT_NO
+ ,RENTAL_SER_NO
+ ,RENTAL_SCRB_DT
+ ,RENTAL_TERM_DT
+ ,TTUL_CHG_DT
+ ,UKEY_INSURE_SCUR_NO
+ ,UKEY_INSURE_SCRB_AMT
+ ,UKEY_INSURE_FEE
+ ,UKEY_INSURE_STA_DT
+ ,UKEY_INSURE_END_DT
+ ,INSURE_TERM_RSN_CD
+ ,INSUCO_SCRB_ST_CD 
+ ,TEEN_YN
+ ,UKEY_CBACK_INSURE_FEE
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM 
+)
+SELECT  'IU'||LPAD(SQ01_TB_INSU_UKEY.NEXTVAL,10,'0')
+       ,(SELECT CNTRT_NO FROM TB_NR_CNTRT WHERE SVC_MGMT_NO = #SVC_MGMT_NO# AND RENTAL_SER_NO = #RENTAL_SER_NO#)
+       ,#OP_PROC_CL_CD#
+       ,#CUST_TYP_CD#
+       ,#CUST_NM#
+	   ,#CUST_NM_ENPT#
+	   ,#CTZ_COPREG_NO#
+	   ,#CTZ_COPREG_NO_ENPT#
+	   ,#BLICENS_NO#
+	   ,#INSU_MGMT_NO#
+	   ,#INSU_SVC_NO#
+	   ,#SVC_MGMT_NO#
+	   ,#RENTAL_SER_NO#
+	   ,#RENTAL_SCRB_DT#
+	   ,#RENTAL_TERM_DT#
+	   ,#TTUL_CHG_DT#
+	   ,#INSU_SCUR_NO#
+	   ,#INSU_SCRB_AMT#
+	   ,#INSU_FEE#
+	   ,#INSU_STA_DT#
+	   ,#INSU_END_DT#
+	   ,#INSU_TERM_RSN_CD#
+	   ,#INSU_SCRB_ST_CD#
+	   ,#TEEN_YN#
+	   ,#CBACK_INSURE_FEE#
+	   ,'BAT'
+	   ,SYSDATE
+	   ,'BAT'
+	   ,SYSDATE
+  FROM  DUAL]]>
+	</insert>
+	<select id="SInsuScrbAmt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR017.SInsuScrbAmt 보험가입금액(출고가) 조회 */
+/* IO: 안진갑,2015-11-05T17:45:51(안진갑,2015-10-16T11:00:24) */
+SELECT  MAX(C.OUT_PRC) AS PRCH_AMT
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_RENTAL_POLY C
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+   AND  A.SVC_MGMT_NO = #SVC_MGMT_NO# 
+   AND  A.RENTAL_SER_NO = #RENTAL_SER_NO#]]>
+	</select>
+	<select id="SCbackInsureFee" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR017.SCbackInsureFee 보증보험료 환급금 조회 */
+/* IO: 안진갑,2015-11-02T17:47:01(안진갑,2015-11-02T16:10:41) */
+SELECT  TO_NUMBER(#INSU_FEE#) 
+        - TRUNC(TRUNC((TO_DATE(#INSU_END_DT#, 'YYYYMMDD') - TO_DATE(#INSU_STA_DT#, 'YYYYMMDD') + 1 - CNT) / 365 * 0.0254, 8) * TO_NUMBER(#INSU_SCRB_AMT#), -1) AS CBACK_INSURE_FEE
+  FROM (
+		SELECT  COUNT(YYYYMMDD) AS CNT
+  		  FROM (
+                SELECT  TO_CHAR(LAST_DAY(ADD_MONTHS(TO_DATE(#INSU_STA_DT#,'YYYYMMDD'), LEVEL -1)),'DD') AS DD
+                       ,LAST_DAY(ADD_MONTHS(TO_DATE(#INSU_STA_DT#,'YYYYMMDD'), LEVEL -1)) AS YYYYMMDD       
+                  FROM  DUAL
+               CONNECT  BY LEVEL <= ROUND(MONTHS_BETWEEN(TO_DATE(#INSU_END_DT#, 'YYYYMMDD'),TO_DATE(#INSU_STA_DT#,'YYYYMMDD')),0) + 1
+               )
+         WHERE  DD = '29'
+           AND  YYYYMMDD BETWEEN TO_DATE(#INSU_STA_DT#, 'YYYYMMDD') AND TO_DATE(#INSU_END_DT#, 'YYYYMMDD')
+       )]]>
+	</select>
+	<select id="SInsuUkeyScrbCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR017.SInsuUkeyScrbCnt 가입데이타건수 조회 */
+/* IO: 안진갑,2015-11-05T16:46:49(안진갑,2015-11-05T16:35:39) */
+SELECT  COUNT(UKEY_INSU_NO) AS CNT
+  FROM  TB_INSU_UKEY
+ WHERE  OP_TYP_CD = '01'
+   AND  UKEY_INSURE_MGMT_NO = #INSU_MGMT_NO#]]>
+	</select>
+</sqlMap>

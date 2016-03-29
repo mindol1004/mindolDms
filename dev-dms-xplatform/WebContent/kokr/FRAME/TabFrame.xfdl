@@ -1,0 +1,388 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="TabFrame" classname="TabFrame" inheritanceid="" position="absolute 0 0 1058 32" scrollbars="none" titletext="Tab영역" class="MDI_bg" onload="TabFrame_onload">
+    <Layouts>
+      <Layout height="32" width="1058">
+        <Div id="div_Tab" anchor="left top right" taborder="14" position="absolute 55 6 967 32" onsize="div_Tab_onsize" scrollbars="none" onhscroll="div_Tab_onhscroll" style="background:transparent;">
+          <Layouts>
+            <Layout width="891" height="26"/>
+          </Layouts>
+        </Div>
+        <Button id="btn_NexMdi" taborder="22" class="btn_MDI_spinUp" position="absolute 995 6 1016 25" onclick="btn_NexMdi_onclick" anchor="top right" visible="true" tabstop="false"/>
+        <Button id="btn_PreMdi" taborder="23" class="btn_MDI_spinDown" position="absolute 973 6 994 25" onclick="btn_PreMdi_onclick" anchor="top right" visible="true" tabstop="false"/>
+        <Button id="btnAllClose" taborder="24" class="btn_DV_allClose" position="absolute 1017 6 1038 25" anchor="top right" tooltiptext="CLOSE ALL" userdata="closeAll" onclick="btnAllClose_onclick" visible="true" tabstop="false"/>
+        <Button id="Button04" taborder="1" text="tabbutton1" class="btn_MDI" anchor="default" position="absolute 267 41 387 67" positiontype="position"/>
+        <Button id="Button03" taborder="1" class="btn_MDI_Extra" anchor="default" position="absolute 368 47 381 60" positiontype="position"/>
+        <Static id="Static02" text="w20" class="tip_guide" visible="false" position2="absolute l:1038 w:20 t:-1 h:31" positiontype="position2"/>
+        <Button id="btn_Home" taborder="26" class="btn_MDI_home_S" onclick="btn_Home_onclick" anchor="default" position="absolute 20 6 55 32" positiontype="position"/>
+        <Static id="Static01" text="w&#13;&#10;17" class="tip_guide" visible="false" position2="absolute l:52 w:17 t:10 h:44" positiontype="position2"/>
+        <Static id="Static00" text="w&#13;&#10;20" class="tip_guide" visible="false" position2="absolute l:0 w:20 t:10 h:22" positiontype="position2"/>
+        <Static id="Static03" text="h32" class="tip_guide" visible="false" position2="absolute l:140 w:17 t:0 h:32" positiontype="position2"/>
+        <Button id="Button00" taborder="27" text="tabbutton44" class="btn_MDI_S" position="absolute 406 40 526 66"/>
+        <Button id="Button01" taborder="28" class="btn_MDI_Extra" position2="absolute l:507 w:13 t:46 h:13" positiontype="position2"/>
+      </Layout>
+    </Layouts>
+    <Objects/>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : TabFrame.xfdl
+ * 03. 화면 설명 : 메뉴 탭 생성 form
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/ 
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+var nTop = 0;
+var nBottom = 26;
+var nExtraButtonTop = 6;
+var nExtraButtonBottom = 19;
+
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function TabFrame_onload(obj:Form, e:LoadEventInfo)
+{
+	//trace("TabFrame_onload>>>>>");
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Transaction 처리
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 5 ] CallBack 처리
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 6 ] Event Function ( Main Button )
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 버튼클릭시 해당페이지로 focus를 이동하여 해당페이지를 Active상태로 만든다.
+ * param    : obj - Button
+ * param    : e - ClickEventInfo
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function Button_onclick(obj:Button,  e:ClickEventInfo)
+{
+	fn_activeTabpage(obj.name);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 닫기버튼 클릭시 해당하는 페이지를 닫는다.
+ * param    : obj - Button
+ * param    : e - ClickEventInfo
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function ExtraButton_onclick(obj:Button,  e:ClickEventInfo)
+{
+   gfn_tabOnClose(obj.name.replace("__EX", ""));
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Tab Button Calss 변경제어
+-----------------------------------------------------------------------------------------------*/
+function ExtraButton_onmouseenter(obj:Button, e:MouseEventInfo)
+{
+	var objBtn = div_Tab.components[obj.name.toString().replace("__EX", "")];
+	
+	if(objBtn.class!="btn_MDI_S")
+	{
+		objBtn.class = "btn_MDI";
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Tab Button Calss 변경제어
+-----------------------------------------------------------------------------------------------*/
+function ExtraButton_onmouseleave(obj:Button, e:MouseEventInfo)
+{
+	var objBtn = div_Tab.components[obj.name.toString().replace("__EX", "")];
+	
+	if(objBtn.class!="btn_MDI_S")
+	{
+		objBtn.class = "btn_MDI";
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 네비게이션 다음버튼 클릭시
+-----------------------------------------------------------------------------------------------*/
+function btn_NexMdi_onclick(obj:Button,  e:ClickEventInfo)
+{
+	//div_Tab.hscrollbar.pos += div_Tab.hscrollbar.page;
+	fn_tabBtnMove("NEXT");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 네비게이션 이전버튼 클릭시
+-----------------------------------------------------------------------------------------------*/
+function btn_PreMdi_onclick(obj:Button,  e:ClickEventInfo)
+{
+	//div_Tab.hscrollbar.pos -= div_Tab.hscrollbar.page;
+	fn_tabBtnMove("PREV");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 네비게이션 전체창 닫기 버튼 클릭시
+-----------------------------------------------------------------------------------------------*/
+function btnAllClose_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_arrangeWin(obj.userdata);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : div_Tab Size변경시 tab button제어
+-----------------------------------------------------------------------------------------------*/
+function div_Tab_onsize(obj:Div, e:SizeEventInfo)
+{
+	fn_tabBtnMove("MOVE");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : div_Tab onhscroll변경시 네비게이션 버튼 제어
+-----------------------------------------------------------------------------------------------*/
+function div_Tab_onhscroll(obj:Div, e:ScrollEventInfo)
+{
+	if(e.pos==0 && div_Tab.hscrollbar.max > 0)
+	{
+		btn_NexMdi.enable = true;
+	}
+	
+	if(e.pos==div_Tab.hscrollbar.max && div_Tab.hscrollbar.max > 0)
+	{
+		btn_PreMdi.enable = true;
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Home버튼 클릭시 
+-----------------------------------------------------------------------------------------------*/
+function btn_Home_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_openMainMenu();
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Event Function ( Others )
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 8 ] User Defined Function
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 페이지를 네비게이션에 추가한다.
+ * param    : naviCD - Menu ID
+ * param    : naviNM - 메뉴명
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function fn_setNaviAdd(naviCD, naviNM) {
+	
+	var i;
+	var objFont      = gfn_getObjFont(9,"Malgun Gothic");
+	objFont.bold     = false;
+	var objTextSize  = gfn_getTextSize(naviNM, objFont);
+	var nLastCompIdx = div_Tab.components.length - 2;
+	var nGap;
+	if(nLastCompIdx == -2)	{
+		nGap = 1;
+	} else {
+		nGap = div_Tab.components[nLastCompIdx].position.right + 1;
+	}
+	var naviNM_Tooltip = naviNM;
+	for(i=0;i<div_Tab.components.length;i++)
+	{
+		if(div_Tab.components[i].class=="btn_MDI_S")
+		{
+			div_Tab.components[i].class ="btn_MDI";
+		}
+	}
+	
+	//페이지 버튼 생성
+	var objBtn = new Button();
+	objBtn.init(naviCD, nGap, nTop, nGap+objTextSize.cx+40, nBottom);
+	div_Tab.addChild(objBtn.name, objBtn);
+	objBtn.text = naviNM;
+	//objBtn.tooltiptext = naviNM_Tooltip;
+	objBtn.class = "btn_MDI_S";
+	objBtn.onclick.setHandler(Button_onclick);
+	objBtn.visible = true;
+	objBtn.show();
+	//objBtn.click();
+	//페이지 닫기 버튼 생성
+	var objExtraBtn = new Button();
+	objExtraBtn.init(naviCD+"__EX", objBtn.position.right-19, nExtraButtonTop, objBtn.position.right-6, nExtraButtonBottom);
+	div_Tab.addChild(objExtraBtn.name, objExtraBtn);
+	objExtraBtn.class = "btn_MDI_Extra";
+	objExtraBtn.onclick.setHandler(ExtraButton_onclick);
+	
+	objExtraBtn.onmouseenter.setHandler(ExtraButton_onmouseenter);
+	objExtraBtn.onmouseleave.setHandler(ExtraButton_onmouseleave);
+	objExtraBtn.visible = true;
+	objExtraBtn.show();
+	
+	objBtn.setFocus();
+	fn_tabBtnMove();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 선택된페이지의 Button을 Select상태로 만들고 
+ *            해당하는페이지가 현재페이지 네비게이션에 보이지 
+ *            않을경우 네비게이션에 보이는 Button의 위치를 변경해 
+ *            선택된페이지가 네비게이션에 보이도록 한다.
+ * param    : naviCD - Menu ID
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function fn_activeTabpage(naviCD) 
+{	
+	var i;
+	var sWINID;
+	var nRow;
+	var nBtnMoveCount;
+	
+	for(i=0;i<gds_openMenu.rowcount;i++)
+	{
+		sWINID = gds_openMenu.getColumn(i, "WINID");
+		
+		if(gfn_isNull(div_Tab.components[sWINID])==true) continue;
+		
+		if(div_Tab.components[sWINID].class=="btn_MDI_S")
+		{
+			div_Tab.components[sWINID].class ="btn_MDI";
+		}
+	}
+	
+	if(gfn_isNull(div_Tab.components[naviCD])==false)
+	{
+		div_Tab.components[naviCD].class = "btn_MDI_S";
+		div_Tab.resetScroll();
+		div_Tab.components[naviCD].setFocus();
+	}
+	
+	nRow = gds_openMenu.findRow("WINID", naviCD)
+	gds_openMenu.rowposition = nRow;
+	gfn_activeFrame(naviCD);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 페이지가 닫아졌을때 해당페이지의 네비게이션 버튼과 닫기버튼을 삭제한다. 
+ * param    : naviCD - Menu ID
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function fn_deleteTabpage(naviCD) 
+{
+	var i;
+	var sWINID;
+	var nDelWidth;
+    if(gfn_isNull(div_Tab.components[naviCD]) == false) 
+    {
+       nDelWidth = eval("div_Tab."+naviCD+".position.width") + 1;
+       div_Tab.removeChild(naviCD); 
+       //eval("div_Tab."+naviCD+"__EX.visible = false");
+       div_Tab.removeChild(naviCD+"__EX");
+	}	
+	
+	var nRow = gds_openMenu.findRow("WINID", naviCD);
+
+ 	for(i=nRow+1;i<gds_openMenu.rowcount;i++)
+ 	{
+ 		sWINID = gds_openMenu.getColumn(i, "WINID");
+ 		div_Tab.components[sWINID].move(div_Tab.components[sWINID].position.left - nDelWidth, nTop);
+ 		div_Tab.components[sWINID+"__EX"].move(div_Tab.components[sWINID].position.right - 18, nExtraButtonTop);
+ 	} 
+ 	
+ 	fn_tabBtnMove();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 선택된 Type에 따라 버튼의 위치를 이동시킨다.
+ * param    : sType - "PREV", "NEXT", "MOVE"
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function fn_tabBtnMove(sType)
+{
+	if ( sType == "PREV" ) {
+		div_Tab.hscrollbar.pos -= div_Tab.hscrollbar.page;
+	} else if ( sType == "NEXT" ) {
+		div_Tab.hscrollbar.pos += div_Tab.hscrollbar.page;
+	}
+
+	div_Tab.resetScroll();
+	var npos 	= div_Tab.hscrollbar.pos;
+	var nmin 	= div_Tab.hscrollbar.min;
+	var nmax 	= div_Tab.hscrollbar.max;
+	//trace("	fn_tabBtnMove>>"+"npos=="+npos+":::::nmin=="+nmin+":::::nmax=="+nmax+":::::page=="+div_Tab.hscrollbar.page);
+	if (nmax < 0) {	//비활성
+		btn_PreMdi.visible 	= false;
+		btn_NexMdi.visible  = false;
+	} else {
+		btn_PreMdi.visible 	= true;
+		btn_NexMdi.visible  = true;
+		
+		if(npos == nmin) {
+			btn_PreMdi.enable 	= false;
+			btn_NexMdi.enable   = true;
+		} else if(npos == nmax) {
+			btn_PreMdi.enable 	= true;
+			btn_NexMdi.enable   = false;
+		} else {
+			btn_PreMdi.enable 	= true;
+			btn_NexMdi.enable   = true;
+		}	
+	}
+
+	if ( gds_openMenu.rowcount == 0 ) {
+		btnAllClose.visible = false;
+	} else {
+		btnAllClose.visible = true;
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Home버튼 호출시 Top, MDI, Left제어
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function fn_setNotSelect()
+{
+	//trace("fn_setNotSelect>>>>>");
+	
+	// Top 메뉴영역 선택상태 해제
+	gds_openMenu.rowposition = -1;
+	var objBtn = ap_TopFrame.form.div_Menu.components;
+	for(var i=0;i<objBtn.length;i++)
+	{
+		if(objBtn[i].class == "btn_topGNBmenu_on") {
+			objBtn[i].class = "btn_topGNBmenu";
+		}	
+	}
+
+	// MDI 탭영역 선택상태 해제
+	for(i=0;i<ap_TabFrame.form.div_Tab.components.length;i++)
+	{
+		if(ap_TabFrame.form.div_Tab.components[i].class=="btn_MDI_S")	{
+			ap_TabFrame.form.div_Tab.components[i].class ="btn_MDI";
+		}
+	}
+	
+	// 메뉴정보 안나타나도록 없는데이타로 필터링
+	//ap_LeftFrame.form.ds_LeftMenu.filter("MENU_ID=='9999'");	
+	//ap_LeftFrame.form.divMenu.StaLeftMenuTitle.text = "Menu";
+}]]></Script>
+  </Form>
+</FDL>

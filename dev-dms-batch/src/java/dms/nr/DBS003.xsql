@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBS003">
+	<select id="SInsuInvDtl" parameterClass="map" resultClass="hmap" ><![CDATA[/* Biz: dms.nr.DBS003.SInsuInvDtl 보증보험청구내역상세 조회 */
+/* IO: 안진갑,2015-12-15T15:10:03(안진갑,2015-08-24T14:53:59) */
+SELECT  'L2' AS OP_CL_CD
+       ,'014' AS CO_CL_CD
+       ,TO_CHAR(SYSDATE,'YYYYMMDD')||SUBSTR(A.INSU_INV_NO, 7) AS INSURE_INV_REQT_NO
+       ,A.INV_DTL_INSURE_MGMT_NO AS INSU_MGMT_NO
+       ,'01' AS ALLOT_ANUL
+       ,A.PRDPAY_DT_1                                         /*납기일자_1*/
+       ,A.PRDPAY_DT_2                                         /*납기일자_2*/
+       ,A.PRDPAY_DT_3                                         /*납기일자_3*/
+       ,A.PRDPAY_DT_4                                         /*납기일자_4*/
+       ,A.PRDPAY_DT_5                                         /*납기일자_5*/
+       ,A.PRDPAY_DT_6                                         /*납기일자_6*/
+       ,A.PRDPAY_DT_7                                         /*납기일자_7*/
+       ,A.PRDPAY_DT_8                                         /*납기일자_8*/
+       ,A.PRDPAY_DT_9                                         /*납기일자_9*/
+       ,A.PRDPAY_DT_10                                        /*납기일자_10*/
+       ,A.PRDPAY_DT_11                                        /*납기일자_11*/
+       ,A.PRDPAY_DT_12                                        /*납기일자_12*/
+       ,A.PRDPAY_DT_13                                        /*납기일자_13*/
+       ,A.PRDPAY_DT_14                                        /*납기일자_14*/
+       ,NVL(A.RENTAL_PRN_1,'0')	AS RENTAL_PRN_1               /*렌탈원금_1*/
+       ,NVL(A.RENTAL_PRN_2,'0')	AS RENTAL_PRN_2               /*렌탈원금_2*/
+       ,NVL(A.RENTAL_PRN_3,'0')	AS RENTAL_PRN_3               /*렌탈원금_3*/
+       ,NVL(A.RENTAL_PRN_4,'0')	AS RENTAL_PRN_4               /*렌탈원금_4*/
+       ,NVL(A.RENTAL_PRN_5,'0')	AS RENTAL_PRN_5               /*렌탈원금_5*/
+       ,NVL(A.RENTAL_PRN_6,'0')	AS RENTAL_PRN_6               /*렌탈원금_6*/
+       ,NVL(A.RENTAL_PRN_7,'0')	AS RENTAL_PRN_7               /*렌탈원금_7*/
+       ,NVL(A.RENTAL_PRN_8,'0')	AS RENTAL_PRN_8               /*렌탈원금_8*/
+       ,NVL(A.RENTAL_PRN_9,'0')	AS RENTAL_PRN_9               /*렌탈원금_9*/
+       ,NVL(A.RENTAL_PRN_10,'0')	AS RENTAL_PRN_10            /*렌탈원금_10*/
+       ,NVL(A.RENTAL_PRN_11,'0')	AS RENTAL_PRN_11            /*렌탈원금_11*/
+       ,NVL(A.RENTAL_PRN_12,'0')	AS RENTAL_PRN_12            /*렌탈원금_12*/
+       ,NVL(A.RENTAL_PRN_13,'0')	AS RENTAL_PRN_13            /*렌탈원금_13*/
+       ,NVL(A.RENTAL_PRN_14,'0')	AS RENTAL_PRN_14            /*렌탈원금_14*/
+       ,NVL(A.DMG_CMP_AMT_1,'0')	AS DMG_CMP_AMT_1            /*손해배상금액_1*/
+       ,NVL(A.DMG_CMP_AMT_2,'0')	AS DMG_CMP_AMT_2            /*손해배상금액_2*/
+       ,NVL(A.DMG_CMP_AMT_3,'0')	AS DMG_CMP_AMT_3            /*손해배상금액_3*/
+       ,NVL(A.DMG_CMP_AMT_4,'0')	AS DMG_CMP_AMT_4            /*손해배상금액_4*/
+       ,NVL(A.DMG_CMP_AMT_5,'0')	AS DMG_CMP_AMT_5            /*손해배상금액_5*/
+       ,NVL(A.DMG_CMP_AMT_6,'0')	AS DMG_CMP_AMT_6            /*손해배상금액_6*/
+       ,NVL(A.DMG_CMP_AMT_7,'0')	AS DMG_CMP_AMT_7            /*손해배상금액_7*/
+       ,NVL(A.DMG_CMP_AMT_8,'0')	AS DMG_CMP_AMT_8            /*손해배상금액_8*/
+       ,NVL(A.DMG_CMP_AMT_9,'0')	AS DMG_CMP_AMT_9            /*손해배상금액_9*/
+       ,NVL(A.DMG_CMP_AMT_10,'0')	AS DMG_CMP_AMT_10           /*손해배상금액_10*/
+       ,NVL(A.DMG_CMP_AMT_11,'0')	AS DMG_CMP_AMT_11           /*손해배상금액_11*/
+       ,NVL(A.DMG_CMP_AMT_12,'0')	AS DMG_CMP_AMT_12           /*손해배상금액_12*/
+       ,NVL(A.DMG_CMP_AMT_13,'0')	AS DMG_CMP_AMT_13           /*손해배상금액_13*/
+       ,NVL(A.DMG_CMP_AMT_14,'0')	AS DMG_CMP_AMT_14           /*손해배상금액_14*/
+       ,NVL(A.ADD_AMT_1,'0') AS ADD_AMT_1                     /*가산금액_1*/
+       ,NVL(A.ADD_AMT_2,'0') AS ADD_AMT_2                     /*가산금액_2*/
+       ,NVL(A.ADD_AMT_3,'0') AS ADD_AMT_3                     /*가산금액_3*/
+       ,NVL(A.ADD_AMT_4,'0') AS ADD_AMT_4                     /*가산금액_4*/
+       ,NVL(A.ADD_AMT_5,'0') AS ADD_AMT_5                     /*가산금액_5*/
+       ,NVL(A.ADD_AMT_6,'0') AS ADD_AMT_6                     /*가산금액_6*/
+       ,NVL(A.ADD_AMT_7,'0') AS ADD_AMT_7                     /*가산금액_7*/
+       ,NVL(A.ADD_AMT_8,'0') AS ADD_AMT_8                     /*가산금액_8*/
+       ,NVL(A.ADD_AMT_9,'0') AS ADD_AMT_9                     /*가산금액_9*/
+       ,NVL(A.ADD_AMT_10,'0')	AS ADD_AMT_10                   /*가산금액_10*/
+       ,NVL(A.ADD_AMT_11,'0')	AS ADD_AMT_11                   /*가산금액_11*/
+       ,NVL(A.ADD_AMT_12,'0')	AS ADD_AMT_12                   /*가산금액_12*/
+       ,NVL(A.ADD_AMT_13,'0')	AS ADD_AMT_13                   /*가산금액_13*/
+       ,NVL(A.ADD_AMT_14,'0')	AS ADD_AMT_14                   /*가산금액_14*/
+       ,NVL(A.UNPD_RENTAL_PRN_1,'0') AS UNPD_RENTAL_PRN_1     /*미납렌탈원금_1*/
+       ,NVL(A.UNPD_RENTAL_PRN_2,'0') AS UNPD_RENTAL_PRN_2     /*미납렌탈원금_2*/
+       ,NVL(A.UNPD_RENTAL_PRN_3,'0') AS UNPD_RENTAL_PRN_3	    /*미납렌탈원금_3*/
+       ,NVL(A.UNPD_RENTAL_PRN_4,'0') AS UNPD_RENTAL_PRN_4	    /*미납렌탈원금_4*/
+       ,NVL(A.UNPD_RENTAL_PRN_5,'0') AS UNPD_RENTAL_PRN_5	    /*미납렌탈원금_5*/
+       ,NVL(A.UNPD_RENTAL_PRN_6,'0') AS UNPD_RENTAL_PRN_6	    /*미납렌탈원금_6*/
+       ,NVL(A.UNPD_RENTAL_PRN_7,'0') AS UNPD_RENTAL_PRN_7	    /*미납렌탈원금_7*/
+       ,NVL(A.UNPD_RENTAL_PRN_8,'0') AS UNPD_RENTAL_PRN_8	    /*미납렌탈원금_8*/
+       ,NVL(A.UNPD_RENTAL_PRN_9,'0') AS UNPD_RENTAL_PRN_9	    /*미납렌탈원금_9*/
+       ,NVL(A.UNPD_RENTAL_PRN_10,'0') AS UNPD_RENTAL_PRN_10	  /*미납렌탈원금_10*/
+       ,NVL(A.UNPD_RENTAL_PRN_11,'0') AS UNPD_RENTAL_PRN_11	  /*미납렌탈원금_11*/
+       ,NVL(A.UNPD_RENTAL_PRN_12,'0') AS UNPD_RENTAL_PRN_12	  /*미납렌탈원금_12*/
+       ,NVL(A.UNPD_RENTAL_PRN_13,'0') AS UNPD_RENTAL_PRN_13	  /*미납렌탈원금_13*/
+       ,NVL(A.UNPD_RENTAL_PRN_14,'0') AS UNPD_RENTAL_PRN_14	  /*미납렌탈원금_14*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_1,'0') AS UNPD_DMG_CMP_AMT_1	  /*미납손해배상금액_1*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_2,'0') AS UNPD_DMG_CMP_AMT_2	  /*미납손해배상금액_2*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_3,'0') AS UNPD_DMG_CMP_AMT_3	  /*미납손해배상금액_3*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_4,'0') AS UNPD_DMG_CMP_AMT_4	  /*미납손해배상금액_4*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_5,'0') AS UNPD_DMG_CMP_AMT_5	  /*미납손해배상금액_5*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_6,'0') AS UNPD_DMG_CMP_AMT_6	  /*미납손해배상금액_6*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_7,'0') AS UNPD_DMG_CMP_AMT_7	  /*미납손해배상금액_7*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_8,'0') AS UNPD_DMG_CMP_AMT_8	  /*미납손해배상금액_8*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_9,'0') AS UNPD_DMG_CMP_AMT_9	  /*미납손해배상금액_9*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_10,'0') AS UNPD_DMG_CMP_AMT_10	/*미납손해배상금액_10*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_11,'0') AS UNPD_DMG_CMP_AMT_11	/*미납손해배상금액_11*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_12,'0') AS UNPD_DMG_CMP_AMT_12	/*미납손해배상금액_12*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_13,'0') AS UNPD_DMG_CMP_AMT_13	/*미납손해배상금액_13*/
+       ,NVL(A.UNPD_DMG_CMP_AMT_14,'0') AS UNPD_DMG_CMP_AMT_14	/*미납손해배상금액_14*/
+       ,NVL(A.UNPD_ADD_AMT_1,'0') AS UNPD_ADD_AMT_1	          /*미납가산금액_1*/
+       ,NVL(A.UNPD_ADD_AMT_2,'0') AS UNPD_ADD_AMT_2	          /*미납가산금액_2*/
+       ,NVL(A.UNPD_ADD_AMT_3,'0') AS UNPD_ADD_AMT_3	          /*미납가산금액_3*/
+       ,NVL(A.UNPD_ADD_AMT_4,'0') AS UNPD_ADD_AMT_4	          /*미납가산금액_4*/
+       ,NVL(A.UNPD_ADD_AMT_5,'0') AS UNPD_ADD_AMT_5	          /*미납가산금액_5*/
+       ,NVL(A.UNPD_ADD_AMT_6,'0') AS UNPD_ADD_AMT_6	          /*미납가산금액_6*/
+       ,NVL(A.UNPD_ADD_AMT_7,'0') AS UNPD_ADD_AMT_7	          /*미납가산금액_7*/
+       ,NVL(A.UNPD_ADD_AMT_8,'0') AS UNPD_ADD_AMT_8	          /*미납가산금액_8*/
+       ,NVL(A.UNPD_ADD_AMT_9,'0') AS UNPD_ADD_AMT_9	          /*미납가산금액_9*/
+       ,NVL(A.UNPD_ADD_AMT_10,'0') AS UNPD_ADD_AMT_10	        /*미납가산금액_10*/
+       ,NVL(A.UNPD_ADD_AMT_11,'0') AS UNPD_ADD_AMT_11	        /*미납가산금액_11*/
+       ,NVL(A.UNPD_ADD_AMT_12,'0') AS UNPD_ADD_AMT_12	        /*미납가산금액_12*/
+       ,NVL(A.UNPD_ADD_AMT_13,'0') AS UNPD_ADD_AMT_13	        /*미납가산금액_13*/
+       ,NVL(A.UNPD_ADD_AMT_14,'0') AS UNPD_ADD_AMT_14	        /*미납가산금액_14*/
+  FROM  TB_INSU_INV_DTL A
+       ,TB_INSU_INV B
+ WHERE  A.INSU_INV_NO = B.INSU_INV_NO
+   AND  B.INV_ST_CD = '02'
+   AND  B.DMS_INV_DT BETWEEN SUBSTR(#PROC_DT#,0,6)||'01' AND SUBSTR(#PROC_DT#,0,6)||'31']]>
+	</select>
+	<insert id="IIFInsuInvListDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS003.IIFInsuInvListDtl 보증보험청구내역상세 등록 */
+/* IO: 안진갑,2015-12-18T11:23:12(안진갑,2015-08-24T15:14:15) */
+INSERT INTO TF_INSU_INV_LIST_DTL
+(
+    IF_PROC_DT
+   ,IF_FILE_NM
+   ,IF_SEQ
+   ,OP_CL_CD
+   ,CO_CL_CD
+   ,INSURE_INV_REQT_NO
+   ,INSU_MGMT_NO
+   ,ALLOT_ANUL
+   ,PRDPAY_DT_1
+   ,PRDPAY_DT_2
+   ,PRDPAY_DT_3
+   ,PRDPAY_DT_4
+   ,PRDPAY_DT_5
+   ,PRDPAY_DT_6
+   ,PRDPAY_DT_7
+   ,PRDPAY_DT_8
+   ,PRDPAY_DT_9
+   ,PRDPAY_DT_10
+   ,PRDPAY_DT_11
+   ,PRDPAY_DT_12
+   ,PRDPAY_DT_13
+   ,PRDPAY_DT_14
+   ,RENTAL_PRN_1
+   ,RENTAL_PRN_2
+   ,RENTAL_PRN_3
+   ,RENTAL_PRN_4
+   ,RENTAL_PRN_5
+   ,RENTAL_PRN_6
+   ,RENTAL_PRN_7
+   ,RENTAL_PRN_8
+   ,RENTAL_PRN_9
+   ,RENTAL_PRN_10
+   ,RENTAL_PRN_11
+   ,RENTAL_PRN_12
+   ,RENTAL_PRN_13
+   ,RENTAL_PRN_14
+   ,DMG_CMP_AMT_1
+   ,DMG_CMP_AMT_2
+   ,DMG_CMP_AMT_3
+   ,DMG_CMP_AMT_4
+   ,DMG_CMP_AMT_5
+   ,DMG_CMP_AMT_6
+   ,DMG_CMP_AMT_7
+   ,DMG_CMP_AMT_8
+   ,DMG_CMP_AMT_9
+   ,DMG_CMP_AMT_10
+   ,DMG_CMP_AMT_11
+   ,DMG_CMP_AMT_12
+   ,DMG_CMP_AMT_13
+   ,DMG_CMP_AMT_14
+   ,ADD_AMT_1
+   ,ADD_AMT_2
+   ,ADD_AMT_3
+   ,ADD_AMT_4
+   ,ADD_AMT_5
+   ,ADD_AMT_6
+   ,ADD_AMT_7
+   ,ADD_AMT_8
+   ,ADD_AMT_9
+   ,ADD_AMT_10
+   ,ADD_AMT_11
+   ,ADD_AMT_12
+   ,ADD_AMT_13
+   ,ADD_AMT_14
+   ,UNPD_RENTAL_PRN_1
+   ,UNPD_RENTAL_PRN_2
+   ,UNPD_RENTAL_PRN_3
+   ,UNPD_RENTAL_PRN_4
+   ,UNPD_RENTAL_PRN_5
+   ,UNPD_RENTAL_PRN_6
+   ,UNPD_RENTAL_PRN_7
+   ,UNPD_RENTAL_PRN_8
+   ,UNPD_RENTAL_PRN_9
+   ,UNPD_RENTAL_PRN_10
+   ,UNPD_RENTAL_PRN_11
+   ,UNPD_RENTAL_PRN_12
+   ,UNPD_RENTAL_PRN_13
+   ,UNPD_RENTAL_PRN_14
+   ,UNPD_DMG_CMP_AMT_1
+   ,UNPD_DMG_CMP_AMT_2
+   ,UNPD_DMG_CMP_AMT_3
+   ,UNPD_DMG_CMP_AMT_4
+   ,UNPD_DMG_CMP_AMT_5
+   ,UNPD_DMG_CMP_AMT_6
+   ,UNPD_DMG_CMP_AMT_7
+   ,UNPD_DMG_CMP_AMT_8
+   ,UNPD_DMG_CMP_AMT_9
+   ,UNPD_DMG_CMP_AMT_10
+   ,UNPD_DMG_CMP_AMT_11
+   ,UNPD_DMG_CMP_AMT_12
+   ,UNPD_DMG_CMP_AMT_13
+   ,UNPD_DMG_CMP_AMT_14
+   ,UNPD_ADD_AMT_1
+   ,UNPD_ADD_AMT_2
+   ,UNPD_ADD_AMT_3
+   ,UNPD_ADD_AMT_4
+   ,UNPD_ADD_AMT_5
+   ,UNPD_ADD_AMT_6
+   ,UNPD_ADD_AMT_7
+   ,UNPD_ADD_AMT_8
+   ,UNPD_ADD_AMT_9
+   ,UNPD_ADD_AMT_10
+   ,UNPD_ADD_AMT_11
+   ,UNPD_ADD_AMT_12
+   ,UNPD_ADD_AMT_13
+   ,UNPD_ADD_AMT_14
+   ,PROC_DT
+   ,PROC_TMS
+   ,PROC_ST_CD
+   ,FS_REG_USER_ID
+   ,FS_REG_DTM
+   ,LS_CHG_USER_ID
+   ,LS_CHG_DTM
+)
+VALUES(
+    #IF_PROC_DT#
+   ,#IF_FILE_NM#
+   ,#IF_SEQ#
+   ,#OP_CL_CD#   
+   ,#CO_CL_CD#
+   ,#INSURE_INV_REQT_NO#  
+   ,#INSU_MGMT_NO#
+   ,#ALLOT_ANUL#
+   ,#PRDPAY_DT_1#
+   ,#PRDPAY_DT_2#
+   ,#PRDPAY_DT_3#
+   ,#PRDPAY_DT_4#
+   ,#PRDPAY_DT_5#
+   ,#PRDPAY_DT_6#
+   ,#PRDPAY_DT_7#
+   ,#PRDPAY_DT_8#
+   ,#PRDPAY_DT_9#
+   ,#PRDPAY_DT_10#
+   ,#PRDPAY_DT_11#
+   ,#PRDPAY_DT_12#
+   ,#PRDPAY_DT_13#
+   ,#PRDPAY_DT_14#
+   ,#RENTAL_PRN_1#
+   ,#RENTAL_PRN_2#
+   ,#RENTAL_PRN_3#
+   ,#RENTAL_PRN_4#
+   ,#RENTAL_PRN_5#
+   ,#RENTAL_PRN_6#
+   ,#RENTAL_PRN_7#
+   ,#RENTAL_PRN_8#
+   ,#RENTAL_PRN_9#
+   ,#RENTAL_PRN_10#
+   ,#RENTAL_PRN_11#
+   ,#RENTAL_PRN_12#
+   ,#RENTAL_PRN_13#
+   ,#RENTAL_PRN_14#
+   ,#DMG_CMP_AMT_1#
+   ,#DMG_CMP_AMT_2#
+   ,#DMG_CMP_AMT_3#
+   ,#DMG_CMP_AMT_4#
+   ,#DMG_CMP_AMT_5#
+   ,#DMG_CMP_AMT_6#
+   ,#DMG_CMP_AMT_7#
+   ,#DMG_CMP_AMT_8#
+   ,#DMG_CMP_AMT_9#
+   ,#DMG_CMP_AMT_10#
+   ,#DMG_CMP_AMT_11#
+   ,#DMG_CMP_AMT_12#
+   ,#DMG_CMP_AMT_13#
+   ,#DMG_CMP_AMT_14#
+   ,#ADD_AMT_1#
+   ,#ADD_AMT_2#
+   ,#ADD_AMT_3#
+   ,#ADD_AMT_4#
+   ,#ADD_AMT_5#
+   ,#ADD_AMT_6#
+   ,#ADD_AMT_7#
+   ,#ADD_AMT_8#
+   ,#ADD_AMT_9#
+   ,#ADD_AMT_10#
+   ,#ADD_AMT_11#
+   ,#ADD_AMT_12#
+   ,#ADD_AMT_13#
+   ,#ADD_AMT_14#
+   ,#UNPD_RENTAL_PRN_1#
+   ,#UNPD_RENTAL_PRN_2#
+   ,#UNPD_RENTAL_PRN_3#
+   ,#UNPD_RENTAL_PRN_4#
+   ,#UNPD_RENTAL_PRN_5#
+   ,#UNPD_RENTAL_PRN_6#
+   ,#UNPD_RENTAL_PRN_7#
+   ,#UNPD_RENTAL_PRN_8#
+   ,#UNPD_RENTAL_PRN_9#
+   ,#UNPD_RENTAL_PRN_10#
+   ,#UNPD_RENTAL_PRN_11#
+   ,#UNPD_RENTAL_PRN_12#
+   ,#UNPD_RENTAL_PRN_13#
+   ,#UNPD_RENTAL_PRN_14#
+   ,#UNPD_DMG_CMP_AMT_1#
+   ,#UNPD_DMG_CMP_AMT_2#
+   ,#UNPD_DMG_CMP_AMT_3#
+   ,#UNPD_DMG_CMP_AMT_4#
+   ,#UNPD_DMG_CMP_AMT_5#
+   ,#UNPD_DMG_CMP_AMT_6#
+   ,#UNPD_DMG_CMP_AMT_7#
+   ,#UNPD_DMG_CMP_AMT_8#
+   ,#UNPD_DMG_CMP_AMT_9#
+   ,#UNPD_DMG_CMP_AMT_10#
+   ,#UNPD_DMG_CMP_AMT_11#
+   ,#UNPD_DMG_CMP_AMT_12#
+   ,#UNPD_DMG_CMP_AMT_13#
+   ,#UNPD_DMG_CMP_AMT_14#
+   ,#UNPD_ADD_AMT_1#
+   ,#UNPD_ADD_AMT_2#
+   ,#UNPD_ADD_AMT_3#
+   ,#UNPD_ADD_AMT_4#
+   ,#UNPD_ADD_AMT_5#
+   ,#UNPD_ADD_AMT_6#
+   ,#UNPD_ADD_AMT_7#
+   ,#UNPD_ADD_AMT_8#
+   ,#UNPD_ADD_AMT_9#
+   ,#UNPD_ADD_AMT_10#
+   ,#UNPD_ADD_AMT_11#
+   ,#UNPD_ADD_AMT_12#
+   ,#UNPD_ADD_AMT_13#
+   ,#UNPD_ADD_AMT_14#
+   ,TO_CHAR(SYSDATE,'YYYYMMDD')
+   ,TO_CHAR(SYSDATE,'HH24MISS')
+   ,'09'
+   ,'BAT'
+   ,SYSDATE
+   ,'BAT'
+   ,SYSDATE
+)]]>
+	</insert>
+</sqlMap>

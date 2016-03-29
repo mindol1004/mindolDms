@@ -1,0 +1,189 @@
+package dms.nr;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+
+import org.apache.commons.logging.Log;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : DMS-BI/기준정보</li>
+ * <li>서브 업무명 : BEDU001</li>
+ * <li>설  명 : <pre>[NR]단말기정보 동기화</pre></li>
+ * <li>작성일 : 2015-08-04</li>
+ * <li>작성자 : 이영진 (newnofixing)</li>
+ * </ul>
+ */
+public class DBR001 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+	
+    /**
+     * 배치 생성자. 
+     * 상위클래스 생성자 호출
+     */
+    public DBR001() {
+		super();
+	}
+
+	
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        Log log = getLog(context);
+        
+        processCnt = 0;
+        taskNo = "";
+        procFileName = "";
+        
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+        taskNo = resDS.getField("TASK_NO");
+        
+        reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "BI");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+	public void execute(final IBatchContext context) {
+        // 트랜잭션 시작
+    	txBegin();  
+    	dbStartSession();
+    	dbBeginBatch();
+    	
+    	Map<String, String> paramMap = new HashMap<String, String>();
+        paramMap.put("PROC_DT", context.getInParameter("PROC_DT"));    //처리일
+    	
+    	dbSelect("SEqpInfo", paramMap, makeRecordHandler(context), context); //단말기모델IF조회
+        	
+        dbSelect("SEqpInfoColor", paramMap, makeRecordHandlerColor(context), context); //단말기모델색상IF조회
+        	
+        dbSelect("SEqpInfo", paramMap, makeRecordHandlerUpdate(context), context); //단말기모델IF조회
+		
+		// 트랜잭션 커밋
+		dbEndBatch();
+		dbEndSession();
+		txCommit(); 
+	}
+	
+	/**
+	 * 배치 후처리 메소드. 
+	 * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+	 */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        }else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+            processCnt = 0;
+        }
+        reqDS.putField("PROC_CNT", ""+processCnt);
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fUpdBatTaskOpHst", reqDS, onlineCtx);
+
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+    
+    /**
+     * 단말기모델IF조회 후 레코드 단위로 단말기모델 테이블에 입력
+     * 
+     */
+    public AbsRecordHandler makeRecordHandler(IBatchContext context) {
+    	AbsRecordHandler rh = new AbsRecordHandler(context) {
+			
+			@Override
+			public void handleRecord(IRecord row) {
+				context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+				context.getLogger().debug("########### : " + row);
+				String existYN = row.get("EXISTYN");
+                if ("Y".equals(existYN)) {
+                    dbUpdate("UEqpMdl", row, context);
+                } else {
+                    dbInsert("IEqpMdl", row, context);
+                }
+                dbDelete("DEqpMdlColor", row, context);
+				processCnt++;
+			}
+		};
+    	return rh;
+    }
+    
+    /**
+     * 단말기모델색상IF조회 후 레코드 단위로 단말기모델색상 테이블에 입력
+     * 
+     */
+    public AbsRecordHandler makeRecordHandlerColor(IBatchContext context) {
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+            
+            @Override
+            public void handleRecord(IRecord row) {
+                context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+                context.getLogger().debug("########### : " + row);
+                
+                dbInsert("IEqpMdlColor", row, context);
+            }
+        };
+        return rh;
+    }
+    
+    /**
+     * 단말기모델IF조회 후 레코드 단위로 단말기모델IF PROC_ST_CD 업데이트
+     * 
+     */
+    public AbsRecordHandler makeRecordHandlerUpdate(IBatchContext context) {
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+            
+            @Override
+            public void handleRecord(IRecord row) {
+                context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+                context.getLogger().debug("########### : " + row);
+                
+                dbUpdate("UEqpInfo", row, context);
+            }
+        };
+        return rh;
+    }
+
+}

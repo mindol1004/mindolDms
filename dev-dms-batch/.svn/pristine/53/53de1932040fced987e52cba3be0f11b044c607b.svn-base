@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.DBP005">
+	<insert id="IEqpOpClctObj" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP005.IEqpOpClctObj 단말기회수정보대상등록 */
+/* IO: 김윤환,2015-08-13T17:09:47(김윤환,2015-08-05T15:54:56) */
+INSERT 
+  INTO TB_EQP_CLCT_OBJ
+  (
+    EQP_CLCT_OBJ_NO	/* 단말기입고대상번호 */
+   ,EQP_MDL_CD	    /* 단말기모델코드 */
+   ,EQP_SER_NO 		/* 단말기일련번호 */
+   ,OP_CL_CD 	    /* 업무구분코드 */
+   ,IN_OBJ_DTL_CD   /* 회수구분코드 */
+   ,AGN_CD			/* 대리점코드 */
+   ,IN_SCHD_DT      /* 입고예정일 */   
+   ,RTN_REG_DT      /* 반납등록일자 */
+   ,DEL_YN          /* 삭제여부 */
+   ,FS_REG_USER_ID  /* 최초등록사용자ID */
+   ,FS_REG_DTM      /* 최초등록일시 */
+   ,LS_CHG_USER_ID  /* 최종변경사용자ID */
+   ,LS_CHG_DTM      /* 최종변경일시 */
+  ) VALUES (
+    #EQP_IN_CLCT_NO#
+   ,#EQP_MDL_CD#
+   ,#EQP_SER_NO#
+   ,'PR'
+   ,#IN_OBJ_DTL_CD#
+   ,#AGN_CD#
+   ,#IN_SCHD_DT#
+   ,#RTN_REG_DT#
+   ,'N'
+   ,'SYSTEM'
+   ,SYSDATE
+   ,'SYSTEM'
+   ,SYSDATE
+  )]]>
+	</insert>
+	<select id="STfEqpOpClctObj" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP005.STfEqpOpClctObj 단말기회수정보대상IF목록조회 */
+/* IO: 김윤환,2015-08-13T17:09:37(김윤환,2015-08-05T16:46:32) */
+SELECT 
+	   '' AS EQP_IN_CLCT_NO 	/* 단말기입고대상번호 */
+	   ,A.IF_PROC_DT		  	/* IF_처리일자 */
+	   ,A.IF_FILE_NM		  	/* IF_파일명 */
+	   ,A.IF_SEQ			  	/* IF_순번 */
+	   ,A.EQP_MDL_CD		  	/* 단말기모델코드 */
+	   ,A.EQP_SER_NO			/* 단말기일련번호 */
+	   ,A.CLCT_CL			    /* 회수구분 */
+	   ,DECODE(A.CLCT_CL,'1','10','2','20','3','30','4','40',NULL) AS IN_OBJ_DTL_CD /* 회수구분 */
+	   ,A.RTN_AGN_CL			/* 반납지점구분 */
+	   ,A.RTN_REG_BR_CD AS AGN_CD		/* 반납등록영업장코드 */
+	   ,TO_CHAR(TO_DATE(A.RTN_REG_DT,'YYYYMMDD')+1,'YYYYMMDD') AS IN_SCHD_DT 	/* 입고예정일자 */
+	   ,A.RTN_REG_DT			/* 반납등록일자 */
+	   ,A.PROC_ST_CD			/* 처리상태코드 */
+	   ,A.FS_REG_USER_ID		/* 최초등록사용자ID */
+	   ,A.FS_REG_DTM			/* 최초등록일시 */
+	   ,A.LS_CHG_USER_ID		/* 최종변경사용자ID */
+	   ,A.LS_CHG_DTM			/* 최종변경일시 */
+  FROM TF_EQP_CLCT_OBJ_INFO A
+ WHERE PROC_ST_CD = '09']]>
+	</select>
+	<select id="SEqpOpClctObjSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP005.SEqpOpClctObjSeq 단말기입고대상정보조회 */
+/* IO: 김윤환,2015-08-13T17:09:33(김윤환,2015-08-05T17:57:05) */
+SELECT  'EC'||LPAD(SQ01_TB_EQP_CLCT_OBJ.NEXTVAL,10,'0') AS EQP_IN_CLCT_NO FROM DUAL]]>
+	</select>
+	<update id="UTfEqpClctObjInfo" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP005.UTfEqpClctObjInfo 단말기회수정보대상IF처리상태변경 */
+/* IO: 김윤환,2015-08-13T17:09:53(김윤환,2015-08-06T10:47:35) */
+UPDATE TF_EQP_CLCT_OBJ_INFO
+   SET PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) */
+	   ,LS_CHG_USER_ID = 'BAT'
+	   ,LS_CHG_DTM = SYSDATE
+ WHERE IF_SEQ = #IF_SEQ#
+   AND IF_FILE_NM = #IF_FILE_NM#]]>
+	</update>
+</sqlMap>

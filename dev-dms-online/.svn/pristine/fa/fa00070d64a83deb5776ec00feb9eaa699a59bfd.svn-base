@@ -1,0 +1,82 @@
+package dms.pr.prbimbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]회수대상임대폰조회</li>
+ * <li>설  명 : <pre>회수대상임대폰조회</pre></li>
+ * <li>작성일 : 2015-07-14 20:45:43</li>
+ * <li>작성자 : 이준우 (elmsliw)</li>
+ * </ul>
+ *
+ * @author 이준우 (elmsliw)
+ */
+public class PPRReqpClctInRgst extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PPRReqpClctInRgst(){
+		super();
+	}
+
+	/**
+	 * <pre>회수대상임대폰조회</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-07-14 20:45:43
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ST_DT [시작일]
+	 *	- field : ED_DT [종료일]
+	 *	- field : EQP_MDL_CD [모델]
+	 *	- field : CLCT_YN [상태]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_LIST
+	 *		- field : IN_SCHD_DT [입고예정일자]
+	 *		- field : ASSET_NUM [자산번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : IN_OBJ_DTL_CD [회수구분코드]
+	 * </pre>
+	 */
+	public IDataSet pInqReqpClctLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+		try {
+			// 1. FU lookup
+			//FPRReqpClctInRgst fPRReqpClctInRgst = (FPRReqpClctInRgst) lookupFunctionUnit(FPRReqpClctInRgst.class);
+			// 2. FM 호출
+			responseData = callSharedBizComponentByDirect("pr.PRSIMBase", "fInqReqpClctLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}		
+	    return responseData;
+	}
+  
+}

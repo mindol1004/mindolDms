@@ -1,0 +1,66 @@
+<HTML>
+<HEAD>
+<TITLE>XPLATFORM Install Page</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=euc-kr">
+<SCRIPT LANGUAGE="JavaScript"> 
+var sKey = "HPC";  //프로젝트 고유id를 입력하시면 됩니다.
+var Server_Path = "http://" + window.location.host + "/tobetest/xp2"; // 기본 서버 경로를 지정합니다.
+
+function fn_load()
+{  
+	var bInstallXLauncherPlugin = false;
+	var bInstallXPlatformPlugin = false;
+	
+	for (var i=0; i<navigator.plugins.length; i++) {
+//alert(navigator.userAgent.indexOf);
+//alert(navigator.plugins[i].name + ":" + navigator.plugins[i].filename + ":" + navigator.plugins[i][0].type.toLowerCase());
+		if (navigator.plugins[i].name == "XPLATFORM") {
+			if (navigator.userAgent.indexOf("Opera") > -1) {				
+				if (navigator.plugins[i].filename == "npXPLauncherPlugin92.dll") {
+					bInstallXLauncherPlugin = true;
+				}
+				if (navigator.plugins[i].filename == "npXPlatformPlugin92.dll") {
+					bInstallXPlatformPlugin = true;
+				}			
+			} else {
+				if (navigator.plugins[i][0].type.toLowerCase() == "application/xplauncher9.2-plugin") {
+					bInstallXLauncherPlugin = true;
+				}
+				if (navigator.plugins[i][0].type.toLowerCase() == "application/xplatform9.2-plugin") {
+					bInstallXPlatformPlugin = true;
+				}				
+			}			
+		}
+	}
+//alert(bInstallXLauncherPlugin + " : " + bInstallXPlatformPlugin);
+	if (!(bInstallXLauncherPlugin && bInstallXPlatformPlugin)) {
+		alert("Please install XPLATFORM Plugin and restart browser");
+		location.href = "./Download/XPLATFORM9.2_SetupEngine.exe";
+	} else {
+		if (confirm("Launch XPLATFORM ?\n\nYes : Execute XPLATFORM browser\nNo  : Embeded Web browser")) {
+			fn_launchX();
+		} else {
+			window.location.href = "./XPlatformPlugin.html"; // 임베디드 화면으로 이동
+		}
+	}
+}
+
+function fn_launchX()
+{  
+	npXPLauncherPlugin92.key = sKey;
+	npXPLauncherPlugin92.splashimage = Server_Path+"/Install/img/loading_img.gif"; // 로딩 이미지 지정
+	npXPLauncherPlugin92.xadl = Server_Path + "/HPC/HPC.xadl"; // xadl 경로 지정
+	npXPLauncherPlugin92.onlyone = true; // 프로젝트를 한개 이상 실행하게 할지 여부 설정
+	npXPLauncherPlugin92.makeshortcut("XPLATFORM", Server_Path+"/Install/img/xicon2.ico", "desktop"); // 단축아이콘 생성
+	npXPLauncherPlugin92.launch(); // 전용브라우저 실행
+}
+
+</SCRIPT> 
+</HEAD>
+<BODY onload="fn_load()">
+<SCRIPT LANGUAGE="JavaScript">
+//XPLATFORM Launcher
+document.write('<embed ID="npXPLauncherPlugin92" type="application/xplauncher9.2-plugin" width="0" height="0"></embed>');
+</SCRIPT>
+</BODY>
+</HTML>

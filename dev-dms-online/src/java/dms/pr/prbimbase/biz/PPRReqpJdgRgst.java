@@ -1,0 +1,253 @@
+package dms.pr.prbimbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]임대폰감정등록</li>
+ * <li>설  명 : <pre>[PU]임대폰감정등록</pre></li>
+ * <li>작성일 : 2015-07-21 16:26:56</li>
+ * <li>작성자 : 이영진 (newnofixing)</li>
+ * </ul>
+ *
+ * @author 이영진 (newnofixing)
+ */
+public class PPRReqpJdgRgst extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PPRReqpJdgRgst(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]임대폰감정등록조회</pre>
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-07-23 12:27:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 *	- field : IN_DT [단말기입고일]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_REQP_JDG_LIST
+	 *		- field : DCP_NO [손해배상금정책번호]
+	 *		- field : INSP_CL_CD [항목구분]
+	 *		- field : INSP_ITM_CD [아이템항목구분]
+	 *		- field : INSP_DTL_ITM_CD [상세아이템항목구분]
+	 *		- field : INDF_AMT [손해배상금액]
+	 *		- field : CMPT_CD [구성품코드]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_JDG_SEQ [단말기감정순번]
+	 *		- field : EQP_JDG_DT [단말기감정일]
+	 *		- field : EQP_JDG_RSLT_CD [단말기감정결과코드]
+	 *		- field : EQP_CMP_AMT_TOT [단말기배상금합계]
+	 *		- field : JDG_APRV_YN [감정승인여부]
+	 *		- field : JDG_CHRGR_NO [감정담당자번호]
+	 *		- field : JDG_CHRGR_NM [감정담당자명]
+	 *		- field : JDG_APRV_DT [감정승인일자]
+	 *		- field : EQP_IN_DT [입고일]
+	 *		- field : PEN [배상금]
+	 *		- field : USE_YN [필드1]
+	 *		- field : DEL_YN [필드1]
+	 *		- field : CMPT_INDF_BACK_AMT [구성품 변상금액]
+	 *		- field : T_PEN [필드1]
+	 *	- record : NC_FILE_LIST
+	 *		- field : UPLD_FILE_NO [업로드파일번호]
+	 *		- field : FILE_ID [파일ID]
+	 *		- field : FILE_NM [파일명]
+	 *		- field : FILE_TYP_VAL [파일유형값]
+	 *		- field : FILE_SIZE [파일크기]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 *	- record : RS_JDG_CMPT_LIST
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : CMPT_RTN_YN [반납여부]
+	 *		- field : INSP_DTL_ITM_CD [구성품코드]
+	 *		- field : CMPT_CD [콩통코드]
+	 *		- field : MGMT_ITEM_CD10 [코드]
+	 * </pre>
+	 */
+    public IDataSet pInqReqpJdgRgstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+        	
+            responseData = callSharedBizComponentByDirect("pr.PRSIMBase", "fInqReqpJdgRgstLst", requestData, onlineCtx);
+        	
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }       
+    
+       
+			
+        /**
+         * 파일리스트
+         * 쿼리 가져온것의 RS_REQP_JDG_LIST 의  ATCH_FILE_NO가 있으면 파일리스트를 가져옴 구해와서 리스트 리턴 
+         * 위 쿼리리스트 없을경우 예외로 그냥 빠져나감.
+         */
+        try {
+        	
+        	if(responseData.getRecordSet("RS_REQP_JDG_LIST").getRecordCount() > 0
+        			&& !"".equals(responseData.getRecordSet("RS_REQP_JDG_LIST").getRecord(0).get("ATCH_FILE_NO")) ){
+        		requestData.putField("UPLD_FILE_NO"  , responseData.getRecordSet("RS_REQP_JDG_LIST").getRecord(0).get("ATCH_FILE_NO"));
+        		IDataSet fileListDS = callSharedBizComponentByDirect("sc.SCSBase", "fInqUpFileInfo", requestData, onlineCtx);
+        		responseData.putRecordSet(fileListDS.getRecordSet("NC_FILE_LIST"));
+        	}
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]임대폰감정저장</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-07-23 12:27:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_REQP_JDG_LIST
+	 *		- field : EQP_IN_DT [입고일]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_JDG_SEQ [단말기감정일련번호]
+	 *		- field : DCP_NO [손해배상금정책번호]
+	 *		- field : INSP_DTL_ITM_CD [점검세부항목코드]
+	 *		- field : PEN [변상금]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_COLOR_CD [단말기칼라코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_IMEI_NO [단말기IMEI번호]
+	 *		- field : BOX_NO [박스번호]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : EQP_JDG_DT [단말기감정일]
+	 *		- field : EQP_JDG_RSLT_CD [단말기감정결과코드]
+	 *		- field : EQP_CMP_AMT_TOT [변상금총액]
+	 *		- field : JDG_APRV_YN [감정승인여부]
+	 *		- field : JDG_CHRGR_NO [감정담당자번호]
+	 *		- field : JDG_CHRGR_NM [감정담당자명]
+	 *		- field : IN_PLC_CD [매입처]
+	 *		- field : DEAL_CO_NM [매입처명]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : USE_YN [사용여부]
+	 *		- field : ATCH_FILE_NO [업로드파일번호]
+	 *	- record : RS_REQP_JDG_LIST2
+	 *		- field : EQP_IN_DT [입고일]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_JDG_SEQ [단말기감정일련번호]
+	 *		- field : DCP_NO [손해배상금정책번호]
+	 *		- field : INSP_DTL_ITM_CD [점검세부항목코드]
+	 *		- field : PEN [변상금]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_COLOR_CD [단말기칼라코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_IMEI_NO [단말기IMEI번호]
+	 *		- field : BOX_NO [박스번호]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : EQP_JDG_DT [단말기감정일]
+	 *		- field : EQP_JDG_RSLT_CD [단말기감정결과코드]
+	 *		- field : EQP_CMP_AMT_TOT [변상금총액]
+	 *		- field : JDG_APRV_YN [감정승인여부]
+	 *		- field : JDG_CHRGR_NO [감정담당자번호]
+	 *		- field : JDG_CHRGR_NM [감정담당자명]
+	 *		- field : IN_PLC_CD [매입처]
+	 *		- field : DEAL_CO_NM [매입처명]
+	 *		- field : DEL_YN [필드1]
+	 *		- field : ATCH_FILE_NO [업로드파일번호]
+	 *		- field : CMPT_INDF_BACK_AMT [구성품반납금액]
+	 *	- record : NC_FILE_LIST
+	 *		- field : ATCH_FILE_NO [업로드파일번호]
+	 *		- field : FILE_ID [파일ID]
+	 *		- field : FILE_NM [파일명]
+	 *		- field : FILE_TYP_VAL [파일유형값]
+	 *		- field : FILE_SIZE [파일크기]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet pSaveReqpJdg(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IRecordSet rs = requestData.getRecordSet("RS_REQP_JDG_LIST");
+        IRecordSet rs2 = requestData.getRecordSet("RS_REQP_JDG_LIST2");
+        IRecordSet upFileListRs = null;
+        String fileNo = "";
+        CommonArea ca = getCommonArea(onlineCtx);
+        requestData.putField("USER_NO", ca.getUserNo());
+
+    	try {
+    		//파일업로드 추가  20150806 김기열 
+    		//파일업로드 DB삭제 FM호출
+    		if(!StringUtils.isEmpty(requestData.getField("UPLD_FILE_NO"))) {
+    			callSharedBizComponentByDirect("sc.SCSBase", "fDelUpFileInfo", requestData, onlineCtx);
+    		}
+    		upFileListRs = requestData.getRecordSet(DmsConstants.UPLOAD_FILE_LIST);
+
+    		if(upFileListRs.getRecordCount() == 0) {
+    			requestData.putField("UPLD_FILE_NO", "-1");
+    		} else {
+    			//파일업로드 DB등록 FM호출
+    			IDataSet fileInfo = callSharedBizComponentByDirect("sc.SCSBase", "fRegUpFileInfo", requestData, onlineCtx);
+    			requestData.putField("ATCH_FILE_NO", fileInfo.getField("UPLD_FILE_NO"));
+    			fileNo = fileInfo.getField("UPLD_FILE_NO");
+    		}
+    		
+    		requestData.putFieldMap(rs2.getRecordMap(0));
+    		requestData.putField("userNo", ca.getUserNo());
+    		requestData.putField("ATCH_FILE_NO", fileNo);
+    	    callSharedBizComponentByDirect("pr.PRSIMBase", "fRegReqpJdg", requestData, onlineCtx);
+    		
+    		for (int i=0; i<rs.getRecordCount(); i++) {
+    			requestData.putFieldMap(rs.getRecordMap(i));
+//    			System.out.println(i+": "+requestData.getField("USE_YN")+" / "+requestData.getField("PEN"));
+    			callSharedBizComponentByDirect("pr.PRSIMBase", "fRegReqpJdgDtl", requestData, onlineCtx);
+    		}
+    		
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+    	// 4. 결과값 리턴
+    	responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+    	
+        return responseData;
+    }
+  
+}

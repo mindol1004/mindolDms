@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCUserAutrRolMgmt">
+	<select id="SUserRolListInq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserAutrRolMgmt.SUserRolListInq 사용자권한역할목록조회 */
+/* IO: 김석영,2014-10-02T21:21:39(심상준,2014-08-11T09:48:50) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY B.USER_NO DESC) AS ROWNO
+               ,B.USER_NO      /* 사용자번호 */ 
+               ,D.USER_NM        /* 사용자명 */          
+     		   ,D.LGIN_ID        /* 로그인ID*/          
+               ,C.AUTR_ROL_ID  /* 권한역할 ID */
+               ,C.AUTR_ROL_NM  /* 권한역할명 */
+               ,A.APLY_STA_DT  /* 적용시작일자 */
+               ,A.APLY_END_DT  /* 작용종료일자 */
+               ,DECODE(A.USE_YN,'Y','1','N','0',NULL,'0') AS USE_YN       /* 사용여부 */
+          FROM  TB_USER_AUTR_ROL A /*SC_사용자권한역할*/
+               ,TB_USER B          /*SC_사용자 */
+               ,TB_AUTR_ROL C      /*SC_권한*/
+               ,TB_USER D
+         WHERE  A.USER_NO = B.USER_NO
+           AND  A.USER_NO = D.USER_NO
+           AND  A.AUTR_ROL_ID = C.AUTR_ROL_ID
+]]><isNotEmpty prepend="AND" property="USER_NO"><![CDATA[
+                B.USER_NO = #USER_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="USER_NM"><![CDATA[
+                B.USER_NM LIKE '%'||#USER_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AUTR_ROL_ID"><![CDATA[
+                A.AUTR_ROL_ID = #AUTR_ROL_ID#
+]]></isNotEmpty><![CDATA[
+         ORDER  BY D.USER_NM ASC, A.APLY_END_DT DESC, C.AUTR_ROL_ID ASC
+        ) PA]]>
+	</select>
+	<update id="UUserRolUpd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserAutrRolMgmt.UUserRolUpd 사용자권한역할수정 */
+/* IO: 김석영,2014-10-01T18:15:02(심상준,2014-08-18T10:53:15) */
+UPDATE 
+        TB_USER_AUTR_ROL           /* SC_사용자권한역할 */                                      
+   SET  APLY_STA_DT=#APLY_STA_DT#  /* 적용시작일자 */                          
+       ,APLY_END_DT=#APLY_END_DT#  /* 적용종료일자 */                              
+       ,USE_YN = DECODE(#USE_YN#,'1','Y','0','N',NULL,'N')           /* 사용여부 */  
+       ,LS_CHG_USER_ID=#CHG_USER_NO#   /* 최종변경사용자ID */                        
+       ,LS_CHG_DTM=SYSDATE         /* 최정변경일시 */                      
+ WHERE  USER_NO= #USER_NO#
+   AND  AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</update>
+	<insert id="IUserRolReg" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserAutrRolMgmt.IUserRolReg 사용자권한역할등록 */
+/* IO: 김석영,2014-10-01T19:24:45(심상준,2014-08-18T11:16:42) */
+INSERT
+  INTO  TB_USER_AUTR_ROL                /* SC_사용자권한역할 */ 
+       (
+        USER_NO                         /* 사용자번호 */
+       ,AUTR_ROL_ID                     /* 권한역할ID */ 
+       ,APLY_STA_DT                     /* 적용시작일자 */  
+       ,APLY_END_DT                     /* 적용종료일자 */ 
+       ,USE_YN                          /* 사용여부 */
+       ,FS_REG_USER_ID                  /* 최초등록사용자ID */
+       ,FS_REG_DTM                      /* 최초등록일시 */
+       ,LS_CHG_USER_ID                  /* 최종변경사용ID */
+       ,LS_CHG_DTM                      /* 최종변경일시 */      
+        )                           
+VALUES
+       (
+        #USER_NO#                                 /* 사용자번호 */
+       ,#AUTR_ROL_ID#                             /* 권한역할ID */
+       ,#APLY_STA_DT#                             /* 적용시작일자 */   
+       ,#APLY_END_DT#                             /* 적용종료일자 */ 
+       ,DECODE(#USE_YN#,'1','Y','0','N',NULL,'N') /* 사용여부 */
+       ,#CHG_USER_NO#                                 /* 최초등록사용자ID */
+       ,SYSDATE                                   /* 최초등록일시 */
+       ,#CHG_USER_NO#                                 /* 최종변경사용ID */
+       ,SYSDATE                                   /* 최종변경일시 */ 
+        )]]>
+	</insert>
+	<delete id="DUserRolDel" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserAutrRolMgmt.DUserRolDel 사용자권한역할삭제 */
+/* IO: 김석영,2014-10-01T18:16:25(심상준,2014-08-18T13:52:20) */
+DELETE 
+        TB_USER_AUTR_ROL       /* SC_사용자권한역할 */  
+ WHERE  USER_NO = #USER_NO#
+   AND  AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</delete>
+	<select id="SUserListCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserAutrRolMgmt.SUserListCnt 사용자권한역할목록전체건수조회 */
+/* IO: 김석영,2014-10-01T18:15:36(심상준,2014-09-02T18:59:03) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_USER_AUTR_ROL A   /* SC_사용자권한역할 */  
+       ,TB_USER B            /* SC_사용자 */ 
+       ,TB_AUTR_ROL C        /* SC_권한역할 */ 
+ WHERE  A.USER_NO = B.USER_NO
+   AND  A.AUTR_ROL_ID = C.AUTR_ROL_ID
+    ]]><isNotEmpty prepend="AND" property="USER_NO"><![CDATA[
+        B.USER_NO LIKE '%'||#USER_NO#||'%'
+  ]]></isNotEmpty><![CDATA[
+   ]]><isNotEmpty prepend="AND" property="USER_NM"><![CDATA[
+        B.USER_NM LIKE '%'||#USER_NM#||'%'
+  ]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<insert id="IUserRolCopy" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserAutrRolMgmt.IUserRolCopy 사용자권한역할복사 */
+/* IO: 이유미,2014-11-28T17:35:57(심상준,2014-10-06T11:31:23) */
+INSERT  
+  INTO  TB_USER_AUTR_ROL   /* SC_사용자권한역할 */
+       (
+        USER_NO                                      
+       ,AUTR_ROL_ID        /* 권한역할ID */ 
+       ,APLY_STA_DT        /* 적용시작일자 */
+       ,APLY_END_DT        /* 적용종료일자 */ 
+       ,USE_YN             /* 사용여부 */ 
+       ,FS_REG_USER_ID     /* 최초등록사용자ID */  
+       ,FS_REG_DTM         /* 최초등록일시 */
+       ,LS_CHG_USER_ID     /* 최종등록사용자ID */
+       ,LS_CHG_DTM         /* 최종등록일시 */ 
+        )
+SELECT  
+        #USER_NO#           /* 복사대상사용자번호 */
+       ,A.AUTR_ROL_ID       /* 권한역할ID */   
+       ,TO_CHAR(SYSDATE,'YYYYMMDD')   /* 적용시작일자 */
+       ,'99991231'          /* 적용종료일자 */ 
+       ,A.USE_YN            /* 사용여부 */
+       ,#REQ_USER_ID#       /* 최초등록사용자ID */
+       ,SYSDATE             /* 최초등록일시 */
+       ,#REQ_USER_ID#       /* 최종등록사용자ID */
+       ,SYSDATE             /* 최종등록일시 */ 
+  FROM  TB_USER_AUTR_ROL A  /* SC_사용자권한역할 */
+ WHERE  A.USER_NO = #USER_NO_CP#
+   AND  A.USE_YN = 'Y'
+   AND  NOT EXISTS (
+                    SELECT  1 
+                      FROM  TB_USER_AUTR_ROL X 
+                     WHERE  X.USER_NO = #USER_NO# 
+                       AND  X.AUTR_ROL_ID = A.AUTR_ROL_ID
+                    )]]>
+	</insert>
+	<select id="SUserRolCPChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserAutrRolMgmt.SUserRolCPChk 사용자권한역할복사사전체크 */
+/* IO: 김석영,2014-10-01T18:15:46(심상준,2014-09-12T11:01:45) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_USER_AUTR_ROL   /* SC_사용자권한역할 */
+ WHERE  USER_NO = #USER_NO_CP#]]>
+	</select>
+	<select id="SUserRolChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserAutrRolMgmt.SUserRolChk 사용자권한사전체크 */
+/* IO: 김석영,2014-10-01T19:26:44(심상준,2014-09-15T09:53:19) */
+SELECT  
+        COUNT(1) AS AUTR_ROL_ID_CNT
+  FROM  TB_USER_AUTR_ROL    /* SC_사용자권한역할 */
+ WHERE  USER_NO = #USER_NO#
+   AND  AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</select>
+</sqlMap>

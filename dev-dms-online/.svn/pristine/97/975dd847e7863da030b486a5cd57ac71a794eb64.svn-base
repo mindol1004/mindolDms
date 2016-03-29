@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCUserLginSessInfoMgmt">
+	<select id="SUserLginSessInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCUserLginSessInfoMgmt.SUserLginSessInfo 사용자로그인세션정보조회 */
+/* IO: admin,2015-07-22T13:45:46(김석영,2014-09-03T20:52:51) */
+SELECT
+        A.SESS_NO          /* 세션번호 */
+       ,A.USER_NO          /* 사용자번호 */
+       ,A.LGIN_SNO         /* 로그인일련번호 */
+       ,A.LGIN_DTM         /* 로그인일시 */
+       ,A.IP_ADDR          /* IP주소 */
+       ,A.SESS_AVL_YN      /* 세션유효여부 */
+       ,A.LGOT_DTM         /* 로그아웃시간 */
+       ,B.USER_NM          /* 사용자명   */
+       ,B.USER_NM_ENPT     /* 사용자명암호화 */
+       ,B.USER_CL_CD       /* 사용자구분코드 */
+       ,B.USER_ST_CD       /* 사용자상태코드 */
+       ,B.LGIN_ID          /* 로그인ID  */
+       ,B.PWD              /* 비밀번호  */
+       ,B.PWD_ERR_CNT      /* 비밀번호오류횟수 */
+       ,B.LS_PWD_CHG_DT    /* 최종비밀번호변경일자 */
+       ,B.LS_LGIN_DTM      /* 최종로그인일시 */
+       ,B.EML_ADDR         /* 이메일주소 */
+       ,B.EML_ADDR_ENPT    /* 이메일주소암호화 */
+       ,B.HP_NO            /* 휴대전화번호 */
+       ,B.HP_NO_ENPT       /* 휴대전화번호암호화 */
+       ,B.GRPC_JOBR_CD     /* 직급코드  */
+       ,B.GRPC_JTIL_CD     /* 직책코드  */
+       ,B.GRPC_DEPT_CD     /* 부서코드  */
+       ,B.GRPC_CO_CD       /* 회사코드  */
+       ,B.DEAL_CO_CD       /* 대리점코드*/
+       ,B.EMP_NO              /* 사원번호  */
+       ,A.AUTR_OBJ_MCHT_INFO  /* 권한대상가맹점정보 */
+  FROM  TB_USER_LGIN_SESS_INFO A
+       ,TB_USER B
+ WHERE  A.USER_NO = B.USER_NO
+   AND  A.USER_NO = #USER_NO#
+   AND  A.SESS_NO = #SESS_NO#
+   AND  A.SESS_AVL_YN = 'Y'
+   AND  A.IP_ADDR = #IP_ADDR#]]>
+	</select>
+	<insert id="IUserLginSessInfo" parameterClass="map" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCUserLginSessInfoMgmt.IUserLginSessInfo 사용자로그인세션정보등록 */
+/* IO: 이유미,2014-12-10T17:39:28(김석영,2014-09-03T20:53:12) */
+INSERT
+  INTO  TB_USER_LGIN_SESS_INFO  /* 사용자로그인세션정보 */
+       (
+        USER_NO            /* 사용자번호 */
+       ,LGIN_SNO           /* 로그인일련번호 */
+       ,LGIN_DTM           /* 로그인일시 */
+       ,SESS_NO            /* 세션번호 */
+       ,IP_ADDR            /* IP주소 */
+       ,SESS_AVL_YN        /* 세션유효여부 */
+       ,LGOT_DTM           /* 로그아웃일시 */
+       ,FS_REG_USER_ID     /* 최초등록사용자ID */
+       ,FS_REG_DTM         /* 최초등록일시 */
+       ,LS_CHG_USER_ID     /* 최종변경사용자ID */
+       ,LS_CHG_DTM         /* 최종변경일시 */
+       ,AUTR_OBJ_MCHT_INFO /* 권한대상가맹점정보 */
+        )
+VALUES
+       (
+        #USER_NO#                               /* 사용자번호 */
+       ,(SELECT 
+                 NVL(MAX(LGIN_SNO),0)+1 
+           FROM  TB_USER_LGIN_SESS_INFO 
+          WHERE  USER_NO = #USER_NO#
+         )                                      /* 로그인일련번호 */
+       ,TO_DATE(NVL(#LGIN_DTM#,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')),'YYYYMMDDHH24MISS')  /* 로그인일시 */
+       ,#SESS_NO#                               /* 세션번호 */
+       ,#IP_ADDR#                               /* IP주소 */
+       ,'Y'                                     /* 세션유효여부 */
+       ,NULL                                    /* 로그아웃일시 */
+       ,#USER_NO#                               /* 최초등록사용자ID */
+       ,SYSDATE                                 /* 최초등록일시 */
+       ,#USER_NO#                               /* 최종변경사용자ID */
+       ,SYSDATE                                 /* 최종변경일시 */
+       ,#AUTR_OBJ_MCHT_INFO#                    /* 권한대상가맹점정보 */
+       )]]>
+	</insert>
+	<update id="UUserLginSessInfo" parameterClass="map" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCUserLginSessInfoMgmt.UUserLginSessInfo 사용자로그인세션정보수정 */
+/* IO: 김석영,2014-09-26T20:28:01(김석영,2014-09-17T17:23:03) */
+UPDATE
+        TB_USER_LGIN_SESS_INFO       /* 사용자로그인세션정보 */
+   SET  SESS_AVL_YN = 'N'            /* 세션유효여부 */
+       ,LGOT_DTM = SYSDATE           /* 로그아웃시간 */
+       ,LS_CHG_USER_ID = #USER_NO#   /* 최종변경사용자ID */
+       ,LS_CHG_DTM = SYSDATE         /* 최종변경일시 */
+ WHERE  USER_NO = #USER_NO#
+]]><isNotEqual property="FORCED_YN" compareValue="Y"><![CDATA[
+   AND  SESS_NO = #SESS_NO#
+]]></isNotEqual><![CDATA[
+   AND  SESS_AVL_YN = 'Y']]>
+	</update>
+	<select id="SUserLginSessInfoChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCUserLginSessInfoMgmt.SUserLginSessInfoChk 사용자로그인세션정보체크 */
+/* IO: 김석영,2014-09-26T20:29:34(김석영,2014-09-19T14:54:18) */
+SELECT
+        1
+  FROM  TB_USER_LGIN_SESS_INFO A
+ WHERE  A.USER_NO = #USER_NO#
+   AND  A.SESS_AVL_YN = 'Y']]>
+	</select>
+</sqlMap>

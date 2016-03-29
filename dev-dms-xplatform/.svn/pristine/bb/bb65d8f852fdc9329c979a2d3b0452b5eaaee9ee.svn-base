@@ -1,0 +1,180 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="MainFrame" classname="MainTemp" inheritanceid="" position="absolute 0 0 1254 608" titletext="Main" onload="MainFrame_onload" scrollbars="none" style="background:white;font:Dotum,10,bold antialias;" onclose="MainFrame_onclose">
+    <Layouts>
+      <Layout width="1254" height="608"/>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_authRol" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="AUTR_ROL_ID" type="STRING" size="256"/>
+          <Column id="AUTR_ROL_NM" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_param" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="AUTR_ROL_ID" type="STRING" size="256"/>
+          <Column id="AUTR_ROL_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_showDivList" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="FRM_ID" type="STRING" size="256"/>
+          <Column id="FRM_URL" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+    </Objects>
+    <Bind/>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : MainFrame.xfdl
+ * 03. 화면 설명 : 메인화면
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/ 
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/  
+var g_divWidth  = 607;  //div 고정 width값 
+var g_divHeight = 284;  //div 고정 height값 
+var g_topMagin = 20;   //top Margin
+var g_leftMagin = 20;   //left Margin
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onload
+-----------------------------------------------------------------------------------------------*/
+function MainFrame_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	//gfn_setInitForm(obj, e, "MainFrame");
+	//bShowType = ap_LeftFrame.form.btn_Hide.visible;
+	//div 생성
+	var aComponents = obj.components;
+	
+	if (aComponents.length == 0) {
+		//trace("탄다2");
+		fn_setExtendMenu();
+		//포지션2세팅
+		gfn_setPosition2All(this);
+	}
+}
+/*----------------------------------------------------------------------------------------------
+ * Notice   : div 생성 및 div 사이즈 조절 
+-----------------------------------------------------------------------------------------------*/
+function fn_setExtendMenu()
+{
+	//권한별 div 항목 활성화
+	 var objDivComp;
+	 var divId;
+	 var divUrl;
+	 var objDiv;
+	 var x=g_leftMagin , y=g_topMagin; //div x,y좌표
+
+	 //2015.01.26 gds_menu 에서 메인화면구성 화면리스트만 가져오기 	  
+	 var idx = 0;
+	 gds_menu.filter("SUP_MENU_ID=='ZZ'");
+	 ds_showDivList.copyData(gds_menu,true);
+	 /*for(var i=ds_showDivList.getRowCount(); i>=0; i--){
+		if(i>14){
+			 ds_showDivList.deleteRow(i);
+		}
+	 }*/
+	 gds_menu.filter("");
+	 	 	 
+	 for(var i=0; i<ds_showDivList.getRowCount();i++){
+		//div 컴포넌트생성
+		divId = ds_showDivList.getColumn(i,"FRM_ID");
+		divUrl= ds_showDivList.getColumn(i,"FRM_URL");
+		objDivComp = new Div(divId, x, y, x+g_divWidth, y+g_divHeight);		
+		
+		this.addChild(divId, objDivComp); 
+		objDiv = eval(divId);
+				
+		//다음 div 의 x,y좌표 구하기 
+		if(i%2 == 0)	{
+			x = g_divWidth+(g_leftMagin)-1; 
+			//x = g_divWidth+1; 
+			//objDiv.anchor ="default";
+		} else {
+			x =  g_leftMagin; 
+			y += g_divHeight-1;
+			//y += g_divHeight+1;
+			//objDiv.anchor ="left top right";
+		}
+
+		//---------------------------------------------
+		//div 공통 속성 지정
+		//---------------------------------------------
+		objDiv.border = "1 solid #ebebebff";
+		objDiv.scrollbars="none";
+		objDiv.url=divUrl; //url link
+		objDiv.show(); 
+		objDiv.class = "main_chartGroup";
+		objDiv.positiontype = "position2";
+	}
+	
+	//스크롤바 설정
+// 	if(ds_showDivList.getRowCount()>4){
+// 		this.scrollbars="fixedvert";
+// 	} else {
+// 		this.scrollbars="none";
+// 	}
+// 	this.resetScroll();
+} 
+
+/*===============================================================================================
+ * [ PART 4 ] Transaction 처리
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 5 ] CallBack 처리
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 6 ] Event Function ( Main Button )
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 7 ] Event Function ( Others )
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onclose
+-----------------------------------------------------------------------------------------------*/
+function MainFrame_onclose(obj:Form, e:CloseEventInfo)
+{    
+	
+}
+
+/*===============================================================================================
+ * [ PART 8 ] User Defined Function
+================================================================================================*/
+
+]]></Script>
+  </Form>
+</FDL>

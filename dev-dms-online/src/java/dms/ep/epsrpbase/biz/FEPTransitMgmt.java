@@ -1,0 +1,117 @@
+package dms.ep.epsrpbase.biz;
+
+import java.util.Map;
+
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]미착내역관리</li>
+ * <li>설  명 : <pre>미착내역관리</pre></li>
+ * <li>작성일 : 2015-11-30 17:08:29</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class FEPTransitMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPTransitMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>미착내역조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-11-30 17:08:29
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_DTM [기준년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_TRANSIT_LIST
+	 *		- field : CON_DT [처리일자]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_DT [접수일자]
+	 *		- field : CLCT_DT [반영일자]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [단말기 일련번호]
+	 *		- field : SKN_EQP_ST [미착AP등급]
+	 *		- field : XCL_AMT [미착AP매입금액]
+	 *		- field : DEDC_TYP_CD [미착AP유형]
+	 *		- field : INVE_SLIP_NO [미착AP번호]
+	 *		- field : INVE_SLIP_DT [미착AP기산일]
+	 *		- field : INVE_TYP_CD [AP처리구분]
+	 *		- field : C_SKN_EQP_ST [확정AP등급]
+	 *		- field : C_XCL_AMT [확정AP매입가]
+	 *		- field : SKN_SMPL_JDG_DAMT [확정AP평가손실금액]
+	 *		- field : C_DEDC_TYP_CD [확정AP유형]
+	 *		- field : C_INVE_SLIP_NO [확정AP번호]
+	 *		- field : C_INVE_SLIP_DT [확정AP기산일]
+	 *		- field : N_XCL_AMT [반제 반환금액]
+	 *		- field : M_INVE_CNCL_SLIP_NO [미착반제 AP번호]
+	 *		- field : C_INVE_CNCL_SLIP_NO [확정반제 AP번호]
+	 *		- field : N_INVE_CNCL_SLIP_DT [반제AP 기산일]
+	 *		- field : AR_SALE_AMT [AR매출가]
+	 *		- field : AR_XCL_SLIP_NO [AR매출번호]
+	 *		- field : AR_XCL_SLIP_DT [AR기산일]
+	 *		- field : AR_SELL_DEALCO_NM [AR매출처]
+	 *		- field : DIS_YN [재고여부]
+	 *		- field : TS_YN [미착]
+	 *		- field : SELL_YN [판매여부]
+	 * </pre>
+	 */
+	public IDataSet fInqTransitList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DEPTransitMgmt dEPTransitMgmt = (DEPTransitMgmt)lookupDataUnit(DEPTransitMgmt.class);
+            
+            // 2. TOTAL COUNT DM호출
+            if("1".equals(requestData.getField("page"))){
+            	// 2. TOTAL COUNT DM호출
+            	dsCnt = dEPTransitMgmt.dSTransitListTotCnt(requestData, onlineCtx);          
+            	intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));     
+            }else{
+            	intTotalCnt = requestData.getIntField("TOTAL_CNT");
+            }
+                 
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            
+            // 3. LISTDM호출
+            responseData = dEPTransitMgmt.dSTransitListPaging(reqDs, onlineCtx);        
+            rsPagingList = responseData.getRecordSet("RS_TRANSIT_LIST");          
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);        
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRReqpLossMgmt">
+	<select id="SReqpLossLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpLossMgmt.SReqpLossLstPaging 임대폰분실조회리스트 */
+/* IO: 김용진,2015-09-10T17:51:26(이준우,2015-07-15T12:35:58) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD , A.EQP_SER_NO ) AS ROWNO
+			    ,C.RTN_REG_DT 										/*입고 분실일자*/
+			    ,A.EQP_LOSS_DT AS LOSS_DT 		                    /*자산 분실일자*/
+		        ,A.ASSET_NO   										/*자산번호*/
+		        ,(SELECT  B.EQP_MDL_NM FROM TB_EQP_MDL B WHERE A.EQP_MDL_CD = B.EQP_MDL_CD) AS EQP_MDL_NM 		/*모델명*/
+		        ,C.EQP_COLOR_CD   									/*모델색상*/
+		        ,C.EQP_SER_NO    									/*단말기일련번호*/
+		        ,C.EQP_IMEI_NO   									/*IME*/
+		        ,'' AS LOSS_AMT   									/*분실위약금*/
+		        ,A.INVE_ST_CD
+		        ,DECODE(A.INVE_ST_CD, 70, '확정', '미확정') AS INVE_ST_NM		/*손실처리여부 회수구분코드 30 분실*/                  
+		        ,A.LS_CHG_DTM                                       /*확정일자*/
+		        ,TRUNC(MONTHS_BETWEEN(SYSDATE, to_date(C.RTN_REG_DT, 'yyyymmddhh24miss'))* 30.5) AS EXP_DT /*경과기간*/
+                ,DECODE((SELECT COUNT(*) AS FND
+                           FROM TB_EQP_CLCT_OBJ
+                          WHERE DEL_YN = 'N'
+                            AND IN_OBJ_DTL_CD = '40'
+                            AND EQP_MDL_CD = C.EQP_MDL_CD
+                            AND EQP_SER_NO = C.EQP_SER_NO
+                            AND EQP_IN_DT >= C.IN_SCHD_DT
+                ),0,'N','Y') AS FND_YN
+		   FROM  TB_EQP_ASSET A
+		        ,TB_EQP_CLCT_OBJ C
+		  WHERE  A.EQP_MDL_CD = C.EQP_MDL_CD
+		    AND  A.EQP_SER_NO = C.EQP_SER_NO
+		    AND  A.OP_CL_CD = 'PR'
+		    AND  A.DEL_YN = 'N'
+   		    AND  C.DEL_YN = 'N'
+   		    AND  C.IN_OBJ_DTL_CD = '30'								/* 회수구분코드 분실(30) */
+
+]]><isNotEmpty property="ST_DT"><![CDATA[
+            AND  C.RTN_REG_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="ED_DT"><![CDATA[
+            AND  C.RTN_REG_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="ASSET_NO"><![CDATA[
+            AND  A.ASSET_NO = #ASSET_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  C.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+            AND  C.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="INVE_ST_CD"><![CDATA[
+            
+]]><isEqual prepend="AND" property="INVE_ST_CD" compareValue="70"><![CDATA[
+            A.INVE_ST_CD = #INVE_ST_CD#				/*자산재고상태코드 출고테이블 상태 컬럼 공통정의 X */
+]]></isEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="INVE_ST_CD" compareValue="70"><![CDATA[
+            A.INVE_ST_CD <> '70'				/*자산재고상태코드 출고테이블 상태 컬럼 공통정의 X */
+]]></isNotEqual><![CDATA[
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="EQP_IMEI_NO"><![CDATA[
+            AND  C.EQP_IMEI_NO = #EQP_IMEI_NO#
+]]></isNotEmpty><![CDATA[
+            ORDER BY C.RTN_REG_DT DESC
+        )
+
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SReqpLossLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpLossMgmt.SReqpLossLstTotCnt 임대폰분실조회총건수 */
+/* IO: 김상오,2015-08-17T19:00:34(이준우,2015-07-14T20:56:54) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  TB_EQP_ASSET A
+     ,  TB_EQP_CLCT_OBJ C
+ WHERE  A.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.EQP_SER_NO = C.EQP_SER_NO
+   AND  A.OP_CL_CD = 'PR'
+   AND  A.DEL_YN = 'N'
+   AND  C.DEL_YN = 'N'
+   AND  C.IN_OBJ_DTL_CD = '30'		/* 회수구분코드 분실(30) */
+
+]]><isNotEmpty property="ST_DT"><![CDATA[
+   AND  C.RTN_REG_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT"><![CDATA[
+   AND  C.RTN_REG_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ASSET_NO"><![CDATA[
+   AND  A.ASSET_NO = #ASSET_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+   AND  C.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+   AND  C.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="INVE_ST_CD"><![CDATA[
+            
+]]><isEqual prepend="AND" property="INVE_ST_CD" compareValue="70"><![CDATA[
+            A.INVE_ST_CD = #INVE_ST_CD#				/*자산재고상태코드 출고테이블 상태 컬럼 공통정의 X */
+]]></isEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="INVE_ST_CD" compareValue="70"><![CDATA[
+            A.INVE_ST_CD <> '70'				/*자산재고상태코드 출고테이블 상태 컬럼 공통정의 X */
+]]></isNotEqual><![CDATA[
+]]></isNotEmpty><![CDATA[
+
+]]><isNotEmpty property="EQP_IMEI_NO"><![CDATA[
+   AND  C.EQP_IMEI_NO = #EQP_IMEI_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<update id="UReqpLoss" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpLossMgmt.UReqpLoss 임대폰분실정보수정 */
+/* IO: 이준우,2015-08-03T09:37:24(이준우,2015-07-17T14:11:22) */
+UPDATE  TB_EQP_ASSET
+   SET 
+        INVE_ST_CD = #INVE_ST_CD# /*재고상태코드 70 분실*/
+       ,EQP_LOSS_DT = #LOSS_DT#			/*분실일자 셋팅*/
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM     = SYSDATE
+		
+       
+ WHERE  ASSET_NO = #ASSET_NO#]]>
+	</update>
+</sqlMap>

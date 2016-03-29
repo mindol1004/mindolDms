@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR013">
+	<select id="SUnrtnTermRslt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR013.SUnrtnTermRslt 해지결과IF조회 */
+/* IO: 문재웅,2015-09-03T09:16:56(문재웅,2015-08-24T14:19:53) */
+SELECT  IF_PROC_DT		/* IF처리일자 	*/
+       ,IF_FILE_NM		/* IF파일명	*/
+       ,IF_SEQ			/* IF순번		*/
+       ,SVC_MGMT_NO		/* 서비스관리번호	*/
+       ,RENTAL_SER_NO	/* 렌탈일련번호	*/
+       ,PROC_RSLT_CD	/* 처리결과코드	*/
+       ,PROC_RSLT_DTL_CD /* 처리결과상세코드 */
+       ,PROC_ST_CD		/* 처리상태코드	*/
+       ,FS_REG_USER_ID	/* 최초등록사용자ID */
+       ,FS_REG_DTM		/* 최초등록일시	*/
+       ,LS_CHG_USER_ID	/* 최종변경사용자ID */
+       ,LS_CHG_DTM		/* 최종변경일시	*/
+  FROM  TF_UNRTN_TERM_RSLT
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UUnrtnTermRslt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR013.UUnrtnTermRslt 해지결과IF수정 */
+/* IO: 문재웅,2015-09-03T20:27:58(문재웅,2015-08-24T14:19:47) */
+UPDATE  TF_UNRTN_TERM_RSLT
+   SET  PROC_ST_CD  = '01'	/* 처리상태: 01(처리), 09(미처리) */
+	   ,LS_CHG_USER_ID = 'BAT'
+	   ,LS_CHG_DTM  = SYSDATE
+ WHERE  IF_SEQ      = #IF_SEQ#
+   AND  IF_FILE_NM  = #IF_FILE_NM#]]>
+	</update>
+	<update id="UTbNrCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR013.UTbNrCntrt 신규R계약 해지결과입력 */
+/* IO: 문재웅,2015-08-25T13:46:31(문재웅,2015-08-25T13:46:31) */
+UPDATE  TB_NR_CNTRT
+   SET  TERM_PROC_RSLT_CD     = #PROC_RSLT_CD#      /* 해지결과코드 */
+       ,TERM_PROC_RSLT_DTL_CD = #PROC_RSLT_DTL_CD#  /* 해지결과상세코드 */
+       ,LS_CHG_USER_ID = 'BAT'			/* 최종변경사용자ID */
+       ,LS_CHG_DTM = SYSDATE			/* 최종변경일시 */
+WHERE  SVC_MGMT_NO    = #SVC_MGMT_NO#   /* 서비스관리번호 */
+  AND  RENTAL_SER_NO  = #RENTAL_SER_NO# /* 렌탈일련번호   */]]>
+	</update>
+</sqlMap>

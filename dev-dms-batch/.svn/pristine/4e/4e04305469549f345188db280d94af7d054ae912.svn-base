@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.BIF019">
+	<select id="SInsuBillRsltLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.BIF019.SInsuBillRsltLst 보증보험청구결과목록 */
+/* IO: 안한모,2015-08-11T13:51:59(admin,2015-03-20T13:41:26) */
+SELECT
+        IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,'D' AS REC_CL_CD
+       ,CUST_TYP_CD
+       ,CTZ_CORP_REG_NO
+       ,BIZ_NUM
+       ,INSU_MGMT_NO
+       ,SVC_MGMT_NO
+       ,RENTAL_SNO
+       ,INSU_BILL_DT
+       ,INSU_BILL_AMT
+       ,INSU_BILL_PROC_CD
+       ,INSU_BILL_PROC_DTL_CD
+       ,INSU_BILL_RJCT_STEP_CD
+       ,INSU_CO_ERR_CD
+       ,NEWLINE
+       ,PROC_ST_CD
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TF_INSU_BILL_RSLT
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UInsuBillRslt" parameterClass="map" ><![CDATA[/* Biz: dms.inf.BIF019.UInsuBillRslt 보증보험청구결과처리상태코드수정 */
+/* IO: 안한모,2015-08-11T13:54:01(이영진,2015-08-10T13:35:41) */
+UPDATE 
+        TF_INSU_BILL_RSLT
+   SET  PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#]]>
+	</update>
+</sqlMap>

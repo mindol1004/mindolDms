@@ -1,0 +1,85 @@
+package dms.fw.fwsbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.utils.PagenateUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: [FU]시스템로그조회</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2014-09-05 16:43:46</li>
+ * <li>작성자 : 심상준 (simair)</li>
+ * </ul>
+ *
+ * @author 심상준 (simair)
+ */
+public class FSCSysLogMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FSCSysLogMgmt() {
+		super();
+	}
+
+	/**
+	 * <pre>시스템로그 목록조회</pre>
+	 *
+	 * @author admin (admin)
+	 * @since 2015-09-14 16:33:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet fInqSysLogLst(IDataSet requestData, IOnlineContext onlineCtx) {
+    	IDataSet responseData = new DataSet();
+    	IDataSet dsCnt = new DataSet();
+    	IDataSet reqDs = (IDataSet) requestData.clone();  //원거래의 DataSet의 훼손을 막기 위한 Clone
+    	IRecordSet sysLogListRs = null;
+    	int sysLogTotalCnt = 0;
+    	// 1. DU lookup
+    	DSCSysLogMgmt dTR_HPC_FRW_TRLOG01 = (DSCSysLogMgmt) lookupDataUnit(DSCSysLogMgmt.class);
+    	// 2. 구분코드 필드에 따른 분기 ( T:거래 / E:에러 )
+    	if ( StringUtils.equals(requestData.getField("CL_CD"), "T") ) {
+    		try {
+    			// 2-1. 거래로그 TOTAL COUNT DM호출
+    			dsCnt = dTR_HPC_FRW_TRLOG01.dSSysTLogLstTotCnt(requestData, onlineCtx);
+    			sysLogTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+    			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+    			// 2-2. 거래로그 LISTDM호출
+    			responseData = dTR_HPC_FRW_TRLOG01.dSSysTLogLstPaging(reqDs, onlineCtx);
+    			sysLogListRs = responseData.getRecordSet("RS_SYS_LOG_LIST");
+    			PagenateUtils.setPagenatedParamToRecordSet(sysLogListRs, reqDs, sysLogTotalCnt);
+    		} catch ( BizRuntimeException e ) {
+    			throw e;
+    		}
+    	} else {
+    		try {
+    			// 2-3. 에러로그 TOTAL COUNT DM호출
+    			dsCnt = dTR_HPC_FRW_TRLOG01.dSSysELogLstTotCnt(requestData, onlineCtx);
+    			sysLogTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+    			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+    			// 2-4. 에러로그 LISTDM호출
+    			responseData = dTR_HPC_FRW_TRLOG01.dSSysELogLstPaging(reqDs, onlineCtx);
+    			sysLogListRs = responseData.getRecordSet("RS_SYS_LOG_LIST");
+    			PagenateUtils.setPagenatedParamToRecordSet(sysLogListRs, reqDs, sysLogTotalCnt);
+    		} catch ( BizRuntimeException e ) {
+    			throw e;
+    		}
+    	}
+    	return responseData;
+    }
+
+}

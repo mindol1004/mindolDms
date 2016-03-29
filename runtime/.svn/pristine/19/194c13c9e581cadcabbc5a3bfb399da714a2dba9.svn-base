@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE ejb-jar PUBLIC "-//Sun Microsystems, Inc.//DTD Enterprise JavaBeans 2.0//EN" "http://java.sun.com/dtd/ejb-jar_2_0.dtd">
+<ejb-jar id="ejb-jar_nexcore.online.Service">
+
+  <enterprise-beans>
+    <session id="nexcore.online.ServiceInit">
+      <ejb-name>nexcore.online.ServiceInit</ejb-name>
+      <home>nexcore.framework.core.service.init.ejb.IIocInitHome</home>
+      <remote>nexcore.framework.core.service.init.ejb.IIocInit</remote>
+      <local-home>nexcore.framework.core.service.init.ejb.IIocInitLocalHome</local-home>
+      <local>nexcore.framework.core.service.init.ejb.IIocInitLocal</local>
+      <ejb-class>nexcore.framework.core.service.init.ejb.IocInitBean</ejb-class>
+      <session-type>Stateless</session-type>
+      <transaction-type>Bean</transaction-type>
+    </session>
+  
+    <session id="nexcore.online.PojoServiceFacade">
+      <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+      <home>nexcore.framework.core.service.facade.ejb.IPojoFacadeHome</home>
+      <remote>nexcore.framework.core.service.facade.ejb.IPojoFacade</remote>
+      <local-home>nexcore.framework.core.service.facade.ejb.IPojoFacadeLocalHome</local-home>
+      <local>nexcore.framework.core.service.facade.ejb.IPojoFacadeLocal</local>
+      <ejb-class>nexcore.framework.core.service.facade.ejb.PojoFacadeBean</ejb-class>
+      <session-type>Stateless</session-type>
+      <transaction-type>Container</transaction-type>
+    </session>
+    
+    <session id="nexcore.online.FrontService">
+      <ejb-name>nexcore.online.FrontService</ejb-name>
+      <home>nexcore.framework.core.service.front.ejb.IFrontServiceHome</home>
+      <remote>nexcore.framework.core.service.front.ejb.IFrontService</remote>
+      <local-home>nexcore.framework.core.service.front.ejb.IFrontServiceLocalHome</local-home>
+      <local>nexcore.framework.core.service.front.ejb.IFrontServiceLocal</local>
+      <ejb-class>nexcore.framework.core.service.front.ejb.FrontServiceBean</ejb-class>
+      <session-type>Stateless</session-type>
+      <transaction-type>Container</transaction-type>
+    </session>
+  </enterprise-beans>
+  
+  <assembly-descriptor>
+     <container-transaction>
+         <method>
+             <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+             <method-name>invoke</method-name>
+         </method>
+         <method>
+             <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+             <method-name>invokeByRequired</method-name>
+         </method>
+         <trans-attribute>Required</trans-attribute>
+     </container-transaction>
+     <container-transaction>
+         <method>
+             <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+             <method-name>invokeByRequiresNew</method-name>
+         </method>
+         <trans-attribute>RequiresNew</trans-attribute>
+     </container-transaction>
+
+     <container-transaction>
+         <method>
+             <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+             <method-name>invokeBySupports</method-name>
+         </method>
+         <trans-attribute>Supports</trans-attribute>
+     </container-transaction>
+
+     <container-transaction>
+         <method>
+             <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+             <method-name>invokeByMandatory</method-name>
+         </method>
+         <trans-attribute>Mandatory</trans-attribute>
+     </container-transaction>
+
+     <container-transaction>
+         <method>
+             <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+             <method-name>invokeByNotSupported</method-name>
+         </method>
+         <trans-attribute>NotSupported</trans-attribute>
+     </container-transaction>
+
+     <container-transaction>
+         <method>
+             <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+             <method-name>invokeByNever</method-name>
+         </method>
+         <trans-attribute>Never</trans-attribute>
+     </container-transaction>
+     
+     <container-transaction>
+         <method>
+             <ejb-name>nexcore.online.FrontService</ejb-name>
+             <method-name>call</method-name>
+         </method>
+         <trans-attribute>Required</trans-attribute>
+     </container-transaction>
+  </assembly-descriptor>
+</ejb-jar>

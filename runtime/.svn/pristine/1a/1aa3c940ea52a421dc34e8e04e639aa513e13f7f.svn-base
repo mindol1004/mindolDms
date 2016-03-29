@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+    <bean id="nc.core.AsyncQueueManager" 
+    	class="nexcore.framework.core.service.asyncqueue.internal.AsyncQueueManager" 
+    	init-method="init" destroy-method="destroy">
+    	<description><![CDATA[비동기 큐 매니저 ]]></description>    
+        <property name="readSqlManager"                ref="nc.core.AsyncQueueISqlManagerRead" />                   <!-- 조회용 SQL MANAGER -->
+        <property name="writeXaSqlManager"             ref="nc.core.AsyncQueueISqlManagerWriteXA" />                <!-- XA 기록용 SQL MANAGER -->
+        <property name="writeNonXaSqlManager"          ref="nc.core.AsyncQueueISqlManagerWriteNonXA" />             <!-- NON XA 기록용 SQL MANAGER -->
+        <property name="startupDelay"                  value="${online.internal.async.startupDelayMillis}" />       <!-- 로딩시 지연시간(기본 : 10000(10초)) -->
+        <property name="runInterval"                   value="${online.internal.async.runIntervalMillis}" />        <!-- 대상건 조회 기준시간 (기본 : 1000(1초)) -->
+        <property name="sequenceLength"                value="${online.internal.async.sequenceLength}" />           <!-- 일련번호 자리수 (기본 : 5) -->
+        <property name="truncateQueueOnLoading"        value="${online.internal.async.truncateQueueOnLoading}" />   <!-- 로딩시 등록된 큐 삭제여부 (기본 : true) -->
+        <property name="cleanOldToSchedule"            value="${online.internal.async.cleanOldToSchedule}" />       <!-- 오래된 큐 삭제 스케줄 동작여부 (기본 : false) -->
+        <property name="cleanOldToScheduleTime"        value="${online.internal.async.cleanOldToScheduleTime}" />   <!-- 오래된 큐 삭제 스케줄 동작시각 -->
+        <property name="cleanOldToScheduleRetainDays"  value="${online.internal.async.cleanOldToScheduleRetainDays}" /> <!-- 오래된 큐 삭제 스케줄 보유기간 -->
+        <property name="queueConfigurationList">
+        	<list>
+        		<bean class="nexcore.framework.core.service.asyncqueue.AsyncQueueConfiguration">
+        			<description><![CDATA[비동기 연동거래 NON-XA]]></description>    
+        			<property name="queueName"    value="${online.internal.async.queuename.nonxa}" />
+        			<property name="queueSize"    value="20" />
+        			<property name="workerSize"   value="5" />
+        			<property name="queueListener"><bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultAsyncServiceQueueListener"></bean></property>
+        		</bean>
+        		<bean class="nexcore.framework.core.service.asyncqueue.AsyncQueueConfiguration">
+        			<description><![CDATA[비동기 연동거래 XA]]></description>    
+        			<property name="queueName"    value="${online.internal.async.queuename.xa}" />
+        			<property name="queueSize"    value="20" />
+        			<property name="workerSize"   value="5" />
+        			<property name="queueListener"><bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultAsyncServiceQueueListener"></bean></property>
+        		</bean>
+        		<!--  
+        		<bean class="nexcore.framework.core.service.asyncqueue.AsyncQueueConfiguration">
+        			<description><![CDATA[비동기 아웃바운드 FEP]]></description>    
+        			<property name="queueName"    value="${online.internal.async.queuename.outbound.fep}" />
+        			<property name="queueSize"    value="20" />
+        			<property name="workerSize"   value="5" />
+        			<property name="queueListener"><bean class="nexbank.fwk.outbound.internal.OutboundAsyncQueueListener"></bean></property>
+        		</bean>
+        		<bean class="nexcore.framework.core.service.asyncqueue.AsyncQueueConfiguration">
+        			<description><![CDATA[비동기 아웃바운드 MCI]]></description>    
+        			<property name="queueName"    value="${online.internal.async.queuename.outbound.mci}" />
+        			<property name="queueSize"    value="20" />
+        			<property name="workerSize"   value="5" />
+        			<property name="queueListener"><bean class="nexbank.fwk.outbound.internal.OutboundAsyncQueueListener"></bean></property>
+        		</bean>
+        		<bean class="nexcore.framework.core.service.asyncqueue.AsyncQueueConfiguration">
+        			<description><![CDATA[비동기 아웃바운드 EAI]]></description>    
+        			<property name="queueName"    value="${online.internal.async.queuename.outbound.eai}" />
+        			<property name="queueSize"    value="20" />
+        			<property name="workerSize"   value="5" />
+        			<property name="queueListener"><bean class="nexbank.fwk.outbound.internal.OutboundAsyncQueueListener"></bean></property>
+        		</bean>
+        		-->
+        	</list> 
+        </property>
+    </bean>
+
+    <bean id="nc.core.AsyncQueueISqlManagerRead" 
+    	class="nexcore.framework.integration.db.internal.XmlSqlManager" 
+    	init-method="init">
+        <description>큐 조회용 SQL MANAGER</description>
+        <property name="configFile"        value="config/sql/asyncqueue-nonxa-sql-config.xml" />
+        <property name="userThreadManager" ref="nc.core.IUserThreadManager" />
+    </bean>
+    
+    <bean id="nc.core.AsyncQueueISqlManagerWriteXA" 
+    	class="nexcore.framework.integration.db.internal.XmlSqlManager" 
+    	init-method="init">
+        <description>큐 XA 기록용 SQL MANAGER</description>
+        <property name="configFile"        value="config/sql/asyncqueue-xa-sql-config.xml" />
+        <property name="userThreadManager" ref="nc.core.IUserThreadManager" />
+    </bean>
+
+    <bean id="nc.core.AsyncQueueISqlManagerWriteNonXA" 
+    	class="nexcore.framework.integration.db.internal.XmlSqlManager" 
+    	init-method="init">
+        <description>큐 NON XA 기록용 SQL MANAGER</description>
+        <property name="configFile"        value="config/sql/asyncqueue-nonxa-sql-config.xml" />
+        <property name="userThreadManager" ref="nc.core.IUserThreadManager" />
+    </bean>
+
+ </beans>

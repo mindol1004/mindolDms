@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 프레임워크 통합레이어  컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+	<bean id="nc.integration.AbstractTCPConnectionMciMeta" class="nexcore.framework.integration.tcp.TCPConnectionMeta" abstract="true">
+        <description><![CDATA[MCI 기본 설정]]></description>
+		<property name="connectTimeout"     value="10000"/>
+		<property name="blockTimeout"       value="31000"/>
+		<property name="defaultReadTimeout" value="20000"/>
+		<property name="connectionClazz"    value="nexcore.framework.integration.tcp.internal.sample.OutboundTCPConnection"/>
+		<property name="pooling"            value="true"/>
+		<property name="min"                value="0"/>
+		<property name="max"                value="10"/>
+		<property name="inc"                value="1"/>
+		<property name="idle"               value="600000"/>
+    </bean>
+    
+	<bean id="nc.integration.AbstractTCPConnectionFepMeta" class="nexcore.framework.integration.tcp.TCPConnectionMeta" abstract="true">
+        <description><![CDATA[FEP 기본 설정]]></description>
+		<property name="connectTimeout"     value="10000"/>
+		<property name="blockTimeout"       value="31000"/>
+		<property name="defaultReadTimeout" value="20000"/>
+		<property name="connectionClazz"    value="nexcore.framework.integration.tcp.internal.sample.OutboundTCPConnection"/>
+		<property name="pooling"            value="true"/>
+		<property name="min"                value="0"/>
+		<property name="max"                value="10"/>
+		<property name="inc"                value="1"/>
+		<property name="idle"               value="600000"/>
+    </bean>
+	
+	<bean id="nc.integration.AbstractTCPConnectionEaiMeta" class="nexcore.framework.integration.tcp.TCPConnectionMeta" abstract="true">
+        <description><![CDATA[EAI 기본 설정]]></description>
+		<property name="connectTimeout"     value="10000"/>
+		<property name="blockTimeout"       value="31000"/>
+		<property name="defaultReadTimeout" value="20000"/>
+		<property name="connectionClazz"    value="nexcore.framework.integration.tcp.internal.sample.OutboundHttpConnection"/>
+		<property name="pooling"            value="false"/>
+		<property name="min"                value="0"/>
+		<property name="max"                value="0"/>
+		<property name="inc"                value="0"/>
+		<property name="idle"               value="0"/>
+    </bean>
+
+    <bean id="nc.integration.TCPConnectionManager" 
+          class="nexcore.framework.integration.tcp.internal.TCPConnectionManager" 
+          init-method="init" 
+          destroy-method="destroy">
+    	<description><![CDATA[TCP Connection 관리기.]]></description>
+    	<!-- property name="loggerName" value="__tcplog"/-->
+    	<property name="preloadPools" ref="nc.integration.TCPConnectionManager.preloadPoolsMap" />
+    </bean>
+
+	<bean id="nc.integration.TCPConnectionManager.preloadPoolsMap" class="nexcore.framework.core.ioc.SpringOptionalMapFactoryBean">
+		<description><![CDATA[사전로딩 아웃바운드 채널.]]></description>    
+		<property name="option" value="${nexcore.runtime.mode.${system.id}}"/> <!-- 프레임워크 환경 구분을 옵션으로 사용한다. -->
+		<property name="optionSourceMap">
+			<map>
+				<entry key="L"> <!-- 로컬용 -->
+					<map>
+		    			<entry key="MCI_PUSH1">
+		    				<bean parent="nc.integration.AbstractTCPConnectionMciMeta">
+		    					<property name="hostName"           value="127.0.0.1"/>
+								<property name="port"               value="40001"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="MCI_MASS1">
+		    				<bean parent="nc.integration.AbstractTCPConnectionMciMeta">
+		    					<property name="hostName"           value="127.0.0.1"/>
+								<property name="port"               value="40002"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="FEP_SYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionFepMeta">
+		    					<property name="hostName"           value="127.0.0.1"/>
+								<property name="port"               value="50001"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="FEP_ASYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionFepMeta">
+		    					<property name="hostName"           value="127.0.0.1"/>
+								<property name="port"               value="50002"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="EAI_SYNC">
+		    				<!-- HTTP를 사용하지만 TCP Connection 인터페이스에 맞게 구현함. -->
+		    				<bean parent="nc.integration.AbstractTCPConnectionEaiMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="0"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="EAI_ASYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionEaiMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="0"/>
+		    				</bean>
+		    			</entry>
+					</map>
+				</entry>
+				<entry key="D"> <!-- 개발용 -->
+					<map>
+		    			<entry key="MCI_PUSH1">
+		    				<bean parent="nc.integration.AbstractTCPConnectionMciMeta">
+		    					<property name="hostName"           value="127.0.0.1"/>
+								<property name="port"               value="40001"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="MCI_MASS1">
+		    				<bean parent="nc.integration.AbstractTCPConnectionMciMeta">
+		    					<property name="hostName"           value="127.0.0.1"/>
+								<property name="port"               value="40002"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="FEP_SYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionFepMeta">
+		    					<property name="hostName"           value="127.0.0.1"/>
+								<property name="port"               value="50001"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="FEP_ASYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionFepMeta">
+		    					<property name="hostName"           value="127.0.0.1"/>
+								<property name="port"               value="50002"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="EAI_SYNC">
+		    				<!-- HTTP를 사용하지만 TCP Connection 인터페이스에 맞게 구현함. -->
+		    				<bean parent="nc.integration.AbstractTCPConnectionEaiMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="0"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="EAI_ASYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionEaiMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="0"/>
+		    				</bean>
+		    			</entry>
+					</map>
+				</entry>
+				<entry key="R"> <!-- 운영용 -->
+					<map>
+		    			<entry key="MCI_PUSH1">
+		    				<bean parent="nc.integration.AbstractTCPConnectionMciMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="40001"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="MCI_PUSH2">
+		    				<bean parent="nc.integration.AbstractTCPConnectionMciMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="40001"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="MCI_MASS1">
+		    				<bean parent="nc.integration.AbstractTCPConnectionMciMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="40002"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="MCI_MASS2">
+		    				<bean parent="nc.integration.AbstractTCPConnectionMciMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="40002"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="FEP_SYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionFepMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="50001"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="FEP_ASYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionFepMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="50002"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="EAI_SYNC">
+		    				<!-- HTTP를 사용하지만 TCP Connection 인터페이스에 맞게 구현함. -->
+		    				<bean parent="nc.integration.AbstractTCPConnectionEaiMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="0"/>
+		    				</bean>
+		    			</entry>
+		    			<entry key="EAI_ASYNC">
+		    				<bean parent="nc.integration.AbstractTCPConnectionEaiMeta">
+		    					<property name="hostName"           value="xxxxxxx"/>
+								<property name="port"               value="0"/>
+		    				</bean>
+		    			</entry>
+					</map>
+				</entry>
+			</map>
+		</property>
+	</bean>  
+	
+</beans>

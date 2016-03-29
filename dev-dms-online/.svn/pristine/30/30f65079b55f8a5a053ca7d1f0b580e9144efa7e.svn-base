@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpPpayXclMgmt">
+	<select id="SEqpPpayXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.SEqpPpayXclList 단말기대금요금선납조회 */
+/* IO: 이민재,2015-10-28T15:49:44(이민재,2015-10-23T10:23:51) */
+SELECT  FEE_PPAY_XCL_NO                       /* 요금 선납 정산 번호 */
+       ,FEE_PPAY_STRD_YM                      /* 요금 선납 기준 년월 */
+       ,INVE_TYP_CD                           /* 재고 유형 코드 */
+       ,FEE_PPAY_AMT                          /* 요금 선납 금액 */
+       ,FEE_PPAY_XCL_CNT                      /* 요금 선납 정산 건수 */
+       ,FEE_PPAY_SLIP_DT AS SLIP_DT           /* 요금 선납 전표 일자 */
+       ,FEE_PPAY_SLIP_NO AS SLIP_NO           /* 요금 선납 전표 번호 */
+       ,NVL(FEE_PPAY_SLIP_ST,'00') AS SLIP_ST /* 요금 선납 전표 상태 */
+       ,FEE_PPAY_CNCL_SLIP_DT                 /* 요금 선납 취소 전표 일자 */
+       ,FEE_PPAY_CNCL_SLIP_NO                 /* 요금 선납 취소 전표 번호 */
+       ,'1048137225' AS DEALCO_BLICENS_NO     /* 사업자번호 */
+       ,SUBSTR(FEE_PPAY_SLIP_DT,0,4) AS YYYY  /* 전표년도 */
+       ,FEE_PPAY_TYP_CD                       /* 유형코드 */
+  FROM  TB_EP_FEE_PPAY_XCL 
+ WHERE  FEE_PPAY_STRD_YM = #STRD_YM#
+   AND  FEE_PPAY_TYP_CD = #TYP_CD#
+   AND  DEL_YN = 'N']]>
+	</select>
+	<select id="SEqpPpayXclDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.SEqpPpayXclDtl 단말기대금요금선납상세조회 */
+/* IO: 이민재,2015-12-09T16:46:13(이민재,2015-10-23T10:24:13) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT  ROW_NUMBER() OVER(ORDER BY A.FEE_PPAY_XCL_NO ) AS ROWNO
+			   ,COUNT(*) OVER () AS EXCEL_TOTAL_CNT
+               ,A.FEE_PPAY_XCL_NO         /* 요금 선납 정산 번호 */
+               ,A.FEE_PPAY_XCL_DTL_SEQ    /* 요금 선납 정산 상세 순번 */
+               ,A.INVE_TYP_CD             /* 재고 유형 코드 */
+               ,A.CNSL_MGMT_NO            /* 상담 관리 번호 */
+               ,A.PRCH_MGMT_NO            /* 매입 관리 번호 */
+               ,B.EQP_MDL_NM              /* 모델명 */
+               ,A.EQP_MDL_CD              /* 모델코드 */
+               ,A.EQP_SER_NO              /* 일련번호 */ 
+               ,A.EQP_ST                  /* 단말기상태 */
+               ,A.REPV_AGN_ORG_CD         /* 대표 대리점 조직 코드 */
+               ,A.CNSL_DT                 /* 상담 일자 */
+               ,A.CLCT_DT                 /* 회수 일자 */
+               ,A.FEE_DEDC_PROC_DT        /* 요금 공제 처리 일자 */
+               ,A.XCL_AMT                 /* 정산 금액 */
+               ,A.SKN_JDG_AMT             /* SKN 감정 금액 */
+               ,A.SKN_SMPL_JDG_DAMT       /* SKN 샘플 감정 차액 */
+               ,A.AGN_DDCT_AMT            /* 대리점 차감 금액 */
+               ,A.AGN_EXPNS_CONF_AMT      /* 대리점 비용 확정 금액 */
+               ,SUBSTR(A.PPAY_PROC_TS,5,2)||'월'||SUBSTR(A.PPAY_PROC_TS,7,1)||'차' AS PPAY_PROC_TS /* 차수 */
+          FROM  TB_EP_FEE_PPAY_XCL_DTL A
+               ,TB_EQP_MDL B
+         WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+           AND  A.FEE_PPAY_XCL_NO = #FEE_PPAY_XCL_NO#
+           AND  A.DEL_YN = 'N'
+       ) PA
+WHERE  PA.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<insert id="IEqpPpayXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.IEqpPpayXcl 단말기대금요금선납재집계 */
+/* IO: 이민재,2016-01-20T17:01:16(이민재,2015-10-26T09:49:10) */
+INSERT
+  INTO  TB_EP_FEE_PPAY_XCL
+       (
+        FEE_PPAY_XCL_NO
+       ,FEE_PPAY_STRD_YM
+       ,INVE_TYP_CD
+       ,FEE_PPAY_AMT
+       ,FEE_PPAY_XCL_CNT
+       ,DEL_YN
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       ,FEE_PPAY_TYP_CD
+       )
+SELECT  TO_CHAR(LPAD(SQ01_TB_EP_FEE_PPAY_XCL.NEXTVAL,15,0)) AS FEE_PPAY_XCL_NO
+       ,FEE_PPAY_STRD_YM
+       ,INVE_TYP_CD
+       ,NVL(FEE_PPAY_AMT,0) AS FEE_PPAY_AMT
+       ,FEE_PPAY_XCL_CNT
+       ,'N'
+       ,#USERNO#
+       ,SYSDATE
+       ,#USERNO#
+       ,SYSDATE
+       ,'10' AS FEE_PPAY_TYP_CD
+  FROM  (
+         SELECT  #STRD_YM# AS FEE_PPAY_STRD_YM
+                ,'10' AS INVE_TYP_CD 
+                ,COUNT(*) AS FEE_PPAY_XCL_CNT
+                ,SUM(PRCH_AMT) AS FEE_PPAY_AMT
+           FROM  ( 
+                  SELECT  NVL(C.PRCH_AMT,0) AS PRCH_AMT      /* 매입금액 */
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT >= D.EFF_STA_DT
+                     AND  A.CNSL_DT <= D.EFF_END_DT
+                    /* AND  A.DEL_YN = 'N' */
+                    /* AND  C.DEL_YN = 'N' */
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                     AND  A.SKN_CL = 'N'
+                     AND  C.FEE_DEDC_YN = '1'
+                     AND  C.FEE_DEDC_PROC_YN = 'Y'
+                     AND  C.PPAY_PROC_TS LIKE #STRD_YM#||'%'
+                  )
+          UNION  ALL
+         SELECT  #STRD_YM# AS FEE_PPAY_STRD_YM
+                ,'20' AS INVE_TYP_CD 
+                ,COUNT(*) AS FEE_PPAY_XCL_CNT
+                ,SUM(EQP_ST_AMT) AS FEE_PPAY_AMT
+           FROM  (  
+                  SELECT  NVL(C.SKN_JDG_AMT,0) AS EQP_ST_AMT  /* 등급산정가 */
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT >= D.EFF_STA_DT
+                     AND  A.CNSL_DT <= D.EFF_END_DT
+                    /* AND  A.DEL_YN = 'N' */
+                    /* AND  C.DEL_YN(+) = 'N' */
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                     AND  A.SKN_CL = 'Y'
+                     AND  A.IN_CONF_YN = 'Y'
+                     AND  (C.FEE_DEDC_YN = '1' OR A.PAY_MTHD = '02')
+                     AND  A.CLCT_YN = 'Y'
+                     AND  A.PPAY_PROC_TS LIKE #STRD_YM#||'%'
+                  )
+        )]]>
+	</insert>
+	<insert id="IEqpPpayXclDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.IEqpPpayXclDtl 단말기대금요금선납재집계상세 */
+/* IO: 이민재,2016-01-20T17:01:47(이민재,2015-10-26T10:13:08) */
+INSERT
+  INTO  TB_EP_FEE_PPAY_XCL_DTL
+       (
+        FEE_PPAY_XCL_NO
+       ,FEE_PPAY_XCL_DTL_SEQ
+       ,INVE_TYP_CD
+       ,CNSL_MGMT_NO
+       ,PRCH_MGMT_NO
+       ,EQP_MDL_CD
+       ,EQP_SER_NO
+       ,EQP_ST
+       ,REPV_AGN_ORG_CD
+       ,CNSL_DT
+       ,CLCT_DT
+       ,FEE_DEDC_PROC_DT
+       ,XCL_AMT
+       ,SKN_JDG_AMT
+       ,SKN_SMPL_JDG_DAMT
+       ,AGN_DDCT_AMT
+       ,AGN_EXPNS_CONF_AMT
+       ,DEL_YN
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       ,PPAY_PROC_TS
+       )
+SELECT  FEE_PPAY_XCL_NO
+       ,FEE_PPAY_XCL_DTL_SEQ
+       ,INVE_TYP_CD
+       ,CNSL_MGMT_NO
+       ,PRCH_MGMT_NO
+       ,EQP_MDL_CD
+       ,EQP_SER_NO
+       ,EQP_ST
+       ,AGN_ORG_CD AS REPV_AGN_ORG_CD
+       ,CNSL_DT
+       ,CLCT_DT
+       ,FEE_DEDC_PROC_DT
+       ,NVL(XCL_AMT,0) AS XCL_AMT
+       ,SKN_JDG_AMT
+       ,SKN_SMPL_JDG_DAMT
+       ,AGN_DDCT_AMT
+       ,AGN_EXPNS_CONF_AMT
+       ,'N'
+       ,#USERNO#
+       ,SYSDATE
+       ,#USERNO#
+       ,SYSDATE
+       ,PPAY_PROC_TS
+  FROM  (
+         SELECT  A.*, B.*
+           FROM  (SELECT  MAX(FEE_PPAY_XCL_NO) AS FEE_PPAY_XCL_NO 
+                    FROM  TB_EP_FEE_PPAY_XCL 
+                   WHERE  FEE_PPAY_STRD_YM = #STRD_YM#
+                     AND  FEE_PPAY_TYP_CD = '10'
+                     AND  INVE_TYP_CD = '10') A
+                ,(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_MGMT_NO) AS FEE_PPAY_XCL_DTL_SEQ
+                         ,'10' AS INVE_TYP_CD  
+                         ,A.CNSL_MGMT_NO                                                           /* 접수관리번호 */
+                         ,C.PRCH_MGMT_NO                                                           /* 매입관리번호 */
+                         ,C.EQP_MDL_CD                                                             /* 모델코드 */
+                         ,C.EQP_SER_NO                                                             /* 일련번호 */ 
+                         ,C.EQP_ST                                                                 /* 단말기상태 */ 
+                         ,D.AGN_ORG_CD                                                             /* 대리점조직코드 */
+                         ,A.CNSL_DT                                                                /* 접수일자 */
+                         ,A.CLCT_DT                                                                /* 회수일자 */
+                         ,C.FEE_DEDC_PROC_DT                                                       /* 요금공제처리일자 */
+                         ,NVL(C.PRCH_AMT,0) AS XCL_AMT                                             /* 매입금액 */
+                         ,NVL(C.SKN_JDG_AMT,0) AS SKN_JDG_AMT                                      /* SKN감정금액 */
+                         ,NVL(C.SKN_SMPL_JDG_DAMT,0) AS SKN_SMPL_JDG_DAMT                          /* SKN샘플감정차액 */
+                         ,DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',0
+                         ,DECODE(C.PRCH_AMT,NULL,NULL,TRUNC(B.DDCT_AMT,-2))) AS AGN_DDCT_AMT       /* 차감금액 */
+                         ,NVL(C.SKN_SMPL_JDG_DAMT,0) - DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',0
+                         ,DECODE(C.PRCH_AMT,NULL,NULL,TRUNC(B.DDCT_AMT,-2))) AS AGN_EXPNS_CONF_AMT /* 대리점비용확정금액 */ 
+                         ,C.PPAY_PROC_TS                                                           /* 차수 */      
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT >= D.EFF_STA_DT
+                     AND  A.CNSL_DT <= D.EFF_END_DT
+                    /* AND  A.DEL_YN = 'N' */
+                    /* AND  C.DEL_YN = 'N' */
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                     AND  A.SKN_CL = 'N'
+                     AND  C.FEE_DEDC_YN = '1'
+                     AND  C.FEE_DEDC_PROC_YN = 'Y'
+                     AND  C.PPAY_PROC_TS LIKE #STRD_YM#||'%'
+                  ) B
+          UNION  ALL
+         SELECT  A.*, B.*
+           FROM  (SELECT  MAX(FEE_PPAY_XCL_NO) AS FEE_PPAY_XCL_NO 
+                    FROM  TB_EP_FEE_PPAY_XCL 
+                   WHERE  FEE_PPAY_STRD_YM = #STRD_YM# 
+                     AND  FEE_PPAY_TYP_CD = '10'
+                     AND  INVE_TYP_CD = '20') A
+                ,(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_MGMT_NO) AS FEE_PPAY_XCL_DTL_SEQ
+                         ,'20' AS INVE_TYP_CD     
+                         ,A.CNSL_MGMT_NO                                                                         /* 접수관리번호 */
+                         ,C.PRCH_MGMT_NO                                                                         /* 매입관리번호 */
+                         ,C.EQP_MDL_CD                                                                           /* 모델코드 */
+                         ,C.EQP_SER_NO                                                                           /* 일련번호 */ 
+                         ,C.EQP_ST                                                                               /* 단말기상태 */ 
+                         ,D.AGN_ORG_CD                                                                           /* 대리점조직코드 */
+                         ,A.CNSL_DT                                                                              /* 접수일자 */
+                         ,A.CLCT_DT                                                                              /* 회수일자 */
+                         ,C.FEE_DEDC_PROC_DT                                                                     /* 요금공제처리일자 */
+                         ,NVL(C.SKN_JDG_AMT,0) AS XCL_AMT                                                        /* 등급산정가 */
+                         ,NVL(C.SKN_JDG_AMT,0) AS SKN_JDG_AMT                                                    /* SKN감정금액 */
+                         ,NVL(C.SKN_SMPL_JDG_DAMT,0) AS SKN_SMPL_JDG_DAMT                                        /* SKN샘플감정차액 */
+                         ,DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',0
+                                ,DECODE(C.PRCH_AMT,NULL,NULL,TRUNC(B.DDCT_AMT,-2))) AS AGN_DDCT_AMT              /* 차감금액 */
+                         ,NVL(C.SKN_SMPL_JDG_DAMT,0) - DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',0
+                         ,DECODE(C.PRCH_AMT,NULL,NULL,TRUNC(B.DDCT_AMT,-2))) AS AGN_EXPNS_CONF_AMT               /* 대리점비용확정금액 */  
+                         ,A.PPAY_PROC_TS                                                                         /* 차수 */    
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT >= D.EFF_STA_DT
+                     AND  A.CNSL_DT <= D.EFF_END_DT
+                    /* AND  A.DEL_YN = 'N' */
+                    /* AND  C.DEL_YN(+) = 'N' */
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                     AND  A.SKN_CL = 'Y'
+                     AND  A.IN_CONF_YN = 'Y'
+                     AND  (C.FEE_DEDC_YN = '1' OR A.PAY_MTHD = '02')
+                     AND  A.CLCT_YN = 'Y'
+                     AND  A.PPAY_PROC_TS LIKE #STRD_YM#||'%'
+                  ) B
+        )]]>
+	</insert>
+	<select id="SEqpPpayXclChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.SEqpPpayXclChk 단말기대금요금선납재집계전표발행체크 */
+/* IO: 이민재,2015-10-28T15:50:36(이민재,2015-10-26T13:37:31) */
+SELECT  COUNT(*) AS CNT
+  FROM  TB_EP_FEE_PPAY_XCL 
+ WHERE  FEE_PPAY_STRD_YM = #STRD_YM#
+   AND  FEE_PPAY_TYP_CD = #TYP_CD# 
+   AND  DEL_YN = 'N'
+   AND  FEE_PPAY_SLIP_ST IN ('10','20','30')]]>
+	</select>
+	<update id="UEqpPpayXclDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.UEqpPpayXclDel 단말기대금요금선납재집계삭제 */
+/* IO: 이민재,2015-10-26T14:22:25(이민재,2015-10-26T13:53:31) */
+UPDATE  TB_EP_FEE_PPAY_XCL
+   SET  DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #USERNO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  FEE_PPAY_XCL_NO = #FEE_PPAY_XCL_NO#]]>
+	</update>
+	<select id="SEqpPpayXclSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.SEqpPpayXclSeq 단말기대금요금선납시퀀스조회 */
+/* IO: 이민재,2015-10-28T15:47:45(이민재,2015-10-26T14:21:03) */
+SELECT  FEE_PPAY_XCL_NO
+  FROM  TB_EP_FEE_PPAY_XCL 
+ WHERE  FEE_PPAY_STRD_YM = #STRD_YM#
+   AND  FEE_PPAY_TYP_CD = #TYP_CD#
+   AND  DEL_YN = 'N']]>
+	</select>
+	<update id="UEqpPpayXclDtlDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.UEqpPpayXclDtlDel 단말기대금요금선납재집계상세삭제 */
+/* IO: 이민재,2015-10-26T14:25:28(이민재,2015-10-26T14:25:10) */
+UPDATE  TB_EP_FEE_PPAY_XCL_DTL
+   SET  DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #USERNO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  FEE_PPAY_XCL_NO = #FEE_PPAY_XCL_NO#]]>
+	</update>
+	<insert id="IEqpClubTXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.IEqpClubTXcl 단말기대금클럽T재집계 */
+/* IO: 이민재,2016-01-20T14:16:16(이민재,2015-10-28T16:04:28) */
+INSERT
+  INTO  TB_EP_FEE_PPAY_XCL
+       (
+        FEE_PPAY_XCL_NO
+       ,FEE_PPAY_STRD_YM
+       ,INVE_TYP_CD
+       ,FEE_PPAY_AMT
+       ,FEE_PPAY_XCL_CNT
+       ,DEL_YN
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       ,FEE_PPAY_TYP_CD
+       )
+SELECT  TO_CHAR(LPAD(SQ01_TB_EP_FEE_PPAY_XCL.NEXTVAL,15,0)) AS FEE_PPAY_XCL_NO
+       ,FEE_PPAY_STRD_YM
+       ,INVE_TYP_CD
+       ,NVL(FEE_PPAY_AMT,0) AS FEE_PPAY_AMT
+       ,FEE_PPAY_XCL_CNT
+       ,'N'
+       ,#USERNO#
+       ,SYSDATE
+       ,#USERNO#
+       ,SYSDATE
+       ,'20' AS FEE_PPAY_TYP_CD
+  FROM  (
+         SELECT  #STRD_YM# AS FEE_PPAY_STRD_YM
+                ,'10' AS INVE_TYP_CD 
+                ,COUNT(*) AS FEE_PPAY_XCL_CNT
+                ,SUM(PRCH_AMT) AS FEE_PPAY_AMT
+           FROM  (  
+                  SELECT  NVL(C.PRCH_AMT,0) AS PRCH_AMT  /* 매입금액 */
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT BETWEEN D.EFF_STA_DT AND D.EFF_END_DT
+                     AND  A.SKN_CL = 'Y'
+                     AND  C.SCRB_MTHD = 'T'
+                     AND  C.PROGR_ST >= '13'
+                     AND  A.CLCT_YN = 'Y'
+                     AND  A.CLCT_DT LIKE TO_CHAR(ADD_MONTHS(TO_DATE(#STRD_YM#,'YYYYMM'),-1),'YYYYMM')||'%'
+                     AND  A.DEL_YN = 'N'
+                     AND  C.DEL_YN = 'N'
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                  )
+        )]]>
+	</insert>
+	<insert id="IEqpClubTXclDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPpayXclMgmt.IEqpClubTXclDtl 단말기대금클럽T재집계상세 */
+/* IO: 이민재,2016-01-20T14:16:01(이민재,2015-10-28T16:04:47) */
+INSERT
+  INTO  TB_EP_FEE_PPAY_XCL_DTL
+       (
+        FEE_PPAY_XCL_NO
+       ,FEE_PPAY_XCL_DTL_SEQ
+       ,INVE_TYP_CD
+       ,CNSL_MGMT_NO
+       ,PRCH_MGMT_NO
+       ,EQP_MDL_CD
+       ,EQP_SER_NO
+       ,EQP_ST
+       ,REPV_AGN_ORG_CD
+       ,CNSL_DT
+       ,CLCT_DT
+       ,FEE_DEDC_PROC_DT
+       ,XCL_AMT
+       ,SKN_JDG_AMT
+       ,SKN_SMPL_JDG_DAMT
+       ,AGN_DDCT_AMT
+       ,AGN_EXPNS_CONF_AMT
+       ,DEL_YN
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+SELECT  FEE_PPAY_XCL_NO
+       ,FEE_PPAY_XCL_DTL_SEQ
+       ,INVE_TYP_CD
+       ,CNSL_MGMT_NO
+       ,PRCH_MGMT_NO
+       ,EQP_MDL_CD
+       ,EQP_SER_NO
+       ,EQP_ST
+       ,AGN_ORG_CD AS REPV_AGN_ORG_CD
+       ,CNSL_DT
+       ,CLCT_DT
+       ,FEE_DEDC_PROC_DT
+       ,NVL(XCL_AMT,0) AS XCL_AMT
+       ,SKN_JDG_AMT
+       ,SKN_SMPL_JDG_DAMT
+       ,AGN_DDCT_AMT
+       ,AGN_EXPNS_CONF_AMT
+       ,'N'
+       ,#USERNO#
+       ,SYSDATE
+       ,#USERNO#
+       ,SYSDATE
+  FROM  (
+         SELECT  A.*, B.*
+           FROM  (SELECT  MAX(FEE_PPAY_XCL_NO) AS FEE_PPAY_XCL_NO 
+                    FROM  TB_EP_FEE_PPAY_XCL 
+                   WHERE  FEE_PPAY_STRD_YM = #STRD_YM# 
+                     AND  FEE_PPAY_TYP_CD = '20'
+                     AND  INVE_TYP_CD = '10') A
+                ,(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_MGMT_NO) AS FEE_PPAY_XCL_DTL_SEQ
+                         ,'10' AS INVE_TYP_CD     
+                         ,A.CNSL_MGMT_NO                                                                         /* 접수관리번호 */
+                         ,C.PRCH_MGMT_NO                                                                         /* 매입관리번호 */
+                         ,C.EQP_MDL_CD                                                                           /* 모델코드 */
+                         ,C.EQP_SER_NO                                                                           /* 일련번호 */ 
+                         ,C.SKN_EQP_ST AS EQP_ST                                                                 /* 단말기상태 */ 
+                         ,D.AGN_ORG_CD                                                                           /* 대리점조직코드 */
+                         ,A.CNSL_DT                                                                              /* 접수일자 */
+                         ,A.CLCT_DT                                                                              /* 회수일자 */
+                         ,C.FEE_DEDC_PROC_DT                                                                     /* 요금공제처리일자 */
+                         ,NVL(C.PRCH_AMT,0) AS XCL_AMT                                                           /* 매입금액 */
+                         ,NVL(C.SKN_JDG_AMT,0) AS SKN_JDG_AMT                                                    /* SKN감정금액 */
+                         ,NVL(C.SKN_SMPL_JDG_DAMT,0) AS SKN_SMPL_JDG_DAMT                                        /* SKN샘플감정차액 */
+                         ,DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',0
+                         ,DECODE(C.PRCH_AMT,NULL,NULL,TRUNC(B.DDCT_AMT,-2))) AS AGN_DDCT_AMT                     /* 차감금액 */
+                         ,NVL(C.SKN_SMPL_JDG_DAMT,0) - DECODE(NVL(E.FIX_PRC_YN,'N'),'Y',0
+                         ,DECODE(C.PRCH_AMT,NULL,NULL,TRUNC(B.DDCT_AMT,-2))) AS AGN_EXPNS_CONF_AMT               /* 대리점비용확정금액 */       
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                         ,(SELECT  CNSL_MGMT_NO
+                                  ,SUM(DDCT_AMT) DDCT_AMT
+                             FROM  TB_EP_CST_CONSULT_DTL
+                            WHERE  DEL_YN = 'N'
+                            GROUP  BY CNSL_MGMT_NO) B
+                         ,TB_EP_CST_PRCHS_MGMT C
+                         ,TB_DEALCO D
+                         ,TB_EQP_MDL E
+                   WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                     AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+                     AND  A.CNSL_DEALCO_CD = D.DEALCO_CD
+                     AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+                     AND  A.CNSL_DT BETWEEN D.EFF_STA_DT AND D.EFF_END_DT
+                     AND  A.SKN_CL = 'Y'
+                     AND  C.SCRB_MTHD = 'T'
+                     AND  C.PROGR_ST >= '13'
+                     AND  A.CLCT_YN = 'Y'
+                     AND  A.CLCT_DT LIKE TO_CHAR(ADD_MONTHS(TO_DATE(#STRD_YM#,'YYYYMM'),-1),'YYYYMM')||'%'
+                     AND  A.DEL_YN = 'N'
+                     AND  C.DEL_YN = 'N'
+                     AND  D.DEL_YN = 'N'
+                     AND  E.DEL_YN = 'N'
+                  ) B
+        )]]>
+	</insert>
+</sqlMap>

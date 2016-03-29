@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRAgnEqpStlMgmt">
+	<select id="SAgnEqpStlLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlLstPaging 대리점단말기정산정보조회 */
+/* IO: 김혁범,2015-10-29T16:57:58(이민재,2015-08-18T10:08:52) */
+SELECT  PA.*
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.DEBT_DEALCO_CD) AS ROWNO
+                ,A.DEBT_AGN_CD AS DEBT_DEALCO_CD 				/*대리점코드*/
+                ,B.ORG_NM                       /*대리점명*/
+                ,A.DEBT_BIZ_REG_NO AS DEALCO_BLICENS_NO            /*사업자번호*/
+                ,A.DEBT_PRCH_TS                  /*채무매입차수*/
+                ,A.XCL_ITM_CL                          /*정산구분*/
+                ,SUM(A.DEBT_ITM_AMT + A.DEBT_SURTAX) OVER(PARTITION BY OP_CL_CD, DEBT_DEALCO_CD, DEBT_PRCH_TS, DEBT_XCL_YM) AS SUM_TOT
+                ,NVL(A.DEBT_ITM_AMT + A.DEBT_SURTAX,0) AS DEBT_AMT /*채무항목금액 + 채무부가세 = 출고가*/
+                ,NVL(A.DEBT_ITM_AMT,0) AS DEBT_ITM_AMT /*채무항목금액(매입가)*/
+                ,NVL(A.DEBT_SURTAX,0) AS DEBT_SURTAX  /*채무부가세*/
+                ,A.DEBT_SLIP_NO AS SLIP_NO /*채무전표번호*/
+                ,A.DEBT_SLIP_DT  /*채무전표일자*/
+                ,A.DEBT_XCL_YM /*정산월*/
+                ,A.PROXY_DEALCO_CD /*대행거래처코드*/
+                ,C.SLIP_ST_CD /*전표상태코드*/
+                ,C.TAX_BILL_NO /*세금계산서번호*/
+                ,C.TAX_BILL_ST_CD /*세금계산서상태코드*/
+                ,C.ORGL_SLIP_NO /*역발행전표번호*/
+                ,'' AS M_CNT
+                ,'' AS M_PRC
+                ,#YDATE# AS YYYYMM
+                ,SUBSTR(#YDATE#,0,4) AS YYYY
+           FROM  TB_XCL_DEBT A
+                ,TB_DEALCO B
+                ,TB_SLIP C
+          WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+            AND  A.OP_CL_CD ='NR'
+            AND  A.XCL_ITM_CL IN ('KD','KN')
+]]><isNotEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="%"><![CDATA[
+                 A.DEBT_PRCH_TS = #DEBT_PRCH_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.DEBT_DEALCO_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+                 A.DEBT_XCL_YM = #YDATE#
+]]></isNotEmpty><![CDATA[
+        ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAgnEqpStlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlTotCnt 대리점단말기정산정보총건수 */
+/* IO: 김혁범,2015-10-29T16:57:04(이민재,2015-08-18T10:09:48) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.DEBT_DEALCO_CD) AS ROWNO
+                ,A.DEBT_AGN_CD AS DEBT_DEALCO_CD 				/*대리점코드*/
+                ,B.ORG_NM                       /*대리점명*/
+                ,A.DEBT_BIZ_REG_NO AS DEALCO_BLICENS_NO            /*사업자번호*/
+                ,A.DEBT_PRCH_TS                  /*채무매입차수*/
+                ,A.XCL_ITM_CL                        /*정산구분*/
+                ,SUM(A.DEBT_ITM_AMT + A.DEBT_SURTAX) OVER(PARTITION BY OP_CL_CD, DEBT_DEALCO_CD, DEBT_PRCH_TS, DEBT_XCL_YM) AS SUM_TOT
+                ,NVL(A.DEBT_ITM_AMT + A.DEBT_SURTAX,0) AS DEBT_AMT /*채무항목금액 + 채무부가세 = 출고가*/
+                ,NVL(A.DEBT_ITM_AMT,0) AS DEBT_ITM_AMT /*채무항목금액(매입가)*/
+                ,NVL(A.DEBT_SURTAX,0) AS DEBT_SURTAX  /*채무부가세*/
+                ,A.DEBT_SLIP_NO AS SLIP_NO /*채무전표번호*/
+                ,A.DEBT_SLIP_DT  /*채무전표일자*/
+                ,A.DEBT_XCL_YM /*정산월*/
+                ,A.PROXY_DEALCO_CD /*대행거래처코드*/
+                ,C.SLIP_ST_CD /*전표상태코드*/
+                ,C.TAX_BILL_NO /*세금계산서번호*/
+                ,C.TAX_BILL_ST_CD /*세금계산서상태코드*/
+                ,C.ORGL_SLIP_NO /*역발행전표번호*/
+                ,'' AS M_CNT
+                ,'' AS M_PRC
+                ,#YDATE# AS YYYYMM
+                ,SUBSTR(#YDATE#,0,4) AS YYYY
+           FROM  TB_XCL_DEBT A
+                ,TB_DEALCO B
+                ,TB_SLIP C
+          WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+            AND  A.OP_CL_CD ='NR'
+            AND  A.XCL_ITM_CL IN ('KD','KN')
+]]><isNotEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="%"><![CDATA[
+                 A.DEBT_PRCH_TS = #DEBT_PRCH_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.DEBT_DEALCO_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+                 A.DEBT_XCL_YM = #YDATE#
+]]></isNotEmpty><![CDATA[
+        )]]>
+	</select>
+	<select id="SAgnEqpStlDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlDtl 대리점단말기정산정보상세 */
+/* IO: 김혁범,2015-10-14T17:09:12(이민재,2015-08-18T10:10:25) */
+SELECT  A.EQP_SER_NO       /* 일련번호 */
+       ,A.EQP_MDL_CD       /* 모델코드 */
+       ,C.EQP_MDL_NM       /* 모델명 */
+       ,B.EQP_COLOR_CD     /* 색상코드 */
+       ,A.PRCH_DT          /* 매입일자 */
+       ,A.PRCH_AMT         /* 매입금액 */
+  FROM  TB_PRCH A
+       ,TB_EQP_ASSET B
+       ,TB_EQP_MDL C
+       ,TB_DEALCO D
+ WHERE  A.PRCH_NO  = B.PRCH_NO
+   AND  A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND  A.OP_CL_CD = 'NR'
+   AND  SUBSTR(A.PRCH_DT,1,6) =  #DEBT_XCL_YM#
+   AND (SUBSTR(A.PRCHCO_CD,1,6) = SUBSTR(#DEBT_DEALCO_CD#,1,6) AND SUBSTR(A.PRCHCO_CD,1,6)=D.UKEY_AGN_CD)
+   AND  D.AGN_ORG_CD LIKE '%A000'
+   AND  A.PRCH_AMT > 0
+]]><isEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="01"><![CDATA[
+        SUBSTR(A.PRCH_DT,7,8) BETWEEN '01' AND '24'
+]]></isEqual><![CDATA[
+]]><isEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="02"><![CDATA[
+        SUBSTR(A.PRCH_DT,7,8) BETWEEN '25' AND '31'
+]]></isEqual><![CDATA[    
+ ORDER  BY A.PRCH_DT DESC, A.EQP_MDL_CD]]>
+	</select>
+	<insert id="IAgnEqpStlSlip" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.IAgnEqpStlSlip 대리점단말기정산정보전표생성 */
+/* IO: 이민재,2015-08-31T17:34:16(이민재,2015-08-31T16:04:25) */
+INSERT INTO  TB_ASSET_SLIP
+            (
+             ASSET_NO
+            ,ASSET_SLIP_SEQ
+            ,ASSET_SLIP_CL_CD
+            ,ASSET_SLIP_NO
+            ,ASSET_SLIP_ST
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM 
+            )
+    VALUES  (
+             #ASSET_NO#
+            ,(SELECT NVL(MAX(ASSET_SLIP_SEQ),0)+1 FROM TB_ASSET_SLIP WHERE ASSET_NO = #ASSET_NO#)  /*자산번호max +1*/
+            ,'AP'				/*ASSET_SLIP_CL_CD*/
+            ,#ASSET_SLIP_NO#
+            ,'10'				/*ASSET_SLIP_ST*/
+            ,#USERNO#    		/*FS_REG_USER_ID*/
+            ,SYSDATE
+            ,#USERNO#	    	/*LS_CHG_USER_ID*/
+            ,SYSDATE
+            )]]>
+	</insert>
+	<select id="SAgnEqpStlAssetNoLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlAssetNoLst 대리점단말기정산자산번호조회 */
+/* IO: 김혁범,2015-09-14T11:18:59(이민재,2015-08-31T16:25:07) */
+SELECT  ASSET_NO
+  FROM  TB_EQP_ASSET
+ WHERE  EQP_MDL_CD IN (SELECT  EQP_MDL_CD
+                         FROM  TB_PRCH
+                        WHERE  PRCHCO_CD = #DEBT_DEALCO_CD#)]]>
+	</select>
+	<update id="UAgnEqpStlPrchSlip" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.UAgnEqpStlPrchSlip 대리점단말기정산매입전표번호수정 */
+/* IO: 이민재,2015-08-31T20:54:21(이민재,2015-08-31T20:24:43) */
+UPDATE  TB_PRCH                 
+   SET  PRCH_SLIP_NO   = #SLIP_NO# 
+       ,LS_CHG_USER_ID = #USERNO#        /* 최종변경사용자ID */  
+       ,LS_CHG_DTM     = SYSDATE         /* 최종변경일시 */ 
+ WHERE  PRCHCO_CD      = #PRCHCO_CD#
+   AND  PRCH_DT LIKE #XCL_PROC_DT#||'%']]>
+	</update>
+	<update id="UsaveAgnEqpStlSlipDel" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.UsaveAgnEqpStlSlipDel 대리점단말기정산전표취소 */
+/* IO: 김혁범,2015-09-04T17:16:35(김혁범,2015-09-04T17:15:53) */
+UPDATE  TB_ASSET_SLIP
+   SET  ASSET_SLIP_ST = '05'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  ASSET_SLIP_NO = #SLIP_NO#]]>
+	</update>
+	<select id="SAgnEqpStlSumTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlSumTotCnt 대리점단말기정산정보현재월총건수 */
+/* IO: 김혁범,2015-10-29T16:57:52(김혁범,2015-09-16T09:30:40) */
+SELECT  COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.DEBT_ITM_AMT),0) AS M_PRC
+  FROM 
+      (
+        SELECT  ROW_NUMBER() OVER(ORDER BY A.DEBT_DEALCO_CD) AS ROWNO
+                ,A.DEBT_AGN_CD AS DEBT_DEALCO_CD 				/*대리점코드*/
+                ,B.ORG_NM                       /*대리점명*/
+                ,A.DEBT_BIZ_REG_NO AS DEALCO_BLICENS_NO            /*사업자번호*/
+                ,A.DEBT_PRCH_TS                  /*채무매입차수*/
+                ,A.XCL_ITM_CL                       /*정산구분*/
+                ,SUM(A.DEBT_ITM_AMT + A.DEBT_SURTAX) OVER(PARTITION BY OP_CL_CD, DEBT_DEALCO_CD, DEBT_PRCH_TS, DEBT_XCL_YM) AS SUM_TOT
+                ,NVL(A.DEBT_ITM_AMT + A.DEBT_SURTAX,0) AS DEBT_AMT /*채무항목금액 + 채무부가세 = 출고가*/
+                ,NVL(A.DEBT_ITM_AMT,0) AS DEBT_ITM_AMT /*채무항목금액(매입가)*/
+                ,NVL(A.DEBT_SURTAX,0) AS DEBT_SURTAX  /*채무부가세*/
+                ,A.DEBT_SLIP_NO AS SLIP_NO /*채무전표번호*/
+                ,A.DEBT_SLIP_DT  /*채무전표일자*/
+                ,A.DEBT_XCL_YM /*정산월*/
+                ,A.PROXY_DEALCO_CD /*대행거래처코드*/
+                ,C.SLIP_ST_CD /*전표상태코드*/
+                ,C.TAX_BILL_NO /*세금계산서번호*/
+                ,C.TAX_BILL_ST_CD /*세금계산서상태코드*/
+                ,C.ORGL_SLIP_NO /*역발행전표번호*/
+                ,'' AS M_CNT
+                ,'' AS M_PRC
+                ,#YDATE# AS YYYYMM
+                ,SUBSTR(#YDATE#,0,4) AS YYYY
+           FROM  TB_XCL_DEBT A
+                ,TB_DEALCO B
+                ,TB_SLIP C
+          WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+            AND  A.OP_CL_CD ='NR'
+            AND  A.XCL_ITM_CL IN ('KD','KN')
+]]><isNotEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="%"><![CDATA[
+                 A.DEBT_PRCH_TS = #DEBT_PRCH_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.DEBT_DEALCO_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+                 A.DEBT_XCL_YM = #YDATE#
+]]></isNotEmpty><![CDATA[
+      )PA]]>
+	</select>
+	<select id="SAgnreBatchDt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnreBatchDt 대리점단말기재배치조회 */
+/* IO: 진병수,2015-09-22T14:25:05(김혁범,2015-09-16T13:23:22) */
+SELECT  COUNT(A.ROWID)   AS CNT
+      , COUNT(A.ROWID)  - SUM(DECODE(NVL(B.SLIP_ST_CD,'05'),'05',0,1))  AS REBAT_DT
+  FROM  TB_XCL_DEBT A
+      , TB_SLIP B
+ WHERE  A.DEBT_XCL_YM  = #YDATE#
+   AND  A.DEBT_SLIP_NO = B.SLIP_NO (+)]]>
+	</select>
+	<select id="SEqpStlAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SEqpStlAllExcel 대리점단말기정산전체다운로드 */
+/* IO: 진병수,2015-09-23T14:47:06(장미진,2015-09-21T12:26:22) */
+SELECT  A.PRCHCO_CD 	 AS  "대리점코드"
+       ,C.ORG_NM         AS  "대리점명"
+       ,C.DEALCO_BLICENS_NO AS "사업자번호"
+       ,A.PRCH_DT        AS  "매입일자"
+       ,G.SVC_MGMT_NO	 AS  "서비스관리번호"
+       ,E.ASSET_NO		 AS  "자산번호"
+       ,A.EQP_SER_NO     AS  "일련번호"
+       ,A.EQP_MDL_CD     AS  "모델코드"
+       ,D.EQP_MDL_NM     AS  "모델명"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS108' 
+            AND  CM_CD_ID=E.INVE_ST_CD) AS "재고상태"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS115' 
+            AND  CM_CD_ID=G.OP_TYP_CD) AS "자산상태" 
+       ,A.PRCH_AMT       AS  "출고가"
+       ,A.SPLY_PRC       AS  "공급가"
+       ,A.SURTAX_AMT     AS  "부가세"
+       ,A.PRCH_SLIP_NO   AS  "매입전표번호"
+       ,B.SLIP_DT        AS  "전표일자"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS153' 
+            AND  CM_CD_ID = B.SLIP_ST_CD) AS  "전표상태"
+       ,A.TAXBILL_NO     AS  "세금계산서번호"
+       ,B.TAX_BILL_ST_CD AS  "세금계산서상태"     
+  FROM  TB_PRCH A
+       ,TB_SLIP B
+       ,TB_DEALCO C
+       ,TB_EQP_MDL D
+       ,TB_EQP_ASSET E
+       ,TB_EQP_CNTRT F
+       ,TB_NR_CNTRT G
+ WHERE  A.PRCH_SLIP_NO = B.SLIP_NO(+)
+   AND  A.PRCHCO_CD = C.AGN_ORG_CD(+)
+   AND  A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   AND  A.PRCH_NO = E.PRCH_NO
+   AND  E.ASSET_NO = F.ASSET_NO
+   AND  F.CNTRT_NO = G.CNTRT_NO
+   AND  A.OP_CL_CD = 'NR'
+   AND  SUBSTR(A.PRCH_DT,0,6) = #YDATE#
+]]><isNotEmpty property="DEBT_DEALCO_CD_LIST"><![CDATA[
+   AND  A.PRCHCO_CD IN    
+	]]><iterate open="(" close=")" conjunction="," property="DEBT_DEALCO_CD_LIST"><![CDATA[
+        #DEBT_DEALCO_CD_LIST[]#
+	]]></iterate><![CDATA[
+]]></isNotEmpty><![CDATA[
+ ORDER BY A.PRCHCO_CD, C.DEALCO_BLICENS_NO , A.PRCH_DT]]>
+	</select>
+	<select id="SAgnEqpStlSumTotCnt2" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlSumTotCnt2 대리점단말기현금여신총건수 */
+/* IO: 김혁범,2015-10-29T16:57:47(김혁범,2015-09-24T17:20:58) */
+SELECT  COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.DEBT_ITM_AMT),0) AS M_PRC
+  FROM 
+      (
+        SELECT  ROW_NUMBER() OVER(ORDER BY A.DEBT_DEALCO_CD) AS ROWNO
+                ,A.DEBT_AGN_CD AS DEBT_DEALCO_CD 				/*대리점코드*/
+                ,B.ORG_NM                       /*대리점명*/
+                ,A.DEBT_BIZ_REG_NO AS DEALCO_BLICENS_NO            /*사업자번호*/
+                ,A.DEBT_PRCH_TS                  /*채무매입차수*/
+                ,A.XCL_ITM_CL                         /*정산구분*/
+                ,SUM(A.DEBT_ITM_AMT + A.DEBT_SURTAX) OVER(PARTITION BY OP_CL_CD, DEBT_DEALCO_CD, DEBT_PRCH_TS, DEBT_XCL_YM) AS SUM_TOT
+                ,NVL(A.DEBT_ITM_AMT + A.DEBT_SURTAX,0) AS DEBT_AMT /*채무항목금액 + 채무부가세 = 출고가*/
+                ,NVL(A.DEBT_ITM_AMT,0) AS DEBT_ITM_AMT /*채무항목금액(매입가)*/
+                ,NVL(A.DEBT_SURTAX,0) AS DEBT_SURTAX  /*채무부가세*/
+                ,A.DEBT_SLIP_NO AS SLIP_NO /*채무전표번호*/
+                ,A.DEBT_SLIP_DT  /*채무전표일자*/
+                ,A.DEBT_XCL_YM /*정산월*/
+                ,A.PROXY_DEALCO_CD /*대행거래처코드*/
+                ,C.SLIP_ST_CD /*전표상태코드*/
+                ,C.TAX_BILL_NO /*세금계산서번호*/
+                ,C.TAX_BILL_ST_CD /*세금계산서상태코드*/
+                ,C.ORGL_SLIP_NO /*역발행전표번호*/
+                ,'' AS M_CNT
+                ,'' AS M_PRC
+                ,#YDATE# AS YYYYMM
+                ,SUBSTR(#YDATE#,0,4) AS YYYY
+           FROM  TB_XCL_DEBT A
+                ,TB_DEALCO B
+                ,TB_SLIP C
+          WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+            AND  A.OP_CL_CD ='NR'
+            AND  A.XCL_ITM_CL = 'KD'
+]]><isNotEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="%"><![CDATA[
+                 A.DEBT_PRCH_TS = #DEBT_PRCH_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.DEBT_DEALCO_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+                 A.DEBT_XCL_YM = #YDATE#
+]]></isNotEmpty><![CDATA[
+      )PA]]>
+	</select>
+	<select id="SAgnEqpStlSumTotCnt3" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlSumTotCnt3 대리점단말기여신총건수 */
+/* IO: 김혁범,2015-10-29T16:57:26(김혁범,2015-10-01T09:40:07) */
+SELECT  COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.DEBT_ITM_AMT),0) AS M_PRC
+  FROM 
+      (
+        SELECT  ROW_NUMBER() OVER(ORDER BY A.DEBT_DEALCO_CD) AS ROWNO
+                ,A.DEBT_AGN_CD AS DEBT_DEALCO_CD 				/*대리점코드*/
+                ,B.ORG_NM                       /*대리점명*/
+                ,A.DEBT_BIZ_REG_NO AS DEALCO_BLICENS_NO            /*사업자번호*/
+                ,A.DEBT_PRCH_TS                  /*채무매입차수*/
+                ,A.XCL_ITM_CL                         /*정산구분*/
+                ,SUM(A.DEBT_ITM_AMT + A.DEBT_SURTAX) OVER(PARTITION BY OP_CL_CD, DEBT_DEALCO_CD, DEBT_PRCH_TS, DEBT_XCL_YM) AS SUM_TOT
+                ,NVL(A.DEBT_ITM_AMT + A.DEBT_SURTAX,0) AS DEBT_AMT /*채무항목금액 + 채무부가세 = 출고가*/
+                ,NVL(A.DEBT_ITM_AMT,0) AS DEBT_ITM_AMT /*채무항목금액(매입가)*/
+                ,NVL(A.DEBT_SURTAX,0) AS DEBT_SURTAX  /*채무부가세*/
+                ,A.DEBT_SLIP_NO AS SLIP_NO /*채무전표번호*/
+                ,A.DEBT_SLIP_DT  /*채무전표일자*/
+                ,A.DEBT_XCL_YM /*정산월*/
+                ,A.PROXY_DEALCO_CD /*대행거래처코드*/
+                ,C.SLIP_ST_CD /*전표상태코드*/
+                ,C.TAX_BILL_NO /*세금계산서번호*/
+                ,C.TAX_BILL_ST_CD /*세금계산서상태코드*/
+                ,C.ORGL_SLIP_NO /*역발행전표번호*/
+                ,'' AS M_CNT
+                ,'' AS M_PRC
+                 ,#YDATE# AS YYYYMM
+                ,SUBSTR(#YDATE#,0,4) AS YYYY
+           FROM  TB_XCL_DEBT A
+                ,TB_DEALCO B
+                ,TB_SLIP C
+          WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+            AND  A.OP_CL_CD ='NR'
+            AND  A.XCL_ITM_CL  = 'KN'
+]]><isNotEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="%"><![CDATA[
+                 A.DEBT_PRCH_TS = #DEBT_PRCH_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.DEBT_DEALCO_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+                 A.DEBT_XCL_YM = #YDATE#
+]]></isNotEmpty><![CDATA[
+      )PA]]>
+	</select>
+	<select id="SAgnEqpStlDtlSumTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlDtlSumTotCnt 대리점정산상세매입총건수, 총금액 */
+/* IO: 김혁범,2015-10-14T17:07:27(김혁범,2015-10-06T09:55:47) */
+SELECT  COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.PRCH_AMT),0) AS M_PRC
+  FROM
+      ( 
+       SELECT  A.EQP_SER_NO       /* 일련번호 */
+       ,A.EQP_MDL_CD       /* 모델코드 */
+       ,C.EQP_MDL_NM       /* 모델명 */
+       ,B.EQP_COLOR_CD     /* 색상코드 */
+       ,A.PRCH_DT          /* 매입일자 */
+       ,A.PRCH_AMT         /* 매입금액 */
+  FROM  TB_PRCH A
+       ,TB_EQP_ASSET B
+       ,TB_EQP_MDL C
+       ,TB_DEALCO D
+ WHERE  A.PRCH_NO  = B.PRCH_NO
+   AND  A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND  A.OP_CL_CD = 'NR'
+   AND  SUBSTR(A.PRCH_DT,1,6) =  #DEBT_XCL_YM#
+   AND (SUBSTR(A.PRCHCO_CD,1,6) = SUBSTR(#DEBT_DEALCO_CD#,1,6) AND SUBSTR(A.PRCHCO_CD,1,6)=D.UKEY_AGN_CD)
+   AND  D.AGN_ORG_CD LIKE '%A000'
+   AND  A.PRCH_AMT > 0
+]]><isEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="01"><![CDATA[
+        SUBSTR(A.PRCH_DT,7,8) BETWEEN '01' AND '24'
+]]></isEqual><![CDATA[
+]]><isEqual prepend="AND" property="DEBT_PRCH_TS" compareValue="02"><![CDATA[
+        SUBSTR(A.PRCH_DT,7,8) BETWEEN '25' AND '31'
+]]></isEqual><![CDATA[       
+ ORDER  BY A.PRCH_DT DESC, A.EQP_MDL_CD
+      )PA]]>
+	</select>
+</sqlMap>

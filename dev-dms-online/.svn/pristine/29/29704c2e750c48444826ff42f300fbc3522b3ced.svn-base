@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPProdHstMgmt">
+	<select id="SProdHstLstPaging" parameterClass="map" resultClass="hmap" fetchSize="100" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPProdHstMgmt.SProdHstLstPaging 상품이력조회리스트 */
+/* IO: 이준우,2015-08-31T10:52:51(이준우,2015-07-15T12:35:58) */
+SELECT 
+	    PA.*
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY V.FS_REG_DTM, V.OUT_DEALCO_NM, V.EQP_SER_NO, V.CNSL_MGMT_NO ) AS ROWNO 
+             ,  V.*
+          FROM  (SELECT TO_CHAR(FS_REG_DTM,'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM
+                      , OUT_DEALCO_NM
+                      , IN_DEALCO_NM
+                      , IN_OUT_DT
+                      , IN_OUT_NM
+                      , IN_OUT_DTL_NM
+                      , EQP_SER_NO
+                      , FS_REG_USER_NM
+                      , CNSL_MGMT_NO 
+                      
+                  FROM  (SELECT  TO_DATE(A.FS_REG_DTM,'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM, 
+                                 (SELECT  DEALCO_NM 
+                                    FROM  TB_DEALCO AB 
+                                   WHERE  A.OUT_DEALCO_ID = AB.DEALCO_CD 
+                                     AND  ROWNUM = 1) AS OUT_DEALCO_NM,
+                                 (SELECT  DEALCO_NM 
+                                    FROM  TB_DEALCO AB 
+                                   WHERE  A.IN_DEALCO_ID = AB.DEALCO_CD 
+                                     AND  ROWNUM = 1) AS IN_DEALCO_NM,    
+                                 A.IN_OUT_DT,
+                                 (SELECT  DA.CM_CD_NM  FROM  TB_CM_CD DA WHERE  DA.CM_CD_ID = A.IN_OUT_CL AND  DA.CM_GRP_CD_ID = 'DMS191') AS IN_OUT_NM, 
+                                 (SELECT  DA.CM_CD_NM  FROM  TB_CM_CD DA WHERE  DA.CM_CD_ID = A.IN_OUT_DTL_CL AND  DA.CM_GRP_CD_ID = 'DMS188') AS IN_OUT_DTL_NM, 
+                                 A.EQP_SER_NO,
+                                 (SELECT  AB.USER_NM ||'('||AB.LGIN_ID||')' FROM TB_USER AB WHERE AB.USER_NO = A.FS_REG_USER_ID AND A.DEL_YN = 'N') AS FS_REG_USER_NM,
+                                 CNSL_MGMT_NO
+                           FROM  TB_EP_DIS_PROD_INOUT_HST A, 
+                                 TB_EP_DIS_PROD_DIS B,
+                                 (SELECT EQP_SER_NO FROM TB_EP_DIS_PROD_DIS WHERE BF_SER_NO = #BF_SER_NO#) C
+                          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+                            AND  A.EQP_SER_NO = B.EQP_SER_NO
+                            AND  A.EQP_COLOR_CD = B.EQP_COLOR_CD
+                            AND  A.EQP_SER_NO = C.EQP_SER_NO
+                            AND  A.DEL_YN = 'N'
+                            AND  B.DEL_YN = 'N'
+                         
+                      UNION ALL
+                       
+                         SELECT  TO_DATE(FS_REG_DTM,'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM, 
+                                 '' AS OUT_DEALCO_NM,
+                                 (SELECT  DEALCO_NM 
+                                    FROM  TB_DEALCO AB 
+                                   WHERE  A.CNSL_DEALCO_CD = AB.DEALCO_CD 
+                                     AND  ROWNUM = 1) AS IN_DEALCO_NM,
+                                 CNSL_DT,
+                                 '상담' AS IN_OUT_NM,
+                                 (SELECT  DA.CM_CD_NM  FROM  TB_CM_CD DA WHERE  DA.CM_CD_ID = A.PROGR_ST AND  DA.CM_GRP_CD_ID = 'DMS179') AS IN_OUT_DTL_NM,
+                                 '' AS EQP_SER_NO,
+                                 (SELECT USER_NM ||'('||LGIN_ID||')'  FROM TB_USER AB WHERE AB.USER_NO = A.FS_REG_USER_ID) AS FS_REG_USER_NM,
+                                 CNSL_MGMT_NO
+                           FROM  TB_EP_CST_CONSULT_MGMT A
+                          WHERE  EQP_SER_NO = #BF_SER_NO#
+                            AND  DEL_YN = 'N'
+                       
+                       UNION ALL
+                       
+                          SELECT  TO_DATE(A.FS_REG_DTM,'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM, 
+                                  '' AS OUT_DEALCO_NM,
+                                  (SELECT DEALCO_NM 
+                                     FROM TB_DEALCO AB 
+                                    WHERE A.CNSL_DEALCO_CD = AB.DEALCO_CD 
+                                      AND ROWNUM = 1) AS IN_DEALCO_NM,
+                                  PRCH_DT,
+                                  '매입' AS IN_OUT_NM,
+                                  (SELECT  DA.CM_CD_NM  FROM  TB_CM_CD DA WHERE  DA.CM_CD_ID = A.PROGR_ST AND  DA.CM_GRP_CD_ID = 'DMS179') AS IN_OUT_DTL_NM,         
+                                  '' AS EQP_SER_NO,
+                                  (SELECT USER_NM ||'('||LGIN_ID||')'  FROM TB_USER AB WHERE AB.USER_NO = A.FS_REG_USER_ID) AS FS_REG_USER_NM,
+                                  CNSL_MGMT_NO
+                            FROM  TB_EP_CST_PRCHS_MGMT A
+                           WHERE  EQP_SER_NO = #BF_SER_NO#
+                             AND  DEL_YN = 'N'
+                        )
+              ORDER BY  FS_REG_DTM
+              )V
+        )PA  
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SProdHstLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPProdHstMgmt.SProdHstLstTotCnt 상품이력조회총건수 */
+/* IO: 이준우,2015-08-31T10:53:11(이준우,2015-07-14T20:56:54) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM (SELECT  ROW_NUMBER() OVER(ORDER BY V.FS_REG_DTM, V.OUT_DEALCO_NM, V.EQP_SER_NO, V.CNSL_MGMT_NO ) AS ROWNO 
+             ,  V.*
+          FROM  (SELECT TO_CHAR(FS_REG_DTM,'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM
+                      , OUT_DEALCO_NM
+                      , IN_DEALCO_NM
+                      , IN_OUT_DT
+                      , IN_OUT_NM
+                      , IN_OUT_DTL_NM
+                      , EQP_SER_NO
+                      , FS_REG_USER_NM
+                      , CNSL_MGMT_NO 
+                      
+                  FROM  (SELECT  TO_DATE(A.FS_REG_DTM,'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM, 
+                                 (SELECT  DEALCO_NM 
+                                    FROM  TB_DEALCO AB 
+                                   WHERE  A.OUT_DEALCO_ID = AB.DEALCO_CD 
+                                     AND  ROWNUM = 1) AS OUT_DEALCO_NM,
+                                 (SELECT  DEALCO_NM 
+                                    FROM  TB_DEALCO AB 
+                                   WHERE  A.IN_DEALCO_ID = AB.DEALCO_CD 
+                                     AND  ROWNUM = 1) AS IN_DEALCO_NM,    
+                                 A.IN_OUT_DT,
+                                 A.IN_OUT_CL AS IN_OUT_NM,   
+                                 (SELECT  DA.CM_CD_NM  FROM  TB_CM_CD DA WHERE  DA.CM_CD_ID = A.IN_OUT_DTL_CL AND  DA.CM_GRP_CD_ID = 'DMS179') AS IN_OUT_DTL_NM, 
+                                 A.EQP_SER_NO,
+                                 (SELECT  AB.USER_NM ||'('||AB.LGIN_ID||')' FROM TB_USER AB WHERE AB.USER_NO = A.FS_REG_USER_ID AND A.DEL_YN = 'N') AS FS_REG_USER_NM,
+                                 CNSL_MGMT_NO
+                           FROM  TB_EP_DIS_PROD_INOUT_HST A,
+                                 TB_EP_DIS_PROD_DIS B,
+                                 (SELECT EQP_SER_NO FROM TB_EP_DIS_PROD_DIS WHERE BF_SER_NO = #BF_SER_NO#) C
+                          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+                            AND  A.EQP_SER_NO = B.EQP_SER_NO
+                            AND  A.EQP_COLOR_CD = B.EQP_COLOR_CD
+                            AND  A.EQP_SER_NO = C.EQP_SER_NO
+                            AND  A.DEL_YN = 'N'
+                            AND  B.DEL_YN = 'N'
+                         
+                      UNION ALL
+                       
+                         SELECT  TO_DATE(FS_REG_DTM,'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM, 
+                                 '' AS OUT_DEALCO_NM,
+                                 (SELECT  DEALCO_NM 
+                                    FROM  TB_DEALCO AB 
+                                   WHERE  A.CNSL_DEALCO_CD = AB.DEALCO_CD 
+                                     AND  ROWNUM = 1) AS IN_DEALCO_NM,
+                                 CNSL_DT,
+                                 '상담' AS IN_OUT_NM,
+                                 (SELECT  DA.CM_CD_NM  FROM  TB_CM_CD DA WHERE  DA.CM_CD_ID = A.PROGR_ST AND  DA.CM_GRP_CD_ID = 'DMS179') AS IN_OUT_DTL_NM,
+	                             '' AS EQP_SER_NO,
+                                 (SELECT USER_NM ||'('||LGIN_ID||')'  FROM TB_USER AB WHERE AB.USER_NO = A.FS_REG_USER_ID) AS FS_REG_USER_NM,
+                                 CNSL_MGMT_NO
+                           FROM  TB_EP_CST_CONSULT_MGMT A
+                          WHERE  EQP_SER_NO = #BF_SER_NO#
+                            AND  DEL_YN = 'N'
+                       
+                       UNION ALL
+                       
+                          SELECT  TO_DATE(A.FS_REG_DTM,'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM, 
+                                  '' AS OUT_DEALCO_NM,
+                                  (SELECT DEALCO_NM 
+                                     FROM TB_DEALCO AB 
+                                    WHERE A.CNSL_DEALCO_CD = AB.DEALCO_CD 
+                                      AND ROWNUM = 1) AS IN_DEALCO_NM,
+                                  PRCH_DT,
+                                  '매입' AS IN_OUT_NM,
+                                  (SELECT  DA.CM_CD_NM  FROM  TB_CM_CD DA WHERE  DA.CM_CD_ID = A.PROGR_ST AND  DA.CM_GRP_CD_ID = 'DMS179') AS IN_OUT_DTL_NM,         
+                                  '' AS EQP_SER_NO,
+                                  (SELECT USER_NM ||'('||LGIN_ID||')'  FROM TB_USER AB WHERE AB.USER_NO = A.FS_REG_USER_ID) AS FS_REG_USER_NM,
+                                  CNSL_MGMT_NO
+                            FROM  TB_EP_CST_PRCHS_MGMT A
+                           WHERE  EQP_SER_NO = #BF_SER_NO#
+                             AND  DEL_YN = 'N'
+                        )
+              ORDER BY  FS_REG_DTM
+              )V
+      )PA]]>
+	</select>
+	<select id="SProdHstInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPProdHstMgmt.SProdHstInfo 상품정보조회 */
+/* IO: 이준우,2015-08-31T13:15:31(이준우,2015-07-15T12:35:58) */
+SELECT EQP_MDL_CD,
+       (SELECT EQP_MDL_NM FROM TB_EQP_MDL B WHERE A.EQP_MDL_CD = B.EQP_MDL_CD) AS EQP_MDL_NM,
+       EQP_COLOR_CD,
+       EQP_COLOR_CD AS EQP_COLOR_NM,
+       EQP_SER_NO,
+       EQP_ST,
+       INVE_ST,
+       BF_SER_NO,
+       CNSL_MGMT_NO,
+       HOLD_AMT 
+  FROM TB_EP_DIS_PROD_DIS A
+ WHERE EQP_SER_NO IN 
+       (SELECT MAX(EQP_SER_NO)  
+         FROM TB_EP_DIS_PROD_DIS 
+        WHERE BF_SER_NO = #BF_SER_NO# 
+       )]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,508 @@
+package dms.ep.epsrpbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]보고서관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-23 11:29:37</li>
+ * <li>작성자 : 정동현 (jjddhh123)</li>
+ * </ul>
+ *
+ * @author 정동현 (jjddhh123)
+ */
+public class FEPReportMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPReportMgmt(){
+		super();
+	}
+	/**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : SELL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_MTH_SALE_LIST
+	 *		- field : SELL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : SELL_TYP [판매 유형]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : G_ID [GROUP_ID]
+	 * </pre>
+	 */
+	public IDataSet fInqMthSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPReportMgmt.dSMthSaleList(requestData, onlineCtx);    // 월별판매현황                  
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B판매실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : SELL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2B_SALE_LIST
+	 *		- field : SELL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : SELL_TYP [판매 유형]
+	 *		- field : PHONE_TYP [폰구분]
+	 *		- field : MFACT_TYP [제조사구분]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 *		- field : G_ID [GROUP_ID]
+	 * </pre>
+	 */
+	public IDataSet fInqB2BSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPReportMgmt.dSB2BSaleList(requestData, onlineCtx);                   
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_DIR_PRCH_LIST
+	 *		- field : CNSL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DEALCO_TYP [유형]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet fInqDirPrchList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPReportMgmt.dSDirPrchList(requestData, onlineCtx);    // 월별판매현황                  
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>NEW보상기변실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [년도]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_NEW_CHG_SALE_LIST
+	 *		- field : CNSL_YR [년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DATA_SECTION [기준데이터구분]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet fInqNewCmpChgSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPReportMgmt.dSInqNewCmpChgSaleList(requestData, onlineCtx);                     
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+        return responseData;
+    }
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : SELL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2C_SALE_LIST
+	 *		- field : SELL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : TYP [유형]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 *		- field : G_ID [GROUP_ID]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 * </pre>
+	 */
+	public IDataSet fInqB2CSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPReportMgmt.dSB2CSaleList(requestData, onlineCtx);                   
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+    /**
+	 * <pre>T에코실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [년도]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_TECHO_SALE_LIST
+	 *		- field : CNSL_YR [년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DATA_SECTION [기준데이터구분]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet fInqTEchoSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPReportMgmt.dSInqTEchoSaleList(requestData, onlineCtx);                   
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+    /**
+	 * <pre>제휴채널실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_JOIN_SALE_LIST
+	 *		- field : CNSL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DEALCO_TYP [유형]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet fInqJoinSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPReportMgmt.dSInqJoinSaleList(requestData, onlineCtx);                   
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+    /**
+	 * <pre>클럽T실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [년도]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CLUBT_SALE_LIST
+	 *		- field : CNSL_YR [년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DATA_SECTION [기준데이터구분]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet fInqClubTSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPReportMgmt.dSInqClubTSaleList(requestData, onlineCtx);                   
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-09-23 11:29:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNSL_YM [시작일자]
+	 *	- field : CNSL_MGMT_NO [접수관리번호]
+	 *	- field : SALEPLC [출고처]
+	 *	- field : EQP_MDL_CD [단말기 모델코드]
+	 *	- field : EQP_SER_NO [단말기 일련번호]
+	 *	- field : RSLT_GB [실적구분]
+	 *	- field : PHONE_GB [단말구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_RSLT_LIST
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : PROD_CHRTIC_1 [단말구분]
+	 *		- field : REPV_PROD_CD [대표모델코드]
+	 *		- field : REPV_PROD_NM [대표모델명]
+	 *		- field : EQP_MDL_CD [단말기 모델코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련번호]
+	 *		- field : EQP_ST [등급]
+	 *		- field : EQP_ST_DTAIL [등급(sub)]
+	 *		- field : CNSL_DT [접수일자]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : XRATE_APPLY_AMT [매출단가($)]
+	 *		- field : SELL_UPRC [매출단가(VAT별도)]
+	 *		- field : SALEPLC [출고처]
+	 *		- field : SALEPLC_NM [출고처명]
+	 *		- field : XCL_SLIP_NO [전표번호]
+	 *		- field : PPAY_PROC_TS [추출차수]
+	 *		- field : INVE_APLY_DT [재고반영일]
+	 *		- field : XRATE_APPLY_DT [invoice날짜(선적일)]
+	 *		- field : SALE_CL [재고/내수/수출]
+	 *		- field : CROVR_INVE_YN [이월재고여부]
+	 *		- field : IMEI [IMEI]
+	 *		- field : INVE_CL_CD [재고 유형 코드]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : SKN_CL [SKN 구분]
+	 * </pre>
+	 */
+	public IDataSet fInqSaleRsltList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DEPReportMgmt dEPReportMgmt = (DEPReportMgmt)lookupDataUnit(DEPReportMgmt.class);
+            
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPReportMgmt.dSSaleRsltListTotCnt(requestData, onlineCtx);   // 재감정회수일자누락목록 총건수        
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));     
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            
+            // 3. LISTDM호출
+            responseData = dEPReportMgmt.dSSaleRsltListPaging(reqDs, onlineCtx);    // 재감정회수일자누락목록 조회       
+            rsPagingList = responseData.getRecordSet("RS_SALE_RSLT_LIST");          
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);        
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+
+        return responseData;
+	}
+}

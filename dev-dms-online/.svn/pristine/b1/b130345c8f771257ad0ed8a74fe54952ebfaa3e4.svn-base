@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPREqpReqpInMgmt">
+	<select id="SInveEqpChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.SInveEqpChk 동일단말기(모델코드 일련번호) 존재 체크 */
+/* IO: 김상오,2015-07-15T13:19:40(김상오,2015-07-10T19:33:09) */
+SELECT 
+	   COUNT(1) AS ROW_CNT           /* 사전체크 카운트 */
+  FROM TB_EQP_ASSET                  /* 단말기 자산 */
+ WHERE EQP_MDL_CD = #EQP_MDL_CD#     /* 단말기모델코드 */
+  AND  EQP_SER_NUM = #EQP_SER_NUM#   /* 단말기일련번호 */]]>
+	</select>
+	<select id="SInveNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.SInveNum 단말기자산일련번호조회 */
+/* IO: 김상오,2015-07-15T16:51:16(김상오,2015-07-10T20:14:58) */
+SELECT  'EA'||LPAD(SQ01_TB_EQP_ASSET.NEXTVAL,10,'0') AS ASSET_NUM
+  FROM  DUAL]]>
+	</select>
+	<insert id="IEqpInve" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.IEqpInve 단말기자산입력 */
+/* IO: 김상오,2015-07-15T17:11:58(김상오,2015-07-13T11:13:32) */
+INSERT
+  INTO  TB_EQP_ASSET                           /* 단말기자산 */ 
+       (
+        ASSET_NUM                              /* 자산번호 */
+        ,EQP_MDL_CD                            /* 단말기모델코드 */
+        ,EQP_SER_NUM                           /* 일련번호 */
+        ,EQP_IMEI_NUM                          /* IMEI */
+        ,EQP_COLOR_CD                          /* 색상코드 */
+        ,PRCH_AMT                              /* 매입단가 */
+        ,FST_IN_DT                             /* 입고일자 */
+        ,DEL_YN                                /* 삭제여부 */
+        ,FS_REG_USER_ID                        /* 최초등록사용자 */
+        ,FS_REG_DTM                            /* 최종등록일시 */
+        ,LS_CHG_USER_ID                        /* 최종변경사용자ID */
+        ,LS_CHG_DTM                            /* 최종변경일시 */
+        ,BOX_NO                                /* BOX NO */
+        ,OP_CL_CD                              /* 업무구분코드 */
+        ,INVE_ST_CD                            /* 재고상태코드 */
+       )
+VALUES
+       (
+         #ASSET_NUM#	                          /* 자산번호 */
+        ,#EQP_MDL_CD#                             /* 단말기모델코드 */
+        ,#EQP_SER_NUM#	                          /* 일련번호 */
+        ,#EQP_IMEI_NUM#	                          /* IMEI */
+        ,#EQP_COLOR_CD#	                          /* 색상코드 */
+        ,#PRCH_AMT#	                              /* 매입단가 */
+        ,#FST_IN_DT#	                          /* 입고일자 */
+        ,#DEL_YN#	                              /* 삭제여부 */
+        ,#FS_REG_USER_ID#	                      /* 최초등록사용자ID */
+        ,SYSDATE   	                              /* 최초등록일시 */
+        ,#LS_CHG_USER_ID#	                      /* 최종변경사용자ID */
+        ,SYSDATE         	                      /* 최종변경일시 */
+        ,#BOX_NO#                                 /* BOX NO */
+        ,#OP_CL_CD#                               /* 업무구분코드 */
+        ,#INVE_ST_CD#                             /* 재고상태코드 */
+       )]]>
+	</insert>
+	<insert id="IEqpIn" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.IEqpIn 단말기입고입력 */
+/* IO: 김상오,2015-07-15T14:14:16(김상오,2015-07-15T13:24:35) */
+INSERT
+  INTO  TB_EQP_IN        /* 단말기입고 */ 
+       (
+        IN_DT            /* 입고일자 */
+        ,IN_PLC_CD       /* 입고처코드 */
+        ,ASSET_NUM       /* 자산번호 */
+        ,FS_REG_USER_ID  /* 최초등록사용자ID */
+        ,FS_REG_DTM      /* 등록일시 */
+        ,LS_CHG_USER_ID  /* 최종변경사용자ID */
+        ,LS_CHG_DTM      /* 최종변경일시 */
+        ,EQP_MDL_CD      /* 단말기모델코드 */
+        ,EQP_SER_NUM     /* 단말기일련번호 */
+        ,DEL_YN          /* 삭제여부 */
+        
+        ,EQP_IN_NUM      /* 단말기입고번호 */
+       )
+VALUES
+       (
+         #FST_IN_DT#	    /* 입고일자 */
+        ,#IN_PLC_CD#        /* 입고처코드 */
+        ,#ASSET_NUM#	    /* 자산번호 */
+        ,#FS_REG_USER_ID#	/* 최초등록사용자ID */
+        ,SYSDATE   	        /* 최초등록일시 */
+        ,#LS_CHG_USER_ID#	/* 최종변경사용자ID */
+        ,SYSDATE         	/* 최종변경일시 */
+        ,#EQP_MDL_CD#       /* 단말기모델코드 */
+        ,#EQP_SER_NUM#	    /* 단말기일련번호 */
+        ,#DEL_YN#	        /* 삭제여부 */
+        
+        ,#EQP_IN_NUM#       /* 단말기입고번호 */
+       )]]>
+	</insert>
+	<insert id="ICmptOut" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.ICmptOut 구성품출고입력 */
+/* IO: 김상오,2015-07-15T14:53:46(김상오,2015-07-15T13:49:37) */
+INSERT
+  INTO  TB_CMPT_OUT        /* 구성품출고 */ 
+       (
+    		CMPT_OUT_DT			  /*	구성품출고일자	*/
+    		,CMPT_USE_QTY		  /*	구성품사용수량	*/
+    		,CMPT_CD	  		  /*	구성품코드	*/
+    		,FS_REG_USER_ID		  /*	최초등록사용자ID	*/
+    		,FS_REG_DTM			  /*	최초등록일시	*/
+    		,LS_CHG_USER_ID		  /*	최종변경사용자ID	*/
+    		,LS_CHG_DTM			  /*	최종변경일시	*/
+    		,DEL_YN				  /*	삭제여부	*/
+    		,CONST_OUT_NO		  /*	구성품출고번호	*/
+    		,OUT_DTL_CD			  /*	출고상세코드	*/
+    		,ASSET_NUM			  /*	자산번호	*/
+      )
+VALUES
+      (
+        SYSDATE   			      /*	구성품출고일자	*/
+        
+    		,CMPT_USE_QTY		  /*	구성품사용수량	*/
+    		,CMPT_CD	  		  /*	구성품코드	*/
+
+    		,#FS_REG_USER_ID#    	/*	최초등록사용자ID	*/
+    		,SYSDATE    		    /*	최초등록일시	*/
+    		,#LS_CHG_USER_ID#		/*	최종변경사용자ID	*/
+    		,SYSDATE    			/*	최종변경일시	*/
+    		,#DEL_YN#				/*	삭제여부	*/
+
+    		,CONST_OUT_NO		  /*	구성품출고번호	*/
+    		,OUT_DTL_CD			  /*	출고상세코드	*/
+
+    		,#ASSET_NUM#			  /*	자산번호	*/
+      )]]>
+	</insert>
+	<select id="SEqpInNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.SEqpInNum 단말기입고일련번호조회 */
+/* IO: 김상오,2015-07-15T16:51:23(김상오,2015-07-15T14:25:11) */
+SELECT  'EI'||LPAD(SQ01_TB_EQP_IN.NEXTVAL,10,'0') AS EQP_IN_NUM
+  FROM  DUAL]]>
+	</select>
+	<select id="SEqpReqpInLstGrpPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.SEqpReqpInLstGrpPaging 단말기입고 페이징 조회 */
+/* IO: 박홍서,2015-07-15T18:05:24(박홍서,2015-07-15T15:38:57) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY B.IN_DT DESC, B.IN_PLC_CD DESC) AS ROWNO
+               , B.IN_DT
+               , B.IN_PLC_CD
+               , C.DEAL_CO_NM
+               , B.EQP_MDL_CD
+               , E.EQP_MDL_NM
+               , A.EQP_COLOR_CD
+               , SUM(1) AS SUM_QTY
+               , SUM(A.PRCH_AMT) AS SUM_AMT
+           FROM  TB_EQP_ASSET A
+               , TB_EQP_IN B
+               , TB_DEAL_CO C
+               , (SELECT DEAL_CO_CD, MAX(SEQ)AS SEQ FROM TB_DEAL_CO GROUP BY DEAL_CO_CD) D
+               , TB_EQP_MDL E
+          WHERE  A.ASSET_NUM = B.ASSET_NUM
+            AND  B.IN_PLC_CD = C.DEAL_CO_CD
+            AND  C.DEAL_CO_CD = D.DEAL_CO_CD
+            AND  C.SEQ = D.SEQ
+            AND  B.EQP_MDL_CD = E.EQP_MDL_CD
+            AND  A.DEL_YN = 'N'
+            AND  B.DEL_YN = 'N'
+            AND  E.DEL_YN = 'N'
+            AND  B.IN_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]><isNotEmpty property="IN_PLC_CD"><![CDATA[
+            AND  B.IN_PLC_CD = #IN_PLC_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+            AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+            AND  A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+          GROUP  BY B.IN_DT, B.IN_PLC_CD, C.DEAL_CO_NM, B.EQP_MDL_CD, E.EQP_MDL_NM, A.EQP_COLOR_CD
+        )
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpReqpIn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.SEqpReqpIn 단말기입고 상세조회 */
+/* IO: 박홍서,2015-07-15T16:35:50(박홍서,2015-07-15T16:35:36) */
+SELECT  B.IN_DT
+      , A.ASSET_NUM
+      , C.DEAL_CO_NM
+      , E.EQP_MDL_NM
+      , A.EQP_COLOR_CD
+      , A.PRCH_AMT
+      , A.EQP_SER_NUM
+      , A.EQP_IMEI_NUM
+      , A.INVE_ST_CD
+  FROM  TB_EQP_ASSET A
+      , TB_EQP_IN B
+      , TB_DEAL_CO C
+      , (SELECT DEAL_CO_CD, MAX(SEQ)AS SEQ FROM TB_DEAL_CO GROUP BY DEAL_CO_CD) D
+      , TB_EQP_MDL E
+ WHERE  A.ASSET_NUM = B.ASSET_NUM
+   AND  B.IN_PLC_CD = C.DEAL_CO_CD
+   AND  C.DEAL_CO_CD = D.DEAL_CO_CD
+   AND  C.SEQ = D.SEQ
+   AND  B.EQP_MDL_CD = E.EQP_MDL_CD
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+   AND  E.DEL_YN = 'N'
+   AND  B.IN_DT = #IN_DT#
+   AND  B.IN_PLC_CD = #IN_PLC_CD#
+   AND  B.EQP_MDL_CD = #EQP_MDL_CD#
+   AND  A.EQP_COLOR_CD = #EQP_COLOR_CD#]]>
+	</select>
+	<select id="SEqpReqpInLstGrpTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbpmbase.db.DPREqpReqpInMgmt.SEqpReqpInLstGrpTotCnt 단말기입고 총건수 조회 */
+/* IO: 박홍서,2015-07-16T09:15:15(박홍서,2015-07-15T16:44:06) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  (
+        SELECT  B.IN_DT
+          FROM  TB_EQP_ASSET A
+              , TB_EQP_IN B
+              , TB_DEAL_CO C
+              , (SELECT DEAL_CO_CD, MAX(SEQ)AS SEQ FROM TB_DEAL_CO GROUP BY DEAL_CO_CD) D
+              , TB_EQP_MDL E
+         WHERE  A.ASSET_NUM = B.ASSET_NUM
+           AND  B.IN_PLC_CD = C.DEAL_CO_CD
+           AND  C.DEAL_CO_CD = D.DEAL_CO_CD
+           AND  C.SEQ = D.SEQ
+           AND  B.EQP_MDL_CD = E.EQP_MDL_CD
+           AND  A.DEL_YN = 'N'
+           AND  B.DEL_YN = 'N'
+           AND  E.DEL_YN = 'N'
+           AND  B.IN_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]><isNotEmpty property="IN_PLC_CD"><![CDATA[
+           AND  B.IN_PLC_CD = #IN_PLC_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+           AND  B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+           AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+           AND  A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+         GROUP  BY B.IN_DT, B.IN_PLC_CD, C.DEAL_CO_NM, B.EQP_MDL_CD, E.EQP_MDL_NM, A.EQP_COLOR_CD
+        )]]>
+	</select>
+</sqlMap>

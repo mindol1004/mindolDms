@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="NEXCORE Build Common" default="description" basedir=".">
+
+	<!-- ################################################################## -->
+	<!-- ## One Stop Build ### common property ############################ -->
+	<!-- ################################################################## -->
+
+	<property name="overwrite.resource" value="true" />
+	<property name="verbose" value="false" />
+
+	<property name="target" value="${NEXCORE_HOME}" />
+	<property name="coverage.flag" value="false" />
+	<property name="component.validation.enabled" value="false" />
+	<property name="component.validation.failToException" value="true" />
+	<property name="component.validation.warnToException" value="true" />
+	<property name="component.validation.fixedLengthParentClassXd" value="" />
+
+	<pathconvert property="libclasspath">
+		<path location="${app.ear.common.classes.path}" />
+		<path>
+			<fileset dir="${NEXCORE_HOME}/lib">
+				<include name="*.jar" />
+			</fileset>
+			<fileset dir="${app.ear.common.lib.path}">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+	</pathconvert>
+
+	<pathconvert property="antlibclasspath">
+		<path>
+			<fileset dir="${NEXCORE_HOME}/lib">
+				<include name="*.jar" />
+			</fileset>
+			<fileset dir="${app.ear.common.lib.path}">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+	</pathconvert>
+
+	<condition property="isCoverage">
+		<equals arg1="${coverage.flag}" arg2="true" />
+	</condition>
+
+	<condition property="isComponentValidation">
+		<equals arg1="${component.validation.enabled}" arg2="true" />
+	</condition>
+
+	<!-- ################################################################## -->
+	<!-- ## One Stop Build ### check property ############################# -->
+	<!-- ################################################################## -->
+	<target name="check.property" unless="NEXCORE_HOME">
+		<echo message="ERROR: " />
+		<echo message="      define property 'NEXCORE_HOME' first " />
+		<echo message="      in your nexcore.build.properties" />
+		<echo message="      before depoying" />
+		<fail message="ERROR: Please check 'NEXCORE_HOME' property in 'nexcore.build.properties' file." />
+	</target>
+	<target name="description" description="" depends="check.property">
+		<echo>test ant call</echo>
+		<echo>${project.name}</echo>
+		<echo>${component.fqId}</echo>
+		<echo>${basedir}</echo>
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## absolute path check start ##################################### -->
+	<!-- ################################################################## -->
+	<target name="check.property.absolute.path">
+		<property name="antfile.absolute.path" value="" />
+		<echo>antfile.absolute.path : ${antfile.absolute.path}</echo>
+		<condition property="isnotabsolutepath">
+			<equals arg1="" arg2="${antfile.absolute.path}" />
+		</condition>
+	</target>
+
+	<target name="ejb-jar.source.dir.setting" if="isnotabsolutepath">
+		<property name="antfile.absolute.path.dir" value="./" />
+	</target>
+
+	<target name="ejb-jar.source.dir.setting.absolute.path">
+		<dirname property="antfile.absolute.path.dir.temp" file="${antfile.absolute.path}" />
+		<property name="antfile.absolute.path.dir" value="${antfile.absolute.path.dir.temp}/" />
+	</target>
+	<!-- ################################################################## -->
+	<!-- ## absolute path check finish #################################### -->
+	<!-- ################################################################## -->
+
+
+	<!-- ################################################################## -->
+	<!-- ## EJB Deployment ################################################ -->
+	<!-- ################################################################## -->
+	<target name="all-ejb" depends="check.property,check.property.absolute.path,ejb-jar.source.dir.setting,ejb-jar.source.dir.setting.absolute.path">
+		<property name="ejb-jar.working" value="${target}/build/${component.fqId}" />
+		<property name="ejb-jar.destfile" value="${ejb-jar.working}.jar" />
+		<property name="ejb-jar.runtime" value="${app.ear.ejb.path}/${component.fqId}.jar" />
+
+		<!-- delete.ejb-jar -->
+		<delete dir="${ejb-jar.working}" failonerror="false" />
+		<delete file="${ejb-jar.destfile}" failonerror="false" />
+		<delete file="${ejb-jar.working}Client.jar}" failonerror="false" />
+
+		<!-- mkdir.ejb-jar -->
+		<mkdir dir="${ejb-jar.working}" />
+
+		<!-- compile classes -->
+		<javac srcdir="${antfile.absolute.path.dir}" destdir="${ejb-jar.working}" includes="**/*.java" excludes="**/*Test.java" encoding="utf-8" debug="true" includeantruntime="false">
+			<classpath>
+				<pathelement path="${libclasspath}" />
+			</classpath>
+		</javac>
+
+		<!-- component validation -->
+		<antcall target="component.validation" />
+
+		<!-- instrument for coverage -->
+		<antcall target="coverage.instrument" />
+
+		<echo>synchronizing files for class</echo>
+		<sync todir="${app.component.path}/${component.fqId}/classes" overwrite="${overwrite.resource}" verbose="${verbose}">
+			<fileset dir="${ejb-jar.working}">
+				<include name="${component.path}/**/*.class" />
+			</fileset>
+		</sync>
+
+		<!-- all-xsql.xml -->
+		<antcall target="all-xsql.xml">
+		</antcall>
+
+		<!-- all-io.xml -->
+		<antcall target="all-xio.xml">
+		</antcall>
+
+		<!-- all-component.xml -->
+		<antcall target="all-component.xml">
+		</antcall>
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## component Deployment ########################################## -->
+	<!-- ################################################################## -->
+	<target name="all-component.xml" depends="check.property">
+
+		<echo>synchronizing files for bizunit</echo>
+		<sync todir="${app.component.path}/${component.fqId}/bizunit" overwrite="${overwrite.resource}" verbose="${verbose}">
+			<fileset dir="${antfile.absolute.path.dir}biz">
+				<include name="*.bizunit" />
+			</fileset>
+		</sync>
+
+		<echo>copying ${component.fqId}.component file</echo>
+		<copy todir="${app.component.path}" overwrite="${overwrite.resource}" flatten="true" verbose="${verbose}">
+			<fileset dir="${antfile.absolute.path.dir}">
+				<include name="${component.fqId}.component" />
+			</fileset>
+		</copy>
+
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## xsql Deployment ############################################### -->
+	<!-- ################################################################## -->
+	<target name="all-xsql.xml" depends="check.property">
+
+		<echo>synchronizing files for xsql </echo>
+		<sync todir="${app.component.path}/${component.fqId}/xsql" overwrite="${overwrite.resource}" failonerror="false" verbose="${verbose}">
+			<fileset dir="${antfile.absolute.path.dir}db">
+				<include name="*.xsql" />
+			</fileset>
+		</sync>
+
+	</target>
+
+
+	<!-- ################################################################## -->
+	<!-- ## IO Layout Deployment ############################################### -->
+	<!-- ################################################################## -->
+	<target name="all-xio.xml" depends="check.property">
+
+		<echo>synchronizing files for xio </echo>
+		<sync todir="${app.component.path}/${component.fqId}/xio" overwrite="${overwrite.resource}" failonerror="false" verbose="${verbose}">
+			<fileset dir="${antfile.absolute.path.dir}io">
+				<include name="*.xio" />
+			</fileset>
+		</sync>
+
+	</target>
+
+
+	<!-- ################################################################## -->
+	<!-- ## WEB Deployment ################################################ -->
+	<!-- ################################################################## -->
+	<target name="all-web" depends="check.property">
+
+		<!-- Web파일-jsp/resource 복사 -->
+		<copy todir="${app.ear.web.path}" overwrite="${overwrite.resource}" preservelastmodified="true" includeemptydirs="false">
+			<fileset dir="${antfile.absolute.path.dir}../../../../../../web" defaultexcludes="false">
+				<exclude name="WEB-INF/**" />
+				<exclude name="**/.svn/**" />
+				<exclude name="web.xml" />
+				<include name="jsp/${web.path}/**/*" />
+			</fileset>
+		</copy>
+
+	</target>
+
+
+	<!-- ################################################################## -->
+	<!-- ## WEB classes Deployment ######################################## -->
+	<!-- ################################################################## -->
+	<target name="all-web-classes" depends="check.property">
+
+		<!-- compile classes -->
+		<javac srcdir="./" destdir="${app.ear.web.path}/WEB-INF/classes" includes="**/*.java" excludes="**/*Test.java" encoding="utf-8" debug="true" includeantruntime="false">
+			<classpath>
+				<pathelement path="${libclasspath}" />
+			</classpath>
+		</javac>
+		<copy todir="${app.ear.web.path}/WEB-INF/classes" overwrite="${overwrite.resource}" preservelastmodified="true" includeemptydirs="false">
+			<fileset dir="${antfile.absolute.path.dir}" defaultexcludes="false">
+				<exclude name="**/.svn/**" />
+				<exclude name="build-web.xml" />
+				<include name="**/*.xml" />
+				<include name="**/*.dtd" />
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## component validation ############################## -->
+	<!-- ################################################################## -->
+	<target name="component.validation" if="isComponentValidation">
+		<typedef name="component-validator" classname="nexcore.framework.build.validator.pojo.ComponentModelValidator" classpath="${antlibclasspath}" />
+
+		<!-- 유효성 검증 -->
+		<path id="component-validator.classpath">
+			<pathelement path="${ejb-jar.working}" />
+			<pathelement path="${libclasspath}" />
+		</path>
+		<component-validator verbose="true" encoding="UTF-8" classpathRefid="component-validator.classpath" srcDir="${antfile.absolute.path.dir}" failToException="${component.validation.failToException}" warnToException="${component.validation.warnToException}" fixedLengthParentClassXd="${component.validation.fixedLengthParentClassXd}" />
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## instrument for Coverage ############################## -->
+	<!-- ################################################################## -->
+	<target name="coverage.instrument" if="isCoverage">
+		<ant antfile="${NEXCORE_HOME}/script/build/build-test-coverage.xml" target="coverage.instrument">
+			<property name="NEXCORE_WORKSPACE" value="${NEXCORE_WORKSPACE}" />
+			<property name="ejb-jar.working" value="${ejb-jar.working}" />
+		</ant>
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## CleanUp        ################################################ -->
+	<!-- ################################################################## -->
+	<target name="cleanup" depends="check.property">
+		<property name="ejb-jar.working" value="${target}/build/${component.fqId}" />
+		<property name="ejb-jar.destfile" value="${ejb-jar.working}.jar" />
+		<delete dir="${ejb-jar.working}" failonerror="false" />
+		<delete file="${ejb-jar.destfile}" failonerror="false" />
+		<!-- build 디렉토리 삭제 -->
+		<!-- build가 동시에 될수있으므로 상위 폴더를 삭제하는 것은 우선 막아줍니다. -->
+		<!-- delete dir="${target}/build" / -->
+		<!-- 꼭 지우고 싶다면 ejb 빌드시  지우는 부분을 이곳으로 복사하여 사용하시면 됩니다. -->
+
+	</target>
+
+
+	<!-- ################################################################## -->
+	<!-- ## Remote Deploy                    ############################## -->
+	<!-- ################################################################## -->
+	<target name="remoteDeploy">
+		<condition property="isFtpRemoteDeploy">
+			<equals arg1="ftp" arg2="${remote.deploy.type}"/>
+		</condition>
+		<condition property="isShellRemoteDeploy">
+			<equals arg1="shell" arg2="${remote.deploy.type}"/>
+		</condition>
+		<condition property="isHttpRemoteDeploy">
+			<equals arg1="http" arg2="${remote.deploy.type}"/>
+		</condition>
+
+		<antcall target="remoteDeployByFtp"     inheritall="true"/>
+		<antcall target="remoteDeployByShell"   inheritall="true"/>
+		<antcall target="remoteDeployByHttp"    inheritall="true"/>
+	</target>
+		
+	<!-- ################################################################## -->
+	<!-- ## Remote Deploy - ftp              ############################## -->
+	<!-- ################################################################## -->
+	<target name="remoteDeployByFtp" if="isFtpRemoteDeploy">
+		<classloader classpath="${antlibclasspath}" />
+		<typedef name="IDECrypto" classname="nexcore.framework.build.antsupport.security.IDECrypto"  classpathref="antlibclasspath"/>
+		<typedef name="scp2" classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp" loaderref="ant.coreLoader" />
+
+		<IDECrypto keyFile="${ide.crypto.keyFile}" value="${remote.deploy.ftp.password}" resultProperty="remote.deploy.ftp.password.new" />
+		<scp2 todir="${remote.deploy.ftp.username}:${remote.deploy.ftp.password.new}@${remote.deploy.ftp.server}:${remote.deploy.ftp.todir}" trust="true">
+			<fileset dir="${app.component.path}">
+				<include name="${component.fqId}/**/*" />
+				<include name="${component.fqId}.component" />
+			</fileset>
+		</scp2>
+	</target> 
+	
+	<!-- ################################################################## -->
+	<!-- ## Remote Deploy - shell            ############################## -->
+	<!-- ################################################################## -->
+	<target name="remoteDeployByShell" if="isShellRemoteDeploy">
+		<classloader classpath="${antlibclasspath}" />
+		<typedef name="IDECrypto" classname="nexcore.framework.build.antsupport.security.IDECrypto"  classpathref="antlibclasspath"/>
+
+		<IDECrypto keyFile="${ide.crypto.keyFile}" value="${remote.deploy.shell.password}" resultProperty="remote.deploy.shell.password.new" />
+		<ssh host="${remote.deploy.shell.server}"
+		     username="${remote.deploy.shell.username}"
+		     password="${remote.deploy.shell.password.new}"
+			 trust="true"
+			 command="${remote.deploy.shell.cmd} ${remote.deploy.shell.param}" />
+	</target> 
+
+	<!-- ################################################################## -->
+	<!-- ## Remote Deploy - http             ############################## -->
+	<!-- ################################################################## -->
+	<target name="remoteDeployByHttp" if="isHttpRemoteDeploy">
+		<get src="${remote.deploy.http.url}?${remote.deploy.http.param}" 
+		     dest="remote-deploy-http.log" 
+		     verbose="true"
+		     usetimestamp="true"/>
+	</target> 
+	
+</project>

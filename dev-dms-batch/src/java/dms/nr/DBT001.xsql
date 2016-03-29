@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBT001">
+	<insert id="ISKNInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBT001.ISKNInfo SKN여신등록 */
+/* IO: 장미진,2015-11-18T14:56:23(박홍서,2015-08-05T09:44:24) */
+INSERT INTO  TB_NR_SKN_CRD 
+          (
+            AGN_CD
+           ,PAY_YM
+           ,PAY_YM_TS
+           ,AGN_CRD_AMT
+           ,AGN_SALE_AMT
+           ,CRD_SALE_DAMT
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+            )
+    VALUES
+           (
+            #SKN_AGN_CD#
+           ,#XCL_YM#
+           ,#TS#
+           ,#USE_AMT#
+           ,(SELECT NVL(SUM(PRCH_AMT),0) 
+               FROM TB_PRCH 
+              WHERE SUBSTRB(PRCH_DT, 0, 6) = #XCL_YM# AND SUBSTR(PRCHCO_CD,0,6)=#SKN_AGN_CD#)
+           ,(SELECT NVL(SUM(PRCH_AMT),0) 
+               FROM TB_PRCH 
+              WHERE SUBSTRB(PRCH_DT, 0, 6) = #XCL_YM# AND SUBSTR(PRCHCO_CD,0,6)=#SKN_AGN_CD#)-NVL(#USE_AMT#,0)
+           ,'BAT'
+           ,SYSDATE
+           ,'BAT'
+           ,SYSDATE
+            )]]>
+	</insert>
+	<select id="SSKNInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBT001.SSKNInfo SKN여신IF정보조회 */
+/* IO: 장미진,2015-11-18T13:15:41(박홍서,2015-08-05T14:35:43) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,XCL_YM
+       ,TS
+       ,SKN_AGN_CD
+       ,USE_AMT 
+  FROM  TF_SKN_CRD_INFO
+ WHERE  PROC_ST_CD = '09'
+   AND  SUBSTR(IF_PROC_DT,1,6) = SUBSTR(#PROC_DT#,1,6)]]>
+	</select>
+	<update id="USKNInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBT001.USKNInfo SKN여신처리상태업데이트 */
+/* IO: 장미진,2015-11-18T13:24:53(박홍서,2015-08-05T14:39:31) */
+UPDATE  TF_SKN_CRD_INFO
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) */
+	   ,LS_CHG_USER_ID = 'BAT'
+	   ,LS_CHG_DTM = SYSDATE
+ WHERE  PROC_ST_CD = '09'
+   AND  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ = #IF_SEQ#]]>
+	</update>
+</sqlMap>

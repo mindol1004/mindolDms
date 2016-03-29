@@ -1,0 +1,88 @@
+package dms.ep.epsbibase.biz;
+
+import java.util.Map;
+
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]가격표관리</li>
+ * <li>설  명 : <pre>[FU]가격표관리</pre></li>
+ * <li>작성일 : 2015-08-19 14:15:08</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class FEPPriceListMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPPriceListMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>가격표관리목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-19 14:15:08
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_DT [적용년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PRICE_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : PRCLST_MGMT_NO [가격표관리번호]
+	 *		- field : STA_DT [시작일자]
+	 *		- field : PRCLST_QTY [가격표수량]
+	 *		- field : RMK [비고]
+	 * </pre>
+	 */
+	public IDataSet fSPriceListMgmtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+	    IDataSet dsCnt = new DataSet();
+		IRecordSet rsPagingList = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DEPPriceListMgmt dEPPriceListMgmt =  (DEPPriceListMgmt) lookupDataUnit(DEPPriceListMgmt.class);
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dEPPriceListMgmt.dSPriceListMgmtTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));			
+			PagenateUtils.setPagenatedParamsToDataSet(requestData);
+			
+			// 3. LISTDM호출
+			responseData = dEPPriceListMgmt.dSPriceListMgmtPaging(requestData, onlineCtx);
+			
+			rsPagingList = responseData.getRecordSet("RS_PRICE_LIST");			
+			PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	
+	    return responseData;
+	}
+  
+}

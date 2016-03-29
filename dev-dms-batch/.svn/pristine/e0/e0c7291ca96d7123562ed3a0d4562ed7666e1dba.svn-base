@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.BPR009">
+	<select id="SXclRent" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR009.SXclRent 랜트료정산리스트 */
+/* IO: 김상오,2015-08-10T18:42:27(김상오,2015-08-10T15:50:09) */
+SELECT
+       ASSET_NO
+      ,RENT_MM_DT as SALE_DT
+      ,RENTAL_FEE as SALE_AMT
+FROM TB_EQP_CNTRT_DTL
+WHERE  DEL_YN = 'N'
+AND RENT_MM_DT = #IN_DT#
+ORDER BY RENT_MM_DT]]>
+	</select>
+	<select id="SXclCmp" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR009.SXclCmp 손해배상금,재상품화 정산리스트 */
+/* IO: 김상오,2015-08-10T18:43:33(김상오,2015-08-10T15:55:27) */
+SELECT
+       ASSET_NO
+      ,EQP_JDG_DT   as SALE_DT
+      ,EQP_CMP_AMT_TOT as SALE_AMT
+      ,EQP_RE_CMC_YN
+FROM
+  TB_EQP_JDG 
+WHERE  DEL_YN = 'N'
+and EQP_JDG_DT like #IN_DT#||'%'
+]]><isEqual prepend="AND" property="RE_CMC" compareValue="Y"><![CDATA[
+       EQP_RE_CMC_YN = #RE_CMC#
+]]></isEqual><![CDATA[]]>
+	</select>
+	<select id="SXclDlv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR009.SXclDlv 운송료정산리스트 */
+/* IO: 김상오,2015-08-10T18:43:47(김상오,2015-08-10T15:58:35) */
+SELECT
+        ASSET_NO
+       ,HOME_DLV_AMT as SALE_AMT
+       ,HOME_DLV_SND_DT as SALE_DT
+FROM  TB_EQP_WAYBIL 
+WHERE DEL_YN = 'N'
+AND HOME_DLV_SND_DT like #IN_DT#||'%']]>
+	</select>
+	<insert id="IXclSale" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR009.IXclSale 매출정산등록 */
+/* IO: 김상오,2015-08-10T17:51:40(김상오,2015-08-10T17:50:57) */
+INSERT INTO TB_SALE
+  (
+     SALE_NO
+    ,SALE_DEPT_CD
+    ,SALE_DT
+    ,REV_ITM_CD
+    ,SALE_PLC_CD
+    ,SALE_GUBUN_CD
+    ,ACNT_CD
+    ,SALE_ST_CD
+    ,SALE_AMT
+    ,ASSET_NO
+    ,FS_REG_USER_ID
+  )
+  VALUES
+  (
+     SQ01_TB_SALE.NEXTVAL        
+    ,#SALE_DEPT_CD# 
+    ,#SALE_DT#      
+    ,#REV_ITM_CD#   
+    ,#SALE_PLC_CD#  
+    ,#SALE_GUBUN_CD#
+    ,#ACNT_CD#      
+    ,#SALE_ST_CD#   
+    ,#SALE_AMT#     
+    ,#ASSET_NO#   
+    ,'SYSTEM'  
+    )]]>
+	</insert>
+</sqlMap>

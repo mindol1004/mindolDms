@@ -1,0 +1,384 @@
+package dms.nr.nrsxmbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]매출추정정보조회</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-03 10:16:16</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class FNRSaleAsmptMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRSaleAsmptMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-03 10:16:16
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : YDATE [년+월]
+	 *	- field : OP_TYP_CD [계약상태]
+	 *	- field : SALE_CL_CD [계정코드]
+	 *	- field : CUST_TYP [고객유형]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_ASMPT_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : OP_TYP_CD [계약상태]
+	 *		- field : SALE_CL_CD [계정코드]
+	 *		- field : BF_RENTAL_QTY [전월매출건수]
+	 *		- field : BF_MTH_RENTAL_FEE [전월매출액]
+	 *		- field : RENTAL_QTY [매출건수]
+	 *		- field : MTH_RENTAL_FEE [매출액]
+	 *		- field : CUST_TYP [고객유형]
+	 *		- field : SALE_ASMPT_YM [매출추정년월]
+	 *	- record : RS_SALE_SUM
+	 *		- field : SALE_ASMPT_STRD_DT [기준일자]
+	 *		- field : BF_YY_RENTAL_QTY [전년당월건수]
+	 *		- field : BF_YY_MTH_RENTAL_FEE [전년당월금액]
+	 *		- field : BF_DD_RENTAL_QTY [전월건수]
+	 *		- field : BF_DD_MTH_RENTAL_FEE [전월금액]
+	 *		- field : TOT_RENTAL_QTY [총건수]
+	 *		- field : TOT_MTH_RENTAL_FEE [총액]
+	 *	- record : RS_SALE_ASMPT_PRI_LIST
+	 *		- field : DEALCO_BLICENS_NO [법인사용자번호여부]
+	 *		- field : NEW_CNTRTR_NM [고객명여부]
+	 *		- field : CUST_TYP [고객유형]
+	 *		- field : MTH_RENTAL_FEE [총렌탈액]
+	 *		- field : GUBUN [구분]
+	 *		- field : SELEC [개인,법인]
+	 *		- field : ASMPT_SLIP_NO [전표번호]
+	 *		- field : ASMPT_SLIP_ST [전표상태]
+	 * </pre>
+	 */
+	public IDataSet fInqSaleAsmptLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		  IDataSet dsCnt = new DataSet();
+		  IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		  IRecordSet usrListRs = null;
+		  int intTotalCnt = 0;
+		  
+		  try {
+				// 1. DU lookup
+			  DNRSaleAsmptMgmt dNRSaleAsmptMgmt = (DNRSaleAsmptMgmt) lookupDataUnit(DNRSaleAsmptMgmt.class);
+			  requestData.putField("SVC_NO", HpcUtils.encodeByAES(requestData.getField("SVC_NO")));
+			  
+				// 2. TOTAL COUNT DM호출
+				dsCnt = dNRSaleAsmptMgmt.dSsaleAsmptTotCnt(requestData, onlineCtx);
+				intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+				PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+				// 3. LISTDM호출
+				responseData = dNRSaleAsmptMgmt.dSsaleAsmptLstPaging(reqDs, onlineCtx);
+				usrListRs = responseData.getRecordSet("RS_SALE_ASMPT_LIST");
+				PagenateUtils.setPagenatedParamToRecordSet(usrListRs, reqDs, intTotalCnt);
+				
+				//매출추정정보 기준일자 리스트조회
+				IDataSet dsRtn = dNRSaleAsmptMgmt.dSsaleAsmptLst(requestData, onlineCtx);
+				responseData.putRecordSet(dsRtn.getRecordSet("RS_SALE_SUM"));
+				
+				//매출추정정보 개인,법인사용자 리스트조회
+				IDataSet dsRtn2 = dNRSaleAsmptMgmt.dSsaleAsmptPriLst(requestData, onlineCtx);
+				responseData.putRecordSet(dsRtn2.getRecordSet("RS_SALE_ASMPT_PRI_LIST"));
+				
+			} catch ( BizRuntimeException e ) {
+				throw e; //시스템 오류가 발생하였습니다.
+			}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-03 10:16:16
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : YDATE [년+월]
+	 *	- field : OP_TYP_CD [계약상태]
+	 *	- field : SALE_CL_CD [계정]
+	 *	- field : AGN_ORG_CD [대리점코드]
+	 *	- field : ORG_NM [대리점명]
+	 *	- field : CUST_TYP [고객유형]
+	 *	- field : SALE_ASMPT_YM [매출추정년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_ASMPT_DTL_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : OP_TYP_CD [계약상태]
+	 *		- field : SALE_CL_CD [계정]
+	 *		- field : AGN_ORG_CD [대리점코드]
+	 *		- field : CNTRT_STA_DT [계약시작일자]
+	 *		- field : CNTRT_END_DT [계약종료일자]
+	 *		- field : RENTAL_TS [렌탈회차]
+	 *		- field : SALE_AMT [매출액]
+	 *		- field : SVC_NO [이동전화번호]
+	 *		- field : NEW_CNTRTR_NM [고객명]
+	 *		- field : CUST_TYP [고객유형]
+	 *	- record : RS_SALE_SUM
+	 *		- field : BF_YY_RENTAL_QTY [전년당월건]
+	 *		- field : BF_YY_MTH_RENTAL_FEE [전년당월금액]
+	 *		- field : BF_DD_RENTAL_QTY [전월건]
+	 *		- field : BF_DD_MTH_RENTAL_FEE [전월금액]
+	 *		- field : TOT_RENTAL_QTY [총건수]
+	 *		- field : TOT_MTH_RENTAL_FEE [총금액]
+	 *		- field : SALE_ASMPT_STRD_DT [기준일자]
+	 * </pre>
+	 */
+	public IDataSet fInqSaleAsmptDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. DU lookup
+	    	DNRSaleAsmptMgmt dNRSaleAsmptMgmt = (DNRSaleAsmptMgmt) lookupDataUnit(DNRSaleAsmptMgmt.class);
+
+			// 2. LISTDM호출
+			responseData = dNRSaleAsmptMgmt.dSsaleAsmptDtlLst(requestData, onlineCtx);
+			
+			//매출추정정보상세 기준일자 리스트조회
+			IDataSet dsRtn = dNRSaleAsmptMgmt.dSsaleYyAsmptDtlLst(requestData, onlineCtx);
+			responseData.putRecordSet(dsRtn.getRecordSet("RS_SALE_SUM"));
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-03 10:16:16
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqSaleReBatch(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    Log log = getLog(onlineCtx);
+	    CommonArea ca = getCommonArea(onlineCtx);
+	
+	    try {	    	
+	    		// 1. DU lookup
+	    		DNRSaleAsmptMgmt dNRSaleAsmptMgmt = (DNRSaleAsmptMgmt) lookupDataUnit(DNRSaleAsmptMgmt.class);
+	    	
+	    		// 2. LISTDM호출
+	    		IDataSet dsRtn = dNRSaleAsmptMgmt.dSsalereBatchDt(requestData, onlineCtx);
+	    	
+	    		if(dsRtn.getIntField("CNT") > 0 && dsRtn.getIntField("REBAT_DT") == 0){
+	    			/* TODO : 에러코드입력 필요함({유효기간}에  주복 데이터가 있습니다). 현재는 중복데이타가 있습니다로 사용.*/
+	    			throw new BizRuntimeException("DMS00117"); //재집계가 불가합니다.
+	    		}
+	    	
+	    	
+	    		log.debug("(((((((((((((((((((((((((((((((fInqSaleReBatch() fInqSaleReBatch requestData:"+ requestData);
+	    
+			    ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+			
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "XCR004");
+			    params.put("TASK_NM", "매출추정");
+			    params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId());
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("PROC_DT", requestData.getField("YDATE")+"01");
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.nr.XCR004");				
+				params.put("ONDEMAND_DATASET", dsXml);
+				
+				log.debug("(((((((((((((((((((((((((((((((fInqSaleReBatch() params :"+ params);
+				
+				String jobExecutionId = callBatchJob("XCR004", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+			    
+			    
+				log.debug("(((((((((((((((((((((((((((((((fInqSaleReBatch() result :"+ result);
+			
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+			    
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		
+		} catch (UnsupportedEncodingException ee) {
+			throw new BizRuntimeException("DMS00009",ee); //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-03 10:16:16
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_ASMPT_LIST
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : NEW_CNTRTR_NM [법인명]
+	 *		- field : CUST_TYP [고객유형]
+	 *		- field : MTH_RENTAL_FEE [매출액]
+	 *		- field : GUBUN [구분]
+	 *		- field : SELEC [필드6]
+	 *		- field : ASMPT_SLIP_NO [전표번호]
+	 *		- field : ASMPT_SLIP_ST [전표상태]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveSaleAsmptSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+        Log log = getLog(onlineCtx);
+        boolean isOnline = false;
+
+        try {
+            // 1. 입력 RS설정
+            requestData.putField("USERNO", ca.getUserNo());
+            requestData.putField("SLIP_TYPE", "AGENCY_AMT_AP");
+            
+        	if(isOnline)
+        	{
+        		/*
+	            // 2. 레코드셋 상태에 따른 분기
+	            if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // 전표생성
+	                responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fRegSlip", requestData, onlineCtx);
+	            } else if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // 전표취소
+	                
+	            }
+	            
+	            responseData.putField("USERNO", ca.getUserNo());
+	            callSharedBizComponentByDirect("nr.NRSXMBase", "fRegAgnEqpStlSlip", responseData, onlineCtx);
+	                
+	            // 3. 결과값 리턴
+	            responseData.setOkResultMessage("DMS00000", null);  //정상 처리되었습니다.
+        		*/
+        	}
+        	else
+	    	{
+				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR010");
+			    params.put("TASK_NM", "전표발행");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+			    
+			    
+				log.debug("(((((((((((((((((((((((((((((((fSlipInveInfoHandl() result :"+ result);
+
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+
+	    	}
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+
+	    //Log log = getLog(onlineCtx);
+	    //CommonArea ca = getCommonArea(onlineCtx);
+
+	    requestData.putField("SLIP_TYPE", "SALE_ASMPT");//전표유형
+	    try{
+			log.debug("((((((((((((((((((((((((((((((((fSaveSaleAsmptSlip() fSaveSaleAsmptSlip requestData:"+ requestData);
+ 
+	
+		    ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+			DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+			String dsXml = bout.toString("UTF-8");
+		//
+			// call on-demand batch job
+			HashMap params = new HashMap<String,String>();
+			params.put("TASK_ID", "EPR010");
+		    params.put("TASK_NM", "전표발행");
+		    params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId());
+		    params.put("USER_NO", ca.getUserNo());
+		    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+			params.put("ONDEMAND_DATASET", dsXml);
+			
+			log.debug("(((((((((((((((((((((((((((((((fSaveSaleAsmptSlip() params :"+ params);
+			
+			String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+		    waitBatchJobEnd(jobExecutionId, 10000);
+		    int result = getJobReturnCode(jobExecutionId);
+		    
+		    
+			log.debug("(((((((((((((((((((((((((((((((fSaveSaleAsmptSlip() result :"+ result);
+		
+		    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발
+
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		
+		} catch (UnsupportedEncodingException ee) {
+			throw new BizRuntimeException("DMS00009",ee); //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+  
+}

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 코어 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <!-- =================================================================== -->
+    <!-- [서비스 필터 선언 영역]                                                  -->
+    <!-- =================================================================== -->
+    <!-- 본 영역은 단순히 서비스 필터들을 선언할 뿐이다.                                -->
+    <!-- 트랜잭션 요청에 필터를 적용할 것인지는 아래 서비스 필터 적용 영역에서                              -->
+    <!-- 서비스 필터 매니저(컴포넌트)에 관련 내용을 설정해야 한다.                       -->
+    <!-- =================================================================== -->
+	<bean id="nc.service.TxControlServiceFilter"
+		class="nexcore.framework.core.service.txcontrol.TxControlServiceFilter"
+		init-method="init"
+		destroy-method="destroy">
+        <property name="description"                value="거래통제 필터"/>
+        <property name="txControlManager"           ref="nc.core.ITxControlManager" />
+        <property name="mainTransactionEnabled"     value="true" />
+        <property name="linkTransactionEnabled"     value="false" />
+        <property name="deferredTransactionEnabled" value="false" />
+	</bean>
+
+    <bean id="nc.service.IServiceFilterManager"
+          class="nexcore.framework.coreext.pojo.filter.internal.DynamicMappingServiceFilterManager"
+          init-method="init"
+          destroy-method="destroy">
+        <description>
+            <![CDATA[Facade에서 수행하는 서비스 필터 매핑 정보를 관리한다.
+            - databaseUse  : true이면 DB에 설정된 정보를 기준으로 동작하고, 
+                             false이면 'configList'에 설정된 정보를 기준으로 동작한다.
+            - sqlManager   : databaseUse가 true인 DB정보를 조회하기 위해 사용.
+            - cacheName    : databaseUse가 true인 경우 DB정보를 보관하는 캐시명.
+            - cacheManager : databaseUse가 true인 경우 캐시 보관을 위해 사용.
+            - mappingList  : databaseUse가 false인 경우 필터 매핑 설정 목록이며, 목록에 설정된 순서대로 적용된다. 
+                             nexcore.framework.core.service.filter.ServiceFilterMapping를 사용하여 list로 설정한다.
+                                                          아래와 같이 설정한다.
+                             <bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+                             	<property name="regex" value="거래아이디 정규표현식" />
+            					<property name="filter">필터객체</property>
+                             </bean>
+            ]]>
+        </description>
+        <property name="databaseUse"                        value="false" />
+        <property name="cacheName"                          value="txFilterMapping" />
+        <property name="bizClassLoadManager"                ref="nc.core.IBizClassLoadManager" />
+        <property name="sqlManager"                         ref="nc.db.ISqlManager" />
+        <property name="cacheManager"                       ref="nc.core.ICacheManager" />
+        <property name="mappingList"> 
+        	<list>
+        		<!--  
+            	<bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+            		<property name="regex" value=".*" />
+            		<property name="filter">
+	            		<bean class="nexcore.framework.coreext.pojo.filter.DynamicBizDelegationServiceFilter" init-method="init" destroy-method="destroy">
+	            			<property name="description"                value="CommonArea 생성/초기화"/>
+	            			<property name="mainTransactionEnabled"     value="true"/>
+	            			<property name="linkTransactionEnabled"     value="false"/>
+	            			<property name="deferredTransactionEnabled" value="false"/>
+	            			<property name="prevComponentFqId"          value="fwk.FWKSBase"/>
+	            			<property name="prevMethodId"               value="fFWK09CommonAreaInit"/>
+	            			<property name="postComponentFqId"          value=""/>
+	            			<property name="postMethodId"               value=""/>
+	            			<property name="errorPostComponentFqId"     value=""/>
+	            			<property name="errorPostMethodId"          value=""/>
+	            			<property name="errorPostFailIgnore"        value="false"/>
+	            		</bean>
+            		</property>
+            	</bean>
+            	<bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+            		<property name="regex" value=".*" />
+            		<property name="filter">
+	            		<bean class="nexcore.framework.coreext.pojo.filter.DynamicBizDelegationServiceFilter" init-method="init" destroy-method="destroy">
+	            			<property name="description"                value="거래(에러) 로그 기록"/>
+	            			<property name="mainTransactionEnabled"     value="true"/>
+	            			<property name="linkTransactionEnabled"     value="true"/>
+	            			<property name="deferredTransactionEnabled" value="false"/>
+	            			<property name="prevComponentFqId"          value=""/>
+	            			<property name="prevMethodId"               value=""/>
+	            			<property name="postComponentFqId"          value="fwk.FWKSBase"/>
+	            			<property name="postMethodId"               value="fFWK09WriteTrLog"/>
+	            			<property name="errorPostComponentFqId"     value="fwk.FWKSBase"/>
+	            			<property name="errorPostMethodId"          value="fFWK09WriteErLog"/>
+	            			<property name="errorPostFailIgnore"        value="true"/>
+	            		</bean>
+            		</property>
+            	</bean>
+            	-->
+            	<bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+            		<description><![CDATA[거래 통제]]></description>
+            		<property name="regex"  value=".*" />
+            		<property name="filter" ref="nc.service.TxControlServiceFilter" />
+            	</bean>
+        		<!--  
+            	<bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+            		<property name="regex" value=".*" />
+            		<property name="filter">
+	            		<bean class="nexcore.framework.coreext.pojo.filter.DynamicBizDelegationServiceFilter" init-method="init" destroy-method="destroy">
+	            			<property name="description"                value="거래 프로파일 기반 거래 제어"/>
+	            			<property name="mainTransactionEnabled"     value="true"/>
+	            			<property name="linkTransactionEnabled"     value="true"/>
+	            			<property name="deferredTransactionEnabled" value="false"/>
+	            			<property name="prevComponentFqId"          value="fwk.FWKSBase"/>
+	            			<property name="prevMethodId"               value="fFWK09TxControl"/>
+	            			<property name="postComponentFqId"          value=""/>
+	            			<property name="postMethodId"               value=""/>
+	            			<property name="errorPostComponentFqId"     value=""/>
+	            			<property name="errorPostMethodId"          value=""/>
+	            			<property name="errorPostFailIgnore"        value="false"/>
+	            		</bean>
+            		</property>
+            	</bean>
+            	<bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+            		<property name="regex" value=".*" />
+            		<property name="filter">
+	            		<bean class="nexcore.framework.coreext.pojo.filter.DynamicBizDelegationServiceFilter" init-method="init" destroy-method="destroy">
+	            			<property name="description"                value="이벤트 알림"/>
+	            			<property name="mainTransactionEnabled"     value="true"/>
+	            			<property name="linkTransactionEnabled"     value="true"/>
+	            			<property name="deferredTransactionEnabled" value="true"/>
+	            			<property name="prevComponentFqId"          value="fwk.FWKSBase"/>
+	            			<property name="prevMethodId"               value="fFWK09PreNotification"/>
+	            			<property name="postComponentFqId"          value="fwk.FWKSBase"/>
+	            			<property name="postMethodId"               value="fFWK09PostNotification"/>
+	            			<property name="errorPostComponentFqId"     value="fwk.FWKSBase"/>
+	            			<property name="errorPostMethodId"          value="fFWK09ErrorPostNotification"/>
+	            			<property name="errorPostFailIgnore"        value="true"/>
+	            		</bean>
+            		</property>
+            	</bean>
+            	-->
+            	<bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+            		<property name="regex" value=".*" />
+            		<property name="filter">
+	            		<bean class="nexcore.framework.coreext.pojo.filter.DynamicBizDelegationServiceFilter" init-method="init" destroy-method="destroy">
+	            			<property name="description"                value="전체 선후처리"/>
+	            			<property name="mainTransactionEnabled"     value="true"/>
+	            			<property name="linkTransactionEnabled"     value="false"/>
+	            			<property name="deferredTransactionEnabled" value="false"/>
+	            			<property name="prevComponentFqId"          value="fw.FWSBase"/>
+	            			<property name="prevMethodId"               value="fCommonAreaInit"/>
+	            			<property name="postComponentFqId"          value=""/>
+	            			<property name="postMethodId"               value=""/>
+	            			<property name="errorPostComponentFqId"     value=""/>
+	            			<property name="errorPostMethodId"          value=""/>
+	            			<property name="errorPostFailIgnore"        value="false"/>
+	            		</bean>
+            		</property>
+            	</bean>
+            	<bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+            		<property name="regex" value=".*" />
+            		<property name="filter">
+	            		<bean class="nexcore.framework.coreext.pojo.filter.DynamicBizDelegationServiceFilter" init-method="init" destroy-method="destroy">
+	            			<property name="description"                value="전처리"/>
+	            			<property name="mainTransactionEnabled"     value="true"/>
+	            			<property name="linkTransactionEnabled"     value="false"/>
+	            			<property name="deferredTransactionEnabled" value="false"/>
+	            			<property name="prevComponentFqId"          value="sc.SCSBase"/>
+	            			<property name="prevMethodId"               value="fPreProc"/>
+	            			<property name="postComponentFqId"          value=""/>
+	            			<property name="postMethodId"               value=""/>
+	            			<property name="errorPostComponentFqId"     value=""/>
+	            			<property name="errorPostMethodId"          value=""/>
+	            			<property name="errorPostFailIgnore"        value="false"/>
+	            		</bean>
+            		</property>
+            	</bean>            	
+            	<!-- 
+            	<bean class="nexcore.framework.core.service.filter.ServiceFilterMapping">
+            		<property name="regex"  value="XYZ.*" />
+            		<property name="filter">
+	            		<bean class="nexcore.framework.coreext.pojo.filter.DynamicBizDelegationServiceFilter" init-method="init" destroy-method="destroy">
+	            			<property name="description"                value="샘플 업무 선후처리"/>
+	            			<property name="mainTransactionEnabled"     value="true"/>
+	            			<property name="linkTransactionEnabled"     value="false"/>
+	            			<property name="deferredTransactionEnabled" value="false"/>
+	            			<property name="prevComponentFqId"          value="xyz.XYZSBase"/>
+	            			<property name="prevMethodId"               value="fXYZ09XyzPre"/>
+	            			<property name="postComponentFqId"          value="xyz.XYZSBase"/>
+	            			<property name="postMethodId"               value="fXYZ09XyzPost"/>
+	            			<property name="errorPostComponentFqId"     value=""/>
+	            			<property name="errorPostMethodId"          value=""/>
+	            			<property name="errorPostFailIgnore"        value="false"/>
+	            		</bean>
+            		</property>
+            	</bean>
+            	-->
+            </list>
+        </property>
+    </bean>
+</beans>

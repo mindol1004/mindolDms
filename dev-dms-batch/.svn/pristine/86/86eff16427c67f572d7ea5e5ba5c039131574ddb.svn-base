@@ -1,0 +1,299 @@
+package dms.inf;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.util.SAMFileTool;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+
+import org.apache.commons.logging.Log;
+
+import fwk.utils.IFFileToDBUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : DMS-IF/인터페이스</li>
+ * <li>서브 업무명 : BIF022</li>
+ * <li>설  명 : <pre>[BC]렌탈채권이관</pre></li>
+ * <li>작성일 : 2015-08-10 11:07:57</li>
+ * <li>작성자 : 이영진 (newnofixing)</li>
+ * </ul>
+ */
+public class BIF022 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+    
+    /**
+     * 배치 생성자. 
+     * 상위클래스 생성자 호출
+     */
+    public BIF022() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        Log log = getLog(context);
+		
+		processCnt = 0;
+		taskNo = "";
+		
+		IOnlineContext    onlineCtx  = makeOnlineContext(context);
+		IDataSet reqDS = new DataSet();
+		IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+		taskNo = resDS.getField("TASK_NO");
+		
+		reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("JOB_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "BI");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+		
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+        Log log = getLog(context);
+        
+        // 트랜잭션 시작
+        txBegin();  
+        dbStartSession();
+        dbBeginBatch();
+        
+        // SAM 파일 헤더부 레이아웃 정의
+        SAMFileTool sam1 = new SAMFileTool();
+        sam1.addColumnInfo("REC_CL_CD",                 1, SAMFileTool.TYPE_STRING);
+        sam1.addColumnInfo("FILE_NM",                  30, SAMFileTool.TYPE_STRING);
+        sam1.addColumnInfo("PROC_DT",                   8, SAMFileTool.TYPE_STRING);
+        sam1.setEncoding("UTF-8");
+
+        // SAM 파일 본문부 레이아웃 정의
+        SAMFileTool sam2 = new SAMFileTool();
+        sam2.addColumnInfo("REC_CL_CD",                 1, SAMFileTool.TYPE_STRING);
+        
+        sam2.addColumnInfo("SVC_MGMT_NO",              10, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("RENTAL_SNO",               15, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("BILL_DT",                   8, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("SALE_ITM_CD",               7, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("BILL_AMT",                  8, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("RECV_AMT",                  8, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("NEWLINE",                   1, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("PROC_ST_CD",                2, SAMFileTool.TYPE_STRING);
+        
+        sam2.addColumnInfo("IF_FILE_NM",                0, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("IF_SEQ",                    0, SAMFileTool.TYPE_STRING);
+        sam2.addColumnInfo("PROC_CL_CD",                0, SAMFileTool.TYPE_STRING);
+        sam2.setEncoding("UTF-8");
+
+        // SAM 파일 꼬리부 레이아웃 정의
+        SAMFileTool sam3 = new SAMFileTool();
+        sam3.addColumnInfo("REC_CL_CD",                 1, SAMFileTool.TYPE_STRING);
+        sam3.addColumnInfo("FILE_NM",                  30, SAMFileTool.TYPE_STRING);
+        sam3.addColumnInfo("TOT_REC_CNT",              10, SAMFileTool.TYPE_STRING);
+        sam3.setEncoding("UTF-8");
+
+        //String fileNm = context.getInParameter("FILE_NM");
+        //String[] fileNmAry = fileNm.split("_");
+        
+        Map<String, String> paramMap = new HashMap<String, String>();
+        paramMap.put("PROC_DT", context.getInParameter("PROC_DT"));
+        paramMap.put("TASK_ID", context.getInParameter("TASK_ID"));
+        paramMap.put("FILE_LOC", context.getInParameter("FILE_LOC"));
+        
+        try {
+            //IFFileToDBUtils fileUtil = new IFFileToDBUtils();
+            //IDataSet responseData = fileUtil.listFile(sam1, sam2, sam3, paramMap, log);
+            IDataSet responseData = listFile(sam1, sam2, sam3, paramMap, log);
+            for (Iterator<IRecordSet> iter=responseData.getRecordSets(); iter.hasNext();) {
+                IRecordSet rs = iter.next();
+                for(int i = 0; i < rs.getRecordCount(); i++) {
+                    dbInsert("IEqpInfo", rs.getRecord(i), context);
+                }
+            }
+            processCnt = responseData.getIntField("TOT_PROC_CNT");
+            procFileName = responseData.getField("PROC_FILE_NM");
+        } catch(Exception e) {
+            log.debug("Exception:["+e.toString()+"]");
+            throw new BizRuntimeException("DMS00009", e); //오류가 발생했습니다.
+        }
+        
+        // 트랜잭션 커밋
+        dbEndBatch();
+        dbEndSession();
+        txCommit();
+    }
+    
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_CNT", ""+processCnt);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        }else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+        }
+        
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "dUBatTaskOpHst", reqDS, onlineCtx);
+
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+        
+    }
+    
+    private int totProcessCnt = 0;
+    private String procFileNm = "";
+    
+    /**
+     * 인터페이스파일처리
+     */
+    public IDataSet listFile(SAMFileTool header, SAMFileTool body, SAMFileTool tail
+                                    , Map<String, String> paramMap, Log log) throws BizRuntimeException {
+        
+        IDataSet responseData = new DataSet();
+        totProcessCnt = 0;
+        procFileNm = "";
+        
+        String path=paramMap.get("FILE_LOC");
+        File dirFile=new File(path);
+        File []fileList=dirFile.listFiles();
+        for(File tempFile : fileList) {
+          if(tempFile.isFile()) {
+            String tempFileName=tempFile.getName();
+            if(tempFileName.indexOf(paramMap.get("TASK_ID")+".SKCC."+paramMap.get("PROC_DT")) > -1 ) {
+                responseData.putRecordSet(readFile(header, body, tail, paramMap, tempFile, log));
+                if("".equals(procFileNm)) {
+                    procFileNm += tempFileName;
+                } else {
+                    procFileNm += ","+tempFileName;
+                }
+            }
+          }
+        }
+        responseData.putField("TOT_PROC_CNT", totProcessCnt);
+        responseData.putField("PROC_FILE_NM", procFileNm);
+        
+        return responseData;
+    }
+    
+    /**
+     * 파일을 IRecordSet으로 변경
+     */
+    public IRecordSet readFile(SAMFileTool header, SAMFileTool body, SAMFileTool tail
+                                , Map<String, String> paramMap, File tempFile, Log log) throws BizRuntimeException {
+        IRecordSet rs1 = header.makeRecordSetFromColumnInfoList("HEADER");
+        IRecordSet rs2 = body.makeRecordSetFromColumnInfoList("BODY");
+        IRecordSet rs3 = tail.makeRecordSetFromColumnInfoList("TRAILER");
+        
+        String path=paramMap.get("FILE_LOC");
+        int ifSeq = 1;
+        
+        int processCnt = 0;
+        int totCnt = 0;
+        BufferedInputStream in = null;
+        String fileRename = "";
+        try {
+            in = new BufferedInputStream(new FileInputStream(tempFile));
+            byte[] readLineBuffer = new byte[1000];
+            while(true) {
+                // 샘플 파일에서는 매 레코드는 EOL 문자로 구분됨.
+                int readLength = SAMFileTool.readToEol(in, readLineBuffer);
+                if (readLength == -1) break; // 다읽었음.
+                if (readLength < 1) continue; // 의미 없는 공백 라인. skip.
+                /*
+                if (readLength != 55) {
+                    throw new BizRuntimeException("메세지코드", new String[]{ "데이타 길이 오류" });
+                }
+                */
+                
+                if (readLineBuffer[0] == 'H') { 
+                    // 레코드의 첫번째 바이트가 H이면 헤더부 
+                    IRecord rec = header.readRecordFromBytes(rs1, readLineBuffer, 0, readLength);
+                    fileRename = rec.get("FILE_NM");
+                }else if (readLineBuffer[0]  == 'D') { 
+                    // 레코드의 첫번째 바이트가D이면 본문부 
+                    IRecord rec = body.readRecordFromBytes(rs2, readLineBuffer, 0, readLength); 
+                    rec.set("IF_PROC_DT", paramMap.get("PROC_DT"));
+                    rec.set("IF_FILE_NM", fileRename);
+                    if(rec.get("PROC_CL_CD") != null && "".equals(rec.get("PROC_CL_CD"))) {
+                        rec.set("PROC_CL_CD","1");
+                    }
+                    //rec.set("IF_SEQ", ifSeq);
+                    rs2.addRecord(rec);
+                    processCnt++;
+                    ifSeq++;
+                }else if (readLineBuffer[0]  == 'T') { 
+                    // 레코드의 첫번째 바이트가 T이면 꼬리부 
+                    IRecord rec = tail.readRecordFromBytes(rs3, readLineBuffer, 0, readLength); 
+                    
+                    String tot = rec.get("TOT_REC_CNT").trim();
+                    totCnt = Integer.parseInt(tot);
+                    log.debug("TOT_REC_CNT:["+totCnt+"]");
+                }
+            }
+            
+            if(processCnt != totCnt) throw new BizRuntimeException("DMS00083"); //총건수와 처리건수가 다릅니다.
+            totProcessCnt += processCnt;
+            
+        } catch(Exception e) {
+            log.debug("Exception:["+e.toString()+"]");
+            throw new BizRuntimeException("DMS00009", e); //오류가 발생했습니다.
+        } finally {
+            try {
+                if (in != null) in.close();
+                File fileToMove = new File(path+"PROC/"+fileRename+".dat");
+                tempFile.renameTo(fileToMove);
+            } catch(Exception e) {
+                log.debug("Exception:["+e.toString()+"]");
+                throw new BizRuntimeException("DMS00009", e); //오류가 발생했습니다.
+            }
+        }
+        
+        return rs2;
+    }    
+    
+}

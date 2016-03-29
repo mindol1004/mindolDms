@@ -1,0 +1,320 @@
+package dms.inf;
+
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.bat.util.SAMFileTool;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.BaseUtils;
+
+import org.apache.commons.logging.Log;
+
+//import fwk.utils.HpcUtils;
+import fwk.utils.IFDBToFileUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/시스템공통</li>
+ * <li>서브 업무명 : BSC002</li>
+ * <li>설  명 : <pre>[IF]보증보험청구내역상세(SGI)</pre></li>
+ * <li>작성일 : 2015-07-30 15:18:31</li>
+ * <li>작성자 : 이영진 (newnofixing)</li>
+ * </ul>
+ */
+public class IFS003 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+    private String preTaskSTCD = "";
+    
+    /**
+     * 배치 생성자. 
+     * 상위클래스 생성자 호출
+     */
+    public IFS003() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        Log log = getLog(context);
+        
+        processCnt = 0;
+        taskNo = "";
+        procFileName = "";
+        
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+        taskNo = resDS.getField("TASK_NO");
+        
+        reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "NR");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+        // 트랜잭션 시작
+        txBegin();  
+        dbStartSession();
+        dbBeginBatch();
+        
+        try {
+            
+            Map<String, String> paramMap = new HashMap<String, String>();
+            paramMap.put("PROC_DT", context.getInParameter("PROC_DT"));
+            paramMap.put("TASK_ID", context.getInParameter("TASK_ID"));
+            paramMap.put("FILE_LOC", context.getInParameter("FILE_LOC"));
+            paramMap.put("FILE_SEQ", context.getInParameter("FILE_SEQ"));
+            paramMap.put("FILE_DT", context.getInParameter("FILE_DT"));
+            
+            IFDBToFileUtils dbToFile = new IFDBToFileUtils();
+            OutputStream fout = dbToFile.HeaderParse(paramMap);
+            
+            StringBuffer bf = new StringBuffer();
+            bf.append(context.getInParameter("TASK_ID"));
+            bf.append(".SKCC.");
+            bf.append(context.getInParameter("FILE_DT"));
+            procFileName = bf.toString()+".dat"; 
+            bf.append("_");
+            bf.append(context.getInParameter("FILE_SEQ"));
+            String ifFileNmSeq = bf.toString();
+            
+            Map<String, String> queryParam = new HashMap<String, String>();
+            queryParam.put("IF_PROC_DT", context.getInParameter("PROC_DT"));
+            queryParam.put("IF_FILE_NM", ifFileNmSeq);
+            
+            
+            SAMFileTool body = new SAMFileTool();
+            body.setOutputStream(fout);
+            // 파일 레이아웃 정의
+            body.setEncoding(BaseUtils.getConfiguration("interface.file.encoding"));
+
+            body.addColumnInfo("REC_CL_CD",              		  1, SAMFileTool.TYPE_STRING);
+
+            body.addColumnInfo("OP_CL_CD",                        2, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("CO_CL_CD",                        3, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("INSURE_INV_REQT_NO",             14, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ERR_RSLT_CD",                     2, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("INSU_MGMT_NO",                   14, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("FILLER",                         20, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ALLOT_ANUL",                      2, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_1",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_2",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_3",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_4",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_5",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_6",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_7",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_8",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_9",                     8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_10",                    8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_11",                    8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_12",                    8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_13",                    8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PRDPAY_DT_14",                    8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_1",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_2",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_3",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_4",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_5",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_6",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_7",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_8",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_9",                    7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_10",                   7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_11",                   7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_12",                   7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_13",                   7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("RENTAL_PRN_14",                   7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_1",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_2",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_3",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_4",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_5",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_6",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_7",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_8",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_9",                   6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_10",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_11",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_12",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_13",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("DMG_CMP_AMT_14",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_1",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_2",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_3",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_4",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_5",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_6",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_7",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_8",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_9",                       6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_10",                      6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_11",                      6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_12",                      6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_13",                      6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("ADD_AMT_14",                      6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_1",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_2",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_3",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_4",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_5",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_6",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_7",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_8",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_9",               7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_10",              7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_11",              7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_12",              7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_13",              7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_RENTAL_PRN_14",              7, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_1",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_2",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_3",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_4",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_5",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_6",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_7",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_8",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_9",              6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_10",             6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_11",             6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_12",             6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_13",             6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_DMG_CMP_AMT_14",             6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_1",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_2",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_3",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_4",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_5",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_6",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_7",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_8",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_9",                  6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_10",                 6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_11",                 6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_12",                 6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_13",                 6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("UNPD_ADD_AMT_14",                 6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("FILLER_1",                        6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PROC_DT",                         8, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("PROC_TMS",                        6, SAMFileTool.TYPE_STRING);
+            body.addColumnInfo("SVC_CD",                          1, SAMFileTool.TYPE_STRING);
+            body.initialize();
+            
+            dbSelect("SInsuInvListLstDtl", queryParam, makeRecordHandler(body), context);  //DB 조회
+            
+            preTaskSTCD = "S";
+            IOnlineContext    onlineCtx  = makeOnlineContext(context);
+            IDataSet reqDS = new DataSet();
+            reqDS.putField("TASK_ID", "DBS002");
+            reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+            if (processCnt == 0) {
+                IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskSTCD", reqDS, onlineCtx);
+                if ("".equals(resDS.getField("BAT_TASK_PROC_ST_CD"))) preTaskSTCD = "F"; 
+                else preTaskSTCD = resDS.getField("BAT_TASK_PROC_ST_CD");
+            }
+            paramMap.put("PROC_ST_CD", preTaskSTCD);
+            
+            paramMap.put("TOT_REC_CNT", processCnt+"");
+            paramMap.put("FILE_NM_SEQ", ifFileNmSeq);
+            dbToFile.tailParse(paramMap, fout);
+            
+            dbUpdate("UInsuInvListDtl", queryParam, context);	// 처리상태코드 Update
+        
+        } catch (Exception e) {
+            throw new BizRuntimeException("DMS00009", e);
+        }
+        
+        // 트랜잭션 커밋
+        dbEndBatch();
+        dbEndSession();
+        txCommit();
+    }
+    
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        }else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+            processCnt = 0; //20150911
+        }
+        
+        //20150911
+        if ("F".equals(preTaskSTCD)) reqDS.putField("BAT_TASK_PROC_ST_CD", "E");
+        reqDS.putField("PROC_CNT", ""+processCnt);
+        
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fUpdBatTaskOpHst", reqDS, onlineCtx);
+
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+    
+    /**
+     * 레코드 핸들러
+     */
+    public AbsRecordHandler makeRecordHandler(final SAMFileTool samTool) {
+        
+        AbsRecordHandler rh = new AbsRecordHandler(batchContext) {
+            
+            @Override
+            public void handleRecord(IRecord arg0) {
+                try {
+                    samTool.writeRecordToOut(arg0); // file write...
+                    processCnt++;
+                    
+                } catch (Exception e) {
+                    throw new BizRuntimeException("DMS00009", e); //오류가 발생했습니다.
+                }
+            }
+        };
+        
+        return rh;
+    }
+}

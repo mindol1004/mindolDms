@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="NEXCORE Local Build Component - NRSEABase" default="all" basedir=".">
+
+	<property environment="env" />
+
+	<!-- ################################################################## -->
+	<!-- ## [Nexbuild] Auto-generated property ############################ -->
+	<!-- ################################################################## -->
+	<property name="project.name" value="dev-dms-online" />
+	<property name="component.id" value="NRSEABase" />
+	<property name="component.path" value="dms/nr/nrseabase" />
+	<property name="component.fqId" value="nr.NRSEABase" />
+	<property name="web.path" value="nr/nrseabase" />
+	<property name="common.path" value="dms/nr" /><!-- 임시 -->
+    <property name="common.id" value="nr" /><!-- 2번째 패키지 명 -->
+    <property name="sub.system" value="nrseabase" /><!-- 추가 항목 : 3번째 패키지 명 -->
+
+	<!-- ################################################################## -->
+	<!-- ## [NEXCORE_HOME] common build property ########################## -->
+	<!-- ################################################################## -->
+	<!-- custombuild build.properties -->
+	<property file="${NEXCORE_HOME_ANT}/script/build/${project.name}.build.properties" />
+	<!-- default build.properties -->
+	<property file="${NEXCORE_HOME_ANT}/script/build/nexcore.build.properties" />
+	<!-- custombuild for CI tool (Continuous Integration : quickBuild etc) -->
+	<property file="${ant.home}/${project.name}.build.properties" />
+	<!-- default for CI tool (Continuous Integration : quickBuild etc) -->
+	<property file="${ant.home}/nexcore.build.properties" />
+	<target name="check.nexcore.property" unless="NEXCORE_HOME">
+		<echo message=" find ANT_HOME ..." />
+		<available file="${ant.home}/nexcore.build.properties" property="check.property.ant" />
+		<antcall target="check.nexcore.property.anthome" />
+	</target>
+	<target name="check.nexcore.property.anthome" unless="check.property.ant">
+		<echo message="ERROR: " />
+		<echo message="      define property 'NEXCORE_HOME_ANT' first " />
+		<echo message="      in your Eclipse Preferences [Ant-Runtime-properties]" />
+		<echo message="      before depoying" />
+		<fail message="ERROR: Ant runtime property 에 'NEXCORE_HOME_ANT'을 등록하세요. " />
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## [ CLASSPATH Property ] ############################################# -->
+	<!-- ################################################################## -->
+	<!-- EX) ${NEXCORE_HOME}/lib/j2ee.jar;${wls.ear.lib}/xxxxxxxxxx.jar; -->
+	<property name="add.classpath" value="" />
+
+	<!-- ################################################################## -->
+	<!-- ## EJB+WEB Deployment ############################################ -->
+	<!-- ################################################################## -->
+	<target name="all" depends="check.nexcore.property">
+<!--		<ant antfile="${NEXCORE_HOME}/script/build/build-biz-common.xml" target="all-web" />-->
+		<ant antfile="${NEXCORE_HOME}/script/build/build-biz-common.xml" target="all-ejb" />
+		<ant antfile="${NEXCORE_HOME}/script/build/build-biz-common.xml" target="cleanup" />
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## EJB Deployment ################################################ -->
+	<!-- ################################################################## -->
+	<target name="all-ejb" depends="check.nexcore.property">
+		<ant antfile="${NEXCORE_HOME}/script/build/build-biz-common.xml" target="all-ejb" />
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## component Deployment ########################################## -->
+	<!-- ################################################################## -->
+	<target name="all-component.xml" depends="check.nexcore.property">
+		<ant antfile="${NEXCORE_HOME}/script/build/build-biz-common.xml" target="all-component.xml" />
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## xsql Deployment ############################################### -->
+	<!-- ################################################################## -->
+	<target name="all-xsql.xml" depends="check.nexcore.property">
+		<ant antfile="${NEXCORE_HOME}/script/build/build-biz-common.xml" target="all-xsql.xml" />
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## WEB Deployment ################################################ -->
+	<!-- ################################################################## -->
+	<target name="all-web" depends="check.nexcore.property">
+		<ant antfile="${NEXCORE_HOME}/script/build/build-biz-common.xml" target="all-web" />
+	</target>
+
+
+	<!-- ################################################################## -->
+	<!-- ## EJB Deployment FOR TEST COVERAGE ############################## -->
+	<!-- ################################################################## -->
+    <!-- Parameters for the code test coverage                              -->
+	<!-- test.dir : set the destination path of coverage metadata file      -->
+	<!-- added targets since 2009-05-18                                     -->
+    <!-- ################################################################## -->
+	<target name="all-ejb-coverage" depends="check.nexcore.property">
+		<ant antfile="${NEXCORE_HOME}/script/build/build-test-coverage.xml" target="all-ejb" >
+		    <property name="test.dir" value="${NEXCORE_WORKSPACE}/${project.name}/src/test/dms/nr/nrseabase/biz"/>
+	    </ant>
+	</target>
+    
+	<!-- ################################################################## -->
+	<!-- ## TEST FOR ANALYSING CODE COVERAGE ############################## -->
+	<!-- ################################################################## -->
+    <!-- Parameters for the code test coverage                              -->
+	<!-- project.dir : set a location to find the classes of bin directory  -->
+	<!-- test.dir    : set the destination path of coverage runtime file    -->
+	<!-- test.name   : set a TestCase name for testing through Junit        -->
+    <!-- ################################################################## -->
+	<target name="test-coverage" depends="check.nexcore.property">
+		<ant antfile="${NEXCORE_HOME}/script/build/build-test-coverage.xml" target="all.test.coverage" >
+		    <property name="project.dir" value="${NEXCORE_WORKSPACE}/${project.name}" />
+		    <property name="test.dir" value="${NEXCORE_WORKSPACE}/${project.name}/src/test/dms/nr/nrseabase/biz"/>
+		    <!--property name="testcase.name" value="ItemManagementGetItemsByPageTest" /-->
+		</ant>
+	</target>
+</project>

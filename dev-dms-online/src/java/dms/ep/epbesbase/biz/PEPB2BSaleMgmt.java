@@ -1,0 +1,649 @@
+package dms.ep.epbesbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]B2B상품판매관리</li>
+ * <li>설  명 : <pre>B2B상품판매관리</pre></li>
+ * <li>작성일 : 2015-08-18 16:25:21</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class PEPB2BSaleMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPB2BSaleMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>B2B상품판매조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-18 16:25:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_STA_DTM [판매시작일자]
+	 *	- field : SELL_END_DTM [판매종료일자]
+	 *	- field : SELL_DEALCO_CD [판매처코드]
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : SALEPLC [매출처코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2B_SALE_LIST
+	 *		- field : SELL_DTM [판매일자]
+	 *		- field : SELL_CHG_DTM [변경일자]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SALEPLC_UKEY [매출처U.KEY코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : SELL_DEALCO_CD_UKEY [판매처U.KEY코드]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SALE_QTY [수량]
+	 *		- field : SELL_PRC [판매가]
+	 *		- field : SELL_PCOST [매입가]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [현금금액]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [변경전신용카드수납금액1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [변경전신용카드수납금액2]
+	 *		- field : CRDTCRD_PAY_AMT [카드금액]
+	 *		- field : TOT_PAY_AMT [수납계]
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : AFFIL_AGN [소속대리점코드]
+	 *		- field : AFFIL_ORG_ID [소속조직ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_NM [U.KEY 대리점]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)]
+	 *		- field : SLIP_DT [전표일자]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST [전표상태]
+	 *		- field : CNCL_SLIP_DT [취소전표일자]
+	 *		- field : CNCL_SLIP_NO [취소전표번호]
+	 *		- field : SLIP_TYPE [전표항목구분]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : SALEPLC_BLICENS_NO [매출처사업자번호]
+	 *		- field : SELL_BLICENS_NO [판매처사업자번호]
+	 *		- field : CUR_CL_CD [화폐 구분 코드]
+	 *		- field : XRATE_APPLY_AMT [환율 적용 금액]
+	 *		- field : XRATE_APPLY_DT [환율 적용 일자]
+	 *		- field : INVE_PCOST_SLIP_NO [원가전표번호]
+	 *		- field : SELL_TYP [판매구분]
+	 *		- field : SURTAX [부가세]
+	 *		- field : SELL_UPRC [공급가액]
+	 * </pre>
+	 */
+	public IDataSet pInqB2bSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSESBase", "fInqB2bSaleList", requestData, onlineCtx);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	    
+	    return responseData;
+	}
+
+    /**
+	 * <pre>B2B상품판매등록</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:25:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : FIX_PRC_YN [고정가여부]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : HLD_DEALCO_ID [보유처코드]
+	 *		- field : HLD_DEALCO_NM [보유처명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : SELL_MGMT_NO [판매번호]
+	 *		- field : IN_OUT_SEQ [입출고순번]
+	 *		- field : OUT_DEALCO_ID [출고거래처ID]
+	 *		- field : RMK [비고]
+	 *		- field : INVE_ST [재고상태]
+	 *		- field : EAPRV_COND_CD [전자결재조건코드]
+	 *		- field : OUT_CL [출고구분]
+	 *		- field : IN_OUT_CL [입출고구분]
+	 *		- field : IN_OUT_DTL_CL [입출고상세구분]
+	 *		- field : SELL_YN [판매여부]
+	 *		- field : TRMS_CL [전송구분]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 *	- record : RS_MASTER_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHRGR_ID [판매담당자ID]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SELL_CHG_DTM [판매변경일시]
+	 *		- field : SELL_CHGR_ID [판매변경자ID]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : XCL_DEALCO_NM [정산거래처명]
+	 *		- field : INVE_HLD_DEALCO_CD [재고보유거래처코드]
+	 *		- field : AGN_ORG_CD [대리점 조직코드]
+	 *		- field : AFFIL_AGN [팀(소속대리점)코드]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)명]
+	 *		- field : SELL_DEALCO_CD [판매거래처코드]
+	 *		- field : SELL_DEALCO_NM [판매거래처명]
+	 *		- field : SELL_CHG_DEALCO_CD [판매변경거래처코드]
+	 *		- field : EQP_STTL_COND [단말기결제조건]
+	 *		- field : RMK [비고]
+	 *		- field : DCLS_YN [일마감여부]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : ATFIL_ID [첨부파일ID]
+	 *		- field : FLAG [구분]
+	 *		- field : TRMS_YN [전송여부]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *	- record : RS_PAYMENT_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : BCHG_SELL_PRC_CASH_RECV_AMT [변경전 판매 가격 현금 수납 금액]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [판매 가격 현금 수납 금액]
+	 *		- field : CHG_SELL_PRC_CASH_RECV_AMT [변경후 판매 가격 현금 수납 금액]
+	 *		- field : BCHG_SELL_PRC_CCARD_CO_1 [변경전 판매 가격 신용카드 회사 1]
+	 *		- field : SELL_PRC_CCARD_CO_1 [판매 가격 신용카드 회사 1]
+	 *		- field : BCHG_SELL_PRC_CCARD_RECV_AMT_1 [변경전 판매 가격 신용카드 수납 금액 1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [판매 가격 신용카드 수납 금액 1]
+	 *		- field : CHG_SELL_PRC_CCARD_RECV_AMT_1 [변경후 판매 가격 신용카드 수납 금액 1]
+	 *		- field : CCARD_XCL_CONF_YN_1 [신용카드 정산 확정 여부 1]
+	 *		- field : CCARD_XCL_CONF_DT_1 [신용카드 정산 확정 일자 1]
+	 *		- field : BCHG_SELL_PRC_CCARD_CO_2 [변경전 판매 가격 신용카드 회사 2]
+	 *		- field : SELL_PRC_CCARD_CO_2 [판매 가격 신용카드 회사 2]
+	 *		- field : BCHG_SELL_PRC_CCARD_RECV_AMT_2 [변경전 판매 가격 신용카드 수납 금액 2]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [판매 가격 신용카드 수납 금액 2]
+	 *		- field : CHG_SELL_PRC_CCARD_RECV_AMT_2 [변경후 판매 가격 신용카드 수납 금액 2]
+	 *		- field : CCARD_XCL_CONF_YN_2 [신용카드 정산 확정 여부 2]
+	 *		- field : CCARD_XCL_CONF_DT_2 [신용카드 정산 확정 일자 2]
+	 *		- field : BCHG_INVE_AMT [변경전 재고 금액]
+	 *		- field : INVE_AMT [재고 금액]
+	 *		- field : CHG_INVE_AMT [변경후 재고 금액]
+	 *		- field : BCHG_MRGN_AMT [변경전 마진 금액]
+	 *		- field : MRGN_AMT [마진 금액]
+	 *		- field : CHG_MRGN_AMT [변경후 마진 금액]
+	 *		- field : BCHG_CMMS_AMT [변경전 수수료 금액]
+	 *		- field : CMMS_AMT [수수료 금액]
+	 *		- field : CHG_CMMS_AMT [변경후 수수료 금액]
+	 *		- field : BCHG_SURTAX_AMT [변경전 부가세 금액]
+	 *		- field : SURTAX_AMT [부가세 금액]
+	 *		- field : CHG_SURTAX_AMT [변경후 부가세 금액]
+	 *		- field : BCHG_SELL_AMT [변경전 판매금액]
+	 *		- field : SELL_AMT [판매금액]
+	 *		- field : CHG_SELL_AMT [변경후 판매금액]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : CUR_CL_CD [화폐 구분 코드]
+	 *		- field : XRATE_APPLY_AMT [환율 적용 금액]
+	 *		- field : XRATE_APPLY_DT [환율 적용 일자]
+	 *	- record : RS_DEL_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : SPLST_YN [고정가여부]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : HLD_DEALCO_ID [보유처코드]
+	 *		- field : HLD_DEALCO_NM [보유처명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : PROD_IN_MGMT_NO [입고관리번호]
+	 *		- field : IN_OUT_SEQ [입출고순번]
+	 *		- field : PROD_IN_SEQ [입고순번]
+	 *		- field : IN_DEALCO_ID [입고거래처ID]
+	 *		- field : RMK [비고]
+	 *		- field : SELL_MGMT_NO [판매번호]
+	 *		- field : TRMS_CL [전송구분]
+	 *		- field : USERNO [사용자번호]
+	 *		- field : IN_CL [입고구분]
+	 *		- field : IN_ST [입고상태]
+	 *		- field : IN_OUT_CL [입출고구분]
+	 *		- field : IN_OUT_DTL_CL [입출고상세구분]
+	 *		- field : INVE_ST [재고상태]
+	 *		- field : SELL_YN [판매여부]
+	 *	- record : NC_FILE_LIST
+	 *		- field : fullpath [파일경로]
+	 *		- field : UPLD_FILE_NO [파일번호]
+	 *		- field : FILE_ID [파일ID]
+	 *		- field : FILE_NM [파일명]
+	 *		- field : FILE_TYP_VAL [파일타입]
+	 *		- field : FILE_SIZE [파일크기]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종등록자ID]
+	 *		- field : LS_CHG_DTM [최종등록일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveB2bSale(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            
+            //파일업로드 DB삭제 FM호출
+            if(!StringUtils.isEmpty(requestData.getField("UPLD_FILE_NO"))) {
+                callSharedBizComponentByDirect("sc.SCSBase", "fDelUpFileInfo", requestData, onlineCtx);
+            }
+            
+            IRecordSet upFileListRs = requestData.getRecordSet(DmsConstants.UPLOAD_FILE_LIST);
+            if(upFileListRs.getRecordCount() == 0) {
+                requestData.putField("UPLD_FILE_NO", "");
+            } else {
+                //파일업로드 DB등록 FM호출
+                requestData.putField("USER_NO", ca.getUserNo());
+                IDataSet fileInfo = callSharedBizComponentByDirect("sc.SCSBase", "fRegUpFileInfo", requestData, onlineCtx);
+                requestData.putField("UPLD_FILE_NO", fileInfo.getField("UPLD_FILE_NO"));
+            }
+            
+            callSharedBizComponentByDirect("ep.EPSESBase", "fRegB2bSaleSave", requestData, onlineCtx);
+                
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B상품판매등록상세조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:25:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : GNRL_SELL_NO [일반판매번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2B_MASTER_DTL
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHRGR_ID [판매담당자ID]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SELL_CHG_DTM [판매변경일시]
+	 *		- field : SELL_CHGR_ID [판매변경자ID]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : XCL_DEALCO_NM [정산거래처명]
+	 *		- field : INVE_HLD_DEALCO_CD [재고보유거래처코드]
+	 *		- field : AGN_ORG_CD [대리점조직코드]
+	 *		- field : AFFIL_AGN [팀(소속대리점)코드]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)명]
+	 *		- field : SELL_DEALCO_CD [판매거래처코드]
+	 *		- field : SELL_DEALCO_NM [판매거래처명]
+	 *		- field : SELL_CHG_DEALCO_CD [판매변경거래처코드]
+	 *		- field : EQP_STTL_COND [단말기결제조건]
+	 *		- field : RMK [비고]
+	 *		- field : DCLS_YN [일마감여부]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : ATFIL_ID [첨부파일ID]
+	 *		- field : FLAG [구분]
+	 *		- field : TRMS_YN [전송여부]
+	 *		- field : XCL_SLIP_NO [전표번호]
+	 *		- field : XCL_SLIP_ST [전표상태]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *	- record : RS_B2B_ITEM_DTL
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : FIX_PRC_YN [고정가여부]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : MFACT_NM [제조사명]
+	 *		- field : HLD_DEALCO_ID [보유처코드]
+	 *		- field : HLD_DEALCO_NM [보유처명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : XCL_SLIP_DT [전표일자]
+	 *		- field : XCL_SLIP_NO [전표번호]
+	 *		- field : XCL_SLIP_ST [전표상태]
+	 *		- field : XCL_CNCL_SLIP_DT [취소전표일자]
+	 *		- field : XCL_CNCL_SLIP_NO [취소전표번호]
+	 *		- field : SALEPLC [매출처]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 *		- field : INVE_PCOST_SLIP_NO [원가전표번호]
+	 *	- record : RS_B2B_PAYMENT_DTL
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : BCHG_SELL_PRC_CASH_RECV_AMT [변경전 판매 가격 현금 수납 금액]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [판매 가격 현금 수납 금액]
+	 *		- field : CHG_SELL_PRC_CASH_RECV_AMT [변경후 판매 가격 현금 수납 금액]
+	 *		- field : BCHG_SELL_PRC_CCARD_CO_1 [변경전 판매 가격 신용카드 회사 1]
+	 *		- field : SELL_PRC_CCARD_CO_1 [판매 가격 신용카드 회사 1]
+	 *		- field : BCHG_SELL_PRC_CCARD_RECV_AMT_1 [변경전 판매 가격 신용카드 수납 금액 1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [판매 가격 신용카드 수납 금액 1]
+	 *		- field : CHG_SELL_PRC_CCARD_RECV_AMT_1 [변경후 판매 가격 신용카드 수납 금액 1]
+	 *		- field : CCARD_XCL_CONF_YN_1 [신용카드 정산 확정 여부 1]
+	 *		- field : CCARD_XCL_CONF_DT_1 [신용카드 정산 확정 일자 1]
+	 *		- field : BCHG_SELL_PRC_CCARD_CO_2 [변경전 판매 가격 신용카드 회사 2]
+	 *		- field : SELL_PRC_CCARD_CO_2 [판매 가격 신용카드 회사 2]
+	 *		- field : BCHG_SELL_PRC_CCARD_RECV_AMT_2 [변경전 판매 가격 신용카드 수납 금액 2]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [판매 가격 신용카드 수납 금액 2]
+	 *		- field : CHG_SELL_PRC_CCARD_RECV_AMT_2 [변경후 판매 가격 신용카드 수납 금액 2]
+	 *		- field : CCARD_XCL_CONF_YN_2 [신용카드 정산 확정 여부 2]
+	 *		- field : CCARD_XCL_CONF_DT_2 [신용카드 정산 확정 일자 2]
+	 *		- field : BCHG_INVE_AMT [변경전 재고 금액]
+	 *		- field : INVE_AMT [재고 금액]
+	 *		- field : CHG_INVE_AMT [변경후 재고 금액]
+	 *		- field : BCHG_MRGN_AMT [변경전 마진 금액]
+	 *		- field : MRGN_AMT [마진 금액]
+	 *		- field : CHG_MRGN_AMT [변경후 마진 금액]
+	 *		- field : BCHG_CMMS_AMT [변경전 수수료 금액]
+	 *		- field : CMMS_AMT [수수료 금액]
+	 *		- field : CHG_CMMS_AMT [변경후 수수료 금액]
+	 *		- field : BCHG_SURTAX_AMT [변경전 부가세 금액]
+	 *		- field : SURTAX_AMT [부가세 금액]
+	 *		- field : CHG_SURTAX_AMT [변경후 부가세 금액]
+	 *		- field : BCHG_SELL_AMT [변경전 판매금액]
+	 *		- field : SELL_AMT [판매금액]
+	 *		- field : CHG_SELL_AMT [변경후 판매금액]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : UKEY_AGN_CD [UKEY대리점코드]
+	 *		- field : CUR_CL_CD [화폐 구분 코드]
+	 *		- field : XRATE_APPLY_AMT [환율 적용 금액]
+	 *		- field : XRATE_APPLY_DT [환율 적용 일자]
+	 *	- record : RS_B2B_REPORT_DTL
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : MFACT_NM [제조사명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : CNT [수량]
+	 *		- field : SELL_PRC [판매가]
+	 *		- field : SURTAX [부가세]
+	 *	- record : NC_FILE_LIST
+	 *		- field : UPLD_FILE_NO [업로드파일번호]
+	 *		- field : FILE_ID [파일ID]
+	 *		- field : FILE_NM [파일명]
+	 *		- field : FILE_TYP_VAL [파일유형값]
+	 *		- field : FILE_SIZE [파일크기]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqB2bSaleSaveDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSESBase", "fInqB2bSaleSaveDtl", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B상품판매등록전송여부조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:25:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_MASTER_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매번호순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_TRMS_YN
+	 *		- field : TRMS_YN [전송여부]
+	 * </pre>
+	 */
+	public IDataSet pInqB2bSaleTrmsYn(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            
+            requestData.putFieldMap(requestData.getRecordSet("RS_MASTER_LIST").getRecordMap(0));
+            
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSESBase", "fInqB2bSaleTrmsYn", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B상품판매취소조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:25:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_DEALCO_CD [판매처]
+	 *	- field : SALEPLC [매출처]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : PROD_SER_NO [상품일련번호]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2B_CNCL_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SELL_DEALCO_CD [판매처코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : RMK [비고]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 * </pre>
+	 */
+	public IDataSet pInqB2bSaleCnclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSESBase", "fInqB2bSaleCnclList", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B상품판매취소</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:25:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_DEL_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SELL_DEALCO_CD [판매처코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : PROD_IN_MGMT_NO [입고관리번호]
+	 *		- field : IN_OUT_SEQ [입출고순번]
+	 *		- field : PROD_IN_SEQ [입고순번]
+	 *		- field : IN_DEALCO_ID [입고거래처ID]
+	 *		- field : RMK [비고]
+	 *		- field : SELL_MGMT_NO [판매번호]
+	 *		- field : TRMS_CL [전송구분]
+	 *		- field : USERNO [사용자번호]
+	 *		- field : IN_CL [입고구분]
+	 *		- field : IN_ST [입고상태]
+	 *		- field : IN_OUT_CL [입출고구분]
+	 *		- field : IN_OUT_DTL_CL [입출고상세구분]
+	 *		- field : INVE_ST [재고상태]
+	 *		- field : SELL_YN [판매여부]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveB2bSaleCncl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            callSharedBizComponentByDirect("ep.EPSESBase", "fRegB2bSaleCncl", requestData, onlineCtx);
+            
+            // 2. 결과값 리턴
+            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+  
+}

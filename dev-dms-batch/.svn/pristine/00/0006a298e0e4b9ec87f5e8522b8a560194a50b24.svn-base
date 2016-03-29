@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.EPR002">
+	<select id="SBondSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR002.SBondSlip 채권전표조회 */
+/* IO: 진병수,2015-12-01T10:44:37(진병수,2015-11-27T14:06:36) */
+SELECT A.*
+     , A.BOND_BIZ_REG_NO          AS BIZ_REG_NO
+     , A.BOND_DEALCO_FISCL_ST_CD  AS AS_IS_FISCL_ST_CD      
+     , NULL                       AS DEALCO_FISCL_ST_CD
+  FROM TB_XCL_BOND A
+     ,  (
+        SELECT *
+          FROM TB_SLIP
+         WHERE NVL(SLIP_ST_CD, '05') = '05'
+        )      S
+ WHERE S.SLIP_NO (+) = A.BOND_SLIP_NO
+   AND BOND_XCL_YM  BETWEEN SUBSTR(#FROM_DATE#,1,6) AND SUBSTR(#TO_DATE#,1,6)]]>
+	</select>
+	<update id="UBond" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR002.UBond 채권거래처ERP상태동기화 */
+/* IO: 진병수,2015-11-27T14:24:13(진병수,2015-11-27T14:21:45) */
+UPDATE TB_XCL_BOND
+   SET BOND_DEALCO_FISCL_ST_CD = #DEALCO_FISCL_ST_CD#
+ WHERE BOND_XCL_YM    = #BOND_XCL_YM#
+   AND BOND_DEALCO_CD = #BOND_DEALCO_CD#
+   AND XCL_CL         = #XCL_CL#
+   AND XCL_ITM_CL     = #XCL_ITM_CL#
+   AND BOND_SALE_TS   = #BOND_SALE_TS#]]>
+	</update>
+	<select id="SSaleAsmptSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR002.SSaleAsmptSlip 매출추정전표조회 */
+/* IO: 진병수,2015-11-30T17:37:15(진병수,2015-11-27T14:06:36) */
+SELECT A.*
+     , A.NEW_CNTRTR_BIZ_REG_NO    AS BIZ_REG_NO
+     , A.SALE_DEALCO_FISCL_ST_CD  AS AS_IS_FISCL_ST_CD      
+     , NULL                       AS DEALCO_FISCL_ST_CD
+  FROM TB_SALE_ASMPT A
+     ,  (
+        SELECT *
+          FROM TB_SLIP
+         WHERE NVL(SLIP_ST_CD, '05') = '05'
+        )      S
+ WHERE A.SALE_ASMPT_CONF_CL = NVL(SALE_ASMPT_CONF_CL, #SALE_ASMPT_CONF_CL#)
+   AND SALE_ASMPT_YM  BETWEEN SUBSTR(#FROM_DATE#,1,6) AND SUBSTR(#TO_DATE#,1,6)
+   AND S.SLIP_NO (+) = A.ASMPT_SLIP_NO]]>
+	</select>
+	<update id="USaleAsmpt" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR002.USaleAsmpt 매출추정거래처ERP상태동기화 */
+/* IO: 진병수,2015-11-27T14:51:25(진병수,2015-11-27T14:21:45) */
+UPDATE TB_SALE_ASMPT
+   SET SALE_DEALCO_FISCL_ST_CD = #DEALCO_FISCL_ST_CD#
+ WHERE SALE_ASMPT_CONF_CL =  #SALE_ASMPT_CONF_CL#
+   AND SALE_ASMPT_YM      =  #SALE_ASMPT_YM#
+   AND SALE_ASMPT_YM_TS   =  #SALE_ASMPT_YM_TS#
+   AND SALE_ASMPT_SEQ     =  #SALE_ASMPT_SEQ#]]>
+	</update>
+	<select id="SDealco" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR002.SDealco 거래처조회 */
+/* IO: 진병수,2015-12-01T10:46:54(진병수,2015-11-30T16:28:04) */
+SELECT A.*
+     , A.DEALCO_BLICENS_NO    AS BIZ_REG_NO
+     , A.DEALCO_FISCL_ST_CD   AS AS_IS_FISCL_ST_CD      
+     , NULL                   AS DEALCO_FISCL_ST_CD
+  FROM TB_DEALCO A
+ WHERE ( TO_CHAR(LS_CHG_DTM, 'YYYYMMDD') BETWEEN #FROM_DATE# AND #TO_DATE# OR DEALCO_FISCL_ST_CD IS NULL )]]>
+	</select>
+	<update id="UDealco" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR002.UDealco 거래처ERP거래처상태동기화 */
+/* IO: 진병수,2015-12-01T10:39:00(진병수,2015-11-30T16:31:59) */
+UPDATE TB_DEALCO
+   SET DEALCO_FISCL_ST_CD = #DEALCO_FISCL_ST_CD#
+ WHERE DEALCO_CD = #DEALCO_CD#]]>
+	</update>
+</sqlMap>

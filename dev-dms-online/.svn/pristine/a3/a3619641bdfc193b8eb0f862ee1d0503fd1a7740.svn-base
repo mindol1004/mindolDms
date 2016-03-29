@@ -1,0 +1,282 @@
+package dms.nr.nrbcsbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]상담관리</li>
+ * <li>설  명 : <pre>[PU]상담관리</pre></li>
+ * <li>작성일 : 2015-08-06 10:47:05</li>
+ * <li>작성자 : 박홍서 (uni9401)</li>
+ * </ul>
+ *
+ * @author 박홍서 (uni9401)
+ */
+public class PNRCnslMngt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRCnslMngt(){
+		super();
+	}
+
+    /**
+	 * <pre>가입현황 리스트 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-08-06 10:47:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_FR_DTM [계약시작일자]
+	 *	- field : CNTRT_TO_DTM [계약종료일자]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : AGN_NM [대리점명]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SCRB_PG
+	 *		- field : NR_CNTRT_DT [계약일자]
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : NR_CNTRTR_NM [가입자명]
+	 *		- field : SVC_NO [핸드폰번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : RENTAL_SER_NUM [렌탈일련번호]
+	 *		- field : DMS_PEN_AMT [위약금]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : AGN_NM [대리점명]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqScrbPrstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 1. FM 호출 ("RS_SCRB_PG")
+            responseData = callSharedBizComponentByDirect("nr.NRSCSBase", "fInqScrbPrstLst", requestData, onlineCtx);
+            // 2. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>가입현황 리스트 모두 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-08-06 10:47:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_FR_DTM [계약시작일자]
+	 *	- field : CNTRT_TO_DTM [계약종료일자]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : AGN_NM [대리점명]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SCRB_LST
+	 *		- field : NR_CNTRT_DT [계약일자]
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : NR_CNTRTR_NM [가입자명]
+	 *		- field : SVC_NO [핸드폰번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : RENTAL_SER_NUM [렌탈일련번호]
+	 *		- field : DMS_PEN_AMT [위약금]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : AGN_NM [대리점명]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqScrbPrstLstAll(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 1. FM 호출 ("RS_SCRB_LST")
+            responseData = callSharedBizComponentByDirect("nr.NRSCSBase", "fInqScrbPrstLstAll", requestData, onlineCtx);
+            // 2. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>가입현황 상세조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-08-06 10:47:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_NO [계약번호]
+	 *	- field : CNSL_BRWS_TYP [상담조회유형]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_MAIN
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : RENTAL_SER_NUM [렌탈일련번호]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : DMG_CMP_POLY_NO [손해배상금정책번호]
+	 *		- field : PEN_POLY_NO [위약금정책번호]
+	 *		- field : RENTAL_POLY_NO [렌탈정책번호]
+	 *		- field : CTT_PRD [내용연수]
+	 *		- field : RENTAL_CNTRT_STA_DT [렌탈계약시작일자]
+	 *		- field : RENTAL_CNTRT_END_DT [렌탈계약종료일자]
+	 *		- field : MTH_RENTAL_FEE [월렌탈료]
+	 *		- field : OP_PROC_DT [업무처리일자]
+	 *		- field : NR_CNTRT_DT [신규계약일자]
+	 *		- field : NC_RMK [계약비고]
+	 *		- field : PP_APLY_DT [위약금정책적용일자]
+	 *		- field : PP_EFF_PRD_FR_DT [위약금정책유효기간시작일자]
+	 *		- field : PP_EFF_PRD_TO_DT [위약금정책유효기간종료일자]
+	 *		- field : TOT_RENTAL_FEE_RT [총렌탈료비율]
+	 *		- field : REM_RENTAL_FEE_RT [잔여렌탈료비율]
+	 *		- field : DAY_RENTAL_FEE_RT [일렌탈료비율]
+	 *		- field : RENTAL_FEE_RT [렌탈료비율]
+	 *		- field : PEN_POLY_CL [위약금정책구분]
+	 *		- field : RP_OCCR_DT [위약금발생일]
+	 *		- field : DMS_PEN_AMT [DMS위약금]
+	 *		- field : UKEY_PEN_AMT [UKEY위약금]
+	 *		- field : RP_PAY_AMT [위약금수납금액]
+	 *		- field : PP_RMK [위약금청책비고]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : AGN_NM [대리점명]
+	 *		- field : POS_AGENCY [소속대리점코드]
+	 *		- field : POS_AGENCY_NM [소속대리점명]
+	 *		- field : DEAL_TEL_NO [전화번호]
+	 *		- field : DEAL_EML_ADDR [이메일주소]
+	 *		- field : PRPB_NM [담당자명]
+	 *		- field : PRPB_MBL_PHON [담당자이동전화]
+	 *		- field : NR_CNTRTR_NM [계약자성명]
+	 *		- field : NR_CNTRTR_BIRTH [계약자생년월일]
+	 *		- field : CUST_TYP [고객유형]
+	 *		- field : NR_CNTRTR_POST_NO [계약자우편번호]
+	 *		- field : NR_CNTRTR_INV_ADDR [계약자청구주소]
+	 *		- field : NR_CNTRTR_INV_ADDR_DTL [계약자청구주소상세]
+	 *		- field : LEGAL_REPVE_NM [대리인성명]
+	 *		- field : LEGAL_REPVE_BIRTH [대리인생년월일]
+	 *		- field : LEGAL_REPVE_CUST_TYP [대리인고객유형]
+	 *		- field : LEGAL_REPVE_CORP_NUM [대리인법인번호]
+	 *		- field : LEGAL_REPVE_REL [대리인관계]
+	 *		- field : EQP_RTN_YN [단말기반납여부]
+	 *		- field : NM_CHG_YN [명의변경여부]
+	 *		- field : EQP_CHG_YN [기기변경여부]
+	 *		- field : LEGAL_REPVE_YN [대리인변경여부]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : CAPA_CD [저장용량]
+	 *		- field : FST_RGST_DT [출시일자]
+	 *		- field : ESI_USE_YN [단말기기준정보사용여부]
+	 *		- field : MDL_NO [모델번호]
+	 *		- field : COLOR_CD [색상코드]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 *	- record : RS_SUB
+	 *		- field : APPLF_TYP [신청서유형]
+	 *		- field : APPLF_SUBMIT_DTM [신청서제출일시]
+	 *	- record : RS_SUB1
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : CNSL_MEMO_SEQ [상담메모순번]
+	 *		- field : CNSL_BRWS_TYP [상담조회유형]
+	 *		- field : CNSL_MEMO [상담메모]
+	 * </pre>
+	 */
+	public IDataSet pInqScrbPrstDetl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 1. FM 호출 ("RS_MAIN")
+            responseData = callSharedBizComponentByDirect("nr.NRSCSBase", "fInqScrbPrstDetl", requestData, onlineCtx);
+            //(RS_SUB)
+            responseData.putRecordSet(callSharedBizComponentByDirect("nr.NRSCSBase", "fInqApplfSubmitDtmLst", requestData, onlineCtx).getRecordSet("RS_SUB"));
+            //(RS_SUB1)
+            responseData.putRecordSet(callSharedBizComponentByDirect("nr.NRSCSBase", "fInqCnslMemoLst", requestData, onlineCtx).getRecordSet("RS_SUB1"));
+            // 2. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>상담메모 저장</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-08-06 10:47:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SUB1
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : CNSL_MEMO_SEQ [상담메모순번]
+	 *		- field : CNSL_BRWS_TYP [상담조회유형]
+	 *		- field : CNSL_MEMO [상담메모]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveNrCnslMemo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IRecordSet rs = requestData.getRecordSet("RS_SUB1");
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try {
+            // 2. 입력 RS설정
+            for (int i=0; i<rs.getRecordCount(); i++) {
+                requestData.putFieldMap(rs.getRecordMap(i));
+                requestData.putField("USER_NO", ca.getUserNo());
+                callSharedBizComponentByDirect("nr.NRSCSBase", "fRegNrCnslMemo", requestData, onlineCtx);
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 4. 결과값 리턴
+        responseData.setOkResultMessage("DMS00000", null); // 정상 처리되었습니다.
+        return responseData;
+    }
+  
+}

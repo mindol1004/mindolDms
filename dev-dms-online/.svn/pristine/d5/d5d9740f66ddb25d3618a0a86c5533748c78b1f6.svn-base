@@ -1,0 +1,215 @@
+package dms.pr.prbimbase.biz;
+
+import java.util.Map;
+import java.util.Vector;
+
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]임대폰출고회수관리</li>
+ * <li>설  명 : <pre>임대폰출고회수관리</pre></li>
+ * <li>작성일 : 2015-07-24 13:17:17</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class PPRReqpInveInfoSend extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PPRReqpInveInfoSend(){
+		super();
+	}
+
+	/**
+	 * <pre>임대폰재고조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-24 13:17:17
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_IN_DT [조회입고시작일]
+	 *	- field : END_IN_DT [조회입고종료일]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : STA_RENT_IN_DT [조회렌트시작기간시작]
+	 *	- field : END_RENT_IN_DT [조회렌트시작기간종료]
+	 *	- field : RENT_APRV_YN [렌트승인여부]
+	 *	- field : BOX_NO [BOX_NO]
+	 *	- field : EQP_SER_NO [일련번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_IN_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_IMEI_NO [단말기IMEI번호]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : FST_IN_DT [최초입고일자]
+	 *		- field : PRCH_DT [매입일자]
+	 *		- field : LAST_EXPART_DT [최종교품일자]
+	 *		- field : IN_OUT_GUBUN_CD [입출고구분코드]
+	 *		- field : LAST_IN_OUT_NO [최종입출고번호]
+	 *		- field : LOSS_DT [분실일자]
+	 *		- field : BOX_NO [BOX NO]
+	 *		- field : EQP_IN_NO [단말기입고번호]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : IN_DT [입고일자]
+	 *		- field : IN_DTL_CD [입고상세코드]
+	 *		- field : IN_DEALCO_CD [입고처코드]
+	 *		- field : CHRG_DEPT_CD [담당부서코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : CM_CD_NM [재고상태 코드명]
+	 *		- field : EQP_REMPRC [단말기잔존가]
+	 * </pre>
+	 */
+	public IDataSet pInqReqpInveLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		
+		try {
+			// FM 호출
+			responseData = callSharedBizComponentByDirect("pr.PRSIMBase", "fInqReqpInveLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		//  결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+		return responseData;
+  
+	}
+
+	/**
+	 * <pre>임대폰출고단말기계약상태저장</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-24 13:17:17
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CNTRT_LIST
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : RENT_STA_DT [렌트시작일자]
+	 *		- field : RENT_END_SCHD_DT [렌트종료예정일자]
+	 *		- field : RENT_END_DT [렌트종료일자]
+	 *		- field : RENT_APRV_YN [렌트승인여부]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_IN_LIST2
+	 *		- field : ROWNO [필드1]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_IMEI_NO [단말기IMEI번호]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : FST_IN_DT [최초입고일자]
+	 *		- field : PRCH_DT [단말기매입일자]
+	 *		- field : LAST_EXPART_DT [최종교품일자]
+	 *		- field : LAST_IN_OUT_NO [최종입출고번호]
+	 *		- field : LOSS_DT [단말기분실일자]
+	 *		- field : BOX_NO [BOXNO]
+	 *		- field : EQP_IN_NO [단말기입고번호]
+	 *		- field : IN_DT [단말기입고일자]
+	 *		- field : IN_DTL_CD [입고상세코드]
+	 *		- field : IN_DEALCO_CD [입고처코드]
+	 *		- field : CHRG_DEPT_CD [담당부서코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : RENT_STA_DT [렌트시작일자]
+	 *		- field : RENT_END_SCHD_DT [렌트종료예정일자]
+	 *		- field : RENT_END_DT [렌트종료일자]
+	 *		- field : RENT_APRV_YN [렌트승인여부]
+	 *		- field : EQP_REMPRC [단말기잔존가]
+	 *		- field : EQP_PRCH_AMT [단말기매입금액]
+	 * </pre>
+	 */
+	public IDataSet pSaveReqpOutCntrtStat(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();	
+	    IRecordSet rs = requestData.getRecordSet("RS_EQP_CNTRT_LIST");
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    
+	    IDataSet xclLst = new DataSet();   //recode
+	    IDataSet xclLstAll = new DataSet(); //recodeSet
+	    
+	    try {
+	    
+		    // 레코드셋 상태에 따른 분기
+	        
+		    for (int i=0; i<rs.getRecordCount(); i++) {
+				requestData.putFieldMap(rs.getRecordMap(i));
+				IRecord record = rs.getRecord(i);
+				requestData.putField("FS_REG_USER_ID", ca.getUserNo());
+				requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+	
+				if ( StringUtils.equals(DmsConstants.STATUS_INSERTED, record.get(DmsConstants.RECORD_STATUS)) ){ // INSERT
+					callSharedBizComponentByDirect("pr.PRSIMBase", "fRegReqpOutCntrtStat", requestData, onlineCtx);
+				}
+			    else if ( StringUtils.equals(DmsConstants.STATUS_UPDATED, record.get(DmsConstants.RECORD_STATUS)) ){
+					callSharedBizComponentByDirect("pr.PRSIMBase", "fUpdReqpOutCntrtStat", requestData, onlineCtx);
+				} 
+				//select - 등록후 엑셀 목록을 조회한다.
+				xclLst = callSharedBizComponentByDirect("pr.PRSIMBase", "fInqReqpInveLst2", requestData, onlineCtx);
+				
+				if(xclLst != null && xclLst.getRecordSetCount() > 0){
+                    for(int j = 0; j < xclLst.getRecordSet("RS_EQP_IN_LIST2").getRecordCount(); j++){
+                        if(xclLstAll == null || xclLstAll.getRecordSetCount() <= 0){
+                            xclLstAll.putRecordSet(xclLst.getRecordSet("RS_EQP_IN_LIST2"));
+                        }else{
+                            xclLstAll.getRecordSet("RS_EQP_IN_LIST2").addRecord(xclLst.getRecordSet("RS_EQP_IN_LIST2").getRecord(j));
+                        }
+                    }
+                }
+		      }//for
+		    if(xclLstAll != null && xclLstAll.getRecordSetCount() > 0){
+    		  responseData.putRecordSet(xclLstAll.getRecordSet("RS_EQP_IN_LIST2"));
+		    }
+		    
+
+			} catch ( BizRuntimeException e ) {
+				throw e;
+			} catch ( Exception e ) {
+				throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+			}
+			// 4. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+	
+	    return responseData;
+	}
+}

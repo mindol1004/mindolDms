@@ -1,0 +1,76 @@
+package dms.ep.epscsbase.biz;
+
+import java.util.Map;
+
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [DU]일반감정상담관리</li>
+ * <li>설  명 : <pre>[DU]일반감정상담관리</pre></li>
+ * <li>작성일 : 2015-08-31 11:01:22</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ *
+ * @author 김상오 (myneti99)
+ */
+public class DEPCnslMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DEPCnslMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>[DM]일반감정상담관리</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-31 11:02:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dInqCnslObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+	    try {       
+	    	IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+	    	
+	    	// 1.쿼리문 호출
+	    	IRecord record  = dbSelectSingle("SInqEqpInObjListTotCnt", requestData, onlineCtx);
+
+	    	reqDs.putField("TOTAL_CNT", record.get("TOTAL_CNT"));
+	    	int intTotalCnt = Integer.parseInt(record.get("TOTAL_CNT"));  
+	    	PagenateUtils.setPagenatedParamsToDataSet(reqDs);	//카운트 셋
+	    	
+	    	IRecordSet rsPagingList  = dbSelect("SInqEqpInObjListPaging", reqDs, onlineCtx);
+	    	// 2.결과값 셋팅
+            responseData.putRecordSet("RS_EQP_IN_OBJ_LIST", rsPagingList);
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);	//리스트 셋
+			
+            
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 	
+	    return responseData;
+	}
+  
+}

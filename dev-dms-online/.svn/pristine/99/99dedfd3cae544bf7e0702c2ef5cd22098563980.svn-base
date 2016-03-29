@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRRentalServCntrtMgmt">
+	<select id="SInqCmphsCntrtLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.SInqCmphsCntrtLst 포괄계약목록 */
+/* IO: 양재석,2015-07-30T17:08:55(양재석,2015-07-24T10:00:12) */
+SELECT CMPHS_CNTRT_NO	       /* 포괄계약번호 */
+       ,CMPHS_CNTRT_NM       /* 포괄계약명 */
+       ,CMPHS_CNTRT_STA_DT   /* 포괄계약시작일자 */
+       ,CMPHS_CNTRT_END_DT   /* 포괄계약종료일자 */
+  FROM TB_RENTPHON_CMPHS_CNTRT
+ WHERE DEL_YN = 'N'
+]]><isNotEmpty property="CMPHS_CNTRT_NM"><![CDATA[  
+   AND CMPHS_CNTRT_NM LIKE #CMPHS_CNTRT_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[  
+   AND CMPHS_CNTRT_STA_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[  
+   AND CMPHS_CNTRT_END_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+ ORDER BY CMPHS_CNTRT_STA_DT DESC]]>
+	</select>
+	<select id="SInqEqpCntrtLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.SInqEqpCntrtLst 단말기계약목록 */
+/* IO: 양재석,2015-07-29T17:41:25(양재석,2015-07-24T10:08:03) */
+SELECT A.CNTRT_NO  /* 계약번호 */
+       ,A.OP_CL_CD  /* 업무구분코드 */
+       ,A.CMPHS_CNTRT_NO  /* 포괄계약번호 */
+       ,A.RENTAL_POLY_NO  /* 렌탈정책번호 */
+       ,A.PEN_POLY_NO  /* 위약금정책번호 */
+       ,A.DMG_CMP_POLY_NO AS DMG_CMP_AMT_POLY_NO  /* 손해배상금정책번호 */
+       ,A.EQP_MDL_CD  /* 단말기모델코드 */
+       ,A.RENTAL_CNTRT_STA_DT AS CNTRT_STA_DT  /* 계약시작일자 */
+       ,A.RENTAL_CNTRT_END_DT AS CNTRT_END_DT  /* 계약종료일자 */
+       ,A.RENTAL_CNTRT_PRD AS CNTRT_PRD  /* 계약기간 */
+       ,A.MTH_RENTAL_FEE  /* 월렌탈료 */
+       ,A.RENTAL_QTY AS QTY  /* 수량 */
+       ,A.EQP_RE_CMC_CMMS AS RE_CMC_CMMS  /* 재상품화수수료 */
+       ,A.EQP_PRCH_AMT AS PRCH_PRC  /* 매입가 */
+       ,A.EQP_REM_PRC_AMT AS REM_PRC  /* 잔존가 */
+       ,A.EQP_ALLOT_CMMS AS ALLOT_CMMS  /* 할부수수료 */
+       ,A.RENTAL_CNTRT_RMK AS RMK  /* 비고 */
+       ,A.FS_REG_USER_ID  /* 최초등록사용자ID */
+       ,A.LS_CHG_USER_ID  /* 최종변경사용자ID */
+       ,B.EQP_MDL_NM
+  FROM TB_RENTAL_CNTRT A
+       ,TB_EQP_MDL B
+ WHERE A.DEL_YN = 'N'
+   AND A.CMPHS_CNTRT_NO = #CMPHS_CNTRT_NO#
+   AND A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+]]><isNotEmpty property="OP_CL_CD"><![CDATA[  
+   AND A.OP_CL_CD = #OP_CL_CD#
+]]></isNotEmpty><![CDATA[
+ ORDER BY B.EQP_MDL_NM]]>
+	</select>
+	<insert id="ICmphsCntrtRgst" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.ICmphsCntrtRgst 포괄계약등록 */
+/* IO: 양재석,2015-07-24T15:06:21(양재석,2015-07-24T13:52:16) */
+INSERT
+  INTO TB_RENTPHON_CMPHS_CNTRT
+     (
+       CMPHS_CNTRT_NO,
+       CMPHS_CNTRT_NM,
+       CMPHS_CNTRT_STA_DT,
+       CMPHS_CNTRT_END_DT,
+       FS_REG_USER_ID,
+       LS_CHG_USER_ID
+     )
+     VALUES
+     (
+       #CMPHS_CNTRT_NO#,
+       #CMPHS_CNTRT_NM#,
+       #CMPHS_CNTRT_STA_DT#,
+       #CMPHS_CNTRT_END_DT#,
+       #FS_REG_USER_ID#,
+       #LS_CHG_USER_ID#
+     )]]>
+	</insert>
+	<update id="DCmphsCntrtDel" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.DCmphsCntrtDel 포괄계약삭제 */
+/* IO: 양재석,2015-07-24T14:06:04(양재석,2015-07-24T14:02:18) */
+UPDATE TB_RENTPHON_CMPHS_CNTRT
+   SET DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE CMPHS_CNTRT_NO = #CMPHS_CNTRT_NO#]]>
+	</update>
+	<update id="UCmphsCntrtUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.UCmphsCntrtUpd 포괄계약수정 */
+/* IO: 양재석,2015-07-24T14:05:47(양재석,2015-07-24T14:05:47) */
+UPDATE TB_RENTPHON_CMPHS_CNTRT
+   SET CMPHS_CNTRT_NM = #CMPHS_CNTRT_NM#
+       ,CMPHS_CNTRT_STA_DT = #CMPHS_CNTRT_STA_DT#
+       ,CMPHS_CNTRT_END_DT = #CMPHS_CNTRT_END_DT#
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE CMPHS_CNTRT_NO = #CMPHS_CNTRT_NO#]]>
+	</update>
+	<select id="SCmphsCntrtNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.SCmphsCntrtNo 포괄계약일련번호조회 */
+/* IO: 양재석,2015-07-24T14:23:56(양재석,2015-07-24T14:23:56) */
+SELECT  'CC'||LPAD(SQ01_TB_RENTPHON_CMPHS_CNTRT.NEXTVAL,10,'0') AS CMPHS_CNTRT_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IEqpRentalCntrtRgst" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.IEqpRentalCntrtRgst 단말기렌탈계약등록 */
+/* IO: 양재석,2015-07-24T16:28:00(양재석,2015-07-24T16:28:00) */
+INSERT
+  INTO TB_RENTAL_CNTRT
+     (
+       CNTRT_NO,
+       OP_CL_CD,
+       CMPHS_CNTRT_NO,
+       RENTAL_POLY_NO,
+       PEN_POLY_NO,
+       DMG_CMP_POLY_NO,
+       EQP_MDL_CD,
+       RENTAL_CNTRT_STA_DT,
+       RENTAL_CNTRT_END_DT,
+       RENTAL_CNTRT_PRD,
+       MTH_RENTAL_FEE,
+       RENTAL_QTY,
+       EQP_RE_CMC_CMMS,
+       EQP_PRCH_AMT,
+       EQP_REM_PRC_AMT,
+       EQP_ALLOT_CMMS,
+       RENTAL_CNTRT_RMK,
+       FS_REG_USER_ID,
+       LS_CHG_USER_ID
+     )
+     VALUES
+     (
+       #CNTRT_NO#,
+       #OP_CL_CD#,
+       #CMPHS_CNTRT_NO#,
+       #RENTAL_POLY_NO#,
+       #PEN_POLY_NO#,
+       #DMG_CMP_AMT_POLY_NO#,
+       #EQP_MDL_CD#,
+       #CNTRT_STA_DT#,
+       #CNTRT_END_DT#,
+       #CNTRT_PRD#,
+       #MTH_RENTAL_FEE#,
+       #QTY#,
+       #RE_CMC_CMMS#,
+       #PRCH_PRC#,
+       #REM_PRC#,
+       #ALLOT_CMMS#,
+       #RMK#,
+       #FS_REG_USER_ID#,
+       #LS_CHG_USER_ID#
+     )]]>
+	</insert>
+	<update id="UEqpRentalCntrtUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.UEqpRentalCntrtUpd 단말기렌탈계약수정 */
+/* IO: 양재석,2015-07-24T16:35:32(양재석,2015-07-24T16:35:32) */
+UPDATE TB_RENTAL_CNTRT
+   SET OP_CL_CD             = #OP_CL_CD#
+       ,CMPHS_CNTRT_NO      = #CMPHS_CNTRT_NO#
+       ,RENTAL_POLY_NO      = #RENTAL_POLY_NO#
+       ,PEN_POLY_NO         = #PEN_POLY_NO#
+       ,DMG_CMP_POLY_NO     = #DMG_CMP_AMT_POLY_NO#
+       ,EQP_MDL_CD          = #EQP_MDL_CD#
+       ,RENTAL_CNTRT_STA_DT = #CNTRT_STA_DT#
+       ,RENTAL_CNTRT_END_DT = #CNTRT_END_DT#
+       ,RENTAL_CNTRT_PRD    = #CNTRT_PRD#
+       ,MTH_RENTAL_FEE      = #MTH_RENTAL_FEE#
+       ,RENTAL_QTY          = #QTY#
+       ,EQP_RE_CMC_CMMS     = #RE_CMC_CMMS#
+       ,EQP_PRCH_AMT        = #PRCH_PRC#
+       ,EQP_REM_PRC_AMT     = #REM_PRC#
+       ,EQP_ALLOT_CMMS      = #ALLOT_CMMS#
+       ,RENTAL_CNTRT_RMK    = #RMK#
+       ,LS_CHG_USER_ID      = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM          = SYSDATE
+ WHERE CNTRT_NO          = #CNTRT_NO#]]>
+	</update>
+	<update id="DEqpRentalCntrtDel" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.DEqpRentalCntrtDel 단말기렌탈계약삭제 */
+/* IO: 양재석,2015-07-24T16:37:42(양재석,2015-07-24T16:37:42) */
+UPDATE TB_RENTAL_CNTRT
+   SET DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE CNTRT_NO = #CNTRT_NO#]]>
+	</update>
+	<select id="SEqpRentalCntrtNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.SEqpRentalCntrtNo 단말기계약일련번호조회 */
+/* IO: 양재석,2015-07-24T16:58:57(양재석,2015-07-24T16:58:28) */
+SELECT  'RC'||LPAD(SQ01_TB_RENTAL_CNTRT.NEXTVAL,10,'0') AS CNTRT_NO
+  FROM  DUAL]]>
+	</select>
+	<select id="SInqEqpCntrtCmptUprcLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.SInqEqpCntrtCmptUprcLst 단말기계약구성품단가조회 */
+/* IO: 양재석,2015-07-28T11:35:15(양재석,2015-07-27T18:21:18) */
+SELECT A.CNTRT_NO
+       ,A.CMPT_CD
+       ,A.CMPT_UPRC
+       ,A.RTN_ITM_YN
+       ,'1' AS CHECKED
+  FROM TB_CMPT_UPRC A
+       ,TB_RENTAL_CNTRT B
+ WHERE A.CNTRT_NO = B.CNTRT_NO
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+]]><isNotEmpty property="CNTRT_NO"><![CDATA[  
+   AND A.CNTRT_NO = #CNTRT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="OP_CL_CD"><![CDATA[  
+   AND B.OP_CL_CD = #OP_CL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<insert id="IEqpCntrtCmptUprcRgst" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.IEqpCntrtCmptUprcRgst 단말기계약구성품단가등록 */
+/* IO: 양재석,2015-07-28T09:24:20(양재석,2015-07-28T09:24:20) */
+INSERT
+INTO TB_CMPT_UPRC
+     (
+       CMPT_CD,                /* 구성품코드       */
+       CNTRT_NO,               /* 계약번호         */
+       CMPT_UPRC,              /* 구성품단가       */
+       RTN_ITM_YN,             /* 반납품목여부     */
+       FS_REG_USER_ID,         /* 최초등록사용자ID */
+       LS_CHG_USER_ID          /* 최종변경사용자ID */
+     )
+     VALUES
+     (
+       #CMPT_CD#,
+       #CNTRT_NO#,
+       #CMPT_UPRC#,
+       #RTN_ITM_YN#,
+       #FS_REG_USER_ID#,
+       #LS_CHG_USER_ID#
+     )]]>
+	</insert>
+	<update id="DEqpCntrtCmptUprcDel" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.DEqpCntrtCmptUprcDel 단말기계약구성품단가삭제 */
+/* IO: 양재석,2015-07-28T09:30:56(양재석,2015-07-28T09:30:56) */
+UPDATE TB_CMPT_UPRC
+   SET DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE CNTRT_NO = #CNTRT_NO#
+]]><isNotEmpty property="CMPT_CD"><![CDATA[  
+   AND CMPT_CD = #CMPT_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</update>
+	<update id="UEqpCntrtCmptUprcUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.UEqpCntrtCmptUprcUpd 단말기계약구성품단가수정 */
+/* IO: 양재석,2015-07-28T11:31:20(양재석,2015-07-28T11:31:20) */
+UPDATE TB_CMPT_UPRC
+   SET CMPT_UPRC = #CMPT_UPRC#
+       ,RTN_ITM_YN = #RTN_ITM_YN#
+       ,DEL_YN = #DEL_YN#
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE CNTRT_NO = #CNTRT_NO#
+   AND CMPT_CD = #CMPT_CD#]]>
+	</update>
+	<select id="SInqEqpCntrtCmptUprcDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.SInqEqpCntrtCmptUprcDtlLst 단말기계약구성품단가세부목록 */
+/* IO: 양재석,2015-07-28T12:27:46(양재석,2015-07-28T11:37:52) */
+SELECT CNTRT_NO
+       ,CMPT_CD
+       ,CMPT_UPRC
+       ,RTN_ITM_YN
+       ,DEL_YN
+  FROM TB_CMPT_UPRC
+ WHERE CNTRT_NO = #CNTRT_NO#
+   AND CMPT_CD = #CMPT_CD#
+]]><isNotEmpty property="DEL_YN"><![CDATA[  
+   AND DEL_YN = #DEL_YN#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqRentRCntrtLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.SInqRentRCntrtLst 임대R계약검색 */
+/* IO: 양재석,2015-07-30T10:58:34(양재석,2015-07-29T10:09:00) */
+SELECT A.CMPHS_CNTRT_NM        /* 계약명 */
+       ,A.CMPHS_CNTRT_STA_DT
+       ,A.CMPHS_CNTRT_END_DT
+       ,B.CNTRT_NO              /* 계약번호 */
+       ,B.EQP_MDL_CD
+       ,C.EQP_MDL_NM
+       ,B.RENTAL_CNTRT_PRD AS CNTRT_PRD
+  FROM TB_RENTPHON_CMPHS_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_MDL C
+ WHERE A.CMPHS_CNTRT_NO = B.CMPHS_CNTRT_NO
+   AND B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+]]><isNotEmpty property="CMPHS_CNTRT_NM"><![CDATA[  
+   AND A.CMPHS_CNTRT_NM LIKE #CMPHS_CNTRT_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[  
+   AND B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<update id="IUEqpCntrtCmptUprcUpdRgst" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prbxmbase.db.DPRRentalServCntrtMgmt.IUEqpCntrtCmptUprcUpdRgst 단말기계약구성품단가수정및등록 */
+/* IO: 양재석,2015-07-30T08:55:29(양재석,2015-07-29T17:05:15) */
+MERGE INTO TB_CMPT_UPRC A
+     USING DUAL
+        ON (
+           A.CNTRT_NO = #CNTRT_NO#
+       AND A.CMPT_CD = #CMPT_CD#
+           )
+WHEN MATCHED THEN
+    UPDATE
+       SET CMPT_UPRC = #CMPT_UPRC#
+           ,RTN_ITM_YN = #RTN_ITM_YN#
+           ,DEL_YN = #DEL_YN#
+           ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+           ,LS_CHG_DTM = SYSDATE
+WHEN NOT MATCHED THEN
+    INSERT (
+           CMPT_CD                /* 구성품코드       */
+           ,CNTRT_NO               /* 계약번호         */
+           ,CMPT_UPRC              /* 구성품단가       */
+           ,RTN_ITM_YN             /* 반납품목여부     */
+           ,FS_REG_USER_ID         /* 최초등록사용자ID */
+           ,LS_CHG_USER_ID          /* 최종변경사용자ID */
+           )
+    VALUES
+           (
+           #CMPT_CD#
+           ,#CNTRT_NO#
+           ,#CMPT_UPRC#
+           ,#RTN_ITM_YN#
+           ,#FS_REG_USER_ID#
+           ,#LS_CHG_USER_ID#
+           )]]>
+	</update>
+</sqlMap>

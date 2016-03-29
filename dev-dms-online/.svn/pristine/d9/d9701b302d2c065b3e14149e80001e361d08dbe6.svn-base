@@ -1,0 +1,253 @@
+package dms.nr.nrsxmbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+
+import org.apache.commons.lang.StringUtils;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]렌탈비정산정보조회</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-07 19:14:02</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class FNRRentalFeeCctlMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRRentalFeeCctlMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-07 19:14:54
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqRentalFeeCctlInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet paramData = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		 
+		try {
+			// 1. DU lookup
+			DNRRentalFeeCctlMgmt dNRRentalFeeCctlMgmt = (DNRRentalFeeCctlMgmt) lookupDataUnit(DNRRentalFeeCctlMgmt.class);
+
+			// 2. main list
+			paramData = dNRRentalFeeCctlMgmt.dSRentalFeeCctlInfoLstPaging(reqDs, onlineCtx);
+			IRecordSet usrListRs = paramData.getRecordSet("RS_RENTAL_FEE_INFO_LIST");
+			paramData.putField("RENTAL_YM", reqDs.getField("RENTAL_YM"));
+			paramData.putField("OP_TYP_CD", reqDs.getField("OP_TYP_CD"));
+			paramData.putField("CL", reqDs.getField("CL"));
+			
+			responseData.putRecordSet("RS_RENTAL_FEE_INFO_LIST",usrListRs);
+			//3. second list						
+			if(usrListRs == null){
+				return responseData;
+			}
+			
+			paramData = dNRRentalFeeCctlMgmt.dSRentalFeeCctlInfoLstPagingDtl(paramData, onlineCtx);
+			paramData.putField("RENTAL_YM", reqDs.getField("RENTAL_YM"));
+			paramData.putField("OP_TYP_CD", reqDs.getField("OP_TYP_CD"));
+			paramData.putField("CL", reqDs.getField("CL"));
+			
+			responseData.putRecordSet("RS_RENTAL_FEE_INFO_DETAIL",paramData.getRecordSet("RS_RENTAL_FEE_INFO_DETAIL"));
+			//4. 전표발행용 list
+			paramData = dNRRentalFeeCctlMgmt.dSRentalFeeTotalLstPaging(paramData, onlineCtx);
+
+			responseData.putRecordSet("RS_RENTAL_FEE_TOTAL_LIST",paramData.getRecordSet("RS_RENTAL_FEE_TOTAL_LIST"));
+			responseData.putRecordSet("RS_SUM_LIST", paramData.getRecordSet("RS_SUM_LIST") );
+			} catch ( BizRuntimeException e ) {
+				throw e; //시스템 오류가 발생하였습니다.
+			}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-09 15:27:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqRentalFeeCctlInfoLstDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+	    
+	    try {
+			// 1. DU lookup
+			DNRRentalFeeCctlMgmt dNRRentalFeeCctlMgmt = (DNRRentalFeeCctlMgmt) lookupDataUnit(DNRRentalFeeCctlMgmt.class);
+
+			// 2.main list
+			responseData = dNRRentalFeeCctlMgmt.dSRentalFeeCctlInfoLstDtlM(reqDs, onlineCtx);
+			
+			//3.grid list						
+			
+			IDataSet dsRtn = dNRRentalFeeCctlMgmt.dSRentalFeeCctlInfoLstDtlG(reqDs, onlineCtx);
+			responseData.putRecordSet("RS_RENTAL_INFO",dsRtn.getRecordSet("RS_RENTAL_INFO"));	
+			} catch ( BizRuntimeException e ) {
+				throw e; //시스템 오류가 발생하였습니다.
+			}
+	    
+	    
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-17 17:08:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRentalFeeBatchCallOnline(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+		   
+	    try {
+	    	 
+	    	IDataSet reqDs = this.fInqRentalFeeCctlInfoLst(requestData, onlineCtx);
+	    	IRecordSet deprRs = reqDs.getRecordSet("RS_RENTAL_FEE_TOTAL_LIST");
+	    	IRecordSet sumRs = reqDs.getRecordSet("RS_SUM_LIST");
+	    	
+	    	if( deprRs == null ){
+				return responseData;
+			}
+	    	
+	    	requestData.putRecordSet(deprRs);
+	    	requestData.putRecordSet(sumRs);
+		
+			if(requestData.getField("CASE_WHEN").equals("01") ){
+				//재집계용 배치로직 호출
+				
+//				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+//				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+//				String dsXml = bout.toString("UTF-8");
+//
+//				// call on-demand batch job
+//				HashMap params = new HashMap<String,String>();
+//				params.put("TASK_ID", "XCR001");
+//				params.put("TASK_NM", "감가상각등록");
+//			    params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId());
+//			    params.put("USER_NO", ca.getUserNo());
+//			    params.put("STD_YM", requestData.getField("DEPR_STRD_YM"));    //감가상각월
+//			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.nr.XCR001");
+//				params.put("ONDEMAND_DATASET", dsXml);
+//				String jobExecutionId = callBatchJob("XCR001", params, onlineCtx);
+//			    waitBatchJobEnd(jobExecutionId, 10000);
+//			    int result = getJobReturnCode(jobExecutionId);
+//			    
+//			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+	    			
+	    	}else if(requestData.getField("CASE_WHEN").equals("02")) {//전표생성
+	    		
+	    		for(int i=0; i<deprRs.getRecordCount(); i++){
+		    		IRecord ir = deprRs.getRecord(i);
+		    		
+		    		if(ir.get("SLIP_ST_CD")=="10" || ir.get("SLIP_ST_CD")=="20" || ir.get("SLIP_ST_CD")=="30"){
+		    			throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+		    		}
+	    		}
+	    		requestData.putField("SLIP_TYPE", "ASSET_DEPRECIATION");//전표유형
+	    		requestData.putField("USER_NO", ca.getUserNo());
+	    		//배치로직호출 -- 전표생성
+	    		ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+	    		DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+	    		String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR010");
+			    params.put("TASK_NM", "전표발행");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+		    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+	    	}else if(requestData.getField("CASE_WHEN").equals("03")){ //전표삭제
+			   
+	    		for(int i=0; i<deprRs.getRecordCount(); i++){
+		    		IRecord ir = deprRs.getRecord(i);
+		    		
+		    		if(StringUtils.isEmpty(ir.get("SLIP_ST_CD")) || ir.get("SLIP_ST_CD")=="00" || ir.get("SLIP_ST_CD")=="05" ){
+				    	throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+	    	    	}else if( ir.get("SLIP_ST_CD")=="20"|| ir.get("SLIP_ST_CD")=="30"){
+	    	    		throw new BizRuntimeException("DMS00087"); //{0} 건은 처리가 불가능 합니다.--승인완료인
+	    	    	}
+	    		}
+	    		requestData.getRecordSet("RS_DEPR_LIST").setId("RS_SLIP_DELETE");//SLIP_NO,YYYY들어있음
+	    		IRecord totalSum = requestData.getRecordSet("RS_SUM_LIST").getRecord(0);
+	    		
+	    		requestData.putField("DEPR_AMT", totalSum.get("DEPR_AMT"));//감가상각액총액
+	    		requestData.putField("ALLWN_AMT", totalSum.get("ALLWN_AMT"));//충당부채액총액
+	    		requestData.putField("SLIP_TYPE", "AGENCY_BILLING");//전표유형
+	    		requestData.putField("USER_NO", ca.getUserNo());
+	    		
+
+	    		ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+	    		DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+	    		String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR011");
+			    params.put("TASK_NM", "전표삭제");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+		    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+			
+	    	}
+	    		
+	    	
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+  
+}

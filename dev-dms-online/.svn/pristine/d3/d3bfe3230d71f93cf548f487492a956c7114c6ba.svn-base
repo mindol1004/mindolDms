@@ -1,0 +1,365 @@
+package dms.ep.epbcsbase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]일반감정상담관리</li>
+ * <li>설  명 : <pre>[PU]일반감정상담관리</pre></li>
+ * <li>작성일 : 2015-08-31 10:55:48</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ *
+ * @author 김상오 (myneti99)
+ */
+public class PEPCnslMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPCnslMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>[PM]상담대상목록조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-31 10:55:48
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_CNSL_DT [처리일자]
+	 *	- field : END_CNSL_DT [처리일자]
+	 *	- field : AFFIL_AGN [소속팀]
+	 *	- field : CNSL_DEALCO_CD [거래처코드]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : EQP_MDL_CD [단말기코드]
+	 *	- field : DPSTR [고객명]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : BOX_NO [박스넘버]
+	 *	- field : AFFIL_AGN_NM [소속팀명]
+	 *	- field : CNSL_DEALCO_NM [거래처명]
+	 *	- field : EQP_MDL_NM [단말기명]
+	 *	- field : SR_GUBUN_1 [검색구분값1]
+	 *	- field : SR_GUBUN_2 [검색구분값2]
+	 *	- field : SR_GUBUN_3 [검색구분값3]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CNSL_OBJ_LIST
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : AFFIL_ORG_ID [조직]
+	 *		- field : AGN_ORG_CD [Ukey_Code]
+	 *		- field : AFFIL_AGN [팀]
+	 *		- field : DEALCO_NM [상담처]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_MDL_CD [모델]
+	 *		- field : DPSTR [고객명]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : EQP_ST [등급]
+	 *		- field : CUST_GRP [고객그룹]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : EQP_MDL_NM [단말기명]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : DPSTR_ENPT [필드1]
+	 *		- field : TEL_NO_ENPT [필드2]
+	 * </pre>
+	 */
+	public IDataSet pInqCnslObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqCnslObjList", requestData, onlineCtx);
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+	    return responseData;
+	    
+	    
+	}
+
+	/**
+	 * <pre>상담등록 PEPCnslMgmt_pRegEqpCnsl</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-31 10:55:48
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_PRCHS_CUST_RMKS
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : PRCH_CUST_SER_NO [매입관리순번]
+	 *		- field : CUST_SUGG_DT [필드3]
+	 *		- field : CUST_IDEA [고객의견]
+	 *		- field : CUST_IDEA_DTL [고객의견상세]
+	 *		- field : EVALCNSLR_SUGG [의견]
+	 *		- field : RMKS_CL [의견만체크구분]
+	 *		- field : RETURN_CL [반송처구분]
+	 *	- record : RQ_CONSULT_M
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : AFFIL_AGN [소속 대리점]
+	 *		- field : CNSL_DEALCO_CD [상담 거래처 코드]
+	 *		- field : DEALCO_NM [거래처 명]
+	 *		- field : EQP_COLOR_CD [단말기 색상 코드]
+	 *		- field : ONING_DT [개통 일자]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : EQP_ST_TXT [단말기 상태 세부입력]
+	 *		- field : USE_PRD_DDCT_AMT [사용 기간 차감 금액]
+	 *		- field : INR_CORR_YN [내부 부식 여부]
+	 *		- field : PWR_SYS [전원 시스템]
+	 *		- field : CALL_QULT_TEST [통화 품질 테스트]
+	 *		- field : DATA_PRFM [DATA 성능]
+	 *		- field : SCRN_TEST [화면 테스트]
+	 *		- field : FUNC_TEST [기능 테스트]
+	 *		- field : LOSS_EQP_YN [분실 단말기 여부]
+	 *		- field : RWD_RTN_OBJ_YN [보상 반납 대상 여부]
+	 *		- field : RENTP_YN [임대폰 여부]
+	 *		- field : WET_YN [침수 여부]
+	 *		- field : USIM_EQPCHG_YN [USIM 기변 여부]
+	 *		- field : OTHRCO_FORGN_EQP_YN [타사 해외 단말기 여부]
+	 *		- field : SUGG [의견]
+	 *		- field : EVALCNSLR_AUTCT_YN [평가원 인증 여부]
+	 *		- field : FULLSET_YN [FULLSET 여부]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : PRCH_CL [매입 구분]
+	 *		- field : DPSTR [예금주]
+	 *		- field : BANK_CD [은행 코드]
+	 *		- field : ACCO_NO [계좌 번호]
+	 *		- field : TEL_NO [전화 번호]
+	 *		- field : ZIPCD_1 [우편번호 1]
+	 *		- field : ZIPCD_2 [우편번호 2]
+	 *		- field : ADDR [주소]
+	 *		- field : ETC_ADDR [기타 주소]
+	 *		- field : FS_REG_USER_ID [최초 등록 사용자 ID]
+	 *		- field : LS_CHG_USER_ID [최종 변경 사용자 ID]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : EVALCNSLR_SUGG [평가원 의견]
+	 *		- field : ADJ_AMT [조정 금액]
+	 *		- field : FEE_DEDC_YN [요금 공제 여부]
+	 *		- field : SVC_NO [서비스 번호]
+	 *		- field : SVC_MGMT_NO [서비스 관리 번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : ETC_CMPT [기타 구성품]
+	 *		- field : PRC_GB [진행구분]
+	 *		- field : CUST_IDEA [고객 의사]
+	 *		- field : AMT_RMT_YN [금액 송금 여부]
+	 *		- field : UPDATE_COUNT [UPDATE COUNT]
+	 *		- field : POLY_OBJ_YN [정책 대상 여부]
+	 *		- field : POLY_OBJ_CD [정책 대상 코드]
+	 *		- field : PROGR_ST [진행 상태]
+	 *		- field : PROGR_ST_NM [진행 상태명]
+	 *		- field : BOX_NO [박스 번호]
+	 *		- field : RETUR_DEALCO_CL [반송 거래처 구분]
+	 *		- field : PRE_DC_CL [선 할인 구분]
+	 *		- field : SCRN_AFIMG_YN [화면 잔상 여부]
+	 *		- field : FST_RGSTR [최초 등록자]
+	 *		- field : ASIANA_CARD_NO [아시아나 카드 번호]
+	 *		- field : AFFIL_AGN_NM [팀명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pRegEqpCnsl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    requestData.putField("USER_ID", ca.getUserNo());
+	    responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fRegEqpCnsl", requestData, onlineCtx);
+
+	    return responseData;
+	}
+
+	/**
+	 * <pre>상담등록내역조회 PEPCnslMgmt_pInqPrchsCustRmksNo</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-31 10:55:48
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : PROGR_ST [진행상태]
+	 *	- field : TLY_DT [검수일자]
+	 *	- field : AFFIL_ORG_ID [조직]
+	 *	- field : AGN_ORG_CD [Ukey_Code]
+	 *	- field : AFFIL_AGN [팀]
+	 *	- field : DEALCO_NM [상담처]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : EQP_MDL_CD [모델]
+	 *	- field : DPSTR [고객명]
+	 *	- field : TEL_NO [연락처]
+	 *	- field : PRCH_AMT [매입금액]
+	 *	- field : EQP_ST [등급]
+	 *	- field : CUST_GRP [고객그룹]
+	 *	- field : EQP_COLOR_CD [색상]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : PRCH_MGMT_NO [매입관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CONSULT_M
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : AFFIL_AGN [소속 대리점]
+	 *		- field : CNSL_DEALCO_CD [상담 거래처 코드]
+	 *		- field : DEALCO_NM [거래처 명]
+	 *		- field : EQP_COLOR_CD [단말기 색상 코드]
+	 *		- field : ONING_DT [개통 일자]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : EQP_ST_TXT [단말기 상태 세부입력]
+	 *		- field : USE_PRD_DDCT_AMT [사용 기간 차감 금액]
+	 *		- field : INR_CORR_YN [내부 부식 여부]
+	 *		- field : PWR_SYS [전원 시스템]
+	 *		- field : CALL_QULT_TEST [통화 품질 테스트]
+	 *		- field : DATA_PRFM [DATA 성능]
+	 *		- field : SCRN_TEST [화면 테스트]
+	 *		- field : FUNC_TEST [기능 테스트]
+	 *		- field : LOSS_EQP_YN [분실 단말기 여부]
+	 *		- field : RWD_RTN_OBJ_YN [보상 반납 대상 여부]
+	 *		- field : RENTP_YN [임대폰 여부]
+	 *		- field : WET_YN [침수 여부]
+	 *		- field : USIM_EQPCHG_YN [USIM 기변 여부]
+	 *		- field : OTHRCO_FORGN_EQP_YN [타사 해외 단말기 여부]
+	 *		- field : SUGG [의견]
+	 *		- field : EVALCNSLR_AUTCT_YN [평가원 인증 여부]
+	 *		- field : FULLSET_YN [FULLSET 여부]
+	 *		- field : PRCH_AMT [상담 금액]
+	 *		- field : PRCH_CL [매입 구분]
+	 *		- field : DPSTR [예금주]
+	 *		- field : BANK_CD [은행 코드]
+	 *		- field : ACCO_NO [계좌 번호]
+	 *		- field : TEL_NO [전화 번호]
+	 *		- field : ZIPCD_1 [우편번호 1]
+	 *		- field : ZIPCD_2 [우편번호 2]
+	 *		- field : ADDR [주소]
+	 *		- field : ETC_ADDR [기타 주소]
+	 *		- field : FS_REG_USER_ID [최초 등록 사용자 ID]
+	 *		- field : LS_CHG_USER_ID [최종 변경 사용자 ID]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : EVALCNSLR_SUGG [평가원 의견]
+	 *		- field : ADJ_AMT [조정 금액]
+	 *		- field : FEE_DEDC_YN [요금 공제 여부]
+	 *		- field : SVC_NO [서비스 번호]
+	 *		- field : SVC_MGMT_NO [서비스 관리 번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : ETC_CMPT [기타 구성품]
+	 *		- field : PRC_GB [진행구분]
+	 *		- field : CUST_IDEA [고객 의사]
+	 *		- field : AMT_RMT_YN [금액 송금 여부]
+	 *		- field : UPDATE_COUNT [UPDATE COUNT]
+	 *		- field : POLY_OBJ_YN [정책 대상 여부]
+	 *		- field : POLY_OBJ_CD [정책 대상 코드]
+	 *		- field : PROGR_ST [진행 상태]
+	 *		- field : PROGR_ST_NM [진행 상태명]
+	 *		- field : BOX_NO [박스 번호]
+	 *		- field : RETUR_DEALCO_CL [반송 거래처 구분]
+	 *		- field : PRE_DC_CL [선 할인 구분]
+	 *		- field : SCRN_AFIMG_YN [화면 잔상 여부]
+	 *		- field : FST_RGSTR [최초 등록자]
+	 *		- field : ASIANA_CARD_NO [아시아나 카드 번호]
+	 *		- field : AFFIL_AGN_NM [팀명]
+	 *		- field : DPSTR_ENPT [암호화필드]
+	 *		- field : ACCO_NO_ENPT [암호화필드]
+	 *		- field : ADDR_ENPT [암호화필드]
+	 *		- field : ETC_ADDR_ENPT [암호화필드]
+	 *		- field : SVC_NO_ENPT [암호화필드]
+	 *		- field : TEL_NO_ENPT [암호화필드]
+	 *	- record : RS_CONSULT_D
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : OUTS_MCN_CL [주변 기기 구분]
+	 *		- field : QTY [수량]
+	 *		- field : UPRC [단가]
+	 *		- field : PRCHS_UPRC [매입단가]
+	 *		- field : SALE_UPRC [매출 단가]
+	 *		- field : NORM_QTY [정상 수량]
+	 *		- field : HLD_QTY [보유 수량]
+	 *		- field : SKN_SMPL_QTY [SKN 샘플 수량]
+	 *		- field : DDCT_AMT [차감 금액]
+	 *		- field : PRCH_SER_NO [매입 일련 번호]
+	 *		- field : LAUNC_DT [출시 일자]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : BATR_CD [배터리 코드]
+	 *		- field : PROD_CL [상품 구분]
+	 *		- field : OUTS_MCN_CL_NM [주변기기명]
+	 *	- record : RS_COLOR
+	 *		- field : COLOR_CD [색상코드]
+	 *		- field : COLOR_NM [색상명]
+	 *	- record : RS_PROD_M
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : MFACT_CD [생산업체 코드]
+	 *		- field : LAUNC_DT [출시 일자]
+	 *		- field : SETOFF_COFC [상계 계수]
+	 *		- field : PREFR_PRC_CL [선호도 가격 구분]
+	 *		- field : PRC_RT [가격 비율]
+	 *		- field : HLMT_PRC [상한 가격]
+	 *		- field : LLMT_PRC [하한 가격]
+	 *		- field : SLFCO_CL [자사 구분]
+	 *		- field : FIX_PRC_YN [고정 가격 여부]
+	 *		- field : LAUNC_YN [출시여부]
+	 *		- field : PROD_CHRTIC_1 [상품 특성 1]
+	 *		- field : COMC [통신방식]
+	 *		- field : BEFORE_YEAR [작년]
+	 *	- record : RS_RATE
+	 *		- field : GRADE [등급]
+	 *		- field : RATE [비율]
+	 *		- field : SEQ [순번]
+	 *		- field : STRD_INCEN [기준 인센티브]
+	 *	- record : RS_RMK_LIST
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : PRCH_CUST_SER_NO_NM [매입 관리 차수]
+	 *		- field : PRCH_CUST_SER_NO [매입 고객 일련 번호]
+	 *		- field : CUST_DT [고객의견일]
+	 *		- field : CUST_TM [고객의견시간]
+	 *		- field : CUST_SUGG_ST_NM [고객 의견 상태]
+	 *		- field : CUST_SUGG_ST [고객 의견 상태]
+	 *		- field : CUST_SUGG_ST_DTL [고객 의견 상태 상세]
+	 *		- field : EVALCNSLR_SUGG [평가원 의견]
+	 *		- field : FS_REG_USER_ID [최초 등록 사용자 ID]
+	 *		- field : FS_REG_USER_ID_NM [최초 등록 사용자 명]
+	 *		- field : RETUR_DEALCO_CL [반송 거래처 구분]
+	 * </pre>
+	 */
+	public IDataSet pInqPrchsCustRmksNo(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqPrchsCustRmksNo", requestData, onlineCtx);
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		return responseData;
+
+	}
+  
+}

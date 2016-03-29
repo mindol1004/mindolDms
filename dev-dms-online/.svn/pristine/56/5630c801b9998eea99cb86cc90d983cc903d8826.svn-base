@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpJdgDTlInfoMgnt">
+	<select id="SEqpJdgDTlInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoMgnt.SEqpJdgDTlInfoTotCnt 단말기감정내역총건수 */
+/* IO: 김혁범,2015-08-28T10:27:23(김혁범,2015-08-11T17:12:50) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  TB_EQP_CLCT_OBJ A
+       ,TB_EQP_ASSET B
+       ,(SELECT  C.ASSET_NO,JDG_CHRGR_NO,EQP_JDG_DT,EQP_JDG_RSLT_CD
+           FROM  TB_EQP_JDG C
+          WHERE  EQP_JDG_SEQ = (SELECT MAX(EQP_JDG_SEQ) FROM TB_EQP_JDG WHERE ASSET_NO=C.ASSET_NO)) D
+       ,TB_EQP_MDL E
+       ,TB_USER G
+ WHERE  A.EQP_SER_NO = B.EQP_SER_NO
+   AND  B.ASSET_NO = D.ASSET_NO(+)
+   AND  A.EQP_MDL_CD = E.EQP_MDL_CD(+)
+   AND  D.JDG_CHRGR_NO = G.USER_NO(+)
+   AND  A.IN_OBJ_DTL_CD IN ('01','04')
+   AND  B.INVE_ST_CD IN ('10','40')
+]]><isNotEmpty property="IN_FR_DT"><![CDATA[
+   AND  A.EQP_IN_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+   AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+   AND  A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+   AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="EQP_JDG_RSLT_CD" compareValue="%"><![CDATA[
+   AND  D.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SEqpJdgDTlInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpJdgDTlInfoMgnt.SEqpJdgDTlInfoLstPaging 단말기감정내역조회 */
+/* IO: 김혁범,2015-08-26T15:54:57(김혁범,2015-08-11T17:13:21) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY B.ASSET_NO DESC) AS ROWNO
+                ,A.EQP_IN_DT AS IN_DT 									/*입고일자*/
+                ,B.ASSET_NO  											/*자산번호*/
+                ,A.EQP_MDL_CD 											/*모델코드*/
+                ,E.EQP_MDL_NM 											/*모델명*/
+                ,A.EQP_COLOR_CD 										/*색상코드*/
+                ,A.EQP_SER_NO 											/*일련번호*/
+                ,A.EQP_IMEI_NO 											/*IMEI*/
+                ,D.EQP_JDG_DT 						/*감정일자*/
+                ,D.EQP_JDG_RSLT_CD 										/*감정결과코드*/
+                /*SKT승인여부*/
+                ,G.USER_NM 												/*담당자*/         
+                ,B.EQP_PRCH_AMT AS PRCH_AMT
+                ,A.IN_OBJ_DTL_CD										/*회수구분코드*/
+           FROM  TB_EQP_CLCT_OBJ A
+                ,TB_EQP_ASSET B
+                ,(SELECT  C.ASSET_NO,JDG_CHRGR_NO,EQP_JDG_DT,EQP_JDG_RSLT_CD
+                    FROM  TB_EQP_JDG C
+                   WHERE  EQP_JDG_SEQ = (SELECT MAX(EQP_JDG_SEQ) FROM TB_EQP_JDG WHERE ASSET_NO=C.ASSET_NO)) D
+                ,TB_EQP_MDL E
+                ,TB_USER G
+ WHERE  A.EQP_SER_NO = B.EQP_SER_NO
+   AND  B.ASSET_NO = D.ASSET_NO(+)
+   AND  A.EQP_MDL_CD = E.EQP_MDL_CD(+)
+   AND  D.JDG_CHRGR_NO = G.USER_NO(+)
+   AND  A.IN_OBJ_DTL_CD IN ('01','04')
+   AND  B.INVE_ST_CD IN ('10','40')
+]]><isNotEmpty property="IN_FR_DT"><![CDATA[
+   AND  A.EQP_IN_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+   AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+   AND  A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+   AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="EQP_JDG_RSLT_CD" compareValue="%"><![CDATA[
+   AND  D.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[            
+        )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

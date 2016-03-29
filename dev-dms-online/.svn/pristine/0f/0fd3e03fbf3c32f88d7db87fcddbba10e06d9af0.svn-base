@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPDisSaleMgmt">
+	<update id="UDisProdOut" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.UDisProdOut 상품출고변경순번수정 */
+/* IO: 이민재,2015-09-30T17:21:16(이민재,2015-09-11T12:41:22) */
+UPDATE  TB_EP_DIS_PROD_OUT_M
+   SET  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#
+       ,UPDATE_COUNT      = UPDATE_COUNT + 1
+       ,LS_CHG_USER_ID    = #USERNO#              /* 최종변경사용자ID */  
+       ,LS_CHG_DTM        = SYSDATE               /* 최종변경일시 */ 
+ WHERE  PROD_OUT_MGMT_NO  = #PROD_OUT_MGMT_NO#
+   AND  SELL_MGMT_NO      = #SELL_MGMT_NO#]]>
+	</update>
+	<select id="SDisProdInNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.SDisProdInNo 입고관리번호채번 */
+/* IO: 이민재,2015-09-30T17:18:46(이민재,2015-09-11T13:32:22) */
+SELECT  'IN' || TO_CHAR(SYSDATE, 'YYYYMMDD') || TO_CHAR(SQ01_TB_EP_DIS_IN_PROD_M.NEXTVAL,'FM0000000') AS PROD_IN_MGMT_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IDisProdIn" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.IDisProdIn 상품입고저장 */
+/* IO: 이민재,2015-09-30T17:21:05(이민재,2015-09-11T14:32:21) */
+INSERT 
+  INTO  TB_EP_DIS_IN_PROD_M
+       (
+        PROD_IN_MGMT_NO               /* 입고 관리 번호 */
+       ,IN_CL                         /* 입고 구분 */
+       ,IN_TS                         /* 입고 차수 */
+       ,IN_SCHD_DT                    /* 입고 예정 일자 */
+       ,IN_DEALCO_ID                  /* 입고 거래처 ID */
+       ,IN_CONF_DT                    /* 입고 확정 일자 */
+       ,IN_ST                         /* 입고 상태 */
+       ,RMK                           /* 비고 */
+       ,DEL_YN                        /* 삭제 여부 */
+       ,UPDATE_COUNT                  /* UPDATE COUNT */
+       ,FS_REG_USER_ID                /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                    /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID                /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM                    /* 최종 변경 일시 */
+       )
+VALUES
+      (
+       #PROD_IN_MGMT_NO#              /* 입고 관리 번호 */
+      ,#IN_CL#                        /* 입고 구분 */
+      ,1                              /* 입고 차수 */
+      ,TO_CHAR(TO_DATE(SUBSTR(#SELL_DTM#,0,8)),'YYYYMMDD') /* 입고 예정 일자 */
+      ,#IN_DEALCO_ID#                 /* 입고 거래처 ID */
+      ,TO_CHAR(SYSDATE,'YYYYMMDD')    /* 입고 확정 일자 */
+      ,#IN_ST#                        /* 입고 상태 */
+      ,#RMK#                          /* 비고 */
+      ,'N'                            /* 삭제 여부 */
+      ,1                              /* UPDATE COUNT */
+      ,#USERNO#                       /* 최초 등록 사용자 ID */
+      ,SYSDATE                        /* 최초 등록 일시 */
+      ,#USERNO#                       /* 최종 변경 사용자 ID */
+      ,SYSDATE                        /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<insert id="IDisProdInDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.IDisProdInDtl 상품입고상세저장 */
+/* IO: 이민재,2015-11-04T15:32:51(이민재,2015-09-11T14:48:04) */
+INSERT 
+  INTO  TB_EP_DIS_IN_PROD_DTL_D
+       (
+        PROD_IN_MGMT_NO                   /* 입고 관리 번호 */
+       ,PROD_IN_SEQ                       /* 입고 순번 */
+       ,EQP_MDL_CD                        /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD                      /* 단말기 색상 코드 */
+       ,EQP_SER_NO                        /* 단말기 일련 번호 */
+       ,IN_QTY                            /* 입고 수량 */
+       ,IN_AMT                            /* 입고 금액 */
+       ,IN_CONF_DT                        /* 입고 확정 일자 */
+       ,IN_CONF_YN                        /* 입고 확정 여부 */
+       ,IN_CONF_QTY                       /* 입고 확정 수량 */
+       ,CNCL_YN                           /* 취소 여부 */
+       ,DEL_YN                            /* 삭제 여부 */
+       ,UPDATE_COUNT                      /* UPDATE COUNT */
+       ,FS_REG_USER_ID                    /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                        /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID                    /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM                        /* 최종 변경 일시 */
+       )
+VALUES
+      (
+       #PROD_IN_MGMT_NO#                  /* 입고 관리 번호 */
+      ,(SELECT  NVL(TO_NUMBER(MAX(PROD_IN_SEQ)),0)+1 AS PROD_IN_SEQ 
+          FROM  TB_EP_DIS_IN_PROD_DTL_D
+         WHERE  PROD_IN_MGMT_NO = #PROD_IN_MGMT_NO#)/* 입고 순번 */
+      ,#EQP_MDL_CD#                       /* 단말기 모델 코드 */
+      ,#EQP_COLOR_CD#                     /* 단말기 색상 코드 */
+      ,#PROD_SER_NO#                      /* 단말기 일련 번호 */
+      ,#SALE_QTY#                         /* 입고 수량 */
+      ,#SELL_AMT#                         /* 입고 금액 */
+      ,TO_CHAR(SYSDATE,'YYYYMMDD')        /* 입고 확정 일자 */
+      ,'Y'                                /* 입고 확정 여부 */
+      ,#SALE_QTY#                         /* 입고 확정 수량 */
+      ,''                                 /* 취소 여부 */
+      ,'N'                                /* 삭제 여부 */
+      ,1                                  /* UPDATE COUNT */
+      ,#USERNO#                           /* 최초 등록 사용자 ID */
+      ,SYSDATE                            /* 최초 등록 일시 */
+      ,#USERNO#                           /* 최종 변경 사용자 ID */
+      ,SYSDATE                            /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<insert id="IDisProdInOutHst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.IDisProdInOutHst 상품입출고상세저장 */
+/* IO: 이민재,2015-11-04T15:47:49(이민재,2015-09-11T15:03:45) */
+INSERT 
+  INTO  TB_EP_DIS_PROD_INOUT_HST
+       (
+        EQP_MDL_CD                                         /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD                                       /* 단말기 색상 코드 */
+       ,EQP_SER_NO                                         /* 단말기 일련 번호 */
+       ,IN_OUT_SEQ                                         /* 입출 출고 순번 */
+       ,PROD_IN_MGMT_NO                                    /* 입고 관리 번호 */
+       ,PROD_IN_SEQ                                        /* 입고 순번 */
+       ,PROD_OUT_MGMT_NO                                   /* 출고 관리 번호 */
+       ,PROD_OUT_SEQ                                       /* 출고 순번 */
+       ,IN_OUT_DT                                          /* 입고 출고 일자 */
+       ,IN_OUT_CL                                          /* 입고 출고 구분 */
+       ,IN_OUT_DTL_CL                                      /* 입고 출고 상세 구분 */
+       ,OUT_DEALCO_ID                                      /* 출고 거래처 ID */
+       ,IN_DEALCO_ID                                       /* 입고 거래처 ID */
+       ,DEL_YN                                             /* 삭제여부 */
+       ,UPDATE_COUNT                                       /* UPDATE COUNT */ 
+       ,FS_REG_USER_ID                                     /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                                         /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID                                     /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM                                         /* 최종 변경 일시 */
+       )
+VALUES
+      (
+       #EQP_MDL_CD#                                        /* 단말기 모델 코드 */
+      ,#EQP_COLOR_CD#                                      /* 단말기 색상 코드 */
+      ,#PROD_SER_NO#                                       /* 단말기 일련 번호 */
+      ,#IN_OUT_SEQ#                                        /* 입출 출고 순번 */
+      ,#PROD_IN_MGMT_NO#                                   /* 입고 관리 번호 */
+      ,#PROD_IN_SEQ#                                       /* 입고 순번 */
+      ,#PROD_OUT_MGMT_NO#                                  /* 출고 관리 번호 */
+      ,(SELECT  PROD_OUT_SEQ
+  	      FROM  TB_EP_DIS_PROD_OUT_DTL_D
+  	     WHERE  PROD_OUT_MGMT_NO = #PROD_OUT_MGMT_NO#
+  		   AND  EQP_MDL_CD = #EQP_MDL_CD#
+  		   AND  EQP_SER_NO = #PROD_SER_NO#
+  		   AND  NVL(CNCL_YN, 'N') = 'N'
+  		   AND DEL_YN = 'N')                               /* 출고 순번 */
+  	  ,TO_CHAR(SYSDATE,'YYYYMMDD')                         /* 입고 출고 일자 */
+      ,#IN_OUT_CL#                                         /* 입고 출고 구분 */
+      ,#IN_OUT_DTL_CL#                                     /* 입고 출고 상세 구분 */
+      ,#OUT_DEALCO_ID#                                     /* 출고 거래처 ID */
+      ,#IN_DEALCO_ID#                                      /* 입고 거래처 ID */
+      ,'N'                                                 /* 삭제 여부 */
+      ,1                                                   /* UPDATE COUNT */      
+      ,#USERNO#                                            /* 최초 등록 사용자 ID */
+      ,SYSDATE                                             /* 최초 등록 일시 */
+      ,#USERNO#                                            /* 최종 변경 사용자 ID */
+      ,SYSDATE                                             /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<update id="UDisProdDis" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.UDisProdDis 상품재고수정 */
+/* IO: 이민재,2015-09-15T13:10:22(이민재,2015-09-11T15:53:00) */
+UPDATE  TB_EP_DIS_PROD_DIS
+   SET  INVE_ST           = #INVE_ST#                       /* 재고 상태 */ 
+   	   ,LAST_IN_OUT_DT    = TO_CHAR(SYSDATE,'YYYYMMDD')     /* 최종 입고 출고 일자 */
+   	   ,IN_OUT_CL         = #IN_OUT_CL#                     /* 입고 출고 구분 */ 
+   	   ,IN_OUT_DTL_CL     = #IN_OUT_DTL_CL#                 /* 입고 출고 상세 구분 */
+   	   ,CONF_SELL_AMT     = #SELL_AMT#                      /* 확정 판매 금액 */
+   	   ,CONF_SELL_DT      = TO_CHAR(TO_DATE(SUBSTR(#SELL_DTM#,0,8)),'YYYYMMDD')  /* 확정 판매 일자 */ 
+   	   ,SELL_YN           = #SELL_YN#                       /* 판매여부 */
+       ,UPDATE_COUNT      = UPDATE_COUNT+1                  /* UPDATE COUNT */
+       ,TRMS_YN           = 'N'                             /* 전송 여부 */
+       ,TRMS_CL           = #TRMS_CL#                       /* 전송 구분 */ 
+       ,TRMS_DT           = ''                              /* 전송 일자 */
+       ,LS_CHG_USER_ID    = #USERNO#                        /* 최종변경사용자ID */  
+       ,LS_CHG_DTM        = SYSDATE                         /* 최종변경일시 */ 
+ WHERE  EQP_MDL_CD        = #EQP_MDL_CD#
+   AND  EQP_SER_NO        = #PROD_SER_NO#]]>
+	</update>
+	<insert id="IDisProdOutDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.IDisProdOutDtl 상품출고상세저장 */
+/* IO: 이민재,2015-09-30T17:19:15(이민재,2015-09-11T17:24:02) */
+INSERT 
+  INTO  TB_EP_DIS_PROD_OUT_DTL_D
+       (
+        PROD_OUT_MGMT_NO                               /* 출고 관리 번호 */
+       ,PROD_OUT_SEQ                                   /* 출고 순번 */
+       ,EQP_MDL_CD                                     /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD                                   /* 단말기 색상 코드 */
+       ,EQP_SER_NO                                     /* 단말기 일련 번호 */
+       ,EQP_ST                                         /* 단말기 상태 */
+       ,INVE_ST                                        /* 재고 상태 */
+       ,OUT_QTY                                        /* 출고 수량 */
+       ,EAPRV_COND_CD                                  /* 전자결재 조건 코드 */
+       ,UPRC                                           /* 단가 */
+       ,AMT                                            /* 금액 */
+       ,CNCL_YN                                        /* 취소 여부 */
+       ,DEL_YN                                         /* 삭제 여부 */
+       ,UPDATE_COUNT                                   /* UPDATE COUNT */
+       ,FS_REG_USER_ID                                 /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                                     /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID                                 /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM                                     /* 최종 변경 일시 */
+       )
+VALUES
+      (
+       #PROD_OUT_MGMT_NO#                              /* 출고 관리 번호 */
+      ,(SELECT  NVL(TO_NUMBER(MAX(PROD_OUT_SEQ)),0)+1 AS PROD_OUT_SEQ 
+          FROM  TB_EP_DIS_PROD_OUT_DTL_D
+         WHERE  PROD_OUT_MGMT_NO = #PROD_OUT_MGMT_NO#) /* 출고 순번 */
+      ,#EQP_MDL_CD#                                    /* 단말기 모델 코드 */
+      ,#EQP_COLOR_CD#                                  /* 단말기 색상 코드 */
+      ,#PROD_SER_NO#                                   /* 단말기 일련 번호 */
+      ,#EQP_ST#                                        /* 단말기 상태 */
+      ,#INVE_ST#                                       /* 재고 상태 */
+      ,#SALE_QTY#                                      /* 출고 수량 */
+      ,#EAPRV_COND_CD#                                 /* 전자결재 조건 코드 */
+      ,#SELL_UPRC#                                     /* 단가 */
+      ,#SELL_UPRC#                                     /* 금액 */
+      ,''                                              /* 취소 여부 */
+      ,'N'                                             /* 삭제 여부 */
+      ,1                                               /* UPDATE COUNT */
+      ,#USERNO#                                        /* 최초 등록 사용자 ID */
+      ,SYSDATE                                         /* 최초 등록 일시 */
+      ,#USERNO#                                        /* 최종 변경 사용자 ID */
+      ,SYSDATE                                         /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<select id="SDisProdOutNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.SDisProdOutNo 출고관리번호채번 */
+/* IO: 이민재,2015-09-30T17:18:58(이민재,2015-09-11T18:14:12) */
+SELECT  'OT' || TO_CHAR(SYSDATE, 'YYYYMMDD') || TO_CHAR(SQ01_TB_EP_DIS_PROD_OUT_M.NEXTVAL,'FM0000000') AS PROD_OUT_MGMT_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IDisProdOut" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.IDisProdOut 상품출고저장 */
+/* IO: 이민재,2015-09-30T17:19:28(이민재,2015-09-15T17:43:50) */
+INSERT 
+  INTO  TB_EP_DIS_PROD_OUT_M
+       (
+        PROD_OUT_MGMT_NO                               /* 출고 관리 번호 */
+       ,SELL_MGMT_NO                                   /* 판매 관리 번호 */  
+       ,GNRL_SELL_CHG_SEQ                              /* 일반 판매 변경 순번 */
+       ,OUT_CL                                         /* 출고 구분 */ 
+       ,OUT_SCHD_DT                                    /* 출고 예정 일자 */
+       ,OUT_DEALCO_ID                                  /* 출고 거래처 ID */
+       ,IN_DEALCO_ID                                   /* 입고 거래처 ID */ 
+       ,OUT_CONF_DT                                    /* 출고 확정 일자 */
+       ,OUT_CONF_YN                                    /* 출고 확정 여부 */
+       ,RMK                                            /* 비고 */
+       ,DEL_YN                                         /* 삭제 여부 */
+       ,UPDATE_COUNT                                   /* UPDATE COUNT */
+       ,FS_REG_USER_ID                                 /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                                     /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID                                 /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM                                     /* 최종 변경 일시 */
+       )
+VALUES
+      (
+       #PROD_OUT_MGMT_NO#                              /* 출고 관리 번호 */
+      ,#SELL_MGMT_NO#                                  /* 판매 관리 번호 */
+      ,#GNRL_SELL_CHG_SEQ#                             /* 일반 판매 변경 순번 */
+      ,#OUT_CL#                                        /* 출고 구분 */ 
+      ,TO_CHAR(TO_DATE(SUBSTR(#SELL_DTM#,0,8)),'YYYYMMDD') /* 출고 예정 일자 */
+      ,#OUT_DEALCO_ID#                                 /* 출고 거래처 ID */
+      ,''                                              /* 입고 거래처 ID */  
+      ,TO_CHAR(SYSDATE,'YYYYMMDD')                     /* 출고 확정 일자 */
+      ,'Y'                                             /* 출고 확정 여부 */
+      ,#RMK#                                           /* 비고 */
+      ,'N'                                             /* 삭제 여부 */
+      ,1                                               /* UPDATE COUNT */
+      ,#USERNO#                                        /* 최초 등록 사용자 ID */
+      ,SYSDATE                                         /* 최초 등록 일시 */
+      ,#USERNO#                                        /* 최종 변경 사용자 ID */
+      ,SYSDATE                                         /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<select id="SDisProdInOutHstSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.SDisProdInOutHstSeq 상품입출고상세입출고번호채번 */
+/* IO: 이민재,2015-11-04T15:45:30(이민재,2015-11-04T15:24:51) */
+SELECT  NVL(TO_NUMBER(MAX(IN_OUT_SEQ)),0)+1 AS IN_OUT_SEQ 
+  FROM  TB_EP_DIS_PROD_INOUT_HST
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EQP_SER_NO = #PROD_SER_NO#]]>
+	</select>
+	<select id="SDisProdInOutHstInSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPDisSaleMgmt.SDisProdInOutHstInSeq 상품입출고상세상품입고번호채번 */
+/* IO: 이민재,2015-11-04T15:49:49(이민재,2015-11-04T15:47:15) */
+SELECT  NVL(TO_NUMBER(MAX(PROD_IN_SEQ)),0)+1 AS PROD_IN_SEQ 
+  FROM  TB_EP_DIS_IN_PROD_DTL_D
+ WHERE  PROD_IN_MGMT_NO = #PROD_IN_MGMT_NO#]]>
+	</select>
+</sqlMap>

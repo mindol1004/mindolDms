@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCFrmAutrRolMgmt">
+	<select id="SFrmRolListbyYes" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SFrmRolListbyYes 화면권한역할목록조회(권한O) */
+/* IO: 김석영,2014-10-02T21:15:26(심상준,2014-07-21T18:00:19) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY B.AUTR_ROL_ID DESC) AS ROWNO
+               ,C.FRM_NM                                                                 /* 화면명 */     
+               ,B.AUTR_ROL_ID                                                             /* 권한역할ID */ 
+               ,B.FRM_ID                                                                  /* 화면ID */     
+               ,A.AUTR_ROL_NM                                                             /* 권한역할명 */ 
+               ,B.FRM_ITEM_GRP_ID                                                         /* 화면항목그룹 I*/
+               ,DECODE(B.INQ_AUTR_YN,'Y','1','N','0') AS INQ_AUTR_YN                      /* 조회권한여부 */
+               ,DECODE(B.SAVE_AUTR_YN,'Y','1','N','0') AS SAVE_AUTR_YN                    /* 저장권한여부 */
+               ,DECODE(B.UPD_AUTR_YN,'Y','1','N','0') AS UPD_AUTR_YN                      /* 수정권한여부 */
+               ,DECODE(B.DEL_AUTR_YN,'Y','1','N','0') AS DEL_AUTR_YN                      /* 삭제권한여부 */
+               ,DECODE(B.OPUT_AUTR_YN,'Y','1','N','0') AS OPUT_AUTR_YN                    /* 출력권한여부 */
+               ,DECODE(B.EXL_AUTR_YN,'Y','1','N','0') AS EXL_AUTR_YN                      /* 엑셀권한여부 */
+               ,DECODE(B.PRN_INFO_INQ_AUTR_YN,'Y','1','N','0') AS PRN_INFO_INQ_AUTR_YN    /* 개인정보조회권 */
+               ,DECODE(B.USE_YN,'Y','1','N','0') AS USE_YN                                /* 사용여부 */   
+         FROM   TB_AUTR_ROL A 
+               ,TB_FRM_AUTR_ROL B
+               ,TB_FRM C
+         WHERE  A.AUTR_ROL_ID = B.AUTR_ROL_ID
+           AND  B.FRM_ID = C.FRM_ID
+           AND ( 
+                SELECT  
+                        COUNT(FRM_ITEM_GRP_ID) 
+                  FROM  TB_FRM_AUTR_ROL 
+                 WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#
+                ) > 0
+]]><isNotEmpty property="AUTR_ROL_ID" prepend="AND"><![CDATA[
+	            B.AUTR_ROL_ID LIKE '%'||#AUTR_ROL_ID#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="AUTR_ROL_NM" prepend="AND"><![CDATA[
+	            A.AUTR_ROL_NM LIKE '%'||#AUTR_ROL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+          ORDER BY B.FRM_ID, B.FRM_ITEM_GRP_ID  ASC
+        ) PA]]>
+	</select>
+	<select id="SFrmRolListbyNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SFrmRolListbyNo 화면권한역할목록조회(권한X) */
+/* IO: 김석영,2014-10-01T18:41:27(심상준,2014-07-21T18:01:00) */
+SELECT 
+        FRM_ID  /* 화면 ID */
+       ,FRM_NM  /* 화면 명 */
+  FROM  TB_FRM  /* SC_화면 */
+  ORDER BY FRM_ID ASC]]>
+	</select>
+	<update id="UFrmRolListUpd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.UFrmRolListUpd 화면권한역할수정 */
+/* IO: 김석영,2014-10-01T19:09:38(심상준,2014-07-28T09:40:12) */
+UPDATE 
+        TB_FRM_AUTR_ROL               /* SC_화면권한역할 */
+   SET  LS_CHG_USER_ID = #userNo#     /* 최종변경사용자ID */
+       ,LS_CHG_DTM = SYSDATE          /* 최종변경일시 */ 
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#   /* 권한역할 ID */
+   AND  FRM_ID = #FRM_ID#             /* 화면 ID */]]>
+	</update>
+	<update id="DFrmRolListDel" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.DFrmRolListDel 화면권한역할삭제 */
+/* IO: 임지후,2015-03-06T17:39:14(심상준,2014-07-28T10:58:25) */
+DELETE 
+  FROM  TB_FRM_AUTR_ROL	                    /* SC_화면권한역할 */   
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#        
+   AND  FRM_ID = #FRM_ID#
+]]><isNotEmpty prepend="AND" property="FRM_ITEM_GRP_ID"><![CDATA[   
+   		FRM_ITEM_GRP_ID = #FRM_ITEM_GRP_ID#
+]]></isNotEmpty><![CDATA[]]>
+	</update>
+	<update id="UFrmRolListReg" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.UFrmRolListReg 화면권한역할등록 */
+/* IO: 김석영,2014-10-02T21:18:41(심상준,2014-07-29T09:56:14) */
+MERGE INTO  TB_FRM_AUTR_ROL A
+USING DUAL
+ON (
+        A.AUTR_ROL_ID = #AUTR_ROL_ID# 
+    AND A.FRM_ID = #FRM_ID# 
+    AND A.FRM_ITEM_GRP_ID = #FRM_ITEM_GRP_ID#
+    )
+WHEN MATCHED THEN
+     UPDATE 
+        SET  USE_YN = DECODE(#USE_YN#,'1','Y','0','N',NULL,'N')                              /* 사용여부 */
+            ,INQ_AUTR_YN = DECODE(#INQ_AUTR_YN#,'1','Y','0','N',NULL,'N')                    /* 조회권한여부 */
+            ,SAVE_AUTR_YN = DECODE(#SAVE_AUTR_YN#,'1','Y','0','N',NULL,'N')                  /* 저장권한여부 */  
+            ,UPD_AUTR_YN = DECODE(#UPD_AUTR_YN#,'1','Y','0','N',NULL,'N')                    /* 수정권한여부 */   
+            ,DEL_AUTR_YN = DECODE(#DEL_AUTR_YN#,'1','Y','0','N',NULL,'N')                    /* 삭제권한여부 */ 
+            ,OPUT_AUTR_YN = DECODE(#OPUT_AUTR_YN#,'1','Y','0','N',NULL,'N')                  /* 출력권한여부 */ 
+            ,EXL_AUTR_YN = DECODE(#EXL_AUTR_YN#,'1','Y','0','N',NULL,'N')                    /* 엑셀권한여부 */
+            ,PRN_INFO_INQ_AUTR_YN = DECODE(#PRN_INFO_INQ_AUTR_YN#,'1','Y','0','N',NULL,'N')  /* 개인정보조회권한여부 */ 
+      WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#
+        AND  FRM_ID = #FRM_ID#
+WHEN NOT MATCHED THEN
+     INSERT
+            ( 
+             AUTR_ROL_ID           /* 권한역할 ID */  
+            ,FRM_ID                /* 화면 ID */  
+            ,FRM_ITEM_GRP_ID       /* 화면항목그룹 ID */  
+            ,INQ_AUTR_YN           /* 조회권한여부 */  
+            ,SAVE_AUTR_YN          /* 저장권한여부 */
+            ,UPD_AUTR_YN           /* 수정권한여부 */
+            ,DEL_AUTR_YN           /* 삭제권한여부 */ 
+            ,OPUT_AUTR_YN          /* 출력권한여부 */
+            ,EXL_AUTR_YN           /* 엑셀권한여부 */
+            ,PRN_INFO_INQ_AUTR_YN  /* 개인정보조회권한 */
+            ,USE_YN                /* 사용여부 */  
+            ,FS_REG_USER_ID        /* 최초등록자 ID */
+            ,FS_REG_DTM            /* 최초등록일시 */
+            ,LS_CHG_USER_ID        /* 최종변경자 ID */
+            ,LS_CHG_DTM            /* 최종변경일시*/ 
+             )	
+     VALUES  
+            (
+             #AUTR_ROL_ID#                                            /* 권한역할 ID */  
+            ,#FRM_ID#                                                 /* 화면 ID */
+            ,DECODE(#FRM_ITEM_GRP_ID#,NULL,'GRP1',#FRM_ITEM_GRP_ID#)  /* 화면항목그룹 ID */                                   
+            ,DECODE(#INQ_AUTR_YN#,'1','Y','0','N',NULL,'N')           /* 조회권한여부 */   
+            ,DECODE(#SAVE_AUTR_YN#,'1','Y','0','N',NULL,'N')          /* 저장권한여부 */ 
+            ,DECODE(#UPD_AUTR_YN#,'1','Y','0','N',NULL,'N')           /* 수정권한여부 */  
+            ,DECODE(#DEL_AUTR_YN#,'1','Y','0','N',NULL,'N')           /* 삭제권한여부 */ 
+            ,DECODE(#OPUT_AUTR_YN#,'1','Y','0','N',NULL,'N')          /* 출력권한여부 */ 
+            ,DECODE(#EXL_AUTR_YN#,'1','Y','0','N',NULL,'N')           /* 엑셀권한여부 */  
+            ,DECODE(#PRN_INFO_INQ_AUTR_YN#,'1','Y','0','N',NULL,'N')  /* 개인정보조회여부*/ 
+            ,DECODE(#USE_YN#,'1','Y','0','N',NULL,'N')                /* 사용여부  */ 
+            ,#userNo#                                                 /* 최초등록사용자ID*/
+            ,SYSDATE                                                  /* 최초등록일시 */
+            ,#userNo#                                                 /* 최종변경사용자ID */
+            ,SYSDATE                                                  /* 최종변경일시 */
+             )]]>
+	</update>
+	<select id="SFrmRolListCntbyYes" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SFrmRolListCntbyYes 화면권한역할전체건수조회(권한O) */
+/* IO: 김석영,2014-10-01T19:10:15(심상준,2014-08-27T10:49:18) */
+SELECT  
+        COUNT(*) AS TOTAL_CNT_Y   /* 화면권한역할전체건수조회(권한O) */
+  FROM  TB_AUTR_ROL A,     /* SC_권한역할 */   
+        TB_FRM_AUTR_ROL B, /* SC_화면권한역할 */   
+        TB_FRM C           /* SC_화면 */   
+ WHERE  A.AUTR_ROL_ID = B.AUTR_ROL_ID
+   AND  B.FRM_ID = C.FRM_ID
+   AND  B.USE_YN = 'Y']]>
+	</select>
+	<select id="SFrmRolListCntbyNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SFrmRolListCntbyNo 화면권한역할전체건수조회(권한X) */
+/* IO: 김석영,2014-10-01T19:07:20(심상준,2014-08-27T10:49:42) */
+SELECT 
+       COUNT(*) AS TOTAL_CNT_N   /*화면권한역할전체건수조회(권한X) */
+FROM  
+       TB_AUTR_ROL A      /* SC_권한역할 */   
+      ,TB_FRM_AUTR_ROL B  /* SC_화면권한역할 */   
+      ,TB_FRM C            /* SC_화면 */   
+WHERE  A.AUTR_ROL_ID = B.AUTR_ROL_ID
+  AND  B.FRM_ID = C.FRM_ID
+  AND  B.USE_YN = 'N']]>
+	</select>
+	<delete id="DFrmRolListDtlDel" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.DFrmRolListDtlDel 화면권한세부역할삭제 */
+/* IO: 김석영,2014-10-01T18:42:14(심상준,2014-09-05T09:02:41) */
+DELETE
+  FROM  TB_FRM_AUTR_ROL                     /* SC_화면권한역할 */
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#         
+   AND  FRM_ID = #FRM_ID#                   
+   AND  FRM_ITEM_GRP_ID =#FRM_ITEM_GRP_ID#]]>
+	</delete>
+	<select id="SFrmRolbyUser" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SFrmRolbyUser 사용자별화면권한역할조회 */
+/* IO: 심상준,2014-12-12T14:15:38(심상준,2014-12-12T13:35:17) */
+SELECT  
+       B.FRM_ID                                               /* 화면명 */
+      ,B.FRM_ITEM_GRP_ID                            		  /* 화면항목그룹 ID*/
+      ,MAX(B.INQ_AUTR_YN) AS INQ_AUTR_YN                      /* 조회권한여부 */
+      ,MAX(B.SAVE_AUTR_YN) AS SAVE_AUTR_YN                    /* 저장권한여부 */
+      ,MAX(B.UPD_AUTR_YN) AS UPD_AUTR_YN                      /* 수정권한여부 */
+      ,MAX(B.DEL_AUTR_YN) AS DEL_AUTR_YN                      /* 삭제권한여부 */
+      ,MAX(B.OPUT_AUTR_YN) AS OPUT_AUTR_YN                    /* 출력권한여부 */
+      ,MAX(B.EXL_AUTR_YN) AS EXL_AUTR_YN                      /* 엑셀권한여부 */
+      ,MAX(B.PRN_INFO_INQ_AUTR_YN) AS PRN_INFO_INQ_AUTR_YN    /* 개인정보조회권 */
+  FROM TB_USER_AUTR_ROL A 
+      ,TB_FRM_AUTR_ROL B 
+      ,TB_AUTR_ROL C
+ WHERE A.AUTR_ROL_ID = B.AUTR_ROL_ID 
+   AND A.AUTR_ROL_ID = C.AUTR_ROL_ID 
+   AND A.USER_NO = #USER_NO#
+   AND B.FRM_ID = #FRM_ID#
+   AND A.APLY_STA_DT <= TO_CHAR(SYSDATE,'YYYYMMDD') 
+   AND A.APLY_END_DT > TO_CHAR(SYSDATE-1,'YYYYMMDD')
+   AND A.USE_YN = 'Y'
+   AND B.USE_YN = 'Y'
+   AND C.USE_YN = 'Y'
+ GROUP BY B.FRM_ID, B.FRM_ITEM_GRP_ID]]>
+	</select>
+	<select id="SMenuRolByUser" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SMenuRolByUser 사용자별하위메뉴조회 */
+/* IO: 심상준,2014-12-16T15:28:35(김석영,2014-07-30T17:03:01) */
+SELECT  
+         MENU_ID              /* 메뉴ID */
+        ,MENU_NM              /* 메뉴명 */
+        ,MENU_DESC            /* 메뉴설명 */
+        ,MENU_LV              /* 메뉴레벨 */
+        ,MENU_SORT_ORD        /* 메뉴정렬순서 */
+        ,SUBSTR(SYS_CONNECT_BY_PATH(MENU_NM, '>') , 2)  AS FULL_PATH_NM  /* 메뉴경로 */ 
+        ,FRM_ID               /* 화면ID */
+        ,FRM_NM               /* 화면명 */
+        ,FRM_URL              /* 화면URL */
+        ,FRM_CL_CD            /* 화면구분코드 */
+        ,SUP_MENU_ID           /* 상위메뉴ID */
+   FROM (
+         SELECT  
+       DISTINCT
+                 A.MENU_ID              /* 메뉴ID */
+                ,A.MENU_NM              /* 메뉴명 */
+                ,A.MENU_DESC            /* 메뉴설명 */
+                ,A.MENU_LV              /* 메뉴레벨 */
+                ,A.MENU_SORT_ORD        /* 메뉴정렬순서 */
+                ,A.FRM_ID               /* 화면ID */
+                ,B.FRM_NM               /* 화면명 */
+                ,B.FRM_URL              /* 화면URL */
+                ,B.FRM_CL_CD            /* 화면구분코드 */
+                ,A.SUP_MENU_ID           /* 상위메뉴ID */
+           FROM  TB_MENU A              /* SC_메뉴 */ 
+               ,(SELECT
+                         IC.FRM_ID 
+                        ,IC.FRM_NM
+                        ,IC.FRM_URL
+                        ,IC.FRM_CL_CD
+                   FROM  TB_USER_AUTR_ROL IB
+                        ,TB_FRM IC 
+                        ,TB_FRM_AUTR_ROL ID 
+                        ,TB_MENU IE 
+                        ,TB_AUTR_ROL IF
+                  WHERE  IB.AUTR_ROL_ID = IF.AUTR_ROL_ID 
+                    AND  IF.AUTR_ROL_ID = ID.AUTR_ROL_ID 
+                    AND  ID.FRM_ID = IC.FRM_ID 
+                    AND  IE.FRM_ID = IC.FRM_ID 
+                    AND  IB.USER_NO = #USER_NO#
+                    AND  IB.APLY_STA_DT <= TO_CHAR(SYSDATE,'YYYYMMDD') 
+                    AND  IB.APLY_END_DT > TO_CHAR(SYSDATE-1,'YYYYMMDD')
+                    AND  IB.USE_YN = 'Y'
+                    AND  ID.USE_YN = 'Y'
+                    AND  IF.USE_YN = 'Y'
+                 ) B
+          WHERE  A.FRM_ID = B.FRM_ID(+)
+          START  WITH  B.FRM_ID IS NOT NULL
+        CONNECT  BY PRIOR A.SUP_MENU_ID = A.MENU_ID
+         )
+  WHERE  MENU_LV > 0
+  START  WITH MENU_ID = #SUP_MENU_ID# 
+CONNECT  BY PRIOR MENU_ID = SUP_MENU_ID
+  ORDER  SIBLINGS BY  MENU_LV 
+                     ,MENU_SORT_ORD]]>
+	</select>
+	<select id="SAutrRolMenu" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SAutrRolMenu 권한메뉴리스트조회 */
+/* IO: 임지후,2015-03-10T11:03:39(임지후,2015-03-10T11:03:39) */
+SELECT 
+		 0 AS CHK		 /* 체크컬럼 */	
+		,#AUTR_ROL_ID# AS AUTR_ROL_ID  /* 권한ID */	
+        ,A.MENU_ID       /* 메뉴ID */
+        ,A.MENU_NM       /* 메뉴명 */
+        ,A.MENU_DESC     /* 메뉴설명 */ 
+        ,A.MENU_LV       /* 메뉴레벨 */
+        ,A.MENU_SORT_ORD /* 메뉴정렬순서 */ 
+        ,A.FRM_ID        /* 화면 ID*/
+        ,B.FRM_NM        /* 화면명 */
+        ,A.SUP_MENU_ID   /* 상위메뉴ID */ 
+        ,CASE WHEN 	A.FRM_ID IN (
+                                 SELECT 
+                                        FRM_ID
+                                  FROM  TB_FRM_AUTR_ROL AA
+                                       ,TB_AUTR_ROL BB
+                                  WHERE AA.AUTR_ROL_ID = BB.AUTR_ROL_ID
+                                    AND AA.AUTR_ROL_ID = #AUTR_ROL_ID#   
+                                )
+              THEN 1
+              ELSE 0
+          END AS AUTR_YN  /* 권한여부 */ 
+   FROM  TB_MENU A       /* SC_메뉴 */
+        ,TB_FRM B        /* SC_화면 */
+  WHERE  A.FRM_ID = B.FRM_ID(+) 
+  START  WITH A.MENU_LV = 0
+CONNECT  BY PRIOR A.MENU_ID = A.SUP_MENU_ID 
+  ORDER  SIBLINGS BY A.MENU_LV
+                    ,A.MENU_SORT_ORD ASC]]>
+	</select>
+	<select id="SAutrRolMenuPopup" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SAutrRolMenuPopup 팝업화면리스트조회 */
+/* IO: 임지후,2015-03-10T11:15:15(임지후,2015-03-10T11:02:04) */
+SELECT 
+	    0        AS CHK		
+	   ,#AUTR_ROL_ID#  AS AUTR_ROL_ID 
+       ,'POPUP'  AS MENU_ID       
+       ,'팝업화면'   AS MENU_NM       
+       ,''       AS MENU_DESC   
+       ,0        AS MENU_LV       
+       ,0        AS MENU_SORT_ORD 
+       ,''  AS FRM_ID      
+       ,''  AS FRM_NM       
+       ,''  AS SUP_MENU_ID  
+       ,0        AS AUTR_YN 
+  FROM  DUAL     /* 팝업화면 상위메뉴 가상생성 */   
+ UNION ALL
+SELECT 
+	    0        AS CHK		
+	   ,#AUTR_ROL_ID#  AS AUTR_ROL_ID 
+       ,A.FRM_ID AS MENU_ID     
+       ,A.FRM_NM AS MENU_NM      
+       ,''       AS MENU_DESC    
+       ,1        AS MENU_LV     
+       ,1        AS MENU_SORT_ORD 
+       ,A.FRM_ID      
+       ,A.FRM_NM        
+       ,'POPUP'  AS SUP_MENU_ID  
+       ,CASE WHEN A.FRM_ID IN (
+                                SELECT 
+                                        FRM_ID
+                                  FROM  TB_FRM_AUTR_ROL AA
+                                       ,TB_AUTR_ROL BB
+                                  WHERE AA.AUTR_ROL_ID = BB.AUTR_ROL_ID
+                                    AND AA.AUTR_ROL_ID = #AUTR_ROL_ID#
+                                )
+              THEN 1
+              ELSE 0
+         END AS AUTR_YN  
+   FROM TB_FRM A      
+  WHERE NOT EXISTS (SELECT 'X' 
+                      FROM TB_MENU 
+                     WHERE FRM_ID = A.FRM_ID)
+    AND A.FRM_ID LIKE '%P'  /* 팝업 P로 끝나는 화면ID 추출 */
+  ORDER BY MENU_LV,
+           FRM_ID]]>
+	</select>
+	<select id="SFrmDtlAutr" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmAutrRolMgmt.SFrmDtlAutr 화면상세권한조회 */
+/* IO: 임지후,2015-03-09T13:52:40(임지후,2015-03-06T13:59:53) */
+SELECT  
+        B.AUTR_ROL_ID                                                              /* 권한역할ID */ 
+       ,B.FRM_ID                                                                  /* 화면ID */  
+       ,B.FRM_ITEM_GRP_ID                                                         /* 화면항목그룹 ID */
+       ,TO_NUMBER(SUBSTR(B.FRM_ITEM_GRP_ID,4, length(B.FRM_ITEM_GRP_ID))) AS FRM_ITEM_GRP_ID_NUM
+       ,DECODE(B.INQ_AUTR_YN,'Y','1','N','0') AS INQ_AUTR_YN                      /* 조회권한여부 */
+       ,DECODE(B.SAVE_AUTR_YN,'Y','1','N','0') AS SAVE_AUTR_YN                    /* 저장권한여부 */
+       ,DECODE(B.UPD_AUTR_YN,'Y','1','N','0') AS UPD_AUTR_YN                      /* 수정권한여부 */
+       ,DECODE(B.DEL_AUTR_YN,'Y','1','N','0') AS DEL_AUTR_YN                      /* 삭제권한여부 */
+       ,DECODE(B.OPUT_AUTR_YN,'Y','1','N','0') AS OPUT_AUTR_YN                    /* 출력권한여부 */
+       ,DECODE(B.EXL_AUTR_YN,'Y','1','N','0') AS EXL_AUTR_YN                      /* 엑셀권한여부 */
+       ,DECODE(B.PRN_INFO_INQ_AUTR_YN,'Y','1','N','0') AS PRN_INFO_INQ_AUTR_YN    /* 개인정보조회권 */
+       ,DECODE(B.USE_YN,'Y','1','N','0') AS USE_YN                                /* 사용여부 */   
+ FROM   TB_AUTR_ROL A 
+       ,TB_FRM_AUTR_ROL B
+       ,TB_FRM C
+ WHERE  A.AUTR_ROL_ID = B.AUTR_ROL_ID
+   AND  B.FRM_ID = C.FRM_ID
+   AND  B.FRM_ID = #FRM_ID#
+   AND  B.AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</select>
+</sqlMap>

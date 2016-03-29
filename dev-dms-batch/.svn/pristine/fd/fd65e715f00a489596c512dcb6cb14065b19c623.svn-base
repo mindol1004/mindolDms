@@ -1,0 +1,223 @@
+package dms.ep;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.logging.Log;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : DMS-IF/인터페이스</li>
+ * <li>서브 업무명 : BIF110</li>
+ * <li>설  명 : <pre>[EP]감정결과전송</pre></li>
+ * <li>작성일 : 2015-08-10 11:07:57</li>
+ * <li>작성자 : 이준우 (newnofixing)</li>
+ * </ul>
+ */
+public class DBE007 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+
+    /**
+     * 배치 생성자. 상위클래스 생성자 호출
+     */
+    public DBE007() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        Log log = getLog(context);
+		
+		processCnt = 0;
+		taskNo = "";
+		procFileName = "";
+		
+		IOnlineContext  onlineCtx  = makeOnlineContext(context);
+		IDataSet reqDS = new DataSet();
+		IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+		taskNo = resDS.getField("TASK_NO");
+		
+		reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "EP");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+		
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+        // 트랜잭션 시작
+        txBegin();  
+        dbStartSession();
+        dbBeginBatch();
+        
+        /* SQL ParmaMap 설정 */
+        HashMap<String, Object> paramMap = new HashMap<String,Object>();
+        paramMap.put("PROC_DT", context.getInParameter("PROC_DT"));             //파라메터 날짜받기
+        
+        try {
+            dbSelect("STfEqpJdgRslt", paramMap, makeRecordHandler(context), context); // IF_단말기감정 조회
+            
+        } catch (Exception e) {         
+            throw new BizRuntimeException("M00001", e);
+        }
+        
+        // 트랜잭션 커밋
+        dbEndBatch();
+        dbEndSession();
+        txCommit();
+    }
+        
+    
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_CNT", "" + processCnt);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        }else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+        }
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fUpdBatTaskOpHst", reqDS, onlineCtx);
+        
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+    
+    /**
+     * E4U감정결과전송 IF조회 후 레코드 단위로 상담관리대상 테이블, 상담관리상세대상 테이블에 입력
+     * 
+     */
+    public AbsRecordHandler makeRecordHandler(IBatchContext context) {
+    
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+                        
+            @Override
+            public void handleRecord(IRecord row) {
+
+                context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+                
+////                context.getLogger().debug("XXXXXXXXXXXXX " + row);
+                                 
+                HashMap<String, Object> paramMap = new HashMap<String,Object>();                    
+                                
+                paramMap.put("IF_PROC_DT", StringUtils.nvlObject(row.get("IF_PROC_DT"),""));
+                paramMap.put("IF_FILE_NM", StringUtils.nvlObject(row.get("IF_FILE_NM"),""));
+                paramMap.put("IF_SEQ", StringUtils.nvlObject(row.get("IF_SEQ"),""));
+                
+                paramMap.put("EQP_MDL_CD"   , StringUtils.nvlObject(row.get("EQP_MDL_CD"   ),""));  /*단말기모델코드   */
+                paramMap.put("EQP_SER_NO"   , StringUtils.nvlObject(row.get("EQP_SER_NO"   ),""));  /*단말기일련번호   */
+                paramMap.put("IMEI"         , StringUtils.nvlObject(row.get("IMEI"         ),""));  /*IMEI         */
+                paramMap.put("BUYER_NM"     , StringUtils.nvlObject(row.get("BUYER_NM"     ),""));  /*매입자명            */
+                paramMap.put("BUYER_NM_ENPT", StringUtils.nvlObject(row.get("BUYER_NM_ENPT"),""));  /*매입자명암호화  */
+                paramMap.put("CNSL_DT"      , StringUtils.nvlObject(row.get("ACPT_DT"      ),""));  /*접수일자          */
+                paramMap.put("PRCH_AMT"     , StringUtils.nvlObject(row.get("PRCH_AMT"     ),""));  /*매입금액           */
+                paramMap.put("DPSTR_NM"      , StringUtils.nvlObject(row.get("DPSTR_NM"      ),""));  /*예금주명          */
+                paramMap.put("DPSTR_NM_ENPT" , StringUtils.nvlObject(row.get("DPSTR_NM_ENPT" ),""));  /*예금주명암호화 */
+                paramMap.put("BANK_CD"      , StringUtils.nvlObject(row.get("BANK_CD"      ),""));  /*은행코드           */
+                paramMap.put("ACCO_NO"      , StringUtils.nvlObject(row.get("ACCO_NO"      ),""));  /*계좌번호           */
+                paramMap.put("ACCO_NO_ENPT" , StringUtils.nvlObject(row.get("ACCO_NO_ENPT" ),""));  /*계좌번호암호화 */
+                paramMap.put("TEL_NO"       , StringUtils.nvlObject(row.get("TEL_NO"       ),""));  /*전화번호           */
+                paramMap.put("TEL_NO_ENPT"  , StringUtils.nvlObject(row.get("TEL_NO_ENPT"  ),""));  /*전화번호암호화 */
+                paramMap.put("CNSL_MGMT_NO" , StringUtils.nvlObject(row.get("MGMT_NO"      ),""));  /*관리번호      */
+                paramMap.put("CUST_GRP_NM"  , StringUtils.nvlObject(row.get("CUST_GRP_NM"  ),""));  /*고객그룹명   */
+                paramMap.put("XCL_MODE"     , StringUtils.nvlObject(row.get("XCL_MODE"     ),""));  /*정산방식      */
+                paramMap.put("PROC_CL_CD"   , StringUtils.nvlObject(row.get("PROC_CL_CD"   ),""));  /*처리구분코드*/
+                paramMap.put("SUGG"         , StringUtils.nvlObject(row.get("SUGG"         ),""));  /*의견             */ 
+                paramMap.put("DEALCO_GRP_CD", StringUtils.nvlObject(row.get("DEALCO_GRP_CD"),""));  /*거래처그룹코드*/ 
+                paramMap.put("DEALCO_GRP_NM", StringUtils.nvlObject(row.get("DEALCO_GRP_NM"),""));  /*거래처그룹명 */  
+                paramMap.put("PROC_ST_CD"   , StringUtils.nvlObject(row.get("PROC_ST_CD"   ),""));  /*처리상태코드 */
+                
+                paramMap.put("HLD_QTY"   , 0);  /*처리상태코드 */
+                
+//                context.getLogger().debug("###paramMap####### : "+paramMap.toString());
+                Map mProdDtl = null;
+                
+                if(null != row  ){
+                    context.getLogger().debug("###paramMap####### : "+paramMap.toString());
+                    dbInsert("IConsultMgmt", paramMap, context);  // 상담관리저장 MERGE (=CNSL_MGMT_NO) > 중복입력방지 수정 필요
+                    
+                    dbDelete("DConsultDtl", paramMap, context);   // 상담관리 상세 삭제 (=CNSL_MGMT_NO) > 중복입력방지
+                    
+                    IRecordSet rs = dbSelectMulti("SInqEqpProdDtlList", paramMap);  //입고대상상품상세리스트
+                    
+                    for(int i=0; i<rs.getRecordCount(); i++){
+                        mProdDtl = rs.getRecordMap(i);
+                        if ("1".equals(mProdDtl.get("OUTS_MCN_CL"))) {
+                            paramMap.put("HLD_QTY", 1);
+                        }
+//                        context.getLogger().debug("###set####### ");
+                        
+                        paramMap.put("CNSL_SER_NO"   , mProdDtl.get("CNSL_SER_NO"));
+                        paramMap.put("BATR_CD"   , StringUtils.nvlObject(mProdDtl.get("BATR_CD"   ),""));  /*상담일련번호   */
+                        paramMap.put("OUTS_MCN_CL"   , StringUtils.nvlObject(mProdDtl.get("OUTS_MCN_CL"   ),"")); 
+                        paramMap.put("QTY"   , mProdDtl.get("QTY"));
+                        paramMap.put("NRL_QTY"   , mProdDtl.get("NRL_QTY"));
+                        
+                        paramMap.put("PRICE"   , mProdDtl.get("UPRC"   )); 
+//                        context.getLogger().debug("###paramMap####### : "+paramMap.toString());
+//                        context.getLogger().debug("###s상담관리상세저장#### ");
+                        dbInsert("IConsultDtl", paramMap, context);  // 상담관리상세저장
+                    }
+                    
+                    dbUpdate("UTfEqpJdgRslt", paramMap, context);  //TF update
+                        
+                }
+                processCnt++;
+                
+                if (processCnt%1000 == 0) {
+                    dbEndBatch();
+                    txCommitAndBegin();
+                    dbBeginBatch();
+                }
+            }
+        };
+        return rh;
+    }
+
+}

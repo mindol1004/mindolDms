@@ -1,0 +1,859 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPRJdgQltyJdgMgmt">
+	<select id="SInqRJdgQltyJdgObjListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqRJdgQltyJdgObjListTotCnt 재감정품질검사대상조회총건수 */
+/* IO: 양재석,2015-11-16T18:12:20(양재석,2015-08-28T15:40:55) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_EP_CST_PRCHS_MGMT A  
+  	    , TB_DEALCO B
+  	    , TB_EQP_MDL C
+  	    , TB_USER D
+  	    , TB_EP_CST_CONSULT_MGMT E
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND A.INPT = D.USER_NO(+)
+   AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.PRCH_CL = 'Y'
+   AND A.SKN_CL = 'Y'
+   AND NVL(A.SKN_PROC_YN,'N') = 'N'
+   AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#       
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+       B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+       A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+       A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+       A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqRJdgQltyJdgObjListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqRJdgQltyJdgObjListPaging 재감정품질검사대상조회 */
+/* IO: 정동현,2016-01-07T11:18:01(양재석,2015-09-02T14:27:39) */
+SELECT PA.*
+  FROM (SELECT ROW_NUMBER() OVER(ORDER BY A.PRCH_MGMT_NO DESC) AS ROWNO
+               , A.PRCH_MGMT_NO  /*매입관리번호*/
+               , A.CNSL_MGMT_NO  /*상담관리번호*/
+               , A.EQP_MDL_CD
+               , A.EQP_SER_NO
+               , A.TLY_DT  /*검수일자*/
+               , A.CNSL_DT /*상담일자*/
+               , A.EQP_COLOR_CD
+               , B.AFFIL_ORG_ID /*소속조직ID*/
+               ,(SELECT ORG_NM FROM TB_EP_BAS_ORG_MGMT WHERE DEL_YN = 'N' AND ORG_ID = B.AFFIL_ORG_ID) ORG_NM /*조직명*/
+               , B.AGN_ORG_CD    /*UKey대리점코드*/
+               ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM /*대리점명*/
+               ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = A.CNSL_DEALCO_CD) CNSL_DEALCO_NM /*상담처명*/   
+               , A.CNSL_DEALCO_CD /*상담처코드*/
+               , C.EQP_MDL_NM
+               , A.PRCH_AMT
+               , A.BANK_CD
+               , A.ACCO_NO
+               , A.DPSTR
+               , A.TEL_NO
+               , A.ACCO_NO_ENPT
+               , A.DPSTR_ENPT
+               , A.TEL_NO_ENPT
+               , NVL(A.CUST_IDEA,'N') CUST_IDEA /*고객의사*/
+               , B.AFFIL_AGN /*소속대리점*/
+               , A.PROGR_ST /*진행상태*/
+               , A.EQP_ST /*단말기상태*/
+               , A.SKN_EQP_ST /*SKN단말기상태*/
+               , A.SKN_JDG_CL /*SKN감정구분*/
+               , NVL(A.SKN_JDG_AMT,A.PRCH_AMT) SKN_JDG_AMT /*SKN감정금액*/
+               , NVL(A.SKN_SMPL_JDG_DAMT,0) SKN_SMPL_JDG_DAMT  /*SKN샘플강정차액*/
+               , NVL(A.SKN_PROC_YN,'N') SKN_PROC_YN  /*SKN처리유무*/
+               , A.SKN_PROC_DT  /*SKN처리일자*/
+               , D.USER_NM CHECK_USER_NM /* 검수자 */
+               , A.EVALCNSLR_SUGG SKN_DTL_SUGG /*SKN상세의견*/
+               , NVL(A.AGN_DDCT_YN,'N') AGN_DDCT_YN /*대리점차감여부*/
+               , A.BOX_NO
+               , A.CLCT_DT  /*회수일자*/
+               , NVL((SELECT CM_CD_ID
+                        FROM TB_CM_CD
+                       WHERE USE_YN = 'Y'
+                         AND CM_GRP_CD_ID = 'DMS182'
+                         AND MGMT_ITEM_CD1 <= A.CNSL_DT
+                         AND MGMT_ITEM_CD2 >= A.CNSL_DT)
+                 ,0) UBO_AMT
+               , (A.PRCH_AMT + NVL((SELECT CM_CD_ID
+                                      FROM TB_CM_CD
+                                     WHERE USE_YN = 'Y'
+                                       AND CM_GRP_CD_ID = 'DMS182'
+                                       AND MGMT_ITEM_CD1 <= A.CNSL_DT
+                                       AND MGMT_ITEM_CD2 >= A.CNSL_DT)
+                               ,0)
+                 ) TOT_AMT   
+               , '0' CHECKED
+               , A.PRCH_CHG_DAMT_AMT
+               , E.IN_CONF_DT
+               , DECODE(NVL(A.QULT_EXMN_CHK_PROC_CHRGR,''),'',''
+                        ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.QULT_EXMN_CHK_PROC_CHRGR)
+                 ) QULT_EXMN_CHK_PROC_CHRGR_NM
+               , DECODE(NVL(A.QULT_EXMN_CHK_CNCL_PROC_CHRGR,''),'',''
+                        ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.QULT_EXMN_CHK_CNCL_PROC_CHRGR)
+                 ) QULT_EXMN_CHK_CNCL_CHRGR_NM
+               ,E.SCRB_MTHD /*20160107 추가 가입방법 */
+          FROM TB_EP_CST_PRCHS_MGMT A  
+          	    , TB_DEALCO B
+          	    , TB_EQP_MDL C
+          	    , TB_USER D
+          	    , TB_EP_CST_CONSULT_MGMT E
+         WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+           AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+           AND A.INPT = D.USER_NO(+)
+           AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+           AND B.EFF_STA_DT <= A.CNSL_DT
+           AND B.EFF_END_DT >= A.CNSL_DT
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.PRCH_CL = 'Y'
+           AND A.SKN_CL = 'Y'
+           AND NVL(A.SKN_PROC_YN,'N') = 'N'
+           AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#       
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+        	   B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+               A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+               A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+               A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+               A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+               A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+       )PA                                                      
+ WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInqRJdgQltyJdgRegListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqRJdgQltyJdgRegListPaging 재감정품질검사확인조회 */
+/* IO: 양재석,2016-01-25T18:41:40(양재석,2015-09-02T15:08:38) */
+SELECT PA.*
+  FROM (SELECT ROW_NUMBER() OVER(ORDER BY A.PRCH_MGMT_NO DESC) AS ROWNO
+               , A.PRCH_MGMT_NO  /*매입관리번호*/
+               , A.CNSL_MGMT_NO  /*상담관리번호*/
+               , A.EQP_MDL_CD
+               , A.EQP_SER_NO
+               , A.TLY_DT  /*검수일자*/
+               , A.CNSL_DT /*상담일자*/
+               , A.EQP_COLOR_CD
+               , B.AFFIL_ORG_ID /*소속조직ID*/
+               ,(SELECT ORG_NM FROM TB_EP_BAS_ORG_MGMT WHERE DEL_YN = 'N' AND ORG_ID = B.AFFIL_ORG_ID) ORG_NM /*조직명*/
+               , B.AGN_ORG_CD    /*UKey대리점코드*/
+               ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM /*대리점명*/
+               ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = A.CNSL_DEALCO_CD) CNSL_DEALCO_NM /*상담처명*/   
+               , A.CNSL_DEALCO_CD /*상담처코드*/
+               , C.EQP_MDL_NM
+               , A.PRCH_AMT
+               , A.BANK_CD
+               , A.ACCO_NO
+               , A.DPSTR
+               , A.TEL_NO
+               , A.ACCO_NO_ENPT
+               , A.DPSTR_ENPT
+               , A.TEL_NO_ENPT
+               , NVL(A.CUST_IDEA,'N') CUST_IDEA /*고객의사*/
+               , B.AFFIL_AGN /*소속대리점*/
+               , A.PROGR_ST /*진행상태*/
+               , A.EQP_ST /*단말기상태*/
+               , A.SKN_EQP_ST /*SKN단말기상태*/
+               , A.SKN_JDG_CL /*SKN감정구분*/
+               , NVL(A.SKN_JDG_AMT,0) SKN_JDG_AMT /*SKN감정금액*/
+               , NVL(A.SKN_SMPL_JDG_DAMT,0) SKN_SMPL_JDG_DAMT  /*SKN샘플강정차액*/
+               , NVL(A.SKN_PROC_YN,'N') SKN_PROC_YN  /*SKN처리유무*/
+               , A.SKN_PROC_DT  /*SKN처리일자*/
+               , D.USER_NM CHECK_USER_NM /* 검수자 */
+               , A.EVALCNSLR_SUGG SKN_DTL_SUGG /*SKN상세의견*/
+               , NVL(A.AGN_DDCT_YN,'N') AGN_DDCT_YN /*대리점차감여부*/
+               , A.BOX_NO
+               , A.CLCT_DT  /*회수일자*/
+               ,DECODE(NVL((SELECT EQP_MDL_CD 
+                              FROM TB_EP_DIS_PROD_DIS
+                             WHERE DEL_YN = 'N'
+                               AND A.EQP_MDL_CD = EQP_MDL_CD
+                               AND A.EQP_COLOR_CD = EQP_COLOR_CD
+                               AND A.EQP_SER_NO = BF_SER_NO
+                               AND IN_OUT_CL != '100'
+                               AND ROWNUM = 1                    
+                            ),'N'),'N','N','Y') DIS_YN /*구성품확인여부*/
+               , NVL((SELECT CM_CD_ID
+                        FROM TB_CM_CD
+                       WHERE USE_YN = 'Y'
+                         AND CM_GRP_CD_ID = 'DMS182'
+                         AND MGMT_ITEM_CD1 <= A.CNSL_DT
+                         AND MGMT_ITEM_CD2 >= A.CNSL_DT)
+                 ,0) UBO_AMT /*유보금액*/
+               , (A.PRCH_AMT + NVL((SELECT CM_CD_ID
+                                      FROM TB_CM_CD
+                                     WHERE USE_YN = 'Y'
+                                       AND CM_GRP_CD_ID = 'DMS182'
+                                       AND MGMT_ITEM_CD1 <= A.CNSL_DT
+                                       AND MGMT_ITEM_CD2 >= A.CNSL_DT)
+                               ,0)
+                 ) TOT_AMT   
+               , '0' CHECKED
+               , A.PRCH_CHG_DAMT_AMT
+               , F.IN_CONF_DT
+               , DECODE(NVL(A.QULT_EXMN_CHK_PROC_CHRGR,''),'',''
+                        ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.QULT_EXMN_CHK_PROC_CHRGR)
+                 ) QULT_EXMN_CHK_PROC_CHRGR_NM
+               , DECODE(NVL(A.QULT_EXMN_CHK_CNCL_PROC_CHRGR,''),'',''
+                        ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.QULT_EXMN_CHK_CNCL_PROC_CHRGR)
+                 ) QULT_EXMN_CHK_CNCL_CHRGR_NM
+               ,F.SCRB_MTHD /* 20160107 추가 가입방법 */
+          FROM TB_EP_CST_PRCHS_MGMT A  
+          	    , TB_DEALCO B
+          	    , TB_EQP_MDL C
+          	    , TB_USER D
+                , TB_EP_CST_CONSULT_MGMT F
+         WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+           AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+           AND A.INPT = D.USER_NO(+)
+           AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+           AND B.EFF_STA_DT <= A.CNSL_DT
+           AND B.EFF_END_DT >= A.CNSL_DT
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.PRCH_CL = 'Y'
+           AND A.SKN_CL = 'Y'
+           AND NVL(A.SKN_PROC_YN,'N') = 'Y'
+           AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#       
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+        	      B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+               A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+               A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+               A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+               A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+               A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+       )PA                                                      
+ WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInqRJdgQltyJdgRegListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqRJdgQltyJdgRegListTotCnt 재감정품질검사확인조회총건수 */
+/* IO: 양재석,2016-01-25T15:38:03(양재석,2015-09-02T15:11:06) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_EP_CST_PRCHS_MGMT A  
+  	    , TB_DEALCO B
+  	    , TB_EQP_MDL C
+  	    , TB_USER D
+  	    , TB_EP_CST_CONSULT_MGMT F
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND A.INPT = D.USER_NO(+)
+   AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.PRCH_CL = 'Y'
+   AND A.SKN_CL = 'Y'
+   AND NVL(A.SKN_PROC_YN,'N') = 'Y'
+   AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#       
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+        	      B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+               A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+               A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+               A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+               A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+               A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<update id="URJdgQltyJdgRegUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.URJdgQltyJdgRegUpd 재감정품질검사대상검수확인수정 */
+/* IO: 양재석,2016-01-25T17:52:40(양재석,2015-09-04T14:36:35) */
+UPDATE TB_EP_CST_PRCHS_MGMT
+   SET SKN_PROC_YN = DECODE(#SKN_PROC_YN#,'Y','N','Y')
+       ,SKN_PROC_DT = DECODE(#SKN_PROC_YN#,'Y','',TO_CHAR(SYSDATE,'YYYYMMDD'))
+       ,QULT_EXMN_CHK_PROC_CHRGR = DECODE(#SKN_PROC_YN#,'N',#LS_CHG_USER_ID#,'') /*품질 검사 확인 처리 담당자*/
+       ,QULT_EXMN_CHK_PROC_DT = DECODE(#SKN_PROC_YN#,'N',TO_CHAR(SYSDATE,'YYYYMMDD'),'') /*품질 검사 확인 처리 일자*/
+       ,QULT_EXMN_CHK_CNCL_PROC_CHRGR = DECODE(#SKN_PROC_YN#,'Y',#LS_CHG_USER_ID#,'') /*품질 검사 확인 취소 처리 담당자*/
+       ,QULT_EXMN_CHK_CNCL_PROC_DT = DECODE(#SKN_PROC_YN#,'Y',TO_CHAR(SYSDATE,'YYYYMMDD'),'') /*품질 검사 확인 취소 처리 일자*/
+       ,QULT_EXMN_CHK_CL = DECODE(#SKN_PROC_YN#,'Y','N','Y') /*품질 검사 확인 구분*/
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#	
+       ,PROGR_ST = DECODE(#SKN_PROC_YN#,'Y','13','35')     
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</update>
+	<select id="SInqRJdgQltyJdgObjDtlList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqRJdgQltyJdgObjDtlList 재감정품질검사대상상세조회 */
+/* IO: 양재석,2016-01-25T18:15:22(양재석,2015-09-07T09:35:07) */
+SELECT A.PRCH_MGMT_NO
+       ,C.CMPT_PROD_CD   EQP_MDL_CD
+       ,D.PROD_CL        PROD_CL
+       ,C.HLD_QTY        IN_QTY
+       ,C.PRCH_UPRC      IN_AMT
+       ,'99'             EQP_COLOR_CD
+  FROM TB_EP_CST_PRCHS_MGMT A
+       ,TB_DEALCO B
+       ,TB_EP_CST_PRCHS_DTL C
+       ,TB_EQP_MDL D
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND A.PRCH_MGMT_NO = C.PRCH_MGMT_NO
+   AND C.CMPT_PROD_CD = D.EQP_MDL_CD(+)
+   AND A.PRCH_CL = 'Y'
+   AND C.HLD_QTY > 0 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN(+) = 'N'
+   AND A.SKN_CL = 'Y'
+   AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+   AND NVL(A.SKN_PROC_YN,'N') = 'N'
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+        	      B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+               A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PRCH_MGMT_NO"><![CDATA[   
+               C.PRCH_MGMT_NO = #PRCH_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+               A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+               A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+               A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+               A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqRJdgQltyJdgRegDtlList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqRJdgQltyJdgRegDtlList 재감정품질검사확인상세조회 */
+/* IO: 양재석,2016-01-25T18:45:49(양재석,2015-09-07T13:37:42) */
+SELECT A.PRCH_MGMT_NO
+       ,C.CMPT_PROD_CD   EQP_MDL_CD
+       ,D.PROD_CL        PROD_CL
+       ,C.HLD_QTY        IN_QTY
+       ,C.PRCH_UPRC      IN_AMT
+  FROM TB_EP_CST_PRCHS_MGMT A
+       ,TB_DEALCO B
+       ,TB_EP_CST_PRCHS_DTL C
+       ,TB_EQP_MDL D
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND A.PRCH_MGMT_NO = C.PRCH_MGMT_NO
+   AND C.CMPT_PROD_CD = D.EQP_MDL_CD(+)
+   AND A.PRCH_CL = 'Y'
+   AND C.HLD_QTY > 0 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN(+) = 'N'
+   AND A.SKN_CL = 'Y'
+   AND A.TLY_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+   AND NVL(A.SKN_PROC_YN,'N') = 'N'
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+        	      B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+               A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PRCH_MGMT_NO"><![CDATA[   
+               A.PRCH_MGMT_NO = #PRCH_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+               A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+               A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+               A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+               A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SRJdgQJdgInqEqpDisListCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SRJdgQJdgInqEqpDisListCnt 재감정품질검사단말기재고건수조회 */
+/* IO: 양재석,2015-09-08T11:27:39(양재석,2015-09-08T11:10:46) */
+SELECT COUNT(*) AS DIS_CNT
+  FROM TB_EP_DIS_DIS
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND IN_OUT_CL = '100'
+   AND DEL_YN = 'N']]>
+	</select>
+	<select id="SRJdgQJdgInqEqpProdDisListCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SRJdgQJdgInqEqpProdDisListCnt 재감정품질검사단말기상품재고건수조회 */
+/* IO: 양재석,2016-01-25T17:53:03(양재석,2015-09-08T11:24:58) */
+SELECT COUNT(*) AS PROD_DIS_CNT
+  FROM TB_EP_DIS_PROD_DIS
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND IN_OUT_CL = '100'
+   AND DEL_YN = 'N']]>
+	</select>
+	<select id="SRJdgQJdgInqEqpInOrdListCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SRJdgQJdgInqEqpInOrdListCnt 재감정품질검사단말기입고오더건수조회 */
+/* IO: 양재석,2015-09-08T13:16:19(양재석,2015-09-08T13:16:19) */
+SELECT COUNT(*) AS ORD_CNT
+  FROM TB_EP_DIS_IN_M
+ WHERE ORD_MGMT_NO = #ORD_MGMT_NO#
+   AND DEL_YN = 'N'
+   AND IN_DEALCO_ID = #IN_DEALCO_ID#]]>
+	</select>
+	<select id="SInqDisInMgmtNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqDisInMgmtNo 입고관리번호채번 */
+/* IO: 양재석,2015-09-10T13:20:47(양재석,2015-09-08T15:42:05) */
+SELECT 'IN' || TO_CHAR(SYSDATE, 'YYYYMMDD') || TO_CHAR(SQ01_TB_EP_DIS_IN_M.NEXTVAL,'FM0000000') AS IN_MGMT_NO
+  FROM DUAL]]>
+	</select>
+	<insert id="IRjdgQltyJdgInRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.IRjdgQltyJdgInRgst 재감정품질검사입고등록 */
+/* IO: 양재석,2015-09-08T16:28:09(양재석,2015-09-08T16:28:09) */
+INSERT
+  INTO TB_EP_DIS_IN_M
+       (
+       IN_MGMT_NO        /* 입고 관리 번호   */
+       ,ORD_MGMT_NO       /* 발주 관리 번호   */
+       ,PRCH_MGMT_NO      /* 매입 관리 번호   */
+       ,IN_SCHD_DT        /* 입고 예정 일자   */
+       ,PRCHCO_ID         /* 매입처 ID        */
+       ,IN_DEALCO_ID      /* 입고 거래처 ID   */
+       ,IN_TS             /* 입고 차수        */
+       ,IN_CL             /* 입고 구분        */
+       ,IN_CONF_DT        /* 입고 확정 일자   */
+       ,IN_ST             /* 입고 상태        */
+       ,OUT_MGMT_NO       /* 출고 관리 번호   */
+       ,RMK               /* 비고             */
+       ,DEL_YN            /* 삭제 여부        */
+       ,UPDATE_COUNT      /* UPDATE COUNT     */
+       ,FS_REG_USER_ID    /* 최초등록사용자ID */
+       ,FS_REG_DTM        /* 최초등록일시     */
+       ,LS_CHG_USER_ID    /* 최종변경사용자ID */
+       ,LS_CHG_DTM        /* 최종변경일시     */
+       )
+VALUES
+      (
+       #IN_MGMT_NO#        
+       ,#ORD_MGMT_NO#      
+       ,#PRCH_MGMT_NO#     
+       ,#IN_SCHD_DT#       
+       ,#PRCHCO_ID#        
+       ,#IN_DEALCO_ID#     
+       ,(SELECT NVL(MAX(IN_TS),0) + 1 
+           FROM TB_EP_DIS_IN_M
+          WHERE IN_SCHD_DT = #IN_SCHD_DT#
+            AND PRCHCO_ID = #PRCHCO_ID#
+            AND IN_DEALCO_ID = #IV_IN_DEALCO_ID#
+       )
+       ,#IN_CL#            
+       ,#IN_CONF_DT#       
+       ,#IN_ST#            
+       ,#OUT_MGMT_NO#      
+       ,#RMK#              
+       ,'N'           
+       ,0     
+       ,#FS_REG_USER_ID#   
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#   
+       ,SYSDATE
+      )]]>
+	</insert>
+	<select id="SInqDisInDtlSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqDisInDtlSeq 입고상세순번채번 */
+/* IO: 양재석,2015-09-08T17:02:49(양재석,2015-09-08T17:02:49) */
+SELECT NVL(MAX(IN_SEQ),0) + 1 AS IN_SEQ
+  FROM TB_EP_DIS_IN_DTL_D
+ WHERE IN_MGMT_NO = #IN_MGMT_NO#]]>
+	</select>
+	<insert id="IRjdgQltyJdgInDtlRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.IRjdgQltyJdgInDtlRgst 재감정품질검사입고상세등록 */
+/* IO: 양재석,2015-09-08T17:29:49(양재석,2015-09-08T17:29:49) */
+INSERT
+  INTO TB_EP_DIS_IN_DTL_D
+       (
+       IN_MGMT_NO         /* 입고 관리 번호   */       
+       ,IN_SEQ            /* 입고 순번        */
+       ,EQP_MDL_CD        /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD      /* 단말기 색상 코드 */
+       ,EQP_SER_NO        /* 단말기 일련 번호 */
+       ,IN_QTY            /* 입고 수량        */
+       ,IN_AMT            /* 입고 금액        */
+       ,IN_CONF_DT        /* 입고 확정 일자   */
+       ,IN_CONF_YN        /* 입고 확정 여부   */
+       ,IN_CONF_QTY       /* 입고 확정 수량   */
+       ,PRCH_MGMT_NO      /* 매입 관리 번호   */
+       ,CNCL_YN           /* 취소 여부        */
+       ,DEL_YN            /* 삭제 여부        */
+       ,UPDATE_COUNT      /* UPDATE COUNT     */
+       ,FS_REG_USER_ID    /* 최초등록사용자ID */
+       ,FS_REG_DTM        /* 최초등록일시     */
+       ,LS_CHG_USER_ID    /* 최종변경사용자ID */
+       ,LS_CHG_DTM        /* 최종변경일시     */
+       )
+VALUES
+       (
+       #IN_MGMT_NO#    
+       ,#IN_SEQ#        
+       ,#EQP_MDL_CD#    
+       ,#EQP_COLOR_CD#  
+       ,#EQP_SER_NO#    
+       ,#IN_QTY#        
+       ,#IN_AMT#        
+       ,#IN_CONF_DT#    
+       ,NVL(#IN_CONF_YN#,'N')    
+       ,NVL(#IN_CONF_QTY#,0)   
+       ,#PRCH_MGMT_NO#  
+       ,'N'
+       ,'N'        
+       ,0
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<insert id="IRjdgQltyJdgInCpntRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.IRjdgQltyJdgInCpntRgst 재감정품질검사입고구성품등록 */
+/* IO: 양재석,2015-09-08T19:11:37(양재석,2015-09-08T18:02:30) */
+INSERT
+  INTO TB_EP_DIS_IN_CPNT
+       (
+       IN_MGMT_NO       /* 입고 관리 번호   */
+       ,IN_SEQ           /* 입고 순번        */
+       ,CMPT_SEQ         /* 구성품 순번      */
+       ,EQP_MDL_CD       /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD     /* 단말기 색상 코드 */
+       ,EQP_SER_NO       /* 단말기 일련 번호 */
+       ,IN_QTY           /* 입고 수량        */
+       ,IN_AMT           /* 입고 금액        */
+       ,UPRC             /* 단가             */
+       ,OUTS_MCN_CL      /* 주변 기기 구분   */
+       ,CNCL_YN          /* 취소 여부        */
+       ,DEL_YN           /* 삭제 여부        */
+       ,UPDATE_COUNT     /* UPDATE COUNT     */
+       ,FS_REG_USER_ID   /* 최초등록사용자ID */
+       ,FS_REG_DTM       /* 최초등록일시     */
+       ,LS_CHG_USER_ID   /* 최종변경사용자ID */
+       ,LS_CHG_DTM       /* 최종변경일시     */
+       )
+SELECT 
+       #IN_MGMT_NO#
+       ,#IN_SEQ#
+       ,A.PRCH_SER_NO
+       ,A.CMPT_PROD_CD /* EQP_MDL_CD  */
+       ,'99'           /* EQP_COLOR_CD */
+       ,'0'             /* EQP_SER_NO  */
+       ,A.HLD_QTY      /* IN_QTY   */
+       ,A.DDCT_AMT     /* IN_AMT   */
+       ,A.PRCH_UPRC    /* UPRC */
+       ,A.DTL_CL       /* OUTS_MCN_CL */
+       ,'N'            /* CNCL_YN  */
+       ,'N'            /* DEL_YN   */
+       ,0              /* UPDATE_COUNT  */
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#  
+       ,SYSDATE
+  FROM TB_EP_CST_PRCHS_DTL A
+ WHERE A.PRCH_MGMT_NO = NVL(#PRCH_MGMT_NO#, (SELECT MAX(PRCH_MGMT_NO)
+                                               FROM TB_EP_CST_PRCHS_MGMT IA
+                                              WHERE IA.EQP_MDL_CD = #EQP_MDL_CD#
+                                                AND IA.EQP_COLOR_CD = #EQP_COLOR_CD#
+                                                AND IA.EQP_SER_NO  = #EQP_SER_NO#
+                                                AND IA.DEL_YN = 'N'))
+   AND A.DEL_YN = 'N']]>
+	</insert>
+	<insert id="IRjdgQltyJdgDisAmtRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.IRjdgQltyJdgDisAmtRgst 재감정품질검사재고금액등록 */
+/* IO: 양재석,2015-09-08T20:01:22(양재석,2015-09-08T20:01:22) */
+INSERT
+  INTO TB_EP_DIS_DIS_AMT
+       (
+       REG_SEQ          /* 등록 순번        */
+       ,EQP_MDL_CD       /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD     /* 단말기 색상 코드 */
+       ,EQP_SER_NO       /* 단말기 일련 번호 */
+       ,OCCR_CL          /* 발생 구분        */
+       ,OCCR_DT          /* 발생 일자        */
+       ,AMT              /* 금액             */
+       ,HOLD_AMT         /* 유보 금액        */
+       ,DEL_YN           /* 삭제 여부        */
+       ,UPDATE_COUNT     /* UPDATE COUNT     */
+       ,FS_REG_USER_ID   /* 최초등록사용자ID */
+       ,FS_REG_DTM       /* 최초등록일시     */
+       ,LS_CHG_USER_ID   /* 최종변경사용자ID */
+       ,LS_CHG_DTM       /* 최종변경일시     */
+       )
+VALUES
+       (
+       (SELECT NVL(MAX(REG_SEQ),0) + 1 
+          FROM TB_EP_DIS_DIS_AMT
+         WHERE EQP_MDL_CD   = #EQP_MDL_CD#
+           AND EQP_COLOR_CD = #EQP_COLOR_CD#
+           AND EQP_SER_NO   = #EQP_SER_NO#)       
+       ,#EQP_MDL_CD#
+       ,#EQP_COLOR_CD#
+       ,#EQP_SER_NO#
+       ,#OCCR_CL#
+       ,#OCCR_DT#
+       ,#AMT#
+       ,0
+       ,'N'
+       ,0
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<insert id="IRJdgQltyJdgEqpDisRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.IRJdgQltyJdgEqpDisRgst 재감정품질검사단말기재고등록 */
+/* IO: 양재석,2015-09-09T08:59:23(양재석,2015-09-08T20:51:40) */
+MERGE INTO TB_EP_DIS_DIS TDIS
+     USING DUAL
+        ON (TDIS.EQP_MDL_CD  = #EQP_MDL_CD#
+            AND TDIS.EQP_COLOR_CD = #EQP_COLOR_CD#
+            AND TDIS.EQP_SER_NO  = #EQP_SER_NO#
+           )
+      WHEN MATCHED THEN
+    UPDATE
+       SET HLD_DEALCO_ID = #HLD_DEALCO_ID#
+           ,INVE_ST        = #INVE_ST#
+           ,EQP_ST         = #EQP_ST#
+           ,LAST_IN_OUT_DT = #LAST_IN_OUT_DT#
+           ,IN_OUT_CL      = #IN_OUT_CL#
+           ,IN_OUT_DTL_CL  = #IN_OUT_DTL_CL#
+           ,FST_IN_CONF_DT = #FST_IN_CONF_DT#
+           ,FST_IN_DEALCO_ID = #FST_IN_DEALCO_ID#
+           ,PRCHCO_ID      = #PRCHCO_ID#
+           ,LAST_MOV_IN_DT = #LAST_MOV_IN_DT#
+           ,INVE_AMT       = #INVE_AMT#
+           ,USED_CL        = #USED_CL#  
+           ,DEL_YN         = 'N'
+           ,UPDATE_COUNT   = 0
+           ,LS_CHG_DTM     = SYSDATE
+           ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+           ,RMK = RMK||'/'||TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')||';'||#LS_CHG_USER_ID#||';'||'IRJdgQltyJdgDisRgst'||';'||#INVE_AMT#
+      WHEN NOT MATCHED THEN
+    INSERT (
+           EQP_MDL_CD
+           ,EQP_COLOR_CD
+           ,EQP_SER_NO
+           ,HLD_DEALCO_ID
+           ,INVE_ST
+           ,EQP_ST
+           ,LAST_IN_OUT_DT
+           ,IN_OUT_CL
+           ,IN_OUT_DTL_CL
+           ,FST_IN_CONF_DT
+           ,FST_IN_DEALCO_ID
+           ,PRCHCO_ID
+           ,LAST_MOV_IN_DT
+           ,INVE_AMT
+           ,USED_CL
+           ,HOLD_AMT
+           ,RMK
+           ,DEL_YN
+           ,UPDATE_COUNT
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM           
+           )
+    VALUES
+           (
+           #EQP_MDL_CD#
+           ,#EQP_COLOR_CD#
+           ,#EQP_SER_NO#
+           ,#HLD_DEALCO_ID#
+           ,#INVE_ST#
+           ,#EQP_ST#
+           ,#LAST_IN_OUT_DT#
+           ,#IN_OUT_CL#
+           ,#IN_OUT_DTL_CL#
+           ,#FST_IN_CONF_DT#
+           ,#FST_IN_DEALCO_ID#
+           ,#PRCHCO_ID#
+           ,#LAST_MOV_IN_DT#
+           ,#INVE_AMT#
+           ,#USED_CL#
+           ,#HOLD_AMT#
+           ,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')||';'||#LS_CHG_USER_ID#||';'||'IRJdgQltyJdgDisRgst'||';'||#INVE_AMT#
+           ,'N'
+           ,0
+           ,#FS_REG_USER_ID#
+           ,SYSDATE
+           ,#LS_CHG_USER_ID#
+           ,SYSDATE
+           )]]>
+	</insert>
+	<insert id="IRJdgQltyJdgDisInoutHstRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.IRJdgQltyJdgDisInoutHstRgst 재감정품질검사입출고이력등록 */
+/* IO: 양재석,2015-10-05T20:06:20(양재석,2015-09-09T14:35:46) */
+INSERT
+  INTO TB_EP_DIS_DIS_INOUT_HST
+       (
+       IN_OUT_SEQ /* 입출 출고 순번 */
+       ,EQP_MDL_CD  /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD  /* 단말기 색상 코드 */
+       ,EQP_SER_NO  /* 단말기 일련 번호 */
+       ,IN_MGMT_NO  /* 입고 관리 번호 */
+       ,IN_SEQ  /* 입고 순번 */
+       ,OUT_MGMT_NO  /* 출고 관리 번호 */
+       ,OUT_SEQ  /* 출고 순번 */
+       ,IN_OUT_DT  /* 입고 출고 일자 */
+       ,IN_OUT_CL  /* 입고 출고 구분 */
+       ,IN_OUT_DTL_CL  /* 입고 출고 상세 구분 */
+       ,PRCH_DEALCO_ID  /* 매입 거래처 ID */
+       ,OUT_DEALCO_ID  /* 출고 거래처 ID */
+       ,IN_DEALCO_ID  /* 입고 거래처 ID */
+       ,DEL_YN  /* 삭제 여부 */
+       ,UPDATE_COUNT  /* UPDATE COUNT */
+       ,FS_REG_USER_ID  /* 최초등록사용자ID */
+       ,FS_REG_DTM  /* 최초등록일시 */
+       ,LS_CHG_USER_ID  /* 최종변경사용자ID */
+       ,LS_CHG_DTM  /* 최종변경일시 */       
+       )
+VALUES
+       (
+        (SELECT NVL(MAX(IN_OUT_SEQ),0) + 1 
+            FROM TB_EP_DIS_DIS_INOUT_HST
+           WHERE EQP_MDL_CD   = #EQP_MDL_CD#
+             AND EQP_COLOR_CD  = #EQP_COLOR_CD#
+             AND EQP_SER_NO   = #EQP_SER_NO#)
+       ,#EQP_MDL_CD#
+       ,#EQP_COLOR_CD#
+       ,#EQP_SER_NO#
+       ,#IN_MGMT_NO#
+       ,#IN_SEQ#
+       ,#OUT_MGMT_NO#
+       ,#OUT_SEQ#
+       ,#IN_OUT_DT#
+       ,#IN_OUT_CL#
+       ,#IN_OUT_DTL_CL#
+       ,#PRCH_DEALCO_ID#
+       ,#OUT_DEALCO_ID#
+       ,#IN_DEALCO_ID#
+       ,'N'
+       ,0   /*UPDATE_COUNT*/
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<insert id="IRJdgQltyJdgDisHstRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.IRJdgQltyJdgDisHstRgst 재감정품질검사재고이력등록 */
+/* IO: 양재석,2015-09-10T13:15:47(양재석,2015-09-09T14:44:12) */
+INSERT
+  INTO TB_EP_DIS_DIS_HST
+       (
+       INOUT_MGMT_NO  /* 입고 출고 관리 번호 */
+       ,EQP_MDL_CD  /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD  /* 단말기 색상 코드 */
+       ,EQP_SER_NO  /* 단말기 일련 번호 */
+       ,HLD_DEALCO_ID  /* 보유 거래처 ID */
+       ,EQP_ST  /* 단말기 상태 */
+       ,INVE_ST  /* 재고 상태 */
+       ,LAST_IN_OUT_DT  /* 최종 입고 출고 일자 */
+       ,IN_OUT_CL  /* 입고 출고 구분 */
+       ,IN_OUT_DTL_CL  /* 입고 출고 상세 구분 */
+       ,FST_IN_CONF_DT  /* 최초 입고 확정 일자 */
+       ,FST_IN_DEALCO_ID  /* 최초 입고 거래처 ID */
+       ,PRCHCO_ID  /* 매입처 ID */
+       ,LAST_MOV_IN_DT  /* 최종 이동 입고 일자 */
+       ,INVE_AMT  /* 재고 금액 */
+       ,HOLD_AMT  /* 유보 금액 */
+       ,DEL_YN  /* 삭제 여부 */
+       ,UPDATE_COUNT  /* UPDATE COUNT */
+       ,FS_REG_USER_ID  /* 최초등록사용자ID */
+       ,FS_REG_DTM  /* 최초등록일시 */
+       ,LS_CHG_USER_ID  /* 최종변경사용자ID */
+       ,LS_CHG_DTM  /* 최종변경일시 */       
+       )
+VALUES
+       (
+       #INOUT_MGMT_NO#
+       ,#EQP_MDL_CD#
+       ,#EQP_COLOR_CD#
+       ,#EQP_SER_NO#
+       ,#HLD_DEALCO_ID#
+       ,#EQP_ST#
+       ,#INVE_ST#
+       ,#LAST_IN_OUT_DT#
+       ,#IN_OUT_CL#
+       ,#IN_OUT_DTL_CL#
+       ,#FST_IN_CONF_DT#
+       ,#FST_IN_DEALCO_ID#
+       ,#PRCHCO_ID#
+       ,#LAST_MOV_IN_DT#
+       ,#INVE_AMT#
+       ,#HOLD_AMT#
+       ,'N'
+       ,0   /*UPDATE_COUNT*/
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<select id="SInqRJdgQltyJdgInInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgQltyJdgMgmt.SInqRJdgQltyJdgInInfo 재감정품질검사대상입고정보조회 */
+/* IO: 양재석,2015-09-10T15:17:09(양재석,2015-09-10T15:17:09) */
+SELECT A.PRCH_MGMT_NO
+       ,A.IN_MGMT_NO
+       ,A.IN_SEQ
+       ,A.EQP_MDL_CD
+       ,A.EQP_COLOR_CD
+       ,A.EQP_SER_NO
+       ,B.IN_OUT_CL
+       ,A.UPDATE_COUNT AS IN_UPDATE_COUNT
+       ,B.UPDATE_COUNT AS OUT_UPDATE_COUNT
+  FROM TB_EP_DIS_IN_DTL_D A
+       ,TB_EP_DIS_DIS B
+ WHERE A.PRCH_MGMT_NO = #PRCH_MGMT_NO#
+   AND A.EQP_MDL_CD  = B.EQP_MDL_CD
+   AND A.EQP_COLOR_CD = B.EQP_COLOR_CD
+   AND A.EQP_SER_NO  = B.EQP_SER_NO
+   AND A.DEL_YN   = 'N'
+   AND B.DEL_YN   = 'N']]>
+	</select>
+</sqlMap>

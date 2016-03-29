@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPOpTargMgmt">
+	<select id="SOpTargLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPOpTargMgmt.SOpTargLst 업무목표조회 */
+/* IO: 박민정,2015-12-15T18:20:01(박민정,2015-12-11T17:52:57) */
+SELECT *
+  FROM (
+        SELECT '0' AS CHECKED2
+              ,'' AS CHECKED
+              ,A.OP_CL_CD                                /*업무 구분 코드*/  
+              ,A.TARG_CL_CD                              /*목표 구분 코드*/
+              ,SUBSTR(A.TARG_STRD_YM,0,4) AS TARG_YY     /*목표 기준 년*/  
+              ,SUBSTR(A.TARG_STRD_YM,5,6) AS TARG_MM     /*목표 기준 월*/ 
+              ,NVL(A.TARG_CNT,0)          AS TARG_CNT                     /*목표 건수*/       
+          FROM TB_EP_OP_TARG A
+         WHERE A.DEL_YN ='N'
+           AND SUBSTR(A.TARG_STRD_YM,0,4) BETWEEN #FR_YR# AND #TO_YR#  
+]]><isNotEqual property="OP_CL_CD" compareValue="%"><![CDATA[
+           AND A.OP_CL_CD = #OP_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="TARG_CL_CD" compareValue="%"><![CDATA[
+           AND A.TARG_CL_CD = #TARG_CL_CD#
+]]></isNotEqual><![CDATA[
+           GROUP BY A.OP_CL_CD, A.TARG_CL_CD, A.TARG_STRD_YM, A.TARG_CNT     
+      ) 
+   PIVOT (
+         MAX(TARG_CNT)
+         FOR TARG_MM IN ( '01' AS MTH_1 ,'02' AS MTH_2 ,'03' AS MTH_3 ,'04' AS MTH_4 ,'05' AS MTH_5 ,'06' AS MTH_6
+                         ,'07' AS MTH_7 ,'08' AS MTH_8 ,'09' AS MTH_9 ,'10' AS MTH_10 ,'11' AS MTH_11 ,'12' AS MTH_12 )
+         )
+ORDER BY  TARG_YY,OP_CL_CD, TARG_CL_CD]]>
+	</select>
+	<insert id="IOpTargReg" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPOpTargMgmt.IOpTargReg 업무목표등록 */
+/* IO: 박민정,2015-12-15T16:38:37(박민정,2015-12-14T16:16:38) */
+MERGE INTO  TB_EP_OP_TARG A
+USING DUAL
+ON (
+       A.OP_CL_CD = #OP_CL_CD#            /*업무 구분 코드*/
+   AND A.TARG_CL_CD = #TARG_CL_CD#        /*목표 구분 코드*/
+   AND A.TARG_STRD_YM =#TARG_STRD_YM#     /*목표 기준 년월*/
+    )
+WHEN MATCHED THEN
+     UPDATE 
+        SET TARG_CNT = #TARG_CNT#            /*목표 건수*/
+            ,DEL_YN  = 'N'
+            ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+            ,LS_CHG_DTM = SYSDATE        
+WHEN NOT MATCHED THEN
+    INSERT  
+     (
+       OP_CL_CD         /*업무구분코드*/  
+      ,TARG_CL_CD       /*목표구분코드*/  
+      ,TARG_STRD_YM     /*목표기준년월*/  
+      ,TARG_CNT         /*목표건수*/       
+      ,DEL_YN           /*삭제여부*/       
+      ,FS_REG_USER_ID   /*최초등록사용자ID*/
+      ,FS_REG_DTM       /*최초등록일시*/    
+      ,LS_CHG_USER_ID   /*최종변경사용자ID*/
+      ,LS_CHG_DTM       /*최종변경일시*/    
+     )
+  VALUES
+     (
+      #OP_CL_CD#         /*업무 구분 코드*/  
+     ,#TARG_CL_CD#       /*목표 구분 코드*/  
+     ,#TARG_STRD_YM#     /*목표 기준 년월*/  
+     ,#TARG_CNT#         /*목표 건수*/ 
+     ,#DEL_YN#           /*삭제여부 */ 
+     ,#FS_REG_USER_ID#	 /*최초등록사용자ID */ 
+     ,SYSDATE	           /*최초등록일시 */ 
+     ,#LS_CHG_USER_ID#	 /*최종변경사용자ID */ 
+     ,SYSDATE	           /*최종변경일시 */ 
+     )]]>
+	</insert>
+	<select id="SOpTargChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPOpTargMgmt.SOpTargChk 업무목표중복체크 */
+/* IO: 박민정,2015-12-14T16:23:45(박민정,2015-12-14T16:23:33) */
+SELECT COUNT(1) AS ROW_CNT
+  FROM TB_EP_OP_TARG
+ WHERE OP_CL_CD = #OP_CL_CD#            /*업무 구분 코드*/
+   AND TARG_CL_CD = #TARG_CL_CD#        /*목표 구분 코드*/
+   AND TARG_STRD_YM = #TARG_STRD_YM#     /*목표 기준 년월*/]]>
+	</select>
+	<update id="UpdOpTargUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPOpTargMgmt.UpdOpTargUpd 업무목표수정 */
+/* IO: 박민정,2015-12-14T22:32:45(박민정,2015-12-14T22:32:14) */
+UPDATE TB_EP_OP_TARG
+   SET TARG_STRD_YM = #TARG_STRD_YM#    /*목표 기준 년월*/
+      ,TARG_CNT = #TARG_CNT#            /*목표 건수*/
+      ,DEL_YN = #DEL_YN#                /*삭제여부*/
+      ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+      ,LS_CHG_DTM = SYSDATE 
+ WHERE OP_CL_CD = #OP_CL_CD#            /*업무 구분 코드*/
+   AND TARG_CL_CD = #TARG_CL_CD#        /*목표 구분 코드*/
+   AND TARG_STRD_YM =#TARG_STRD_YM#     /*목표 기준 년월*/]]>
+	</update>
+</sqlMap>

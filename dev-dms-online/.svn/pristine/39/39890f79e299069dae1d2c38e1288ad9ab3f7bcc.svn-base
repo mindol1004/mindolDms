@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpDspslMgmt">
+	<select id="SEqpDspslLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.SEqpDspslLstPaging 단말매각현황조회 */
+/* IO: 장미진,2015-08-07T18:19:56(장미진,2015-08-06T09:25:18) */
+/* Biz: dms.nr.nrseabase.db.DNREqpExcMgmt.SEqpExcLstPaging 단말제각현황조회 */
+/* IO: 장미진,2015-08-06T15:22:47(장미진,2015-08-06T09:24:04) */
+SELECT  *
+  FROM  (SELECT 
+                 ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,D.SVC_MGMT_NO    				     /* 서비스관리번호 */
+                ,A.EQP_SER_NUM  			/* 단말기일련번호*/
+                ,E.EQP_MDL_NM   					     /* 모델명 */
+                ,A.EQP_MDL_CD   					    /* 모델코드 */
+                ,A.EQP_PRCH_AMT      			 /* 매입가 =출고가 */ 
+                ,#DEPR_DT# AS DEPR_DT
+                ,TRUNC(A.EQP_PRCH_AMT*(731-((TO_DATE(#DEPR_DT#)-TO_DATE(D.NR_CNTRT_DT))+1))/731) AS REM_PRC /*회계용잔존가*/
+                ,TRUNC(A.EQP_PRCH_AMT*((TO_DATE(#DEPR_DT#)-TO_DATE(D.NR_CNTRT_DT))+1)/731) AS DEPR_PRC /*감가상각금액회계용*/      
+                ,D.NR_CNTRT_DT 					 /* 계약일=자산입고일 */
+                ,E.CAPA_CD                 		 /* 용량코드 */
+           FROM  TB_EQP_ASSET A
+                ,TB_EQP_CNTRT B
+                ,TB_RENTAL_CNTRT C
+                ,TB_NR_CNTRT D
+                ,TB_RENTAL_POLY E
+          WHERE  A.ASSET_NO = B.ASSET_NO 
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  B.CNTRT_NO = D.CNTRT_NO
+            AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  A.OP_CL_CD = 'NR'
+            AND  A.INVE_ST_CD='50'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpDspslTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpDspslMgmt.SEqpDspslTotCnt 단말매각총건수 */
+/* IO: 장미진,2015-08-06T16:21:25(장미진,2015-08-06T09:25:41) */
+SELECT 
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.OP_CL_CD = 'NR'
+   AND  A.INVE_ST_CD='50' 
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

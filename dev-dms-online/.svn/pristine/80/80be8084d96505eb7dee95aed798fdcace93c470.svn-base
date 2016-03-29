@@ -1,0 +1,529 @@
+package dms.ep.epsfsbase.biz;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]FPA판매대행상품판매관리</li>
+ * <li>설  명 : <pre>FPA판매대행상품판매관리 FU</pre></li>
+ * <li>작성일 : 2016-02-18 10:04:23</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FEPFPAProxySaleMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPFPAProxySaleMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>FPA판매대행상품판매관리조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 10:04:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_STA_DTM [시작일]
+	 *	- field : SELL_END_DTM [종료일]
+	 *	- field : SALEPLC [매출처]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqFpaProxySaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        try {
+            // 1. DU lookup
+            DEPFPAProxySaleMgmt dEPFPAProxySaleMgmt = (DEPFPAProxySaleMgmt) lookupDataUnit(DEPFPAProxySaleMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPFPAProxySaleMgmt.dSFpaProxySaleList(reqDs, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA판매대행상품판매등록상세조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 10:04:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : GNRL_SELL_NO [일반판매번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqFpaProxySaleSaveDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IDataSet masterData = new DataSet();
+        IDataSet itemData = new DataSet();
+        
+        try {
+            // 1. DU lookup
+            DEPFPAProxySaleMgmt dEPFPAProxySaleMgmt = (DEPFPAProxySaleMgmt) lookupDataUnit(DEPFPAProxySaleMgmt.class);
+            
+            // 2. LISTDM호출
+            masterData = dEPFPAProxySaleMgmt.dSFpaProxySaleMasterDtl(reqDs, onlineCtx);
+            itemData = dEPFPAProxySaleMgmt.dSFpaProxySaleItemDtl(reqDs, onlineCtx);
+            
+            // 3. 업로드파일 조회
+            reqDs.putField("UPLD_FILE_NO", masterData.getRecordSet("RS_FPA_MASTER_DTL").getRecord(0).get("ATFIL_ID"));
+            IDataSet fileListDS = callSharedBizComponentByDirect("sc.SCSBase", "fInqUpFileInfo", reqDs, onlineCtx);
+            responseData.putRecordSet(fileListDS.getRecordSet("NC_FILE_LIST"));
+            
+            responseData.putRecordSet("RS_FPA_MASTER_DTL", masterData.getRecordSet("RS_FPA_MASTER_DTL"));
+            responseData.putRecordSet("RS_FPA_ITEM_DTL", itemData.getRecordSet("RS_FPA_ITEM_DTL"));
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA판매대행상품판매등록저장</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 10:04:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SURTAX [부가세]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *	- record : RS_MASTER_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHRGR_ID [판매담당자ID]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SELL_CHG_DTM [판매변경일시]
+	 *		- field : SELL_CHGR_ID [판매변경자ID]
+	 *		- field : RMK [비고]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : ATFIL_ID [첨부파일ID]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : CUR_CL_CD [화폐 구분 코드]
+	 *		- field : XRATE_APPLY_AMT [환율적용금액]
+	 *		- field : XRATE_APPLY_DT [환율적용일자]
+	 *		- field : XCL_SLIP_NO [전표번호]
+	 *		- field : XCL_SLIP_ST [전표상태]
+	 *	- record : RS_DEL_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SURTAX [부가세]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *	- record : NC_FILE_LIST
+	 *		- field : fullpath [파일경로]
+	 *		- field : UPLD_FILE_NO [파일번호]
+	 *		- field : FILE_ID [파일ID]
+	 *		- field : FILE_NM [파일명]
+	 *		- field : FILE_TYP_VAL [파일타입]
+	 *		- field : FILE_SIZE [파일크기]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종등록자ID]
+	 *		- field : LS_CHG_DTM [최종등록일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegFpaProxySaleSave(IDataSet requestData, IOnlineContext onlineCtx) {
+	    CommonArea ca = getCommonArea(onlineCtx);
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        IDataSet saleDs = null;
+        IDataSet delDs = null;
+        IDataSet masterDs = null;
+        IDataSet seqDs = null;
+    
+        try {
+
+            // 1. DU lookup
+            DEPFPAProxySaleMgmt dEPFPAProxySaleMgmt = (DEPFPAProxySaleMgmt) lookupDataUnit(DEPFPAProxySaleMgmt.class);
+            
+            IRecordSet masterRs = reqDs.getRecordSet("RS_MASTER_LIST");
+
+            // 마스터정보
+            if (masterRs != null) {
+                masterDs = new DataSet();
+                masterDs.putFieldMap(masterRs.getRecordMap(0));
+                
+                SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
+                long currentTime = System.currentTimeMillis();
+                
+                String GNRL_SELL_NO = masterDs.getField("GNRL_SELL_NO");
+                int GNRL_SELL_CHG_SEQ = Integer.parseInt(StringUtils.nvlEmpty(masterDs.getField("GNRL_SELL_CHG_SEQ"), "0"));
+                
+                if (StringUtils.isEmpty(GNRL_SELL_NO)) { // 신규
+                    seqDs = new DataSet();
+                    seqDs = dEPFPAProxySaleMgmt.dSFpaProxySaleGnrlNo(reqDs, onlineCtx);
+                    GNRL_SELL_NO = seqDs.getField("GNRL_SELL_NO");
+                    GNRL_SELL_CHG_SEQ = 1;
+                }else{ // 수정
+                    GNRL_SELL_CHG_SEQ = GNRL_SELL_CHG_SEQ + 1;
+                }
+
+                masterDs.putField("GNRL_SELL_NO", GNRL_SELL_NO);
+                masterDs.putField("GNRL_SELL_CHG_SEQ", GNRL_SELL_CHG_SEQ);
+                masterDs.putField("USERNO", ca.getUserNo());
+                masterDs.putField("ATFIL_ID", reqDs.getField("UPLD_FILE_NO"));
+
+                if ("I".equals(ca.getTrnPtrnDvcd())){ // 판매
+                    masterDs.putField("SELL_CHG_HST_CL", "01");
+                    masterDs.putField("SELL_CNCL_YN", "N");
+                }else if ("U".equals(ca.getTrnPtrnDvcd())){ // 판매수정
+                    masterDs.putField("SELL_CHG_HST_CL", "09");
+                    masterDs.putField("SELL_CNCL_YN", "N");
+                }else if ("D".equals(ca.getTrnPtrnDvcd())){ // 판매취소
+                    masterDs.putField("SELL_CHG_HST_CL", "07");
+                    masterDs.putField("SELL_CNCL_YN", "Y");
+                    masterDs.putField("SELL_CNCL_DTM", df.format(new Date(currentTime)));
+                }
+                
+                // 업무 DM호출
+                dEPFPAProxySaleMgmt.dIFpaProxyGnrlSale(masterDs, onlineCtx); // 일반판매저장
+
+                // 단말기판매정보
+                IRecordSet saleRs = reqDs.getRecordSet("RS_SALE_LIST");
+                IRecord saleRc = null;
+                if (saleRs.getRecordCount() != 0) {
+                    saleRs.addHeader(new RecordHeader("USERNO"));
+                    saleRs.addHeader(new RecordHeader("DEL_YN"));
+                    saleRs.addHeader(new RecordHeader("SELL_CNCL_YN"));
+                    saleRs.addHeader(new RecordHeader("SELL_CNCL_DTM"));
+                    saleRs.addHeader(new RecordHeader("SELL_PROXY_YN"));
+                    
+                    IDataSet sellDs = dEPFPAProxySaleMgmt.dSFpaProxySaleEquipmentSellSeq(reqDs, onlineCtx);
+                    int sellSeq = Integer.parseInt(sellDs.getField("SELL_SEQ"));
+                    
+                    for (int i = 0; i < saleRs.getRecordCount(); i++) {
+                        saleRc = saleRs.getRecord(i);
+                        
+                        saleRc.set("USERNO", ca.getUserNo());
+                        saleRc.set("GNRL_SELL_NO", GNRL_SELL_NO);
+                        saleRc.set("GNRL_SELL_CHG_SEQ", GNRL_SELL_CHG_SEQ);
+                        saleRc.set("SELL_SEQ", sellSeq + i);
+                        if ("D".equals(ca.getTrnPtrnDvcd())) {
+                            saleRc.set("DEL_YN", "Y");
+                            saleRc.set("SELL_CNCL_YN", "Y");
+                            saleRc.set("SELL_CNCL_DTM", df.format(new Date(currentTime)));
+                            saleRc.set("SELL_PROXY_YN", "N");
+                        }else{
+                            saleRc.set("SELL_CNCL_YN", "N");
+                            saleRc.set("DEL_YN", "N");
+                            saleRc.set("SELL_PROXY_YN", "Y");
+                        }
+                        saleRs.setRecord(i, saleRc);
+                    }
+                    
+                    saleDs = new DataSet();
+                    saleDs.putRecordSet(saleRs);
+                    dEPFPAProxySaleMgmt.dIFpaProxySaleEquipment(saleDs, onlineCtx); // 단말기판매저장
+                    dEPFPAProxySaleMgmt.dUFpaProxyEqpMgmt(saleDs, onlineCtx); // 판매정보수정
+                }
+                
+                // FPA단말기정보 판매여부 수정
+                IRecordSet delRs = reqDs.getRecordSet("RS_DEL_LIST");
+                IRecord delRc = null;
+                if (delRs.getRecordCount() != 0) {
+                    delRs.addHeader(new RecordHeader("USERNO"));
+                    delRs.addHeader(new RecordHeader("SELL_PROXY_YN"));
+                    
+                    for (int i = 0; i < delRs.getRecordCount(); i++) {
+                        delRc = delRs.getRecord(i);
+                        
+                        delRc.set("USERNO", ca.getUserNo());
+                        delRc.set("SELL_PROXY_YN", "N");
+                        
+                        delRs.setRecord(i, delRc);
+                    }
+                    
+                    delDs = new DataSet();
+                    delDs.putRecordSet("RS_SALE_LIST", (IRecordSet) delRs.clone());
+                    dEPFPAProxySaleMgmt.dUFpaProxyEqpMgmt(delDs, onlineCtx); // 판매정보수정
+                }
+                
+            } else {
+                throw new BizRuntimeException("DMS00004"); //데이터가 존재하지 않습니다.
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA판매대행상품판매엑셀업로드검증</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 10:04:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_IN_EXCEL_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 *		- field : ERR_DESC [오류내용]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : CNSL_MGMT_NO [상담일련번호]
+	 *		- field : SELL_CHG_HST_CL [구분]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SURTAX [부가세]
+	 *	- field : SELL_CL_CD [판매구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqFpaProxySaleExcelErrLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+            
+        try {
+
+            // 1. DU lookup
+            DEPFPAProxySaleMgmt dEPFPAProxySaleMgmt = (DEPFPAProxySaleMgmt) lookupDataUnit(DEPFPAProxySaleMgmt.class);
+            
+            IRecordSet excelRs = reqDs.getRecordSet("RS_IN_EXCEL_LIST");
+
+            if (excelRs != null) {
+                
+                /*********************************************
+                 * 재고정보 조회
+                 *********************************************/
+                IDataSet disCnt = dEPFPAProxySaleMgmt.dSFpaProxySaleDisTotCnt(reqDs, onlineCtx);
+                int totalCnt = Integer.parseInt(disCnt.getField("TOTAL_CNT"));
+                int firstRowIndex = 1;
+                int lastRowIndex = 5000;
+                
+                int end = (int) Math.ceil((double)totalCnt / lastRowIndex);
+                
+                IDataSet disDs = new DataSet();
+                Map<String, Object> disMap = new HashMap<String, Object>();
+                for (int i = 0; i < end; i++){
+                    reqDs.putField("firstRowIndex", firstRowIndex);
+                    reqDs.putField("lastRowIndex", lastRowIndex);
+                    IRecordSet disRs = dEPFPAProxySaleMgmt.dSFpaProxySaleDisLst(reqDs, onlineCtx).getRecordSet("RS_FPA_DIS_LIST");
+                    for(int j=0 ; j < disRs.getRecordCount(); j++){
+                        disDs.putFieldMap(disRs.getRecordMap(j));
+                        disMap.put(disDs.getField("EQP_MDL_CD")+disDs.getField("PROD_SER_NO"), disDs.getFieldMap());
+                    }
+                    
+                    firstRowIndex = lastRowIndex + 1;
+                    if(i == end-2) lastRowIndex = totalCnt;
+                    else lastRowIndex += 5000;
+                }
+                
+                IRecord excelRd = null;
+                for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                    excelRd = excelRs.getRecord(i);
+                    
+                    int prodChk = 0;
+                    for (int k = 0; k < excelRs.getRecordCount(); k++) {
+                        if(StringUtils.equals(excelRd.get("PROD_SER_NO").trim(), excelRs.get(k, "PROD_SER_NO").trim())){
+                            prodChk++;
+                        }
+                    }
+                    
+                    if(prodChk > 1){
+                        excelRd.set("ERR_DESC", "중복된 상품일련번호가 있습니다.");
+                        continue;
+                    }
+                    
+                    if (disMap.containsKey(excelRd.get("EQP_MDL_CD")+excelRd.get("PROD_SER_NO"))) {
+                        
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> value = (Map<String, Object>) disMap.get(excelRd.get("EQP_MDL_CD")+excelRd.get("PROD_SER_NO"));
+                        
+                        /*********************************************
+                         * 판매가 check 및 포멧팅.
+                         * 판매가 입력하지 않은경우 계산하여 가져온다
+                         *********************************************/
+                        double sellAmt = 0;
+                        double sellPcost = 0;
+                        double surtax = 0;
+                        
+                        if(excelRd.get("SELL_AMT") == null){
+                            sellAmt = Double.parseDouble(value.get("SELL_AMT").toString());
+                            surtax =  Double.parseDouble(value.get("SURTAX").toString());
+                        }else{
+                            
+                            try {
+                                sellAmt = Double.parseDouble(excelRd.get("SELL_AMT").replace(",", "")); //판매가
+                            } catch (NumberFormatException e) {
+                                excelRd.set("ERR_DESC", "잘못된 판매가 형식입니다.");
+                                continue;
+                            }
+                            
+                            if(StringUtils.equals("10", reqDs.getField("SELL_CL_CD")) || StringUtils.equals("19", reqDs.getField("SELL_CL_CD"))){
+                                sellPcost = sellAmt/1.1;
+                                surtax = sellPcost * 0.1;
+                            }else{
+                                sellPcost = sellAmt;
+                                surtax = 0;
+                            }
+                        }
+                        
+                        excelRd.set("PROD_CL", value.get("PROD_CL")); //상품구분
+                        excelRd.set("MFACT_CD", value.get("MFACT_CD")); //제조사코드
+                        excelRd.set("SALE_QTY", value.get("SALE_QTY")); //판매수량
+                        excelRd.set("EQP_MDL_CD", value.get("EQP_MDL_CD")); //상품 모델 코드
+                        excelRd.set("EQP_MDL_NM", value.get("EQP_MDL_NM")); //상품명
+                        excelRd.set("EQP_COLOR_CD", value.get("EQP_COLOR_CD")); //색상코드
+                        excelRd.set("EQP_SER_NO", value.get("EQP_SER_NO")); //일련번호
+                        excelRd.set("PROD_SER_NO", value.get("PROD_SER_NO")); //상품일련번호
+                        excelRd.set("CNSL_MGMT_NO", value.get("CNSL_MGMT_NO")); //상담 관리 번호
+                        excelRd.set("SELL_CHG_HST_CL", value.get("SELL_CHG_HST_CL")); //판매 변경 이력 구분
+                        excelRd.set("SELL_UPRC", sellPcost); //공급가액
+                        excelRd.set("SELL_AMT", sellAmt); //판매가
+                        excelRd.set("SELL_PCOST", value.get("PRCH_AMT")); //매입원가
+                        excelRd.set("SURTAX", surtax); //부가세
+                        if(excelRd.get("XRATE_APPLY_AMT") != null){
+                            excelRd.set("XRATE_APPLY_AMT", Double.parseDouble(excelRd.get("XRATE_APPLY_AMT").replace(",", ""))); //환율금액
+                        }
+                        
+                    }else{
+                        excelRd.set("ERR_DESC", "재고에 입력된 일련번호로 등록된 상품이 없습니다.");
+                        continue;
+                    }
+                }
+               
+            } else {
+                throw new BizRuntimeException("DMS00004"); //데이터가 존재하지 않습니다.
+            }
+            
+            responseData.putRecordSet("RS_EXCEL_LIST", excelRs);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA판매대행상품판매재고조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 10:04:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : PROD_SER_NO [상품일련번호]
+	 *	- field : MFACT_CD [제조사코드]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : CNSL_MGMT_NO [접수번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqFpaProxySaleDisList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPFPAProxySaleMgmt dEPFPAProxySaleMgmt = (DEPFPAProxySaleMgmt) lookupDataUnit(DEPFPAProxySaleMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPFPAProxySaleMgmt.dSFpaProxySaleDisListTotCnt(reqDs, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseData = dEPFPAProxySaleMgmt.dSFpaProxySaleDisListPaging(reqDs, onlineCtx);
+            rsPagingList = responseData.getRecordSet("RS_FPA_SALE_DIS_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRPrchCnclXclMgmt">
+	<select id="SPrchCnclXclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRPrchCnclXclMgmt.SPrchCnclXclTotCnt 매입취소정산합계건수 */
+/* IO: 문재웅,2015-12-03T16:45:07(문재웅,2015-12-02T11:27:37) */
+SELECT  COUNT(1) AS TOTAL_CNT
+/*         A.ACQR_XCL_SLIP_NO  취득전표번호 */
+/*        ,'' AS AA            취득취소전표번호 */
+/*        ,D.DEPR_SLIP_NO      감가상각전표 */
+/*        ,'' AS HH            감가상각취소전표번호 */
+/*        ,B.PRCH_SLIP_NO      매입전표번호 */
+  FROM  TB_EQP_ASSET  A 	/* PR_단말기자산 */
+       ,TB_PRCH       B 	/* NR_매입 */
+       ,(SELECT  T4.ASSET_NO  
+                ,T3.DEPR_SLIP_NO
+           FROM  TB_CLS_DEPR      T3    /* NR_마감감가상각 */
+                ,TB_CLS_DEPR_DTL  T4    /* NR_마감감가상각상세 */
+          WHERE  T3.DEPR_CL       = T4.DEPR_CL
+            AND  T3.DEPR_STRD_YM  = T4.DEPR_STRD_YM
+            AND  T3.DEPR_DEPT_CD  = T4.DEPR_DEPT_CD
+            AND  T4.DEPR_CL       = 'AC'
+            AND  T4.DEPR_DEPT_CD  = 'NR' 
+            AND  T4.DEPR_STRD_YM  = #YDATE#) D /* 감가상각 */
+WHERE  A.OP_CL_CD     = 'NR'
+  AND  A.PRCH_NO      = B.PRCH_NO
+  AND  A.ASSET_NO     = D.ASSET_NO(+)
+  /* AND  A.INVE_ST_CD IN ('60','61','70','71','80')  매각,제각,14일이내반납 데이터 */  
+  AND  A.INVE_ST_CD IN ('80')  /* 매각,제각,14일이내반납 데이터 */  
+  AND  SUBSTR(B.PRCH_DT,0,6) = #YDATE# 
+]]><isNotEmpty prepend="AND" property="ASSET_SLIP_NO"><![CDATA[
+  	  (A.ACQR_XCL_SLIP_NO = #ASSET_SLIP_NO#
+    OR D.DEPR_SLIP_NO 	  = #ASSET_SLIP_NO#
+    OR B.PRCH_SLIP_NO 	  = #ASSET_SLIP_NO#)
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SPrchCnclXclPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRPrchCnclXclMgmt.SPrchCnclXclPaging 매입취소정산조회 */
+/* IO: 진병수,2015-12-18T17:04:14(문재웅,2015-12-03T10:51:06) */
+SELECT  C.SVC_MGMT_NO   /* 서비스관리번호 */
+       ,A.ASSET_NO      /* 자산번호 */
+       ,A.EQP_PRCH_DT   /* 계약일자:단말기매입일자 */
+       ,(SELECT TT.OP_PROC_DT 
+           FROM TH_NR_CNTRT_HST TT 
+          WHERE TT.OP_TYP_CD = '06' /* 반품해지 */
+            AND C.CNTRT_NO = TT.CNTRT_NO
+        ) AS OP_PROC_DT /* 해지일자 */
+       ,B.SPLY_PRC      /* 취득금액:공급가격 */
+
+       ,A.ACQR_XCL_SLIP_NO 		/* 취득전표번호 */
+       ,NVL(E.ACQR_XCL_SLIP_ST_CD,'00') AS ACQR_XCL_SLIP_ST_CD   /* 취득전표상태*/
+       ,E.ACQR_XCL_SLIP_DT   	/* 취득전표 전표일자 */   
+       ,E.ACQR_XCL_PRPSR     	/* 취득전표 발의자 */           
+       
+       ,A.ACQR_XCL_CNCL_SLIP_NO AS ACQR_CNCL_SLIP_NO 	            /* 취득취소전표번호:취득정산취소전표번호 */
+       ,NVL(F.ACQR_CNCL_SLIP_ST_CD,'00')  AS ACQR_CNCL_SLIP_ST_CD   /* 취득취소전표상태 */
+       ,F.ACQR_CNCL_SLIP_DT           /* 취득취소전표 전표일자 */
+       ,F.ACQR_CNCL_SLIP_PRPSR        /* 취득취소전표 발의자 */
+       ,'' AS CC 					  /* 취득취소생성 */
+       ,'' AS DD 					  /* 취득취소취소 */
+       /* ,CASE WHEN B.PRCH_SLIP_NO IS NOT NULL THEN '' ELSE 'Y' END AS CC 취득취소생성 */
+       /* ,CASE WHEN B.PRCH_SLIP_NO IS NOT NULL THEN 'Y' ELSE '' END AS DD 취득취소취소 */
+
+       ,D.DEPR_STA_DT       /* 감가상각시작일자 */
+       ,D.DEPR_END_DT       /* 감가상각종료일자 */
+       ,D.DEPR_DTL_SUM_AMT  /* 감가상각누계액 */
+       ,D.DISPO_PRE_PRFITLS_AMT /* 처분선손익금액:충당금 */
+       ,D.DEPR_DTL_REM_AMT  /* 감가상각잔여금액 */
+       ,D.DEPR_SLIP_NO      /* 감가상각전표 */
+       ,NVL((SELECT  TT.SLIP_ST_CD 
+           FROM  TB_SLIP TT
+          WHERE  D.DEPR_SLIP_NO = TT.SLIP_NO),'00') AS DEPR_SLIP_ST_CD   /* 감가상각전표상태*/
+       ,(SELECT  TT.SLIP_DT  FROM  TB_SLIP TT
+          WHERE  D.DEPR_SLIP_NO = TT.SLIP_NO
+        ) AS DEPR_SLIP_DT   /* 감가상각전표 전표일자 */   
+       ,(SELECT  TT2.USER_NM  FROM  TB_SLIP TT, TB_USER TT2
+          WHERE  D.DEPR_SLIP_NO = TT.SLIP_NO
+            AND  TT.PRPSR = TT2.USER_NO
+        ) AS DEPR_PRPSR     /* 감가상각전표 발의자 */           
+       
+       ,D.DEPR_CNCL_SLIP_NO 	/* 감가상각취소전표번호 */
+       ,NVL(G.DEPR_CNCL_SLIP_ST_CD,'00') AS DEPR_CNCL_SLIP_ST_CD /* 감가상각취소전표상태 */
+       ,G.DEPR_CNCL_SLIP_DT 	/* 감가상각취소전표 전표일자 */
+       ,G.DEPR_CNCL_SLIP_PRPSR 	/* 감가상각취소전표 발의자 */
+       ,'' AS JJ 	/* 감가상각취소생성 */
+       ,'' AS KK 	/* 감가상각취소 */
+       
+       ,B.XCL_PROC_DT     /* 정산처리일자:매입정산일자 */
+       ,B.PRCH_DT         /* 매입일자 */
+       ,B.PRCH_AMT        /* 매입금액 */
+       ,B.PRCH_SLIP_NO    /* 매입전표번호 */
+       ,NVL((SELECT  TT.SLIP_ST_CD 
+           FROM  TB_SLIP TT
+          WHERE  B.PRCH_SLIP_NO = TT.SLIP_NO),'00') AS PRCH_SLIP_ST_CD   /* 매입전표상태*/
+       ,(
+         SELECT TT.TAX_BILL_NO
+           FROM TB_SLIP TT
+          WHERE B.PRCH_SLIP_NO = TT.SLIP_NO       
+        ) AS TAXBILL_NO      /* 세금계산서번호 */  
+       ,(SELECT  TT.TAX_BILL_ST_CD 
+           FROM  TB_SLIP TT
+          WHERE  B.PRCH_SLIP_NO = TT.SLIP_NO) AS TAX_BILL_ST_CD   /* 세금계산서상태코드*/
+       ,B.PRCH_CASH_SLIP_NO    /* 매입전표번호 */
+       ,NVL((SELECT  TT.SLIP_ST_CD 
+           FROM  TB_SLIP TT
+          WHERE  B.PRCH_CASH_SLIP_NO = TT.SLIP_NO),'00') AS PRCH_CASH_SLIP_ST_CD   /* 매입전표상태*/          
+       ,B.PRCH_NO         /* 매입번호 */
+       ,B.CNCL_SLIP_NO    /* 매입취소전표번호 */
+       ,(SELECT  TT.SLIP_ST_CD 
+           FROM  TB_SLIP TT
+          WHERE  B.CNCL_SLIP_NO = TT.SLIP_NO) AS CNCL_SLIP_ST_CD   /* 매입취소전표상태*/
+       ,B.CNCL_CASH_SLIP_NO    /* 매입취소전표번호 */
+       ,(SELECT  TT.SLIP_ST_CD 
+           FROM  TB_SLIP TT
+          WHERE  B.CNCL_CASH_SLIP_NO = TT.SLIP_NO) AS CNCL_CASH_SLIP_ST_CD   /* 매입취소전표상태*/          
+       ,(
+         SELECT TT.TAX_BILL_NO
+           FROM TB_SLIP TT
+          WHERE B.PRCH_CASH_SLIP_NO = TT.SLIP_NO       
+        ) AS CASH_TAXBILL_NO      /* 세금계산서번호 */  
+       ,(SELECT  TT.TAX_BILL_ST_CD 
+           FROM  TB_SLIP TT
+          WHERE  B.PRCH_CASH_SLIP_NO = TT.SLIP_NO) AS CASH_TAX_BILL_ST_CD   /* 세금계산서상태코드*/
+       ,D.DEPR_STRD_YM /* 감가상각년월 */
+  FROM  TB_EQP_ASSET  A   /* PR_단말기자산 */
+       ,TB_PRCH       B   /* NR_매입 */
+       ,(SELECT  T1.CNTRT_NO
+                ,T1.ASSET_NO
+                ,T2.SVC_MGMT_NO   /* 서비스관리번호 */
+           FROM  TB_EQP_CNTRT T1  /* PR_단말기계약 */
+                ,TB_NR_CNTRT  T2  /* NR_신규계약 */
+          WHERE  T1.CNTRT_NO = T2.CNTRT_NO) C 
+       ,(SELECT  T4.ASSET_NO  
+                ,T3.DEPR_SLIP_NO
+                ,T4.DEPR_DTL_SUM_AMT    /* 감가상각상세누계금액 */
+                ,T4.DEPR_DTL_REM_AMT    /* 감가상각상세잔여금액 */
+                ,T4.DISPO_PRE_PRFITLS_AMT /* 처분선손익금액:충당금 */
+                ,T4.DEPR_STA_DT         /* 감가상각시작일자 */
+                ,T4.DEPR_END_DT         /* 감가상각종료일자 */
+                ,T4.DEPR_CNCL_SLIP_NO   /* 감가상각취소전표번호 */
+                ,T4.DEPR_STRD_YM        /* 감가상각년월 */                
+           FROM  TB_CLS_DEPR      T3    /* NR_마감감가상각 */
+                ,TB_CLS_DEPR_DTL  T4    /* NR_마감감가상각상세 */
+          WHERE  T3.DEPR_CL       = T4.DEPR_CL
+            AND  T3.DEPR_STRD_YM  = T4.DEPR_STRD_YM
+            AND  T3.DEPR_DEPT_CD  = T4.DEPR_DEPT_CD
+            AND  T4.DEPR_CL       = 'AC'
+            AND  T4.DEPR_DEPT_CD  = 'NR' 
+            AND  T4.DEPR_STRD_YM  = #YDATE#) D /* 감가상각 */
+       ,(SELECT  TT1.SLIP_NO
+                ,TT1.SLIP_ST_CD AS ACQR_XCL_SLIP_ST_CD   /* 취득전표상태*/
+                ,TT1.SLIP_DT    AS ACQR_XCL_SLIP_DT      /* 취득전표 전표일자 */   
+                ,TT2.USER_NM    AS ACQR_XCL_PRPSR        /* 취득전표 발의자 */
+           FROM  TB_SLIP TT1
+                ,TB_USER TT2       
+          WHERE  TT1.PRPSR = TT2.USER_NO(+) ) E /* 취득전표 정보 */
+       ,(SELECT  TT1.SLIP_NO
+                ,TT1.SLIP_ST_CD AS ACQR_CNCL_SLIP_ST_CD   /* 취득취소전표상태*/
+                ,TT1.SLIP_DT    AS ACQR_CNCL_SLIP_DT      /* 취득취소전표 전표일자 */   
+                ,TT2.USER_NM    AS ACQR_CNCL_SLIP_PRPSR   /* 취득취소전표 발의자 */
+           FROM  TB_SLIP TT1
+                ,TB_USER TT2       
+          WHERE  TT1.PRPSR = TT2.USER_NO(+) ) F /* 취득취소전표 정보 */
+       ,(SELECT  TT1.SLIP_NO
+                ,TT1.SLIP_ST_CD AS DEPR_CNCL_SLIP_ST_CD   /* 감가상각취소전표상태*/
+                ,TT1.SLIP_DT    AS DEPR_CNCL_SLIP_DT      /* 감가상각취소전표 전표일자 */   
+                ,TT2.USER_NM    AS DEPR_CNCL_SLIP_PRPSR   /* 감가상각취소전표 발의자  */
+           FROM  TB_SLIP TT1
+                ,TB_USER TT2       
+          WHERE  TT1.PRPSR = TT2.USER_NO(+) ) G /* 감가상각취소전표 정보 */         
+ WHERE  A.OP_CL_CD     = 'NR'
+/*    AND  A.ACQR_XCL_CNCL_SLIP_NO	IS NOT NULL  취득정산취소전표번호*/
+   AND  A.PRCH_NO      = B.PRCH_NO
+   AND  A.ASSET_NO     = C.ASSET_NO(+)
+   AND  A.ASSET_NO     = D.ASSET_NO(+)
+   AND  A.ACQR_XCL_SLIP_NO      = E.SLIP_NO(+)
+   AND  A.ACQR_XCL_CNCL_SLIP_NO = F.SLIP_NO(+)
+   AND  D.DEPR_CNCL_SLIP_NO     = G.SLIP_NO(+)
+   AND  A.INVE_ST_CD IN ('80')  /* 14일이내반납 데이터 */  
+   AND  SUBSTR(B.PRCH_DT,0,6) = #YDATE# 
+]]><isNotEmpty prepend="AND" property="ASSET_SLIP_NO"><![CDATA[
+  	   (A.ACQR_XCL_SLIP_NO = #ASSET_SLIP_NO#
+     OR D.DEPR_SLIP_NO 	  = #ASSET_SLIP_NO#
+     OR B.PRCH_SLIP_NO 	  = #ASSET_SLIP_NO#)
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

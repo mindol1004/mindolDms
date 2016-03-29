@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR011">
+	<select id="SPayRfndDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR011.SPayRfndDtl 수납이력 조회 */
+/* IO: 안진갑,2015-09-17T18:36:59(안진갑,2015-09-17T16:54:28) */
+SELECT  A.SVC_MGMT_NO
+       ,A.SALE_ITM_CD
+       ,MAX(A.INV_DT) AS INV_DT       
+       ,MAX(A.RECV_DT) AS RECV_DT
+       ,SUM(NVL(A.RECV_AMT,0)) AS RECV_AMT
+  FROM  TB_NR_PAY_RFND_DTL A
+ WHERE  A.RECV_DT BETWEEN TRUNC(TO_DATE(#PROC_DT#,'YYYYMMDD'), 'MM')||'01' AND TRUNC(TO_DATE(#PROC_DT#,'YYYYMMDD'), 'MM')||'31'
+   AND  A.SALE_ITM_CD IN ('CRRNTHA', 'CRRNTDE', 'CRPREGA', 'CRRNBAP', 'CRRNBME')
+ GROUP  BY B.CNTRT_NO, A.SVC_MGMT_NO, A.SALE_ITM_CD
+UNION ALL
+SELECT  A.SVC_MGMT_NO
+       ,A.SALE_ITM_CD
+       ,A.INV_DT       
+       ,MAX(A.RECV_DT) AS RECV_DT
+       ,SUM(NVL(A.RECV_AMT,0)) AS RECV_AMT
+  FROM  TB_NR_PAY_RFND_DTL A
+ WHERE  A.RECV_DT BETWEEN TRUNC(TO_DATE(#PROC_DT#,'YYYYMMDD'), 'MM')||'01' AND TRUNC(TO_DATE(#PROC_DT#,'YYYYMMDD'), 'MM')||'31'
+   AND  A.SALE_ITM_CD = 'CRRNTUS'
+ GROUP  BY B.CNTRT_NO, A.SVC_MGMT_NO, A.SALE_ITM_CD, A.INV_DT]]>
+	</select>
+	<update id="UEqpCntrtDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR011.UEqpCntrtDtl 렌탈료 수납정보 등록 */
+/* IO: 안진갑,2015-09-17T18:31:12(안진갑,2015-09-17T17:21:18) */
+UPDATE  TB_EQP_CNTRT_DTL 
+   SET  RECV_DT = #RECV_DT# 
+       ,RECV_AMT = NVL(RECV_AMT,0) + ROUND(#RECV_AMT#*100/110,0)
+ WHERE  ASSET_NO = (SELECT  B.ASSET_NO
+                      FROM  TB_NR_CNTRT A
+                           ,TB_EQP_CNTRT B
+                     WHERE  A.CNTRT_NO = B.CNTRT_NO
+                       AND  A.SVC_MGMT_NO = #SVC_MGMT_NO#)
+   AND  RENT_YM = TO_CHAR(ADD_MONTHS(TO_DATE(#INV_DT#,'YYYYMMDD'),-1), 'YYYYMM')]]>
+	</update>
+	<update id="URentalDcp" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR011.URentalDcp 손해배상금 수납정보 등록 */
+/* IO: 안진갑,2015-09-17T18:32:58(안진갑,2015-09-17T17:22:18) */
+MERGE  INTO TB_RENTAL_DCP A
+ USING  ( SELECT  IA.DCP_NO
+                 ,IA.CNTRT_NO
+                 ,#ITM_CL# AS DCP_CL
+            FROM  TB_RENTAL_CNTRT IA
+                 ,TB_NR_CNTRT IB
+           WHERE  IA.CNTRT_NO = IB.CNTRT_NO
+             AND  IB.SVC_MGMT_NO = TO_CHAR(#SVC_MGMT_NO#)
+        ) B
+    ON  ( A.DCP_NO = B.DCP_NO
+          AND A.CNTRT_NO = B.CNTRT_NO
+          AND A.DCP_CL = B.DCP_CL )
+  WHEN  MATCHED THEN
+UPDATE  SET  DMG_CMP_RECV_AMT = NVL(DMG_CMP_RECV_AMT,0) + #RECV_AMT#
+            ,DMG_CMP_RECV_DT = #RECV_DT#
+            ,DMG_CMP_INV_DT = #INV_DT#
+  WHEN  NOT MATCHED THEN
+INSERT (
+         DCP_NO
+        ,CNTRT_NO
+        ,DCP_CL
+        ,DMG_CMP_OCCR_DT
+        ,DMG_CMP_RECV_AMT
+        ,DMG_CMP_RECV_DT
+        ,DMG_CMP_INV_DT
+        ,FS_REG_USER_ID
+        ,FS_REG_DTM
+        ,LS_CHG_USER_ID
+        ,LS_CHG_DTM
+       )
+VALUES (
+         B.DCP_NO
+        ,B.CNTRT_NO
+        ,B.DCP_CL
+        ,TO_CHAR(SYSDATE,'YYYYMMDD')
+        ,#RECV_AMT#
+        ,#RECV_DT#
+        ,#INV_DT#
+        ,'BAT'
+        ,SYSDATE
+        ,'BAT'
+        ,SYSDATE
+       )]]>
+	</update>
+	<update id="URentalPen" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR011.URentalPen 위약금 수납정보 등록 */
+/* IO: 안진갑,2015-09-17T17:22:52(안진갑,2015-09-17T17:22:52) */
+ MERGE  INTO TB_RENTAL_PEN A
+ USING  ( SELECT  IA.PEN_POLY_NO
+                 ,IA.CNTRT_NO
+                 ,#ITM_CL# AS PEN_POLY_CL
+            FROM  TB_RENTAL_CNTRT IA
+                 ,TB_NR_CNTRT IB
+           WHERE  IA.CNTRT_NO = IB.CNTRT_NO
+             AND  IB.SVC_MGMT_NO = TO_CHAR(#SVC_MGMT_NO#)
+        ) B
+    ON  ( A.PEN_POLY_NO = B.PEN_POLY_NO
+          AND A.CNTRT_NO = B.CNTRT_NO
+          AND A.PEN_POLY_CL = B.PEN_POLY_CL )
+  WHEN  MATCHED THEN
+UPDATE  SET  PEN_RECV_AMT = NVL(PEN_RECV_AMT,0) + #RECV_AMT#
+            ,PEN_RECV_DT = #RECV_DT#
+            ,PEN_INV_DT = #INV_DT#
+  WHEN  NOT MATCHED THEN
+INSERT (
+         PEN_POLY_NO
+        ,CNTRT_NO
+        ,PEN_POLY_CL
+        ,PEN_OCCR_DT
+        ,PEN_RECV_AMT
+        ,PEN_RECV_DT
+        ,PEN_INV_DT
+        ,FS_REG_USER_ID
+        ,FS_REG_DTM
+        ,LS_CHG_USER_ID
+        ,LS_CHG_DTM
+       )
+VALUES (
+         B.PEN_POLY_NO
+        ,B.CNTRT_NO
+        ,B.PEN_POLY_CL
+        ,TO_CHAR(SYSDATE,'YYYYMMDD')
+        ,#RECV_AMT#
+        ,#RECV_DT#
+        ,#INV_DT#
+        ,'BAT'
+        ,SYSDATE
+        ,'BAT'
+        ,SYSDATE
+       )	 ]]>
+	</update>
+</sqlMap>

@@ -1,0 +1,130 @@
+package dms.ep.epssxbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]판매정산관리</li>
+ * <li>설  명 : <pre>판매정산관리 FU</pre></li>
+ * <li>작성일 : 2015-10-13 14:49:36</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FEPSaleXclMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPSaleXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>판매정산관리전표발행</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-14 10:03:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegSaleXclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+                // 1. 입력 RS설정
+                requestData.putField("USERNO", ca.getUserNo());
+                requestData.putField("SLIP_TYPE", "");
+
+                ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+                DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+                String dsXml = bout.toString("UTF-8");
+
+                // call on-demand batch job
+                Map<String ,String> params = new HashMap<String ,String>();
+                params.put("TASK_ID", "");
+                params.put("TASK_NM", "전표발행");
+                params.put("USER_NO", ca.getUserNo());
+                params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.");               
+                params.put("POST_SLIP_DATASET", dsXml);
+                String jobExecutionId = callBatchJob("", params, onlineCtx);
+                waitBatchJobEnd(jobExecutionId, 10000);
+                int result = getJobReturnCode(jobExecutionId);
+
+                if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>판매정산관리전표취소</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-14 14:09:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegSaleXclSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+                // 1. 입력 RS설정
+                requestData.putField("USERNO", ca.getUserNo());
+                requestData.putField("SLIP_TYPE", "");
+
+                ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+                DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+                String dsXml = bout.toString("UTF-8");
+
+                // call on-demand batch job
+                Map<String ,String> params = new HashMap<String ,String>();
+                params.put("TASK_ID", "");
+                params.put("TASK_NM", "전표취소");
+                params.put("USER_NO", ca.getUserNo());
+                params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.");               
+                params.put("POST_SLIP_DATASET", dsXml);
+                String jobExecutionId = callBatchJob("", params, onlineCtx);
+                waitBatchJobEnd(jobExecutionId, 10000);
+                int result = getJobReturnCode(jobExecutionId);
+
+                if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        
+        return responseData;
+    }
+  
+}

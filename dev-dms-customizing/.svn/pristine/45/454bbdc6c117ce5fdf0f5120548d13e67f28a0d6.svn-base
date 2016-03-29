@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 업무 프로젝트별 전체 배포 -->
+<project name="Build Source move to Application Server" default="putBizSource" basedir=".">
+	<!-- USE ANT LIB ant-contrib.jar -->
+	<!-- ANT CONTRIBUTE OPTIONAL TASK -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" classpath="${NEXCORE_HOME}/lib/ant-contrib.jar"/>
+	<target name="putBizSource" >
+		<classloader classpath="${NEXCORE_HOME}/lib" />
+		<typedef name="scp2" classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp" loaderref="ant.coreLoader" />
+		<!-- FWK에서 *.component파일을 2~3초간격으로 모니터링하면서 update time이 변경되어 있으면 업무소스를 로딩하는데-->
+		<!-- 대량의 업무소스를 배포하는 경우 *.component부터 FTP PUT을 하게 되면, 업무소스가 전부 이동하기 전에 소스를 loading하여  -->
+		<!-- 수정된 class를 로딩하지 못할 수 있기 때문에 아래와 같이 두번으로 나눠 FTP PUT을 실시함-->
+		<echo>[${COMPONENT_FQ_ID}]Upload biz folder by SCP</echo>
+		<scp2 todir="${SFTP_USERNAME}@${SFTP.SERVER}:${SFTP.TODIR}"  keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+			<fileset dir="${APP_COMP_PATH}" >
+				<include name="${COMPONENT_FQ_ID}/**/*" />
+			</fileset>
+		</scp2>
+		<echo>[${COMPONENT_FQ_ID}]Upload *.component file by SCP</echo>
+		<scp2 todir="${SFTP_USERNAME}@${SFTP.SERVER}:${SFTP.TODIR}"  keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+			<fileset dir="${APP_COMP_PATH}" >
+				<include name="${COMPONENT_FQ_ID}.component" />
+			</fileset>
+		</scp2>
+		<if>
+			 <equals arg1="${RUNTIME_MODE}" arg2="R" />
+			 <then>
+			 	<echo>[${COMPONENT_FQ_ID}]Upload biz folder by SCP</echo>
+			 	<scp2 todir="${SFTP_USERNAME2}@${SFTP.SERVER2}:${SFTP.TODIR}"  keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+	 				<fileset dir="${APP_COMP_PATH}">
+	 					<include name="${COMPONENT_FQ_ID}/**/*" />
+	 				</fileset>
+	 			</scp2>
+			 	<echo>[${COMPONENT_FQ_ID}]Upload *.component file by SCP</echo>
+			 	<scp2 todir="${SFTP_USERNAME2}@${SFTP.SERVER2}:${SFTP.TODIR}"  keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+	 				<fileset dir="${APP_COMP_PATH}">
+	 					<include name="${COMPONENT_FQ_ID}.component" />
+	 				</fileset>
+	 			</scp2>
+		 	 </then>
+		</if>
+	</target>
+
+	<target name="putRuntime" >
+		<classloader classpath="${NEXCORE_HOME}/lib" />
+		<typedef name="scp2" classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp" loaderref="ant.coreLoader" />
+		<echo>Upload runtime source by SCP</echo>
+		<scp2 todir="${SFTP_USERNAME}@${SFTP.SERVER}:${SFTP.TODIR}"  keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+			<fileset dir="${NEXCORE_HOME}">
+				<exclude name="**/business-component/**" />
+				<exclude name="**/build/**" />
+				<exclude name="**/batch/**" />
+			</fileset>
+		</scp2>
+		<if>
+			 <equals arg1="${RUNTIME_MODE}" arg2="R" />
+			 <then>
+			 	<echo>Upload runtime source by SCP</echo>
+			 	<scp2 todir="${SFTP_USERNAME2}@${SFTP.SERVER2}:${SFTP.TODIR}"  keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+	 				<fileset dir="${NEXCORE_HOME}">
+	 					<exclude name="**/business-component/**" />
+	 					<exclude name="**/build/**" />
+	 					<exclude name="**/batch/**" />
+	 				</fileset>
+	 			</scp2>
+		 	 </then>
+		</if>
+	</target>
+
+	<target name="putUI" >
+		<classloader classpath="${NEXCORE_HOME}/lib" />
+		<typedef name="scp2" classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp" loaderref="ant.coreLoader" />
+		<echo>Upload XPlatform resource by SCP</echo>
+		<scp2 todir="${SFTP_USERNAME}@${SFTP.SERVER}:${SFTP.TODIR}" keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+			<fileset dir="${NEXCORE_HOME}${XPLATFORM_HOME}"/>
+		</scp2>
+		<if>
+			 <equals arg1="${RUNTIME_MODE}" arg2="R" />
+			 <then>
+			 	<echo>Upload XPlatform resource by SCP</echo>
+			 	<scp2 todir="${SFTP_USERNAME2}@${SFTP.SERVER2}:${SFTP.TODIR}" keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+	 				<fileset dir="${NEXCORE_HOME}${XPLATFORM_HOME}"/>
+	 			</scp2>
+		 	 </then>
+		</if>
+	</target>
+
+	<target name="putBat" >
+		<classloader classpath="${NEXCORE_HOME}/lib" />
+		<typedef name="scp2" classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp" loaderref="ant.coreLoader" />
+		<echo>Upload Batch resource by SCP</echo>
+		<scp2 todir="${SFTP_USERNAME}@${SFTP.SERVER}:${SFTP.TODIR}" keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+			<fileset dir="${NEXCORE_HOME}/batch"/>
+		</scp2>
+		<if>
+			 <equals arg1="${RUNTIME_MODE}" arg2="R" />
+			 <then>
+			 	<echo>Upload Batch resource by SCP</echo>
+			 	<scp2 todir="${SFTP_USERNAME2}@${SFTP.SERVER2}:${SFTP.TODIR}" keyfile="/home/svnserv/.ssh/id_rsa" passphrase="HPC" trust="true">
+	 				<fileset dir="${NEXCORE_HOME}/batch"/>
+	 			</scp2>
+		 	 </then>
+		</if>
+	</target>
+</project>

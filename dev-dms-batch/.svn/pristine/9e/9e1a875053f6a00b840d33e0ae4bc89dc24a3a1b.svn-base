@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.XCE001">
+	<select id="SEqpPreDcTotLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.XCE001.SEqpPreDcTotLst 단말기대금선할인집계대상목록조회 */
+/* IO: 이민재,2016-03-16T10:25:59(김윤환,2015-10-29T09:14:37) */
+WITH PRE_DC AS ( 
+SELECT  A.UKEY_AGN_BLICENS_NO
+       ,MAX(A.UKEY_AGN_CD) AS UKEY_AGN_CD
+       ,MAX(A.UKEY_AGN_NM) AS UKEY_AGN_NM
+       ,COUNT(*) AS AMT_CNT
+       ,SUM(A.CNSL_AMT) AS CNSL_AMT
+       ,SUM(DECODE(ERR_JDG_YN,'Y',1,0)) AS ERR_CNT
+       ,SUM(A.DDCT_AMT) AS DDCT_AMT
+  FROM  (SELECT  IA.CNSL_AMT	                                  /* 상담 금액 */
+                ,CASE WHEN (IA.CNSL_AMT-IB.PRCH_AMT) > 0 THEN 'Y'
+                      ELSE 'N' 
+                 END ERR_JDG_YN                                   /* 오감정 여부*/
+                ,CASE WHEN IA.CNSL_DT BETWEEN '20140101' AND '20140630' THEN (IA.CNSL_AMT-IB.PRCH_AMT)*0.5
+                      WHEN IA.CNSL_DT BETWEEN '20140701' AND '20140930' THEN DECODE(IB.EQP_ST,'N',(IA.CNSL_AMT-IB.PRCH_AMT),(IA.CNSL_AMT-IB.PRCH_AMT)*0.5)
+                      WHEN IA.CNSL_DT BETWEEN '20141001' AND '20151002' THEN DECODE(IB.EQP_ST,'N',(IA.CNSL_AMT-IB.PRCH_AMT),(IA.CNSL_AMT-IB.PRCH_AMT)*0.7)
+                      WHEN IA.CNSL_DT > '20151002'  THEN (IA.CNSL_AMT-IB.PRCH_AMT)
+                      ELSE (IA.CNSL_AMT-IB.PRCH_AMT)
+                 END AS DDCT_AMT                                  /* 차감금액 */                          
+                ,IC.UKEY_AGN_CD                                   /* 대표 대리점코드2 */
+                ,ID.DEALCO_NM AS UKEY_AGN_NM                      /* 대표 대리점명2 */
+                ,ID.DEALCO_BLICENS_NO AS UKEY_AGN_BLICENS_NO      /* 대표 대리점명2_사업자번호 */
+           FROM  TB_EP_CST_CONSULT_MGMT IA
+                ,TB_EP_CST_PRCHS_MGMT IB
+                ,TB_DEALCO IC
+                ,(SELECT  UKEY_AGN_CD
+                         ,DEALCO_NM
+                         ,DEALCO_BLICENS_NO
+                    FROM  TB_DEALCO
+                   WHERE  DEALCO_CL_1 = 'A1'
+                     AND  DEL_YN = 'N') ID
+                ,(SELECT  B.CNSL_MGMT_NO
+                             FROM  TB_EP_INVE_XCL A 
+                                  ,TB_EP_INVE_XCL_DTL B
+                            WHERE  A.INVE_XCL_NO = B.INVE_XCL_NO
+                              AND  A.DEL_YN = 'N'
+                              AND  B.DEL_YN = 'N'
+                              AND  A.INVE_TYP_CD = '10'
+                              AND  A.CNCL_SLIP_YN = 'N'
+                              AND  A.INVE_XCL_NO = (SELECT  MAX(IA.INVE_XCL_NO)
+                                                      FROM  TB_EP_INVE_XCL IA
+                                                           ,TB_EP_INVE_XCL_DTL IB
+                                                     WHERE  IA.INVE_XCL_NO = IB.INVE_XCL_NO
+                                                       AND  IB.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                                                       AND  IA.INVE_TYP_CD = '10'
+                                                       AND  IA.DEL_YN = 'N'
+                                                       AND  IB.DEL_YN = 'N')) IE     
+          WHERE  IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+            AND  IA.CNSL_DEALCO_CD = IC.DEALCO_CD
+            AND  IC.UKEY_AGN_CD = ID.UKEY_AGN_CD(+)
+            AND  IA.CNSL_MGMT_NO = IE.CNSL_MGMT_NO
+            AND  IA.PRE_DC_CL = 'Y'  
+            AND  IA.CLCT_DT BETWEEN TO_CHAR(ADD_MONTHS(TO_DATE(#DCINAD_STRD_YM#,'YYYYMM'),-1) ,'YYYYMM')||'15' AND #DCINAD_STRD_YM#||'14'
+            AND  SUBSTR(IA.CNSL_DT,1,6) = TO_CHAR(ADD_MONTHS(TO_DATE(#DCINAD_STRD_YM#,'YYYYMM'),-1) ,'YYYYMM')
+            AND  IA.DEL_YN = 'N' 
+            AND  IB.DEL_YN = 'N' 
+            AND  IC.DEL_YN = 'N') A
+      GROUP  BY  A.UKEY_AGN_BLICENS_NO
+), PPAY_RMT AS (
+SELECT  A.UKEY_AGN_BLICENS_NO
+       ,MAX(A.UKEY_AGN_CD) AS UKEY_AGN_CD
+       ,MAX(A.UKEY_AGN_NM) AS UKEY_AGN_NM
+       ,COUNT(*) AS AMT_CNT
+       ,SUM(A.CNSL_AMT) AS CNSL_AMT
+       ,SUM(DECODE(ERR_JDG_YN,'Y',1,0)) AS ERR_CNT
+       ,SUM(A.DDCT_AMT) AS DDCT_AMT
+  FROM  (SELECT  IA.CNSL_AMT	                                   /* 상담 금액 */
+                ,CASE WHEN (IA.CNSL_AMT-IB.PRCH_AMT) > 0 THEN 'Y'
+                      ELSE 'N' 
+                  END ERR_JDG_YN                                   /* 오감정 여부*/
+                ,CASE WHEN IA.CNSL_DT BETWEEN '20140101' AND '20140630' THEN (IA.CNSL_AMT-IB.PRCH_AMT)*0.5
+                      WHEN IA.CNSL_DT BETWEEN '20140701' AND '20140930' THEN DECODE(IB.EQP_ST,'N',(IA.CNSL_AMT-IB.PRCH_AMT),(IA.CNSL_AMT-IB.PRCH_AMT)*0.5)
+                      WHEN IA.CNSL_DT BETWEEN '20141001' AND '20151002' THEN DECODE(IB.EQP_ST,'N',(IA.CNSL_AMT-IB.PRCH_AMT),(IA.CNSL_AMT-IB.PRCH_AMT)*0.7)
+                      WHEN IA.CNSL_DT > '20151002'  THEN (IA.CNSL_AMT-IB.PRCH_AMT)
+                      ELSE (IA.CNSL_AMT-IB.PRCH_AMT)
+                 END AS DDCT_AMT                                   /* 차감금액 */                          
+                ,IC.UKEY_AGN_CD                                    /* 대표 대리점코드2 */
+                ,ID.DEALCO_NM AS UKEY_AGN_NM                       /* 대표 대리점명2 */
+                ,ID.DEALCO_BLICENS_NO AS UKEY_AGN_BLICENS_NO       /* 대표 대리점명2_사업자번호 */
+           FROM  TB_EP_CST_CONSULT_MGMT IA
+                ,TB_EP_CST_PRCHS_MGMT IB
+                ,TB_DEALCO IC
+                ,(SELECT  UKEY_AGN_CD
+                         ,DEALCO_NM
+                         ,DEALCO_BLICENS_NO
+                    FROM  TB_DEALCO
+                   WHERE  DEALCO_CL_1 = 'A1'
+                     AND  DEL_YN = 'N') ID
+                ,(SELECT  B.CNSL_MGMT_NO
+                             FROM  TB_EP_INVE_XCL A 
+                                  ,TB_EP_INVE_XCL_DTL B
+                            WHERE  A.INVE_XCL_NO = B.INVE_XCL_NO
+                              AND  A.DEL_YN = 'N'
+                              AND  B.DEL_YN = 'N'
+                              AND  A.INVE_TYP_CD = '10'
+                              AND  A.CNCL_SLIP_YN = 'N'
+                              AND  A.INVE_XCL_NO = (SELECT  MAX(IA.INVE_XCL_NO)
+                                                      FROM  TB_EP_INVE_XCL IA
+                                                           ,TB_EP_INVE_XCL_DTL IB
+                                                     WHERE  IA.INVE_XCL_NO = IB.INVE_XCL_NO
+                                                       AND  IB.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                                                       AND  IA.INVE_TYP_CD = '10'
+                                                       AND  IA.DEL_YN = 'N'
+                                                       AND  IB.DEL_YN = 'N')) IE     
+          WHERE  IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+            AND  IA.CNSL_DEALCO_CD = IC.DEALCO_CD
+            AND  IC.UKEY_AGN_CD = ID.UKEY_AGN_CD(+)
+            AND  IA.CNSL_MGMT_NO = IE.CNSL_MGMT_NO
+            AND  (IB.FEE_DEDC_YN = '1' OR IB.AMT_RMT_YN = 'Y')
+            AND  IA.CLCT_DT BETWEEN TO_CHAR(ADD_MONTHS(TO_DATE(#DCINAD_STRD_YM#,'YYYYMM'),-1) ,'YYYYMM')||'15' AND #DCINAD_STRD_YM#||'14'
+            AND  SUBSTR(IA.CNSL_DT,1,6) = TO_CHAR(ADD_MONTHS(TO_DATE(#DCINAD_STRD_YM#,'YYYYMM'),-1) ,'YYYYMM')
+            AND  IA.DEL_YN = 'N' 
+            AND  IB.DEL_YN = 'N' 
+            AND  IC.DEL_YN = 'N') A
+      GROUP  BY  A.UKEY_AGN_BLICENS_NO )
+SELECT  A.UKEY_AGN_BLICENS_NO
+       ,A.REPV_AGN_ORG_CD 								                            /* 대표대리점 코드 */
+       ,A.AMT_CNT 												                    /* 선할인 총 수량 건수*/
+       ,A.CNSL_AMT  											                    /* 선할인 총 금액 */
+       ,A.ERR_CNT 												                    /* 선할인 오류 건수 */
+       ,A.DDCT_AMT 											  	                    /* 선할인 차감금액 */
+       ,A.PPAY_RMT_AMT_CNT							                                /* 선납,송금 총 수량 건수*/
+       ,A.PPAY_RMT_CNSL_AMT  						                                /* 선납,송금 총 금액 */
+       ,A.PPAY_RMT_ERR_CNT 							                                /* 선납,송금 오류 건수 */
+       ,A.PPAY_RMT_DDCT_AMT 							                            /* 선납,송금 차감금액 */
+       ,A.EQP_TOT						                                            /* 단말기정산총건수 */
+       ,A.DCINAD_XCL_CNT 	                                                        /* 선할인 정산 건수 */
+       ,TRUNC(A.DCINAD_AMT * 100/110,-1) + (A.DCINAD_AMT-TRUNC(A.DCINAD_AMT * 100/110,-1)) AS DCINAD_AMT   /* 선할인금액(실지급액) */
+       ,TRUNC(A.DCINAD_AMT * 100/110,-1) AS SPLY_PRC                                /* 공급가격 */  
+       ,A.DCINAD_AMT-TRUNC(A.DCINAD_AMT * 100/110,-1) AS SURTAX_AMT                 /* 부가세금액 */
+ FROM  (SELECT  IA.UKEY_AGN_BLICENS_NO
+               ,IA.UKEY_AGN_CD AS REPV_AGN_ORG_CD 								    /* 대표대리점 코드 */
+               ,IA.AMT_CNT 														    /* 선할인 총 수량 건수*/
+               ,IA.CNSL_AMT  													    /* 선할인 총 금액 */
+               ,IA.ERR_CNT 														    /* 선할인 오류 건수 */
+               ,IA.DDCT_AMT 														/* 선할인 차감금액 */
+               ,NVL(IB.AMT_CNT,0) AS PPAY_RMT_AMT_CNT							    /* 선납,송금 총 수량 건수*/
+               ,NVL(IB.CNSL_AMT,0) AS PPAY_RMT_CNSL_AMT  						    /* 선납,송금 총 금액 */
+               ,NVL(IB.ERR_CNT,0) AS PPAY_RMT_ERR_CNT 							    /* 선납,송금 오류 건수 */
+               ,NVL(IB.DDCT_AMT,0) AS PPAY_RMT_DDCT_AMT 							/* 선납,송금 차감금액 */
+               ,(IA.AMT_CNT + NVL(IB.AMT_CNT,0)) AS EQP_TOT						    /* 단말기정산총건수 */
+               ,(IA.AMT_CNT - IA.ERR_CNT - NVL(IB.ERR_CNT,0)) AS DCINAD_XCL_CNT 	/* 선할인 정산 건수 */
+               ,(IA.CNSL_AMT - IA.DDCT_AMT - NVL(IB.DDCT_AMT,0)) AS DCINAD_AMT		/* 선할인 금액 */       
+          FROM  PRE_DC IA
+               ,PPAY_RMT IB
+         WHERE  IA.UKEY_AGN_CD = IB.UKEY_AGN_CD(+)) A]]>
+	</select>
+	<select id="SEqpDcinadXclSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.XCE001.SEqpDcinadXclSeq 단말기대금선할인정산번호조회 */
+/* IO: 김윤환,2015-10-29T09:16:25(김윤환,2015-10-29T09:16:25) */
+SELECT 
+       LPAD(SQ01_TB_EP_DCINAD_XCL.NEXTVAL,15,'0') AS DCINAD_XCL_NO 
+  FROM DUAL]]>
+	</select>
+	<insert id="IEqpDcinadXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.XCE001.IEqpDcinadXcl 단말기대금선할인정산등록 */
+/* IO: 김윤환,2015-11-10T17:33:25(김윤환,2015-10-29T09:17:09) */
+INSERT 
+  INTO TB_EP_DCINAD_XCL
+  (
+    DCINAD_XCL_NO	/* 선할인 정산 번호 */
+    ,DCINAD_STRD_YM	/* 선할인 기준 년월 */
+    ,REPV_AGN_ORG_CD	/* 대표 대리점 조직 코드 */
+    ,DCINAD_AMT	/* 선할인 금액 */
+    ,SURTAX_AMT	/* 부가세금액 */
+    ,SPLY_PRC	/* 공급가격 */
+    ,DCINAD_XCL_CNT	/* 선할인 정산 건수 */
+    ,DEL_YN	/* 삭제 여부 */
+    ,FS_REG_USER_ID	/* 최초등록사용자ID */
+    ,FS_REG_DTM	/* 최초등록일시 */
+    ,LS_CHG_USER_ID	/* 최종변경사용자ID */
+    ,LS_CHG_DTM	/* 최종변경일시 */
+  )VALUES(
+    #DCINAD_XCL_NO#	
+    ,#DCINAD_STRD_YM#
+    ,#REPV_AGN_ORG_CD#
+    ,#DCINAD_AMT#
+    ,#SURTAX_AMT#	
+    ,#SPLY_PRC#	
+    ,#DCINAD_XCL_CNT#
+    ,'N'
+    ,#USER_ID#
+    ,SYSDATE	
+    ,#USER_ID#
+    ,SYSDATE	
+  )]]>
+	</insert>
+	<insert id="IEqpDcinadXclDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.XCE001.IEqpDcinadXclDtl 단말기대금선할인정산상세등록 */
+/* IO: 이민재,2015-12-11T14:41:56(김윤환,2015-10-30T12:52:15) */
+INSERT 
+  INTO TB_EP_DCINAD_XCL_DTL (
+       DCINAD_XCL_NO					/* 선할인 정산 번호 */
+       ,DCINAD_STRD_YM                  /* 선할인 정산 기준년월 */ 
+       ,DCINAD_XCL_DTL_SEQ				/* 선할인 정산 상세 순번 */
+       ,DEDC_TYP_CD						/* 공제 유형 코드 */
+       ,CNSL_MGMT_NO					/* 상담 관리 번호 */
+       ,PRCH_MGMT_NO					/* 매입 관리 번호 */
+       ,EQP_MDL_CD						/* 단말기 모델 코드 */
+       ,EQP_SER_NO						/* 단말기 일련 번호 */
+       ,REPV_AGN_ORG_CD					/* 대표 대리점 조직 코드 */
+       ,CNSL_DT							/* 상담 일자 */
+       ,CLCT_DT							/* 회수 일자 */
+       ,FEE_DEDC_PROC_DT				/* 요금 공제 처리 일자 */
+       ,XCL_AMT							/* 정산 금액 */
+       ,SKN_JDG_AMT						/* SKN 감정 금액 */
+       ,SKN_SMPL_JDG_DAMT				/* SKN 샘플 감정 차액 */
+       ,AGN_DDCT_AMT					/* 대리점 차감 금액 */
+       ,AGN_EXPNS_CONF_AMT				/* 대리점 비용 확정 금액 */
+       ,DEL_YN							/* 삭제 여부 */
+       ,FS_REG_USER_ID					/* 최초등록사용자ID */
+       ,FS_REG_DTM						/* 최초등록일시 */
+       ,LS_CHG_USER_ID					/* 최종변경사용자ID */
+       ,LS_CHG_DTM						/* 최종변경일시 */
+)VALUES(
+       #DCINAD_XCL_NO#					/* 선할인 정산 번호 */
+       ,#DCINAD_STRD_YM#                /* 선할인 정산 기준년월 */
+       ,#DCINAD_XCL_DTL_SEQ#				/* 선할인 정산 상세 순번 */
+       ,#DEDC_TYP_CD#						/* 공제 유형 코드 */
+       ,#CNSL_MGMT_NO#					/* 상담 관리 번호 */
+       ,#PRCH_MGMT_NO#					/* 매입 관리 번호 */
+       ,#EQP_MDL_CD#						/* 단말기 모델 코드 */
+       ,#EQP_SER_NO#						/* 단말기 일련 번호 */
+       ,#REPV_AGN_ORG_CD#					/* 대표 대리점 조직 코드 */
+       ,#CNSL_DT#							/* 상담 일자 */
+       ,#CLCT_DT#							/* 회수 일자 */
+       ,#FEE_DEDC_PROC_DT#				/* 요금 공제 처리 일자 */
+       ,#XCL_AMT#							/* 정산 금액 */
+       ,#SKN_JDG_AMT#						/* SKN 감정 금액 */
+       ,#SKN_SMPL_JDG_DAMT#				/* SKN 샘플 감정 차액 */
+       ,#AGN_DDCT_AMT#					/* 대리점 차감 금액 */
+       ,#AGN_EXPNS_CONF_AMT#				/* 대리점 비용 확정 금액 */
+       ,'N'							/* 삭제 여부 */
+       ,#USER_ID#					/* 최초등록사용자ID */
+       ,SYSDATE						/* 최초등록일시 */
+       ,#USER_ID#					/* 최종변경사용자ID */
+       ,SYSDATE						/* 최종변경일시 */
+)]]>
+	</insert>
+	<select id="SEqpDcinadXclDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.XCE001.SEqpDcinadXclDtl 단말기대금선할인정산상세집계목록조회 */
+/* IO: 이민재,2016-03-16T10:28:18(김윤환,2015-10-30T12:52:52) */
+SELECT  #DCINAD_XCL_NO# AS DCINAD_XCL_NO
+       ,#DCINAD_STRD_YM# AS DCINAD_STRD_YM
+       ,ROWNUM AS DCINAD_XCL_DTL_SEQ	                            /* 선할인 정산 상세 순번 */
+       ,A.DEDC_TYP_CD                                               /* 공제 유형 코드 */
+       ,A.CNSL_MGMT_NO	                                            /* 상담 관리 번호 */
+       ,A.PRCH_MGMT_NO	                                            /* 매입 관리 번호 */
+       ,A.EQP_MDL_CD	                                            /* 단말기 모델 코드 */
+       ,A.EQP_SER_NO	                                            /* 단말기 일련 번호 */
+       ,A.UKEY_AGN_CD AS REPV_AGN_ORG_CD                            /* 대표 대리점코드 */
+       ,A.CNSL_DT	                                                /* 상담 일자 */
+       ,A.CLCT_DT 	                                                /* 회수 일자(반영일자) */
+       ,A.FEE_DEDC_PROC_DT	                                        /* 요금 공제 처리 일자 */
+       ,DECODE(A.PRE_DC_CL,'Y',A.CNSL_AMT-A.DDCT_AMT,0) AS XCL_AMT	/* 정산 금액 */
+       ,A.ASSET_AMT AS SKN_JDG_AMT	                                /* SKN 감정 금액 */
+       ,A.AGN_ERR_AMT AS SKN_SMPL_JDG_DAMT	                        /* SKN 샘플 감정 차액 */
+       ,A.DDCT_AMT AS AGN_DDCT_AMT	                                /* 대리점 차감 금액 */
+       ,CASE WHEN A.ERR_JDG_YN='N' THEN A.CNSL_AMT-A.ASSET_AMT
+             ELSE A.AGN_ERR_AMT-A.DDCT_AMT 
+        END AS AGN_EXPNS_CONF_AMT	                                /* 대리점 비용 확정 금액 */
+       ,#USER_ID# AS USER_ID
+  FROM  (SELECT  CASE WHEN IB.FEE_DEDC_YN = '1' THEN '03'
+                      WHEN IB.AMT_RMT_YN = 'Y' THEN '01'
+                      WHEN IA.PRE_DC_CL = 'Y' THEN '02'
+                      ELSE '' 
+                 END  AS DEDC_TYP_CD                                /* 공제유형코드 */
+                ,IA.CNSL_MGMT_NO	                                /* 상담 관리 번호 */
+                ,IB.PRCH_MGMT_NO	                                /* 매입 관리 번호 */
+                ,IA.EQP_MDL_CD	                                    /* 단말기 모델 코드 */
+                ,IA.EQP_SER_NO	                                    /* 단말기 일련 번호 */
+                ,ID.UKEY_AGN_CD                                     /* 대표 대리점코드 */
+                ,IA.CNSL_DT	                                        /* 상담 일자 */
+                ,IA.CLCT_DT 	                                    /* 회수 일자(반영일자) */
+                ,IB.FEE_DEDC_PROC_DT	                            /* 요금 공제 처리 일자 */
+                ,IA.CNSL_AMT	                                    /* 상담 금액 */
+                ,IB.PRCH_AMT AS ASSET_AMT                           /* 자산가액 */
+                ,(IA.CNSL_AMT-IB.PRCH_AMT) AS AGN_ERR_AMT           /* 대리점오류금액 */
+                ,CASE WHEN IA.CNSL_DT BETWEEN '20140101' AND '20140630' THEN (IA.CNSL_AMT-IB.PRCH_AMT)*0.5
+                      WHEN IA.CNSL_DT BETWEEN '20140701' AND '20140930' THEN DECODE(IB.EQP_ST,'N',(IA.CNSL_AMT-IB.PRCH_AMT),(IA.CNSL_AMT-IB.PRCH_AMT)*0.5)
+                      WHEN IA.CNSL_DT BETWEEN '20141001' AND '20151002' THEN DECODE(IB.EQP_ST,'N',(IA.CNSL_AMT-IB.PRCH_AMT),(IA.CNSL_AMT-IB.PRCH_AMT)*0.7)
+                      WHEN IA.CNSL_DT > '20151002'  THEN (IA.CNSL_AMT-IB.PRCH_AMT)
+                      ELSE (IA.CNSL_AMT-IB.PRCH_AMT)
+                 END AS DDCT_AMT                                    /* 차감금액 */
+                ,IA.PRE_DC_CL
+                ,CASE WHEN (IA.CNSL_AMT-IB.PRCH_AMT) > 0 THEN 'Y'
+                      ELSE 'N' 
+                 END AS ERR_JDG_YN                                  /* 오감정 여부*/
+           FROM  TB_EP_CST_CONSULT_MGMT IA
+                ,TB_EP_CST_PRCHS_MGMT IB
+                ,TB_DEALCO ID
+                ,(SELECT  B.CNSL_MGMT_NO
+                             FROM  TB_EP_INVE_XCL A 
+                                  ,TB_EP_INVE_XCL_DTL B
+                            WHERE  A.INVE_XCL_NO = B.INVE_XCL_NO
+                              AND  A.DEL_YN = 'N'
+                              AND  B.DEL_YN = 'N'
+                              AND  A.INVE_TYP_CD = '10'
+                              AND  A.CNCL_SLIP_YN = 'N'
+                              AND  A.INVE_XCL_NO = (SELECT  MAX(IA.INVE_XCL_NO)
+                                                      FROM  TB_EP_INVE_XCL IA
+                                                           ,TB_EP_INVE_XCL_DTL IB
+                                                     WHERE  IA.INVE_XCL_NO = IB.INVE_XCL_NO
+                                                       AND  IB.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                                                       AND  IA.INVE_TYP_CD = '10'
+                                                       AND  IA.DEL_YN = 'N'
+                                                       AND  IB.DEL_YN = 'N')) IE
+          WHERE  IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+            AND  IA.CNSL_DEALCO_CD = ID.DEALCO_CD
+            AND  IA.CNSL_MGMT_NO = IE.CNSL_MGMT_NO
+            AND  (IA.PRE_DC_CL = 'Y' OR IB.FEE_DEDC_YN = '1' OR IB.AMT_RMT_YN = 'Y')
+            AND  IA.DEL_YN = 'N' 
+            AND  IB.DEL_YN = 'N' 
+            AND  ID.DEL_YN = 'N'
+            AND  IA.CLCT_DT BETWEEN TO_CHAR(ADD_MONTHS(TO_DATE(#DCINAD_STRD_YM#,'YYYYMM'),-1) ,'YYYYMM')||'15' AND #DCINAD_STRD_YM#||'14'
+		    AND  SUBSTR(IA.CNSL_DT,1,6) = TO_CHAR(ADD_MONTHS(TO_DATE(#DCINAD_STRD_YM#,'YYYYMM'),-1) ,'YYYYMM')
+		    AND  IB.TLY_DT IS NOT NULL
+            AND  ID.DEALCO_BLICENS_NO = #UKEY_AGN_BLICENS_NO#
+       ) A]]>
+	</select>
+	<select id="SEqpDcinadXclNoLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.XCE001.SEqpDcinadXclNoLst 단말기대금정산할인번호정보목록조회 */
+/* IO: 김윤환,2015-10-30T11:13:29(김윤환,2015-10-30T11:09:18) */
+SELECT 
+       DCINAD_XCL_NO 
+  FROM TB_EP_DCINAD_XCL
+ WHERE DCINAD_STRD_YM = #DCINAD_STRD_YM#
+   AND DEL_YN = 'N']]>
+	</select>
+	<update id="DTbEpDcinadXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.XCE001.DTbEpDcinadXcl 단말기대금선할인정산삭제 */
+/* IO: 김윤환,2015-10-30T11:25:23(김윤환,2015-10-30T11:25:23) */
+UPDATE TB_EP_DCINAD_XCL
+   SET DEL_YN = 'Y'
+ WHERE DCINAD_XCL_NO = #DCINAD_XCL_NO#
+   AND DEL_YN = 'N']]>
+	</update>
+	<update id="DTbEpDcinadXclDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.XCE001.DTbEpDcinadXclDtl 단말기대금선할인정산상세삭제 */
+/* IO: 김윤환,2015-10-30T11:26:02(김윤환,2015-10-30T11:26:02) */
+UPDATE TB_EP_DCINAD_XCL_DTL
+   SET DEL_YN = 'Y'
+ WHERE DCINAD_XCL_NO = #DCINAD_XCL_NO#
+   AND DEL_YN = 'N']]>
+	</update>
+</sqlMap>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.IFP017">
+	<select id="SLossFndBajtReqsLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.IFP017.SLossFndBajtReqsLst 분실습득 전조정 요청목록 */
+/* IO: 안한모,2015-09-04T09:28:41(admin,2015-03-20T13:41:26) */
+SELECT
+        IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,'B' AS REC_CL_CD
+       ,SVC_MGMT_NO
+       ,SALE_ITM_CD
+       ,ADJ_REQS_AMT
+       ,ADJ_RSN_CD
+       ,ADJ_DTAIL_RSN_CD
+       ,FILLER
+       ,PROC_ST_CD
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TF_LOSS_FND_BAJT_REQS
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="ULossFndBajtReqs" parameterClass="map" ><![CDATA[/* Biz: dms.inf.IFP017.ULossFndBajtReqs 분실습득 전조정 요청 처리상태코드수정 */
+/* IO: 안한모,2015-09-04T09:28:51(이영진,2015-08-10T13:35:41) */
+UPDATE 
+        TF_LOSS_FND_BAJT_REQS
+   SET  PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#]]>
+	</update>
+</sqlMap>

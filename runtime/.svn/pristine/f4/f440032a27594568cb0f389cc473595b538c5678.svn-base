@@ -1,0 +1,140 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %> 
+<%@page import="nexcore.framework.core.util.StringUtils"%>
+<%  
+	String userNm = "";
+	String userNo = "";
+	String sessNo = "";
+	String dealCoCd = "";
+	String dealCoNm = "";
+	String dealCoRepveNm = "";
+	String dealCoBlicensNo = "";
+	IUserInfo userInfo = (IUserInfo)WebUtils.getSessionUserInfo(request);
+	if (userInfo == null) {
+		//로그인페이지로 포워딩
+		String[] requestUri = request.getRequestURI().split("/");
+		if(!requestUri[requestUri.length-1].equals("login.jsp")){
+		    response.sendRedirect("login.jsp");
+		}
+	} else {  
+	    userNm = StringUtils.nvlObject(userInfo.get("USER_NM").toString(), "");
+	    userNo = StringUtils.nvlObject(userInfo.get("USER_NO").toString(), "");
+	    sessNo = StringUtils.nvlObject(userInfo.get("SESS_NO").toString(), "");
+		dealCoCd = StringUtils.nvlObject(userInfo.get("DEALCO_CD").toString(), "");
+		dealCoNm = StringUtils.nvlObject(userInfo.get("DEALCO_NM").toString(), "");
+		dealCoRepveNm = StringUtils.nvlObject(userInfo.get("DEALCO_REPVE_NM").toString(), "");
+		dealCoBlicensNo = StringUtils.nvlObject(userInfo.get("DEALCO_BLICENS_NO").toString(), "");
+	}
+	
+
+	//calendar
+	Calendar cal = Calendar.getInstance();
+	int year = cal.get(cal.YEAR);
+	int month = cal.get(cal.MONTH)+1;
+	String todate = "";
+	
+	if(month < 10){
+	    todate = year +"-" + "0" + month;
+	}else{
+	    todate = year + "-" + month;
+	}
+	String sNoDataMessage = "조회결과가 없습니다.";
+	//money format
+	DecimalFormat df = new DecimalFormat("###,###");   
+	
+	//페이지 설정
+	int _page = 1;
+	int _page_size = 10;
+	if(request.getParameter("page") != null){
+	    _page = Integer.parseInt(request.getParameter("page"));
+	}	
+	if(request.getParameter("page_size") !=null){
+	    _page_size = Integer.parseInt(request.getParameter("page_size"));
+	}	
+	
+	
+%>
+<c:set var="userNm"  value="<%=userNm%>"/>
+<c:set var="userId"  value="<%=userNo%>"/>
+<c:set var="dealCoCd"  value="<%=dealCoCd%>"/>
+<c:set var="dealCoNm"  value="<%=dealCoNm%>"/>
+<c:set var="dealCoRepveNm"  value="<%=dealCoRepveNm%>"/>
+<c:set var="dealCoBlicensNo"  value="<%=dealCoBlicensNo%>"/>
+<form name="logout" action="" method="post" onsubmit="">
+	<input type="hidden" name="<%= Constants.TRANSACTION_ID %>">
+	<input type="hidden" name="<%= Constants.TARGET %>">
+	<input type="hidden" name="USER_NO"  value="<%=userNo%>">
+	<input type="hidden" name="SESS_NO" value="<%=sessNo%>">
+</form>
+<div id="headerDiv">
+	<div id="topDiv">
+		<div id="logoDiv" class="float-left">
+			<a href="<%= request.getContextPath() %>/jsp/SknCrdLstM.jsp"><img id="logoImg" src="<%= request.getContextPath() %>/ext/img/logo_SK_C&C.png" width="96" height="49" alt="로고" /></a>
+		</div>
+		<div id="topRightMenuDiv" class="float-right">
+			<ul id="topRightMenuUl" class="navUl">
+			
+			 <c:choose>
+			     <c:when test="${userNm != ''}">
+				<li>${userNm} 님 </li>		
+				<li><img src="<%= request.getContextPath() %>/ext/img/top_mu_line.gif" alt="" /></li>
+				 </c:when>
+			     <c:otherwise>
+			     </c:otherwise>
+			</c:choose>			
+	           <c:choose>
+			     <c:when test="${userId != ''}">
+			     		<li><a href="javascript:void(0);" onclick="fn_openChgPwdPopup()">비밀번호변경</a></li>
+			     		<li><img src="<%= request.getContextPath() %>/ext/img/top_mu_line.gif" alt="" /></li>
+			     		<li><a href="javascript:void(0);" onclick="onBeforeLogout()">로그아웃</a></li>
+			     </c:when>
+			     <c:otherwise>
+						<li><a href="./login.jsp">로그인</a></li>
+			            <li><img src="<%= request.getContextPath() %>/ext/img/top_mu_line.gif" alt="" /></li>
+			            <li><a href="javascript:void(0);" onclick="fn_openChgPwdPopup()">비밀번호변경</a></li>
+			     </c:otherwise>
+			</c:choose>
+	       </ul>
+		</div>
+	</div>
+	<div id="navDiv">	 
+		<ul class="navUl"> 
+			<li class="navUlMenu"><a href="<%= request.getContextPath() %>/jsp/SknCrdLstM.jsp" class="topnav-icons" >SKN 여신조회</a></li>
+			<li ><img src="<%= request.getContextPath() %>/ext/img/gnb_line.gif" alt="" /></li>
+			<li class="navUlMenu"><a href="<%= request.getContextPath() %>/jsp/SknCrdDtlLstM.jsp"  class="topnav-icons">SKN 여신상세조회</a></li>
+			<li><img src="<%= request.getContextPath() %>/ext/img/gnb_line.gif" alt="" /></li>
+			<li class="navUlMenu"><a href="<%= request.getContextPath() %>/jsp/ApplfItmChkM.jsp"  class="topnav-icons">신청서 항목 체크</a></li>
+		</ul>
+	</div>
+</div>
+<script>
+	//비밀번호 변경 버튼 클릭시 이벤트
+	function fn_openChgPwdPopup(){
+		 window.open('/jsp/chgPwdPopup.jsp', 'pop','toolbar=no,directories=no,scrollbars=no,resizable=no,status=no,menubar=no,width=390,height=360');		 
+	}
+
+	//로그아웃 버튼 클릭시 이벤트
+	function onBeforeLogout() {
+		if(confirm("로그아웃하시겠습니까?")){
+			 doLogout();
+		} else	{		
+			return false;
+		}
+	}	
+	//로그아웃 서비스 호출
+	function doLogout(){
+		document.logout.<%= Constants.TRANSACTION_ID %>.value="PSCLginOp_pLgout";
+		document.logout.<%= Constants.TARGET %>.value="forward:jsp/login.jsp";
+		document.logout.target = "_self";
+		document.logout.action = "<%=request.getContextPath()%>/login.cmd";
+		document.logout.submit();
+	}
+	//세션 체크
+	function checkSessionAfterService(messageId,message){
+		if(messageId=="DMS00017"){
+		   //세션종료시 로그인페이지로 포워딩
+		   alert(message);
+		   location.href='jsp/login.jsp';
+		} 
+	}
+</script>

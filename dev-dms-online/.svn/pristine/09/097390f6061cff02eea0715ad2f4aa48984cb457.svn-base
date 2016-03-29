@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRSaleXclRgst">
+	<select id="SInqSaleXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRSaleXclRgst.SInqSaleXclList 매출정산그룹리스트 */
+/* IO: 김상오,2015-08-12T09:41:55(김상오,2015-08-12T09:24:45) */
+SELECT 
+      SALE_DT as XCL_YM
+      ,REV_ITM_CD as XCL_NM
+      ,COUNT(*) as XCL_QTY
+      ,SUM(SALE_AMT) as XCL_AMT
+      ,MAX(FS_REG_DTM) as XCL_DT
+      ,MAX(FS_REG_USER_ID) as XCL_CRTR_NM
+FROM TB_SALE 
+WHERE  1=1
+AND SALE_DT = rpad( #IN_DT#,18, ' ')
+GROUP BY SALE_DT, REV_ITM_CD]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,201 @@
+package dms.sc.scbbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/시스템공통</li>
+ * <li>단위업무명: [DU]공지사항관리</li>
+ * <li>설  명 : <pre>공지사항관리</pre></li>
+ * <li>작성일 : 2015-06-29 11:07:12</li>
+ * <li>작성자 : 개발자 (developer)</li>
+ * </ul>
+ *
+ * @author 개발자 (developer)
+ */
+public class DSCAnncBrdMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DSCAnncBrdMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>공지사항 총건수 조회</pre>
+	 *
+	 * @author 개발자 (developer)
+	 * @since 2015-06-29 11:10:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSAnncBrdTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출     
+ 		IRecord record = dbSelectSingle("SAnncBrdTotCnt", requestData, onlineCtx);
+ 		// 2.결과값 셋팅     
+ 		responseData.putFieldMap(record);
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>공지사항 페이징 조회</pre>
+	 *
+	 * @author 개발자 (developer)
+	 * @since 2015-06-29 11:10:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSAnncBrdPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출
+ 		IRecordSet rsReturn = dbSelect("SAnncBrdPaging", requestData, onlineCtx);
+ 		// 2.결과값 셋팅
+ 		responseData.putRecordSet("RS_ANNCE_LIST", rsReturn);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>공지사항 입력</pre>
+	 *
+	 * @author 개발자 (developer)
+	 * @since 2015-06-29 11:10:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIAnncBrd(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출
+	 	dbInsert("IAnncBrd", requestData, onlineCtx);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>공지사항 수정</pre>
+	 *
+	 * @author 개발자 (developer)
+	 * @since 2015-06-29 11:10:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUAnncBrd(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출
+	 	dbUpdate("UAnncBrd", requestData, onlineCtx);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>공지사항 조회수 증가</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-06-29 11:10:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUAnncIncreBrwsCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출
+	 	dbUpdate("UAnncIncreBrwsCnt", requestData, onlineCtx);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>공지사항 번호 채번</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-02 09:11:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSAnncBrdSeq(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IRecord record = dbSelectSingle("SAnncBrdSeq", requestData, onlineCtx);
+		if ( record != null ) {
+			responseData.putFieldMap(record);
+		}
+	    return responseData;
+	}
+
+    /**
+	 * <pre>공지사항내용조회_대리점웹</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-06-29 11:10:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSAnncBrdForWebNotice(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SAnncBrdForWebNotice", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_ANNCE", rsReturn);
+        return responseData;
+    }
+
+    /**
+	 * <pre>공지사항목록조회_대리점웹</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-06-29 11:10:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSAnncBrdNumForWebNotice(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SAnncBrdNumForWebNotice", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_ANNCE_LIST", rsReturn);
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점웹의 홈게시글을 조회해온다.</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-06-29 11:10:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dInqAnncBrdHomeForWebNotice(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SAnncBrdHomeForWebNotice", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_ANNCE", rsReturn);
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR006">
+	<select id="SRecvRfndSum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR006.SRecvRfndSum 정산환불테이블집계 */
+/* IO: 진병수,2015-11-25T14:16:20(진병수,2015-09-22T19:45:21) */
+SELECT 'NR' AS OP_CL_CD
+       , 'MR' AS XCL_ITM_CL
+       , '01' AS XCL_CL
+       , SUBSTR(A.RECV_PROC_DT,1,6) AS BOND_XCL_YM
+       , CASE WHEN C.CUST_TYP IN ('01','04') THEN DEALCO_CD ELSE C.NEW_CNTRTR_BIZ_REG_NO END AS BOND_DEALCO_CD
+       , CASE WHEN C.CUST_TYP IN ('01','04') THEN DEALCO_BLICENS_NO ELSE C.NEW_CNTRTR_BIZ_REG_NO END AS BOND_BIZ_REG_NO
+       , SUM(A.RECV_AMT) AS BOND_ITM_AMT
+    FROM PS_MNG.TB_NR_PAY_RFND_DTL A
+       , TB_NR_CNTRT               C
+       , TB_DEALCO                 D
+   WHERE A.SALE_ITM_CD = 'CRRNTUS'
+     AND A.RECV_PROC_DT LIKE SUBSTR(NVL(#PROC_DT#, TO_CHAR(SYSDATE, 'YYYYMMDD')),1,6) || '%'
+     AND TO_CHAR(C.SVC_MGMT_NO) = TO_CHAR(A.SVC_MGMT_NO)
+     AND D.DEALCO_CD   =     '1000000009' 
+   GROUP BY SUBSTR(A.RECV_PROC_DT,1,6)
+          , CASE WHEN C.CUST_TYP IN ('01','04') THEN DEALCO_CD ELSE C.NEW_CNTRTR_BIZ_REG_NO END
+          , CASE WHEN C.CUST_TYP IN ('01','04') THEN DEALCO_BLICENS_NO ELSE C.NEW_CNTRTR_BIZ_REG_NO END]]>
+	</select>
+	<select id="SRecvRfnd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR006.SRecvRfnd 정산환불테이블조회 */
+/* IO: 진병수,2015-11-25T14:12:22(진병수,2015-09-22T19:45:21) */
+SELECT 'NR' AS OP_CL_CD
+       , 'MR' AS XCL_ITM_CL
+       , '01' AS XCL_CL
+       , SUBSTR(A.RECV_PROC_DT,1,6) AS BOND_XCL_YM
+       , CASE WHEN C.CUST_TYP IN ('01','04') THEN '1000000009' ELSE C.NEW_CNTRTR_BIZ_REG_NO END AS BOND_DEALCO_CD
+       , CASE WHEN C.CUST_TYP IN ('01','04') THEN (SELECT DEALCO_BLICENS_NO FROM TB_DEALCO WHERE DEALCO_CD = '1000000009') ELSE C.NEW_CNTRTR_BIZ_REG_NO END AS BOND_BIZ_REG_NO
+       , A.SVC_MGMT_NO
+       , A.RECV_DT
+       , A.SALE_ITM_CD
+       , A.RECV_CL_CD
+    FROM PS_MNG.TB_NR_PAY_RFND_DTL A
+       , TB_NR_CNTRT               C
+   WHERE A.SALE_ITM_CD = 'CRRNTUS'
+     AND A.RECV_PROC_DT LIKE SUBSTR(NVL(#PROC_DT#, TO_CHAR(SYSDATE, 'YYYYMMDD')),1,6) || '%'
+     AND TO_CHAR(C.SVC_MGMT_NO) = TO_CHAR(A.SVC_MGMT_NO)]]>
+	</select>
+	<insert id="IXclBond" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR006.IXclBond 채권정보입력 */
+/* IO: 진병수,2015-11-25T14:27:37(진병수,2015-08-10T09:53:17) */
+INSERT INTO TB_XCL_BOND
+            (
+             OP_CL_CD
+           , BOND_XCL_YM
+           , XCL_CL
+           , BOND_DEALCO_CD
+           , BOND_BIZ_REG_NO
+           , XCL_ITM_CL
+           , BOND_SALE_TS
+           , BOND_ITM_AMT
+           , BOND_SURTAX
+           , BOND_SLIP_NO
+           , BOND_SLIP_DT
+           , BOND_ORGL_SLIP_NO
+           , BOND_CNCL_SLIP_NO
+           , BOND_CNCL_DT
+           , BOND_ADJ_BF_AMT
+           , BOND_ADJ_DAMT    
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+            , LS_CHG_USER_ID
+            , LS_CHG_DTM
+            )
+     VALUES (
+             #OP_CL_CD#
+           , #BOND_XCL_YM#
+           , #XCL_CL#
+           , #BOND_DEALCO_CD#
+           , #BOND_BIZ_REG_NO#
+           , #XCL_ITM_CL#
+           , NVL(#BOND_SALE_TS#, '01')
+           , #BOND_ITM_AMT#
+           , NVL(#BOND_SURTAX#,0)
+           , #BOND_SLIP_NO#
+           , #BOND_SLIP_DT#
+           , #BOND_ORGL_SLIP_NO#
+           , #BOND_CNCL_SLIP_NO#
+           , #BOND_CNCL_DT#
+           , NVL(#BOND_ADJ_BF_AMT#,0)
+           , NVL(#BOND_ADJ_DAMT#,  0)  
+           , nvl(#USER_NO#,'BAT')
+           , nvl(#FS_REG_DTM#,sysdate)  
+           , nvl(#USER_NO#,'BAT')
+           , nvl(#LS_CHG_DTM#,sysdate)           
+            )]]>
+	</insert>
+	<update id="URecvRfnd" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR006.URecvRfnd 정산환불테이블업데이트 */
+/* IO: 진병수,2015-11-25T14:39:10(진병수,2015-09-22T19:50:31) */
+UPDATE PS_MNG.TB_NR_PAY_RFND_DTL
+     SET OP_CL_CD       = #OP_CL_CD#
+       , BOND_XCL_YM    = #BOND_XCL_YM#
+       , XCL_CL         = #XCL_CL#
+       , XCL_ITM_CL     = #XCL_ITM_CL#
+/*       , BOND_DEALCO_CD = BOND_DEALCO_CD*/
+       , BOND_BIZ_REG_NO = #BOND_BIZ_REG_NO#
+       , LS_CHG_USER_ID = NVL(#USER_NO#,LS_CHG_USER_ID)
+       , LS_CHG_DTM     = SYSDATE
+   WHERE SVC_MGMT_NO    = #SVC_MGMT_NO#
+     AND RECV_DT        = #RECV_DT#
+     AND SALE_ITM_CD    = #SALE_ITM_CD#
+     AND RECV_CL_CD     = #RECV_CL_CD#]]>
+	</update>
+</sqlMap>

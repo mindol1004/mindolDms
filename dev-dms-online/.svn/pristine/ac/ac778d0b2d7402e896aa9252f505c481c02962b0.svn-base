@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCntrtPrstMgmt">
+	<select id="SCntrtPrstLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstLstPaging 계약현황조회 */
+/* IO: 이영진,2015-09-21T10:37:28(이민재,2015-07-17T10:34:24) */
+SELECT  PA.*
+  FROM  (SELECT ROW_NUMBER() OVER(ORDER BY B.OP_PROC_DT DESC, A.CNTRT_NO) AS ROWNO
+               ,A.CNTRT_NO                         /* 계약번호 */                
+               ,A.OP_CL_CD                         /* 업무구분코드 */
+               ,B.OP_PROC_DT                       /* 업무처리일자 */
+               ,B.OP_TYP_CD                        /* 계약상태(업무유형) */
+               ,A.RENTAL_POLY_NO                   /* 렌탈정책번호 */
+               ,C.POLY_NM                          /* 렌탈정책명 */
+               ,A.DCP_NO                           /* 손해배상금정책번호 */
+               ,A.PEN_POLY_NO                      /* 위약금정책번호 */
+               ,B.EQP_SER_NO                       /* 단말기일련번호 */
+               ,A.EQP_MDL_CD                       /* 단말기모델코드 */
+               ,D.EQP_MDL_NM                       /* 단말기모델명 */
+               ,B.PET_NM                           /* 펫네임 */
+               ,B.COLOR_CD                         /* 색상코드 */
+               ,B.SVC_NO                           /* 서비스번호 */
+               ,B.SVC_NO_ENPT                      /* 서비스번호암호화 */
+               ,B.EQP_RTN_YN                       /* 단말반납여부코드 */
+               ,B.NEW_CNTRT_DT                     /* 신규R계약일자 */
+               ,A.RENTAL_CNTRT_STA_DT              /* 계약시작일자 */
+               ,A.RENTAL_CNTRT_END_DT              /* 계약종료일자 */
+               ,C.CNTRT_PRD                        /* 계약기간 */
+               ,C.RENTAL_FEE                       /* 월렌탈료 */
+               ,B.SVC_MGMT_NO                      /* 서비스관리번호 */
+               ,B.RENTAL_SER_NO                    /* 렌탈일련번호 */
+               ,B.NEW_CNTRTR_NM                    /* 고객성명 */
+               ,B.NEW_CNTRTR_NM_ENPT               /* 고객성명암호화 */
+               ,B.CUST_TYP                         /* 고객유형 */                
+               ,B.NEW_CNTRTR_ZIPCD                 /* 우편번호 */
+               ,B.NEW_CNTRTR_INV_ADDR              /* 청구주소 */
+               ,B.NEW_CNTRTR_INV_ADDR_DTL          /* 청구상세주소 */
+               ,B.NEW_CNTRTR_BIRTH_YMD             /* 생년월일 */
+               ,B.NEW_CNTRTR_CORP_REG_NO           /* 법인등록번호 */
+               ,B.NEW_CNTRTR_BIZ_REG_NO            /* 사업자등록번호 */                
+               ,B.AGN_CD                           /* 대리점코드 */
+               ,E.ORG_NM AS AGN_NM              /* 대리점명 */              
+               ,B.LEGAL_AGENT_NM                   /* 법정대리인성명 */
+               ,B.LEGAL_AGENT_CUST_TYP             /* 법정대리인고객유형 */
+               ,B.LEGAL_AGENT_BIZ_REG_NO           /* 법정대리인사업자등록번호 */
+               ,B.LEGAL_AGENT_CORP_REG_NO          /* 법정대리인법인번호 */
+               ,B.LEGAL_AGENT_BIRTH_YMD            /* 법정대리인생년월일 */
+               ,B.LEGAL_AGENT_REL                  /* 법정대리인관계 */ 
+               ,B.TTUL_CHG_YN                      /* 명의변경여부 */
+               ,B.EQP_CHG_YN                       /* 단말변경여부 */
+               ,B.LEGAL_AGENT_CHG_YN               /* 법정대리인변경여부 */ 
+               ,B.SVCL                             /* 내용연수 */ 
+               ,B.NEW_CNTRT_RMK                    /* 신규R계약비고 */             
+               ,A.FS_REG_USER_ID                   /* 최초등록사용자ID */
+               ,A.FS_REG_DTM                       /* 최초등록일시 */
+               ,A.LS_CHG_USER_ID                   /* 최종변경사용자ID */
+               ,A.LS_CHG_DTM                       /* 최종변경일시 */
+               ,B.TERM_PROC_RSLT_CD                /* 해지처리결과 */
+               ,B.TERM_PROC_RSLT_DTL_CD            /* 해지처리결과상세 */
+               ,B.TERM_PROC_REQS_DT                /* 해지처리요청일자 */
+          FROM  TB_RENTAL_CNTRT A
+               ,TB_NR_CNTRT B
+               ,TB_RENTAL_POLY C
+               ,TB_EQP_MDL D
+               ,TB_DEALCO E
+         WHERE  A.CNTRT_NO = B.CNTRT_NO
+           AND  A.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+           AND  A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+           AND  B.AGN_CD = E.AGN_ORG_CD(+)
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+		        A.RENTAL_CNTRT_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CNTRT_PRD" prepend="AND" compareValue="%"><![CDATA[
+                C.CNTRT_PRD = #CNTRT_PRD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="OP_STA_DT" prepend="AND"><![CDATA[
+		        B.OP_PROC_DT BETWEEN #OP_STA_DT# AND #OP_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="NEW_CNTRTR_NM" prepend="AND"><![CDATA[
+                B.NEW_CNTRTR_NM = #NEW_CNTRTR_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+                B.SVC_NO_ENPT = #SVC_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+                B.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+                B.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="EQP_RTN_YN" prepend="AND" compareValue="%"><![CDATA[
+                B.EQP_RTN_YN = #EQP_RTN_YN#
+]]></isNotEqual><![CDATA[
+        ) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCntrtPrstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstTotCnt 계약현황총건수 */
+/* IO: 안진갑,2015-09-07T14:47:09(이민재,2015-07-17T10:34:43) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_RENTAL_CNTRT A
+       ,TB_NR_CNTRT B
+       ,TB_RENTAL_POLY C
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  A.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+        B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+		A.RENTAL_CNTRT_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="CNTRT_PRD" prepend="AND" compareValue="%"><![CDATA[
+        C.CNTRT_PRD = #CNTRT_PRD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="OP_STA_DT" prepend="AND"><![CDATA[
+		B.OP_PROC_DT BETWEEN #OP_STA_DT# AND #OP_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="NEW_CNTRTR_NM" prepend="AND"><![CDATA[
+        B.NEW_CNTRTR_NM LIKE #NEW_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+        B.SVC_NO_ENPT = #SVC_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+        B.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+        B.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="EQP_RTN_YN" prepend="AND" compareValue="%"><![CDATA[
+        B.EQP_RTN_YN = #EQP_RTN_YN#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SCntrtPrstDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstDtl 계약현황상세조회 */
+/* IO: 장미진,2015-09-01T17:16:55(이민재,2015-07-17T10:41:26) */
+SELECT  A.CNTRT_NO                         /* 계약번호 */                
+       ,A.OP_CL_CD                         /* 업무구분코드 */
+       ,B.OP_PROC_DT                       /* 업무처리일자 */
+       ,B.OP_TYP_CD                        /* 계약상태(업무유형) */
+       ,A.RENTAL_POLY_NO                   /* 렌탈정책번호 */
+       ,C.POLY_NM                          /* 렌탈정책명 */
+       ,A.DCP_NO                           /* 손해배상금정책번호 */
+       ,A.PEN_POLY_NO                      /* 위약금정책번호 */
+       ,B.EQP_SER_NO                       /* 단말기일련번호 */
+       ,A.EQP_MDL_CD                       /* 단말기모델코드 */
+       ,D.EQP_MDL_NM                       /* 단말기모델명 */
+       ,B.PET_NM                           /* 펫네임 */
+       ,B.COLOR_CD                         /* 색상코드 */
+       ,B.SVC_NO                           /* 서비스번호 */
+       ,B.EQP_RTN_YN                       /* 단말반납여부코드 */
+       ,B.NEW_CNTRT_DT                     /* 신규R계약일자 */
+       ,A.RENTAL_CNTRT_STA_DT              /* 계약시작일자 */
+       ,A.RENTAL_CNTRT_END_DT              /* 계약종료일자 */
+       ,C.CNTRT_PRD                        /* 계약기간 */
+       ,C.RENTAL_FEE                       /* 월렌탈료 */
+       ,B.SVC_MGMT_NO                      /* 서비스관리번호 */
+       ,B.RENTAL_SER_NO                    /* 렌탈일련번호 */
+       ,B.NEW_CNTRTR_NM                    /* 고객성명 */
+       ,B.CUST_TYP                         /* 고객유형 */                
+       ,B.NEW_CNTRTR_ZIPCD                 /* 우편번호 */
+       ,B.NEW_CNTRTR_INV_ADDR              /* 청구주소 */
+       ,B.NEW_CNTRTR_INV_ADDR_DTL          /* 청구상세주소 */
+       ,B.NEW_CNTRTR_BIRTH_YMD             /* 생년월일 */
+       ,B.NEW_CNTRTR_CORP_REG_NO           /* 법인등록번호 */
+       ,B.NEW_CNTRTR_BIZ_REG_NO            /* 사업자등록번호 */                
+       ,B.AGN_CD                           /* 대리점코드 */
+       ,E.ORG_NM AS AGN_NM              /* 대리점명 */              
+       ,B.LEGAL_AGENT_NM                   /* 법정대리인성명 */
+       ,B.LEGAL_AGENT_CUST_TYP             /* 법정대리인고객유형 */
+       ,B.LEGAL_AGENT_BIZ_REG_NO           /* 법정대리인사업자등록번호 */
+       ,B.LEGAL_AGENT_CORP_REG_NO          /* 법정대리인법인번호 */
+       ,B.LEGAL_AGENT_BIRTH_YMD            /* 법정대리인생년월일 */
+       ,B.LEGAL_AGENT_REL                  /* 법정대리인관계 */ 
+       ,B.TTUL_CHG_YN                      /* 명의변경여부 */
+       ,B.EQP_CHG_YN                       /* 단말변경여부 */
+       ,B.LEGAL_AGENT_CHG_YN               /* 법정대리인변경여부 */ 
+       ,B.SVCL                             /* 내용연수 */ 
+       ,B.NEW_CNTRT_RMK                    /* 신규R계약비고 */             
+       ,A.FS_REG_USER_ID                   /* 최초등록사용자ID */
+       ,A.FS_REG_DTM                       /* 최초등록일시 */
+       ,A.LS_CHG_USER_ID                   /* 최종변경사용자ID */
+       ,A.LS_CHG_DTM                       /* 최종변경일시 */
+       ,B.TERM_PROC_RSLT_CD                /* 해지처리결과 */
+       ,B.TERM_PROC_RSLT_DTL_CD            /* 해지처리결과상세 */
+       ,B.TERM_PROC_REQS_DT                /* 해지처리요청일자 */
+  FROM  TB_RENTAL_CNTRT A
+       ,TB_NR_CNTRT B
+       ,TB_RENTAL_POLY C
+       ,TB_EQP_MDL D
+       ,TB_DEALCO E
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  A.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+   AND  A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   AND  B.AGN_CD = E.AGN_ORG_CD(+)
+   AND  A.CNTRT_NO = #CNTRT_NO#]]>
+	</select>
+	<select id="SCntrtPrstHisLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstHisLstPaging 계약현황이력조회 */
+/* IO: 안진갑,2015-10-15T16:44:22(이민재,2015-07-24T14:48:34) */
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.SVC_MGMT_NO DESC, A.NEW_CNTRT_HST_SEQ) AS ROWNO
+                ,A.NEW_CNTRT_HST_SEQ                /* 계약이력번호 */
+                ,A.CNTRT_NO                         /* 계약번호 */  
+                ,A.OP_PROC_DT                       /* 업무처리일자 */
+                ,A.OP_TYP_CD                        /* 계약상태(업무유형) */
+                ,A.RENTAL_POLY_NO                   /* 렌탈정책번호 */
+                ,B.POLY_NM                          /* 렌탈정책명 */
+                ,A.DCP_NO                           /* 손해배상금정책번호 */
+                ,A.PEN_POLY_NO                      /* 위약금정책번호 */
+                ,A.EQP_SER_NO                       /* 단말기일련번호 */
+                ,A.EQP_MDL_CD                       /* 단말기모델코드 */
+                ,C.EQP_MDL_NM                       /* 단말기모델명 */
+                ,A.PET_NM                           /* 펫네임 */
+                ,A.COLOR_CD                         /* 색상코드 */
+                ,A.SVC_NO                           /* 서비스번호 */
+                ,A.EQP_RTN_YN                       /* 단말반납여부코드 */
+                ,A.NEW_CNTRT_DT                     /* 계약일자 */
+                ,A.RENTAL_CNTRT_STA_DT              /* 계약시작일자 */
+                ,A.RENTAL_CNTRT_END_DT              /* 계약종료일자 */
+                ,B.CNTRT_PRD                        /* 계약기간 */
+                ,B.RENTAL_FEE                       /* 월렌탈료 */
+                ,A.SVC_MGMT_NO                      /* 서비스관리번호 */
+                ,A.RENTAL_SER_NO                    /* 렌탈일련번호 */
+                ,A.NEW_CNTRTR_NM                    /* 고객성명 */
+                ,A.CUST_TYP                         /* 고객유형 */                
+                ,A.NEW_CNTRTR_ZIPCD                 /* 우편번호 */
+                ,A.NEW_CNTRTR_INV_ADDR              /* 청구주소 */
+                ,A.NEW_CNTRTR_INV_ADDR_DTL          /* 청구상세주소 */
+                ,A.NEW_CNTRTR_BIRTH_YMD             /* 생년월일 */
+                ,A.NEW_CNTRTR_CORP_REG_NO           /* 법인등록번호 */
+                ,A.NEW_CNTRTR_BIZ_REG_NO            /* 사업자등록번호 */                
+                ,A.AGN_CD                           /* 대리점코드 */
+                ,D.ORG_NM AS AGN_NM              /* 대리점명 */              
+                ,A.LEGAL_AGENT_NM                   /* 법정대리인성명 */
+                ,A.LEGAL_AGENT_CUST_TYP             /* 법정대리인고객유형 */
+                ,A.LEGAL_AGENT_BIZ_REG_NO           /* 법정대리인사업자등록번호 */
+                ,A.LEGAL_AGENT_CORP_REG_NO          /* 법정대리인법인번호 */
+                ,A.LEGAL_AGENT_BIRTH_YMD            /* 법정대리인생년월일 */
+                ,A.LEGAL_AGENT_REL                  /* 법정대리인관계 */
+                ,CASE WHEN A.TTUL_CHG_YN = 'Y' THEN '명의변경'
+                      WHEN A.EQP_CHG_YN = 'Y' THEN '단말변경'
+                      WHEN A.LEGAL_AGENT_CHG_YN = 'Y' THEN '법정대리인변경'
+                      ELSE '' 
+                 END AS CHG_YN                      /* 변경구분 */
+                ,A.TTUL_CHG_YN                      /* 명의변경여부 */
+                ,A.EQP_CHG_YN                       /* 단말변경여부 */
+                ,A.LEGAL_AGENT_CHG_YN               /* 법정대리인변경여부 */ 
+                ,A.SVCL                             /* 내용연수 */
+                ,A.NEW_CNTRT_HST_RMK                /* 메모 */               
+                ,A.FS_REG_USER_ID                   /* 최초등록사용자ID */
+                ,A.FS_REG_DTM                       /* 최초등록일시 */
+                ,A.LS_CHG_USER_ID                   /* 최종변경사용자ID */
+                ,A.LS_CHG_DTM                       /* 최종변경일시 */
+                ,A.TERM_PROC_RSLT_CD                /* 해지처리결과 */
+                ,A.TERM_PROC_RSLT_DTL_CD            /* 해지처리결과상세 */
+           FROM  TH_NR_CNTRT_HST A
+                ,TB_RENTAL_POLY B
+                ,TB_EQP_MDL C
+                ,TB_DEALCO D
+          WHERE  A.RENTAL_POLY_NO = B.RENTAL_POLY_NO
+            AND  A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+            AND  A.AGN_CD = D.AGN_ORG_CD(+)
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                 A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="OP_STA_DT" prepend="AND"><![CDATA[
+		         A.OP_PROC_DT BETWEEN #OP_STA_DT# AND #OP_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="NEW_CNTRTR_NM" prepend="AND"><![CDATA[
+                 A.NEW_CNTRTR_NM = #NEW_CNTRTR_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+                 A.SVC_NO_ENPT = #SVC_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+                 A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+                 A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="CHG_YN" compareValue="N"><![CDATA[
+                 AND ( 1!=1
+]]><isNotEmpty property="TTUL_CHG_YN" prepend="OR"><![CDATA[
+                       A.TTUL_CHG_YN = 'Y'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_CHG_YN" prepend="OR"><![CDATA[
+	                   A.EQP_CHG_YN = 'Y'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="LEGAL_AGENT_CHG_YN" prepend="OR"><![CDATA[
+	                   A.LEGAL_AGENT_CHG_YN = 'Y'        
+]]></isNotEmpty><![CDATA[
+                     )	
+]]></isNotEqual><![CDATA[
+        ) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCntrtPrstHisTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstHisTotCnt 계약현황이력총건수 */
+/* IO: 안진갑,2015-09-07T14:50:14(이민재,2015-07-24T14:48:56) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TH_NR_CNTRT_HST A
+       ,TB_RENTAL_POLY B
+ WHERE  A.RENTAL_POLY_NO = B.RENTAL_POLY_NO
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+        A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="OP_STA_DT" prepend="AND"><![CDATA[
+		A.OP_PROC_DT BETWEEN #OP_STA_DT# AND #OP_END_DT# 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="NEW_CNTRTR_NM" prepend="AND"><![CDATA[
+        A.NEW_CNTRTR_NM LIKE #NEW_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+        A.SVC_NO_ENPT = #SVC_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+        A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="CHG_YN" compareValue="N"><![CDATA[
+        AND ( 1!=1
+]]><isNotEmpty property="TTUL_CHG_YN" prepend="OR"><![CDATA[
+              A.TTUL_CHG_YN = 'Y'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_CHG_YN" prepend="OR"><![CDATA[
+	          A.EQP_CHG_YN = 'Y'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="LEGAL_AGENT_CHG_YN" prepend="OR"><![CDATA[
+	          A.LEGAL_AGENT_CHG_YN = 'Y'        
+]]></isNotEmpty><![CDATA[
+        )	
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SCntrtPrstHisDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstHisDtl 계약현황이력상세조회 */
+/* IO: 장미진,2015-08-25T09:41:06(이민재,2015-07-24T14:49:17) */
+SELECT  A.NEW_CNTRT_HST_SEQ                /* 계약이력번호 */
+       ,A.CNTRT_NO                         /* 계약번호 */  
+       ,A.OP_PROC_DT                       /* 업무처리일자 */
+       ,A.OP_TYP_CD                        /* 계약상태(업무유형) */
+       ,A.RENTAL_POLY_NO                   /* 렌탈정책번호 */
+       ,B.POLY_NM                          /* 렌탈정책명 */
+       ,A.DCP_NO                           /* 손해배상금정책번호 */
+       ,A.PEN_POLY_NO                      /* 위약금정책번호 */
+       ,A.EQP_SER_NO                       /* 단말기일련번호 */
+       ,A.EQP_MDL_CD                       /* 단말기모델코드 */
+       ,C.EQP_MDL_NM                       /* 단말기모델명 */
+       ,A.PET_NM                           /* 펫네임 */
+       ,A.COLOR_CD                         /* 색상코드 */
+       ,A.SVC_NO                           /* 서비스번호 */
+       ,A.EQP_RTN_YN                       /* 단말반납여부코드 */
+       ,A.NEW_CNTRT_DT                     /* 계약일자 */
+       ,A.RENTAL_CNTRT_STA_DT              /* 계약시작일자 */
+       ,A.RENTAL_CNTRT_END_DT              /* 계약종료일자 */
+       ,B.CNTRT_PRD                        /* 계약기간 */
+       ,B.RENTAL_FEE                       /* 월렌탈료 */
+       ,A.SVC_MGMT_NO                      /* 서비스관리번호 */
+       ,A.RENTAL_SER_NO                    /* 렌탈일련번호 */
+       ,A.NEW_CNTRTR_NM                    /* 고객성명 */
+       ,A.CUST_TYP                         /* 고객유형 */                
+       ,A.NEW_CNTRTR_ZIPCD                 /* 우편번호 */
+       ,A.NEW_CNTRTR_INV_ADDR              /* 청구주소 */
+       ,A.NEW_CNTRTR_INV_ADDR_DTL          /* 청구상세주소 */
+       ,A.NEW_CNTRTR_BIRTH_YMD             /* 생년월일 */
+       ,A.NEW_CNTRTR_CORP_REG_NO           /* 법인등록번호 */
+       ,A.NEW_CNTRTR_BIZ_REG_NO            /* 사업자등록번호 */                
+       ,A.AGN_CD                           /* 대리점코드 */
+       ,D.ORG_NM AS AGN_NM              /* 대리점명 */              
+       ,A.LEGAL_AGENT_NM                   /* 법정대리인성명 */
+       ,A.LEGAL_AGENT_CUST_TYP             /* 법정대리인고객유형 */
+       ,A.LEGAL_AGENT_BIZ_REG_NO           /* 법정대리인사업자등록번호 */
+       ,A.LEGAL_AGENT_CORP_REG_NO          /* 법정대리인법인번호 */
+       ,A.LEGAL_AGENT_BIRTH_YMD            /* 법정대리인생년월일 */
+       ,A.LEGAL_AGENT_REL                  /* 법정대리인관계 */
+       ,A.TTUL_CHG_YN                      /* 명의변경여부 */
+       ,A.EQP_CHG_YN                       /* 단말변경여부 */
+       ,A.LEGAL_AGENT_CHG_YN               /* 법정대리인변경여부 */ 
+       ,A.SVCL                             /* 내용연수 */
+       ,A.NEW_CNTRT_HST_RMK                /* 메모 */               
+       ,A.FS_REG_USER_ID                   /* 최초등록사용자ID */
+       ,A.FS_REG_DTM                       /* 최초등록일시 */
+       ,A.LS_CHG_USER_ID                   /* 최종변경사용자ID */
+       ,A.LS_CHG_DTM                       /* 최종변경일시 */
+       ,A.TERM_PROC_RSLT_CD                /* 해지처리결과 */
+       ,A.TERM_PROC_RSLT_DTL_CD            /* 해지처리결과상세 */
+  FROM  TH_NR_CNTRT_HST A
+       ,TB_RENTAL_POLY B
+       ,TB_EQP_MDL C
+       ,TB_DEALCO D
+ WHERE  A.RENTAL_POLY_NO = B.RENTAL_POLY_NO
+   AND  A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND  A.AGN_CD = D.AGN_ORG_CD(+)
+   AND  A.CNTRT_NO = #CNTRT_NO#
+   AND  A.NEW_CNTRT_HST_SEQ = #NEW_CNTRT_HST_SEQ#]]>
+	</select>
+	<update id="UCntrtPrstHisRmk" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.UCntrtPrstHisRmk 계약현황이력메모저장 */
+/* IO: 이민재,2015-08-12T11:33:41(이민재,2015-08-04T13:13:10) */
+UPDATE  TH_NR_CNTRT_HST                                 /* 계약현황이력 */
+   SET  NEW_CNTRT_HST_RMK = #NEW_CNTRT_HST_RMK#         /* 메모 */ 
+       ,LS_CHG_USER_ID = #USERNO#                       /* 최종변경사용자ID */  
+       ,LS_CHG_DTM = SYSDATE                            /* 최종변경일시 */ 
+ WHERE  CNTRT_NO = #CNTRT_NO#
+   AND  NEW_CNTRT_HST_SEQ = #NEW_CNTRT_HST_SEQ#]]>
+	</update>
+	<select id="SCntrtPrstUscanLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstUscanLstPaging 계약현황USCAN조회 */
+/* IO: 이영진,2015-09-08T13:35:58(이민재,2015-08-11T10:18:59) */
+SELECT  #SVC_MGMT_NO# AS SVC_MGMT_NO
+       ,A.CNTRT_NO
+       ,B.APPLF_TYP
+       ,NVL(B.APPLF_IMG_URL,#APPLF_IMG_URL#) AS APPLF_IMG_URL
+       ,NVL(B.APPLF_SUBMIT_DTM,A.ING_APPLY_DTM) AS APPLF_SUBMIT_DTM
+       ,NVL(B.APPLF_IMG_ERR_YN,'N') AS APPLF_IMG_ERR_YN
+       ,B.APPLF_RMK
+FROM (SELECT   #CNTRT_NO# AS CNTRT_NO
+              ,ING_APPLY_DTM
+        FROM  TF_USCAN_IMG_INFO
+       WHERE  CUST_ACNT_SVC_MGMT_NO = #SVC_MGMT_NO#
+        AND   IMG_SER_NO||'_'||IMG_FILE_NM||'_r.tif' = #APPLF_IMG_URL#) A,
+       TB_NR_APPLF B
+WHERE  A.CNTRT_NO = B.CNTRT_NO(+)
+  AND  B.CNTRT_NO(+) = #CNTRT_NO#
+  AND  B.APPLF_IMG_URL(+) = #APPLF_IMG_URL#]]>
+	</select>
+	<select id="SCntrtPrstUscanTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstUscanTotCnt 계약현황USCAN총건수 */
+/* IO: 이영진,2015-09-08T13:38:53(이민재,2015-08-17T14:51:52) */
+SELECT  COUNT(*) AS ROW_CNT
+  FROM  TB_NR_APPLF
+ WHERE  CNTRT_NO = #CNTRT_NO#
+   AND  APPLF_TYP = #APPLF_TYP#]]>
+	</select>
+	<update id="UCntrtPrstUscan" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.UCntrtPrstUscan 계약현황USCAN오류항목수정 */
+/* IO: 이영진,2015-09-08T12:58:56(이민재,2015-08-17T16:43:56) */
+UPDATE  TB_NR_APPLF
+   SET  APPLF_IMG_ERR_YN = #APPLF_IMG_ERR_YN#           /* 이미지오류여부 */
+       ,APPLF_RMK = #APPLF_RMK#                         /* 비고 */
+       ,LS_CHG_USER_ID = #USERNO#                       /* 최종변경사용자ID */  
+       ,LS_CHG_DTM = SYSDATE 
+ WHERE  CNTRT_NO = #CNTRT_NO#
+        AND APPLF_TYP = #APPLF_TYP#]]>
+	</update>
+	<select id="SCntrtPrstUscanImgLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstUscanImgLst 계약현황USCAN이미지목록조회 */
+/* IO: 이영진,2015-08-27T15:59:38(이영진,2015-08-27T11:03:52) */
+SELECT  CUST_ACNT_SVC_MGMT_NO
+       ,IMG_SER_NO||'_'||IMG_FILE_NM||'_r.tif' AS IMG_FILE_NM
+  FROM  TF_USCAN_IMG_INFO
+ WHERE
+]]><iterate property="CUST_ACNT_SVC_MGMT_NO_LIST" prepend="CUST_ACNT_SVC_MGMT_NO IN" open="(" conjunction=", " close=")"><![CDATA[
+        #CUST_ACNT_SVC_MGMT_NO_LIST[]#
+]]></iterate><![CDATA[
+ GROUP BY CUST_ACNT_SVC_MGMT_NO
+         ,IMG_SER_NO
+         ,IMG_FILE_NM]]>
+	</select>
+	<delete id="ICntrtPrstUscan" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.ICntrtPrstUscan 계약현황USCAN오류항목수정 */
+/* IO: 이영진,2015-09-15T15:26:32(이민재,2015-08-17T16:43:56) */
+INSERT 
+  INTO  TB_NR_APPLF 
+       (
+        CNTRT_NO
+       ,APPLF_TYP
+       ,APPLF_IMG_URL
+       ,APPLF_SUBMIT_DTM
+       ,APPLF_IMG_ERR_YN
+       ,APPLF_RMK
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+        #CNTRT_NO#
+       ,#APPLF_TYP#
+       ,#APPLF_IMG_URL#
+       ,#APPLF_SUBMIT_DTM#
+       ,#APPLF_IMG_ERR_YN#
+       ,#APPLF_RMK#
+       ,#USERNO#
+       ,SYSDATE
+       ,#USERNO#
+       ,SYSDATE
+       )]]>
+	</delete>
+	<select id="SCntrtPrstUscanExistYN" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtPrstMgmt.SCntrtPrstUscanExistYN 계약현황USCAN총건수 */
+/* IO: 이영진,2015-09-08T13:39:36(이민재,2015-08-17T14:51:52) */
+SELECT  COUNT(*) AS ROW_CNT
+  FROM  TB_NR_APPLF
+ WHERE  CNTRT_NO = #CNTRT_NO#
+   AND  APPLF_TYP = #APPLF_TYP#
+   AND  APPLF_IMG_URL = #APPLF_IMG_URL#]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,114 @@
+package dms.nr.nrsxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]위약금정산정보조회</li>
+ * <li>설  명 : <pre>위약금정산정보조회FU</pre></li>
+ * <li>작성일 : 2015-07-27 17:38:33</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class FNRStlMnt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRStlMnt(){
+		super();
+	}
+
+	/**
+	 *위약금정산정보조회
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-27 17:39:17
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fCalChrStlMgmtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		 // IDataSet dsCnt = new DataSet();
+		  //IDataSet dsCnt2 = new DataSet();
+		  IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		  IRecordSet usrListRs = null;
+		  int intTotalCnt = 0;
+		  
+		  try {
+				// 1. DU lookup
+			  DNRStlMnt dNRStlMnt = (DNRStlMnt) lookupDataUnit(DNRStlMnt.class);
+	
+				// 3. LISTDM호출
+				responseData = dNRStlMnt.dSCalChrStlLstPaging(reqDs, onlineCtx);
+				usrListRs = responseData.getRecordSet("RS_CAL_CHR_STL_LIST");
+				PagenateUtils.setPagenatedParamToRecordSet(usrListRs, reqDs, intTotalCnt);
+				
+				//위약금정산정보 현재월 기준 조회
+				IDataSet dsRtn = dNRStlMnt.dSCalChrStlSysLst(requestData, onlineCtx);
+				responseData.putRecordSet(dsRtn.getRecordSet("RS_CAL_CHR_STL_SYS_LIST"));
+				
+				// 2. TOTAL COUNT DM호출
+			    IDataSet dsCnt = dNRStlMnt.dSCalChrStlTotCnt(requestData, onlineCtx);
+				responseData.putRecordSet(dsCnt.getRecordSet("RS_SUM_LIST"));
+				//intTotalCnt = Integer.parseInt(dsCnt.getField("M_CNT"));
+				//PagenateUtils.setPagenatedParamsToDataSet(dsCntreqDs);
+				
+				// 2. TOTAL COUNT DM호출
+				IDataSet dsCnt2 = dNRStlMnt.dSCalChrStlSysLstTotCnt(requestData, onlineCtx);
+				responseData.putRecordSet(dsCnt2.getRecordSet("RS_SUM_DTL_LIST"));
+				//intTotalCnt = Integer.parseInt(dsCnt.getField("S_CNT"));
+				//PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+				
+			} catch ( BizRuntimeException e ) {
+				throw e; //시스템 오류가 발생하였습니다.
+			}
+	
+	
+	    return responseData;
+	}
+
+	/**
+	 *위약금정산정보상세
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-29 11:09:24
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fCalChrStlMgmtDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. DU lookup
+	    	DNRStlMnt dNRStlMnt = (DNRStlMnt) lookupDataUnit(DNRStlMnt.class);
+
+			// 2. LISTDM호출
+			responseData = dNRStlMnt.dSCalChrStlMgmtDtlLst(requestData, onlineCtx);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+  
+}

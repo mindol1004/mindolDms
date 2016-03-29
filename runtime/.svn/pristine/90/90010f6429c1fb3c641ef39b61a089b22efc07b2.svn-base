@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 웹 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <bean id="nc.channel.IXmiRequestHandler" 
+    	class="nexcore.framework.online.channel.handler.internal.NewStandardXmiHandler">
+		<description>
+			<![CDATA[표준 miplatform UI(XMI) 요청 처리기]]>
+		</description>
+		<property name="trIdVarName"              value="ncTrId" />
+		<property name="reqIdVarName"             value="ncReqId" />
+        <property name="fieldDataSetId"           value="ncFieldMap" />
+		<property name="recordStatusName"         value="ncRecStatus" />
+		<property name="blobDataSetId"            value="ncInputBlobDs" />
+		<property name="blobDataSetIdColName"     value="id" />
+		<property name="blobDataSetBinaryColName" value="binary" />
+		<property name="identityGenerator"        ref="nc.core.IdentityGenerator"/>
+    </bean>
+
+    <bean id="nc.channel.web.IXmiApplicationController" 
+    	class="nexcore.framework.online.channel.core.internal.DefaultApplicationController">
+        <description>
+            <![CDATA[표준 miplatform UI(XMI) 요청에서 사용하는 ApplicationController임]]>
+        </description>
+        <property name="commandViewMapResolver"   ref="nc.channel.web.IXmiCommandViewMapResolver" />
+        <property name="commandProcessor"         ref="nc.channel.web.ICommandProcessor" />
+    </bean>
+
+    <bean id="nc.channel.web.DefaultXmiView" 
+    	class="nexcore.framework.online.channel.web.XMIView">
+        <description>
+            <![CDATA[표준 miplatform UI(XMI) View 정보]]>
+        </description>
+        <constructor-arg value="text" />
+        <property name="fieldDataSetId"        value="ncFieldMap" />
+        <property name="trIdVarName"           value="ncTrId" />
+		<property name="reqIdVarName"          value="ncReqId" />
+        <property name="startDateVarName"      value="ncStartDate" />
+        <property name="endDateVarName"        value="ncEndDate" />
+        <property name="msgFlagVarName"        value="ncMsgFlag" />
+        <property name="msgIdVarName"          value="ncMsgId" />
+        <property name="msgVarName"            value="ncMsg" />
+        <property name="msgIndexVarName"       value="ncMsgIndex" />
+    </bean>
+
+    <bean id="nc.channel.web.IXmiCommandViewMapResolver" 
+    	class="nexcore.framework.online.channel.core.internal.DefaultCommandViewMapResolver">
+        <description>
+            <![CDATA[표준 miplatform UI(XMI) 요청에서 사용하는 CommandViewMapResolver임]]>
+        </description>
+
+		<!-- 기본 에러 view -->
+        <property name="defaultErrorView" ref="nc.channel.web.DefaultXmiView" />
+        
+		<!-- 기본 CommandViewMap -->
+        <property name="defaultCommandViewMap">
+            <bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+                <!-- 커맨드 맵의 커맨드 정보 -->
+                <property name="command">
+                    <bean class="nexcore.framework.online.channel.core.command.StdCommand" />
+                </property>
+                <!-- 커맨드 맵의 View 정보 -->
+                <property name="viewMap">
+                    <map>
+                        <entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmiView" />
+                        <entry key="FAIL"    value-ref="nc.channel.web.DefaultXmiView" />
+                    </map>
+                </property>
+            </bean>
+        </property>
+
+		<!-- 에러별로 View 할당하는 경우를 위한 ViewMap -->
+		<!--  
+		<property name="errorViewMap">
+			<map>
+				<entry key="NC_TrControlErr" value-ref="nc.channel.web.DefaultXmiView" />
+				<entry key="NC_NoViewMap"    value-ref="nc.channel.web.DefaultXmiView" />
+			</map>
+		</property>
+		-->
+
+		<!-- 커맨드별로 설정하는 경우 CommandViewMap -->
+		<!--  
+		<property name="commandViewMaps">
+			<map>
+				<entry key="/login.xmi">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[로그인 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.DelegationLoginCommand" >
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+								<property name="sessionInvalidate"       value="false" />
+								<property name="requestHeaderEnable"     value="false" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmiView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmiView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+				<entry key="/logout.xmi">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[로그아웃 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.DelegationLogoutCommand" />
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmiView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmiView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+				<entry key="/filedownload.xmi">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[파일 다운로드 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.FileDownloadCommand" />
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmiView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmiView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+				<entry key="/filedelete.xmi">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[파일 삭제 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.FileDeleteCommand" />
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmiView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmiView" />
+							</map>
+						</property>
+					</bean>
+				</entry>	
+			</map>
+		</property>
+		-->	
+    </bean>
+
+</beans>

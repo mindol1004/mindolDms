@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 웹 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+	<bean id="propertyConfigurerWeb" parent="propertyConfigurer">
+        <description>
+            <![CDATA[Spring(3.x이상) context 초기화시 임의로 properties를 지정하는 기능.]]>
+        </description>
+	</bean>
+
+	<bean id="nc.channel.web.ICommandProcessor"
+		class="nexcore.framework.online.channel.core.internal.DefaultCommandProcessor">
+		<description>
+			<![CDATA[표준 웹요청에서 사용하는 CommandProcessor임]]>
+		</description>
+	</bean>
+
+	<bean id="nc.channel.web.DefaultWebErrorView"
+		class="nexcore.framework.online.channel.web.NewStandardRequestView">
+		<description>
+			<![CDATA[표준 웹요청에서 사용하는 에러 처리 VIEW]]>
+		</description>
+		<property name="target" value="/Error500.jsp" />
+		<property name="supportTargets">
+			<list>
+				<value>*.jsp</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="nc.channel.web.DefaultNullView"
+		class="nexcore.framework.online.channel.web.NullView">
+		<description>
+			<![CDATA[표준 웹요청에서 사용하는 아무동작 하지 않는 VIEW]]>
+		</description>
+	</bean>
+
+  <!--
+	<bean id="nc.channel.IValidationManager"
+		class="nexcore.framework.core.validation.internal.DefaultValidationManager"
+		init-method="init" destroy-method="destroy">
+		<description>요청 정보에 대한 검증(Validation 수행)</description>
+		<property name="registry" ref="nc.core.IBizComponentMetaDataRegistry" />
+		<property name="checkers">
+			<map>
+				<entry key="1">
+					<bean
+						class="nexcore.framework.core.validation.internal.NullableMandatoryChecker" />
+				</entry>
+				<entry key="2">
+					<bean
+						class="nexcore.framework.core.validation.internal.NotNullMandatoryChecker" />
+				</entry>
+				<entry key="3">
+					<bean
+						class="nexcore.framework.core.validation.internal.CustomMandatoryChecker" />
+				</entry>
+			</map>
+		</property>
+		<property name="validators">
+			<map>
+				<entry key="00">
+					<bean
+						class="nexcore.framework.core.validation.internal.NullValidator" />
+				</entry>
+				<entry key="AP">
+					<bean
+						class="nexcore.framework.core.validation.internal.AlphabetValidator" />
+				</entry>
+				<entry key="AD">
+					<bean
+						class="nexcore.framework.core.validation.internal.AlphaDigitValidator" />
+				</entry>
+				<entry key="MD">
+					<bean
+						class="nexcore.framework.core.validation.internal.DateMdValidator" />
+				</entry>
+				<entry key="YM">
+					<bean
+						class="nexcore.framework.core.validation.internal.DateYmValidator" />
+				</entry>
+				<entry key="DT">
+					<bean
+						class="nexcore.framework.core.validation.internal.DateValidator" />
+				</entry>
+				<entry key="DZ">
+					<bean
+						class="nexcore.framework.core.validation.internal.DigitValidator" />
+				</entry>
+				<entry key="TS">
+					<bean
+						class="nexcore.framework.core.validation.internal.EnglishKoreanStringValidator" />
+				</entry>
+				<entry key="ES">
+					<bean
+						class="nexcore.framework.core.validation.internal.EnglishStringValidator" />
+				</entry>
+				<entry key="HS">
+					<bean
+						class="nexcore.framework.core.validation.internal.KoreanStringValidator" />
+				</entry>
+				<entry key="NR">
+					<bean
+						class="nexcore.framework.core.validation.internal.RealNumberValidator" />
+				</entry>
+				<entry key="NI">
+					<bean
+						class="nexcore.framework.core.validation.internal.IntegerValidator" />
+				</entry>
+				<entry key="MK">
+					<bean
+						class="nexcore.framework.core.validation.internal.MaskValidator" />
+				</entry>
+				<entry key="MS">
+					<bean
+						class="nexcore.framework.core.validation.internal.TimeMsValidator" />
+				</entry>
+				<entry key="HM">
+					<bean
+						class="nexcore.framework.core.validation.internal.TimeHmValidator" />
+				</entry>
+				<entry key="TM">
+					<bean
+						class="nexcore.framework.core.validation.internal.TimeValidator" />
+				</entry>
+				<entry key="DS">
+					<bean
+						class="nexcore.framework.core.validation.internal.TimeStampValidator" />
+				</entry>
+				<entry key="DD">
+					<bean
+						class="nexcore.framework.core.validation.internal.DetailTimeStampValidator" />
+				</entry>
+			</map>
+		</property>
+		<property name="limiters">
+			<map>
+				<entry key="00">
+					<bean
+						class="nexcore.framework.core.validation.internal.NullLimiter" />
+				</entry>
+				<entry key="01">
+					<bean
+						class="nexcore.framework.core.validation.internal.NumberInterLimiter" />
+				</entry>
+				<entry key="02">
+					<bean
+						class="nexcore.framework.core.validation.internal.NumberOuterLimiter" />
+				</entry>
+				<entry key="03">
+					<bean
+						class="nexcore.framework.core.validation.internal.DictionaryInterLimiter" />
+				</entry>
+				<entry key="04">
+					<bean
+						class="nexcore.framework.core.validation.internal.DictionaryOuterLimiter" />
+				</entry>
+				<entry key="05">
+					<bean
+						class="nexcore.framework.core.validation.internal.LetterAllowLimiter" />
+				</entry>
+				<entry key="06">
+					<bean
+						class="nexcore.framework.core.validation.internal.LetterDenyLimiter" />
+				</entry>
+				<entry key="99">
+					<bean
+						class="nexcore.framework.core.validation.internal.CustomLogicLimiter" />
+				</entry>
+			</map>
+		</property>
+	</bean>
+	-->
+
+  <!--
+	<bean id="nc.channel.IFormattingManager"
+		class="nexcore.framework.core.formatting.internal.DefaultFormattingManager"
+		init-method="init">
+		<description>요청 정보에 대한 포매팅(Formatting 수행)</description>
+		<property name="formatters">
+			<map>
+				<entry key="00">
+					<bean
+						class="nexcore.framework.core.formatting.internal.NullFormatter" />
+				</entry>
+				<entry key="01">
+					<bean
+						class="nexcore.framework.core.formatting.internal.DateFormatter" />
+				</entry>
+				<entry key="02">
+					<bean
+						class="nexcore.framework.core.formatting.internal.DateYmFormatter" />
+				</entry>
+				<entry key="03">
+					<bean
+						class="nexcore.framework.core.formatting.internal.DateMdFormatter" />
+				</entry>
+				<entry key="04">
+					<bean
+						class="nexcore.framework.core.formatting.internal.TimeFormatter" />
+				</entry>
+				<entry key="05">
+					<bean
+						class="nexcore.framework.core.formatting.internal.TimeHmFormatter" />
+				</entry>
+				<entry key="06">
+					<bean
+						class="nexcore.framework.core.formatting.internal.TimeMsFormatter" />
+				</entry>
+				<entry key="07">
+					<bean
+						class="nexcore.framework.core.formatting.internal.DateTimeFormatter" />
+				</entry>
+				<entry key="08">
+					<bean
+						class="nexcore.framework.core.formatting.internal.DetailTimeStampFormatter" />
+				</entry>
+				<entry key="21">
+					<bean
+						class="nexcore.framework.core.formatting.internal.MaskFormatter" />
+				</entry>
+				<entry key="41">
+					<bean
+						class="nexcore.framework.core.formatting.internal.I18nDateFormatter" />
+				</entry>
+				<entry key="42">
+					<bean
+						class="nexcore.framework.core.formatting.internal.I18nDateYmFormatter" />
+				</entry>
+				<entry key="43">
+					<bean
+						class="nexcore.framework.core.formatting.internal.I18nDateMdFormatter" />
+				</entry>
+				<entry key="44">
+					<bean
+						class="nexcore.framework.core.formatting.internal.I18nTimeFormatter" />
+				</entry>
+				<entry key="45">
+					<bean
+						class="nexcore.framework.core.formatting.internal.I18nTimeHmFormatter" />
+				</entry>
+				<entry key="46">
+					<bean
+						class="nexcore.framework.core.formatting.internal.I18nTimeMsFormatter" />
+				</entry>
+				<entry key="47">
+					<bean
+						class="nexcore.framework.core.formatting.internal.I18nDateTimeFormatter" />
+				</entry>
+				<entry key="48">
+					<bean class="nexcore.framework.core.formatting.internal.PackDecimalFormatter" />
+				</entry>
+				<entry key="99">
+					<bean
+						class="nexcore.framework.core.formatting.internal.CustomLogicFormatter" />
+				</entry>
+			</map>
+		</property>
+	</bean>
+	-->
+
+  <!--
+	<bean id="nc.channel.IDataMappingManager"
+		class="nexcore.framework.online.channel.mapping.internal.DefaultDataMappingManager"
+		init-method="init" destroy-method="destroy">
+		<description>요청 정보에 대한 데이터 매핑(Data Mapping 수행)</description>
+		<property name="dataMappers">
+			<map>
+				<entry key="01">
+					<bean
+						class="nexcore.framework.online.channel.mapping.internal.NullMapper" />
+				</entry>
+				<entry key="02">
+					<bean
+						class="nexcore.framework.online.channel.mapping.internal.AssignedValueMapper" />
+				</entry>
+				<entry key="11">
+					<bean
+						class="nexcore.framework.online.channel.mapping.internal.SimpleCodeMapper" />
+				</entry>
+				<entry key="12">
+					<bean
+						class="nexcore.framework.online.channel.mapping.internal.TableCodeMapper" />
+				</entry>
+				<entry key="99">
+					<bean
+						class="nexcore.framework.online.channel.mapping.internal.CustomLogicMapper" />
+				</entry>
+			</map>
+		</property>
+	</bean>
+  -->
+  	
+</beans>

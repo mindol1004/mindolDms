@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.BNR011">
+	<select id="SDeprDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR011.SDeprDtlLst 감가상각상세조회_회계 */
+/* IO: 진병수,2015-08-06T20:29:24(진병수,2015-08-04T19:15:23) */
+SELECT 'AC'   AS RDM_CL
+     ,  TO_CHAR(SYSDATE -1, 'YYYYMM') AS DEPR_STRD_YM
+     ,  '501802'                      AS DEPR_DEPT_CD
+     ,  A.ASSET_NO
+     ,  A.EQP_SRV_LIFE                AS DEPR_DTL_CTT_YR_CNT
+     ,  A.EQP_REM_PRC_AMT             AS DEPR_OBJ_AMT/* 기준금액 */
+     ,  B.RENT_STA_DT                 AS DEPR_STA_DT
+     ,  ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.EQP_SRV_LIFE) AS DEPR_END_DT
+     ,  ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.EQP_SRV_LIFE) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD') AS CNT
+     ,  A.EQP_REM_PRC_AMT / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.EQP_SRV_LIFE) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS UNIT_AMT
+     ,  A.EQP_REM_PRC_AMT - FLOOR(SYSDATE -TO_DATE(B.RENT_STA_DT,'YYYYMMDD'))
+        * A.EQP_REM_PRC_AMT / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.EQP_SRV_LIFE) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS DEPR_DTL_REM_PRC_AMT 
+     ,  (SYSDATE - (LAST_DAY(ADD_MONTHS(SYSDATE,-1)) +1))
+        * A.EQP_REM_PRC_AMT / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.EQP_SRV_LIFE) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS DEPR_DTL_AMT   
+     ,  FLOOR(SYSDATE -TO_DATE(B.RENT_STA_DT,'YYYYMMDD'))
+        * A.EQP_REM_PRC_AMT / (ADD_MONTHS(TO_DATE(B.RENT_STA_DT,'YYYYMMDD'), A.EQP_SRV_LIFE) - TO_DATE(B.RENT_STA_DT,'YYYYMMDD')) AS DEPR_DTL_SUM_AMT
+     , 'BAT'                          AS FS_REG_USER_ID
+     , SYSDATE                        AS FS_REG_DTM
+     , 'BAT'                          AS LS_CHG_USER_ID
+     , SYSDATE                        AS LS_CHG_DTM     
+   FROM TB_EQP_ASSET A
+      , TB_EQP_CNTRT B
+  WHERE A.DEL_YN   = 'N'
+    AND A.OP_CL_CD = 'NR'
+    AND B.ASSET_NO = A.ASSET_NO]]>
+	</select>
+	<insert id="IDeprDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR011.IDeprDtl 감가상각상세등록 */
+/* IO: 진병수,2015-08-06T20:21:50(진병수,2015-08-04T20:37:05) */
+INSERT INTO TB_CLS_DEPR_DTL
+            (
+               RDM_CL
+             , DEPR_STRD_YM
+             , DEPR_DEPT_CD
+             , ASSET_NO
+             , DEPR_DTL_CTT_YR_CNT
+             , DEPR_OBJ_AMT
+             , DEPR_DTL_REM_PRC_AMT
+             , DEPR_DTL_AMT
+             , DEPR_DTL_SUM_AMT
+             , FS_REG_USER_ID
+             , FS_REG_DTM
+             , LS_CHG_USER_ID
+             , LS_CHG_DTM
+            )
+            VALUES
+            (
+                #RDM_CL#
+              , #DEPR_STRD_YM#
+              , #DEPR_DEPT_CD#
+              , #ASSET_NO#
+              , #DEPR_DTL_CTT_YR_CNT#
+              , #DEPR_OBJ_AMT#
+              , #DEPR_DTL_REM_PRC_AMT#
+              , #DEPR_DTL_AMT#
+              , #DEPR_DTL_SUM_AMT#
+              , #FS_REG_USER_ID#
+              , #FS_REG_DTM#
+              , #LS_CHG_USER_ID#
+              , #LS_CHG_DTM#
+            )]]>
+	</insert>
+	<select id="SDeprLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR011.SDeprLst 감가상각조회_회계 */
+/* IO: 진병수,2015-08-06T20:34:10(진병수,2015-08-06T20:29:03) */
+SELECT DEPR_STRD_YM
+     , DEPR_DEPT_CD
+     , SUM(DEPR_DTL_AMT)     AS DEPR_AMT
+     , SUM(DEPR_DTL_SUM_AMT) AS DEPR_SUM_AMT
+  FROM TB_CLS_DEPR_DTL
+ WHERE DEPR_STRD_YM = TO_CHAR(SYSDATE, 'YYYYMM')  
+ GROUP BY DEPR_STRD_YM, DEPR_DEPT_CD]]>
+	</select>
+	<insert id="IDepr" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR011.IDepr 감가상각등록 */
+/* IO: 진병수,2015-08-06T20:31:01(진병수,2015-08-06T20:30:03) */
+INSERT INTO TB_CLS_DEPR
+            (
+               DEPR_STRD_YM
+             , DEPR_DEPT_CD
+             , DEPR_AMT
+             , DEPR_SUM_AMT
+             , FS_REG_USER_ID
+             , FS_REG_DTM
+             , LS_CHG_USER_ID
+             , LS_CHG_DTM
+            )
+            VALUES
+            (
+                #DEPR_STRD_YM#
+              , #DEPR_DEPT_CD#
+              , #DEPR_AMT#
+              , #DEPR_SUM_AMT#
+              , 'BAT'
+              , SYSDATE
+              , 'BAT'
+              , SYSDATE
+            )]]>
+	</insert>
+</sqlMap>

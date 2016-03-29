@@ -1,0 +1,362 @@
+package dms.nr.nrsxmbase.biz;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordHeader;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.exception.SystemRuntimeException;
+
+import com.sap.conn.jco.JCoDestination;
+import com.sap.conn.jco.JCoDestinationManager;
+import com.sap.conn.jco.JCoException;
+import com.sap.conn.jco.JCoField;
+import com.sap.conn.jco.JCoFieldIterator;
+import com.sap.conn.jco.JCoFunction;
+import com.sap.conn.jco.JCoParameterList;
+import com.sap.conn.jco.JCoStructure;
+import com.sap.conn.jco.JCoTable;
+import com.sap.conn.jco.ext.DestinationDataEventListener;
+import com.sap.conn.jco.ext.DestinationDataProvider;
+import com.sap.conn.jco.ext.Environment;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]ERP_PING</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-07-21 17:32:59</li>
+ * <li>작성자 : 진병수 (greatjin)</li>
+ * </ul>
+ *
+ * @author 진병수 (greatjin)
+ */
+public class FNRErpIF extends fwk.base.FunctionUnit {
+ 	enum TARGET {SCQ};
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRErpIF(){
+		super();
+	}
+
+	private static final String ABAP_AS_POOLED = "ABAP_AS_WITH_POOL";
+	private static final String FUNCTION="STF_CONNECTION";
+	private static final String I_PARAM = "REQUTEXT";
+//	private static final String O_PARAM1 = "ECHOTEXT";
+//	private static final String O_PARAM2 = "RESPTEXT"; 
+	/**
+	 *
+	 *
+	 * @author 진병수 (greatjin)
+	 * @since 2015-07-21 17:34:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqErpIFPing(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+    	IDataSet inDataSet = new DataSet();
+    	inDataSet.putField(I_PARAM, "");
+   
+    	responseData = this.callFunction("SCQ", FUNCTION, inDataSet);
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	
+	    return responseData;
+	}
+	
+	
+    /**
+     * SAP RFC 함수를 호출하여 결과를 리턴받는다.
+     * 
+     * @param target
+     * 				호출할 SAP target id 지정한다.
+     * @param function
+     * 				함수이름을 지정한다.
+     * @param inDataSet
+     * 				파라미터 정보를 지정한다.
+     * @return
+     * 			결과를 데이터셋으로 리턴받는다.
+     */
+    public IDataSet callFunction(String target, String function, IDataSet inDataSet) {
+    	
+    	IDataSet outDataSet = new DataSet();
+    	
+    	try {
+    		// SAP 연결정보 얻기
+    		this.connect(null);
+			JCoDestination destination = JCoDestinationManager.getDestination(ABAP_AS_POOLED);
+			
+			// SAP Fuction 설정
+	        JCoFunction jcoFunction = destination.getRepository().getFunction(function);
+
+	        // Nexcore dataset 으로부터 파라미터 설정
+	        setJcoParameter(jcoFunction, inDataSet);
+			
+			// function 실행하기
+			jcoFunction.execute(destination);
+			
+			// 리턴된 결과를 Nexcore dataset 으로 받기
+			getJcoResult(jcoFunction, outDataSet);
+
+		} catch (Exception ex) {
+			StringBuffer sb = new StringBuffer();
+			sb.append("### Error in SAP callFunction ### [target: ");
+			sb.append(target);
+			sb.append(", func.: ");
+			sb.append(function);
+			sb.append("]");
+			
+			//logger.error(errMsg + BaseUtils.getExceptionStackTrace(ex));
+			throw new SystemRuntimeException(sb.toString(), ex);
+		}
+    	
+    	
+    	return outDataSet;
+    }
+    
+    
+    /**
+     * 환경설정 정보를 이용하여 JCO 연결을 설정한다.
+     * 
+     * @throws JCoException
+     */
+    private void connect(String target) throws JCoException
+    {
+    	Properties connectProperties = new Properties();
+        connectProperties.setProperty(DestinationDataProvider.JCO_LANG, "EN");
+        connectProperties.setProperty(DestinationDataProvider.JCO_POOL_CAPACITY, "99");
+        connectProperties.setProperty(DestinationDataProvider.JCO_PEAK_LIMIT, "10");
+        connectProperties.setProperty(DestinationDataProvider.JCO_EXPIRATION_TIME, "20");
+
+        connectProperties.setProperty(DestinationDataProvider.JCO_CLIENT, "600");
+        connectProperties.setProperty(DestinationDataProvider.JCO_USER, "SKVLC01");
+        connectProperties.setProperty(DestinationDataProvider.JCO_PASSWD, "icango");
+        connectProperties.setProperty(DestinationDataProvider.JCO_ASHOST, "203.235.217.67");
+        connectProperties.setProperty(DestinationDataProvider.JCO_SYSNR, "02");
+        
+        MyDestinationDataProvider myProvider = MyDestinationDataProvider.getInstance();   
+        myProvider.changeProperties(ABAP_AS_POOLED, connectProperties);
+    }
+    
+    /**
+     * MyDestinationDataProvider
+     * @author greatjin
+     *
+     */
+    static class MyDestinationDataProvider implements DestinationDataProvider   
+    {
+        private DestinationDataEventListener eL;      
+        
+		private HashMap<String, Properties> destinations;
+		
+		private static MyDestinationDataProvider provider;
+		
+		/**
+		 * Basic Constructor
+		 */
+		private MyDestinationDataProvider(){
+				destinations = new HashMap();
+	     }
+
+		/**
+		 *Static method to retrieve instance 
+		 * @return
+		 */
+		public static MyDestinationDataProvider getInstance(){
+			//System.out.println("Getting MyDestinationDataProvider ... ");
+			if(provider == null) {
+				provider = new MyDestinationDataProvider();
+				Environment.registerDestinationDataProvider(provider);
+			}
+			return provider;
+		}
+		/**
+		 * getDestinationProperties
+		 */
+        public Properties getDestinationProperties(String destinationName)   
+        {   
+			if( destinations.containsKey( destinationName ) ){
+				return destinations.get( destinationName );
+			} else {
+				throw new RuntimeException("Destination " + destinationName + " is not available");   
+			}
+        }   
+   
+        /**
+         * setDestinationDataEventListener
+         */
+        public void setDestinationDataEventListener(DestinationDataEventListener eventListener)   
+        {   
+            this.eL = eventListener;   
+        }   
+   
+        /**
+         * supportsEvents
+         */
+        public boolean supportsEvents()   
+        {   
+            return true;   
+        }   
+        
+        /**
+         * implementation that saves the properties in a very secure way 
+         * @param destName
+         * @param properties
+         */
+        void changeProperties(String destName, Properties properties)
+        {
+            synchronized(destinations)
+            {
+            	destinations.put(destName, properties);
+            }
+        }
+    }   
+    
+    
+    /**
+     * 데이터셋에 전달된 파라미터를 JCO 파라미터로 변환시킨다.
+     * + 필드맵 데이터는 JCO 필드 데이터로 변환
+     * + 레코드셋 데이터는 JCO 테이블 데이터로 변환
+     * 
+     * @param jcoFunction
+     * @param inDataSet
+     */
+    private static void setJcoParameter(JCoFunction jcoFunction, IDataSet inDataSet) {
+    	
+    	try {
+	        // Nexcore 필드데이터를 JCO field 로 변환하기
+			for (Iterator<String> iter=inDataSet.getFieldKeys(); iter.hasNext();) {
+				String key = iter.next();
+				Object obj = inDataSet.getObjectField(key);
+				JCoParameterList jcoParam = jcoFunction.getImportParameterList();
+				
+				if(obj instanceof Map) {
+					Map stMap = (Map)obj;
+					JCoStructure jcoStructure = jcoParam.getStructure(key);
+					for (Iterator<String> stIter=stMap.entrySet().iterator(); stIter.hasNext();) {
+						jcoStructure.setValue(stIter.next(), stMap.get(stIter.next()));
+					}
+				} else {
+					jcoParam.setValue(key, obj);
+				}
+			}
+    	} catch (Exception ex) {
+    		throw new SystemRuntimeException("### 1-1 ### Error in setup parameter : field data " , ex);
+    	}
+		
+    	try {
+			// Nexcore 레코드셋을 JCO Table 로 변환하기
+			for (Iterator<IRecordSet> iter=inDataSet.getRecordSets(); iter.hasNext();) {
+				IRecordSet rs = iter.next();
+				JCoTable jcoTable = jcoFunction.getTableParameterList().getTable(rs.getId());
+				
+				//레코드셋 핸들링...
+				for (int i=0; i<rs.getRecordCount(); i++) {
+					//레코드 추가
+					IRecord record = rs.getRecord(i);
+					jcoTable.appendRow();
+					
+					for (Iterator rsIter=rs.getHeaders(); rsIter.hasNext();) {
+						IRecordHeader header = (IRecordHeader) rsIter.next();
+						jcoTable.setValue(header.getName(), record.get(header.getName())); //필드값 설정
+					}
+					
+				}
+			}
+    	} catch (Exception ex) {
+    		throw new SystemRuntimeException("### 1-2 ### Error in setup parameter : table data " , ex);
+    	}
+    }
+    
+    /**
+     * JCO 호출결과를 데이터셋으로 변환하여 얻어온다.
+     * 
+     * @param jcoFunction
+     * @param outDataSet
+     */
+    private static void getJcoResult(JCoFunction jcoFunction, IDataSet outDataSet) {
+    	
+    	try {
+	    	// JCO Fields 데이터 리턴받기 (일반필드,structure 포함)
+			if (jcoFunction.getExportParameterList() != null) {
+				for (JCoFieldIterator exIter=jcoFunction.getExportParameterList().getFieldIterator(); exIter.hasNextField();) {
+					JCoField exField = exIter.nextField();
+					
+					if (exField.isTable()) {
+						//skip...
+						exField.getTable();
+					} else if (exField.isStructure()) { //(1) structure 데이터타입
+	
+						Map stMap = new HashMap();
+						outDataSet.putField(exField.getName(), stMap); //structure 데이터로 저장
+						
+						JCoStructure st = exField.getStructure();
+						for (JCoFieldIterator stIter=st.getFieldIterator(); stIter.hasNextField();) {
+							JCoField stField = stIter.nextField();
+							stMap.put(stField.getName(), stField.getString());
+						}
+						
+					} else {  //(2) 일반 fields 데이터타입
+						
+						outDataSet.putField(exField.getName(), exField.getString()); //fields 데이터로 저장
+					}
+				}
+			}
+    	} catch (Exception ex) {
+    		throw new SystemRuntimeException("### 2-1 ### Error in getting result : fields data " , ex);
+    	}
+		
+    	try {
+			// JCO Table 데이터 리턴받기
+			if (jcoFunction.getTableParameterList() != null) {
+				for (JCoFieldIterator tbIter=jcoFunction.getTableParameterList().getFieldIterator(); tbIter.hasNextField();) {
+					JCoField tbField = tbIter.nextField();
+					JCoTable jcoTable = tbField.getTable();
+					
+					//(1) 레코드셋 생성
+					IRecordSet outRes = new RecordSet(tbField.getName());
+	
+					//(2) 레코드 헤더정보 생성
+					for(JCoFieldIterator colIter=jcoTable.getFieldIterator(); colIter.hasNextField();) {
+						outRes.addHeader(new RecordHeader(colIter.nextField().getName()));
+					}
+					
+					//(3) 레코드 채우기...
+					for(int i=0; i<jcoTable.getNumRows(); i++) {
+						IRecord rsRecord= outRes.newRecord(); //레코드생성
+						
+						for(JCoFieldIterator colIter=jcoTable.getFieldIterator(); colIter.hasNextField();) {
+							JCoField colField =colIter.nextField();
+							rsRecord.set(colField.getName(), colField.getString()); //레코드값 설정
+						}
+						
+						jcoTable.nextRow();
+					}
+					
+					outDataSet.putRecordSet(outRes); //레코드셋 리턴
+				}
+			}
+    	} catch (Exception ex) {
+    		throw new SystemRuntimeException("### 2-2 ### Error in getting result : table data " , ex);
+    	}
+    }
+  
+}

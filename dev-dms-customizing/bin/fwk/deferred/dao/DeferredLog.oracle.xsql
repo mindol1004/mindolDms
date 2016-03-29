@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="deferred.log">
+
+	<resultMap id="DEF_LOG_RESULT" class="hmap">
+		<result property="SEQ_NO"        column="SEQ_NO"       javaType="long"   />
+		<result property="LOG_BZOP_DT"   column="LOG_BZOP_DT"  javaType="String" />
+		<result property="TARGET_TR_CD"  column="TARGET_TR_CD" javaType="String" />
+		<result property="SOURCE_TR_CD"  column="SOURCE_TR_CD" javaType="String" />
+		<result property="STATUS"        column="STATUS"       javaType="String" />
+		<result property="EXE_CNT"       column="EXE_CNT"      javaType="int"    />
+	</resultMap>
+	
+	<resultMap id="LAST_SEQUENCE_RESULT" class="hmap">
+		<result property="LAST_SEQUENCE_NO" column="LAST_SEQUENCE_NO" javaType="long" nullValue="0"/>
+	</resultMap>
+
+	<select id="SELECT_LAST_DEFERRED_LOG" parameterClass="map" resultMap="LAST_SEQUENCE_RESULT" fetchSize="50" >
+		<![CDATA[
+		select MAX(SEQ_NO) as LAST_SEQUENCE_NO 
+		from TL_HPC_FWK_DEFLOG 
+		where LOG_BZOP_DT = #LOG_BZOP_DT# 
+		  and SEQ_NO >= #FROM_SEQ# 
+		  and SEQ_NO <= #TO_SEQ#]]>
+	</select>
+
+	<select id="SELECT_REP_DEFERRED_LOG" parameterClass="map" resultMap="DEF_LOG_RESULT" fetchSize="50" >
+		<![CDATA[
+		select SEQ_NO, LOG_BZOP_DT, TARGET_TR_CD, SOURCE_TR_CD, EXE_CNT, STATUS 
+		from (
+		    select /*+ INDEX(H TL_HPC_FWK_DEFLOG(LOG_BZOP_DT STATUS EXE_CNT)) */ SEQ_NO, LOG_BZOP_DT, TARGET_TR_CD, SOURCE_TR_CD, EXE_CNT, STATUS 
+		    from TL_HPC_FWK_DEFLOG H
+		    where LOG_BZOP_DT = #LOG_BZOP_DT# 
+		      and (SEQ_NO between #FROM_SEQ# and #TO_SEQ#) 
+		      and STATUS = #STATUS_RETRY# 
+		]]><isGreaterThan prepend="AND" property="MAX_READ" compareValue="0"><![CDATA[ ROWNUM <= #MAX_READ# ]]></isGreaterThan><![CDATA[
+		    union all 
+		    select /*+ INDEX(H TL_HPC_FWK_DEFLOG(LOG_BZOP_DT STATUS EXE_CNT)) */ SEQ_NO, LOG_BZOP_DT, TARGET_TR_CD, SOURCE_TR_CD, EXE_CNT, STATUS 
+		    from TL_HPC_FWK_DEFLOG H
+		    where LOG_BZOP_DT = #LOG_BZOP_DT# 
+		      and (SEQ_NO between #FROM_SEQ# and #TO_SEQ#) 
+		      and ((STATUS = #STATUS_FAIL# and EXE_CNT < #FAIL_RETRY#) or (STATUS = #STATUS_LOST# and EXE_CNT < #LOST_RETRY#))
+		]]><isGreaterThan prepend="AND" property="MAX_READ" compareValue="0"><![CDATA[ ROWNUM <= #MAX_READ# ]]></isGreaterThan><![CDATA[
+		) a 
+		]]><isGreaterThan prepend="WHERE" property="MAX_READ" compareValue="0"><![CDATA[ ROWNUM <= #MAX_READ# ]]></isGreaterThan><![CDATA[
+		]]>
+	</select>
+	
+	<select id="SELECT_DEFERRED_LOG" parameterClass="map" resultMap="DEF_LOG_RESULT" fetchSize="50" >
+		<![CDATA[select SEQ_NO, LOG_BZOP_DT, TARGET_TR_CD, SOURCE_TR_CD, EXE_CNT, STATUS
+		from TL_HPC_FWK_DEFLOG
+		where LOG_BZOP_DT = #LOG_BZOP_DT# 
+		  and SEQ_NO = #SEQ_NO#
+		]]>
+	</select>
+
+	<select id="SELECT_VOLATILE_LOG" parameterClass="map" resultMap="DEF_LOG_RESULT" fetchSize="50" >
+		<![CDATA[select SEQ_NO, LOG_BZOP_DT, TARGET_TR_CD, SOURCE_TR_CD, EXE_CNT, STATUS
+		from TL_HPC_FWK_DEFLOG H
+		where LOG_BZOP_DT = #LOG_BZOP_DT# 
+		  and (SEQ_NO between #FROM_SEQ# and #TO_SEQ#) 
+		  and STATUS=#FROM_STATUS#
+		]]>
+	</select>
+
+	<update id="INSERT_DEFERRED_LOG" parameterClass="map">
+		<![CDATA[INSERT INTO TL_HPC_FWK_DEFLOG(LOG_BZOP_DT, SEQ_NO, TARGET_TR_CD, SOURCE_TR_CD, STATUS, DESCRIPTION, EXE_CNT, CR_DATE, UP_DATE)
+	    VALUES (#LOG_BZOP_DT#, #SEQ_NO#, #TARGET_TR_CD#, #SOURCE_TR_CD#, #STATUS#, #DESCRIPTION#, #EXE_CNT#, #CR_DATE#, #UP_DATE#)]]>
+	</update>
+		
+	<update id="UPDATE_DEFERRED_LOG" parameterClass="map">
+		<![CDATA[update TL_HPC_FWK_DEFLOG set STATUS=#STATUS#, DESCRIPTION=#DESCRIPTION#, EXE_CNT=#EXE_CNT#, UP_DATE=#UP_DATE# 
+		where LOG_BZOP_DT=#LOG_BZOP_DT#  
+		  and SEQ_NO=#SEQ_NO#
+		  and TARGET_TR_CD=#TARGET_TR_CD#]]>
+	</update>
+	
+	<update id="UPDATE_DEFERRED_LOG1" parameterClass="map">
+		<![CDATA[update TL_HPC_FWK_DEFLOG set SOURCE_TR_CD=#SOURCE_TR_CD#, STATUS=#STATUS#, DESCRIPTION=#DESCRIPTION#, EXE_CNT=#EXE_CNT#, UP_DATE=#UP_DATE# 
+		where LOG_BZOP_DT=#LOG_BZOP_DT#  
+		  and SEQ_NO=#SEQ_NO#
+		  and TARGET_TR_CD=#TARGET_TR_CD#]]>
+	</update>
+	
+	<update id="UPDATE_DEFERRED_LOG2" parameterClass="map">
+		<![CDATA[update TL_HPC_FWK_DEFLOG set TARGET_TR_CD=#TARGET_TR_CD#, SOURCE_TR_CD=#SOURCE_TR_CD#, STATUS=#STATUS#, DESCRIPTION=#DESCRIPTION# ,EXE_CNT=#EXE_CNT#, UP_DATE=#UP_DATE# 
+		where LOG_BZOP_DT=#LOG_BZOP_DT#  
+		  and SEQ_NO=#SEQ_NO#
+		  and TARGET_TR_CD=#KEY_TARGET_TR_CD#]]>
+	</update>
+
+	<update id="UPDATE_VOLATILE_LOG" parameterClass="map">
+		<![CDATA[update TL_HPC_FWK_DEFLOG set STATUS=#TO_STATUS#, UP_DATE=#UP_DATE# 
+		where LOG_BZOP_DT=#LOG_BZOP_DT# 
+		  and (SEQ_NO between #FROM_SEQ# and #TO_SEQ#) 
+		  and STATUS=#FROM_STATUS#]]>
+	</update>	
+
+	<update id="UPDATE_RESTORE_LOG" parameterClass="map">
+		<![CDATA[update TL_HPC_FWK_DEFLOG set STATUS=#TO_STATUS#, DESCRIPTION=#DESCRIPTION#, EXE_CNT=#EXE_CNT#, UP_DATE=#UP_DATE# 
+		where LOG_BZOP_DT=#LOG_BZOP_DT#  
+		  and SEQ_NO=#SEQ_NO#
+		  and TARGET_TR_CD=#TARGET_TR_CD#
+		  and STATUS=#FROM_STATUS#
+		]]>
+	</update>
+
+</sqlMap>

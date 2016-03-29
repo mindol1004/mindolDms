@@ -1,0 +1,202 @@
+package dms.nr.nrsplbase.biz;
+
+import java.util.Map;
+
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]손해배상단말관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-15 17:43:05</li>
+ * <li>작성자 : 안진갑 (bella21cjk)</li>
+ * </ul>
+ *
+ * @author 안진갑 (bella21cjk)
+ */
+public class FNRCmpStdMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRCmpStdMgmt(){
+		super();
+	}
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-09-15 17:44:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqCmpStdLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet cmpStdListRs = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DNRCmpStdMgmt dNRCmpStdMgmt = (DNRCmpStdMgmt) lookupDataUnit(DNRCmpStdMgmt.class);
+            
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRCmpStdMgmt.dSCmpStdTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+            // 3. LISTDM호출
+            responseData = dNRCmpStdMgmt.dSCmpStdLstPaging(reqDs, onlineCtx);
+            cmpStdListRs = responseData.getRecordSet("RS_CMP_STD_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(cmpStdListRs, reqDs, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-09-15 17:43:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqCmpStdDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        try {
+            // 1. DU lookup
+            DNRCmpStdMgmt dNRCmpStdMgmt = (DNRCmpStdMgmt) lookupDataUnit(DNRCmpStdMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNRCmpStdMgmt.dSCmpStdDtl(requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }   
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-09-17 13:37:34
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegCmpStd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        try {
+            // 1. DU lookup
+            DNRCmpStdMgmt dNRCmpStdMgmt = (DNRCmpStdMgmt) lookupDataUnit(DNRCmpStdMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNRCmpStdMgmt.dICmpStd(requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-09-17 13:38:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdCmpStd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        try {
+            // 1. DU lookup
+            DNRCmpStdMgmt dNRCmpStdMgmt = (DNRCmpStdMgmt) lookupDataUnit(DNRCmpStdMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNRCmpStdMgmt.dUCmpStd(requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-09-21 10:17:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDelCmpStd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        DNRCmpStdMgmt dNRCmpStdMgmt = (DNRCmpStdMgmt) lookupDataUnit(DNRCmpStdMgmt.class);
+
+        // 2. LISTDM호출
+        responseData = dNRCmpStdMgmt.dDCmpStd(requestData, onlineCtx);
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-10-07 15:33:17
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqDupMdl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        DNRCmpStdMgmt dNRCmpStdMgmt = (DNRCmpStdMgmt) lookupDataUnit(DNRCmpStdMgmt.class);
+        responseData = dNRCmpStdMgmt.dSDupMdl(requestData, onlineCtx);
+        return responseData;
+    }
+  
+}

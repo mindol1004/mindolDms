@@ -1,0 +1,452 @@
+package dms.ep.epbrpbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]보고서관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-23 11:27:01</li>
+ * <li>작성자 : 정동현 (jjddhh123)</li>
+ * </ul>
+ *
+ * @author 정동현 (jjddhh123)
+ */
+public class PEPReportMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPReportMgmt(){
+		super();
+	}
+	/**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-09-23 11:27:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : SELL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_MTH_SALE_LIST
+	 *		- field : SELL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : SELL_TYP [판매 유형]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : G_ID [GROUP_ID]
+	 * </pre>
+	 */
+	public IDataSet pInqMthSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqMthSaleList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B판매실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:27:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : SELL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2B_SALE_LIST
+	 *		- field : SELL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : SELL_TYP [판매 유형]
+	 *		- field : PHONE_TYP [폰구분]
+	 *		- field : MFACT_TYP [제조사구분]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 *		- field : G_ID [GROUP_ID]
+	 * </pre>
+	 */
+	public IDataSet pInqB2BSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqB2BSaleList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-09-23 11:27:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_DIR_PRCH_LIST
+	 *		- field : CNSL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DEALCO_TYP [유형]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet pInqDirPrchList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqDirPrchList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>NEW보상기변실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:27:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [년도]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_NEW_CHG_SALE_LIST
+	 *		- field : CNSL_YR [년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DATA_SECTION [기준데이터구분]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet pInqNewCmpChgSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqNewCmpChgSaleList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-09-23 11:27:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : SELL_YR [판매년도]
+	 *	- field : MTH_CNT [해당월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2C_SALE_LIST
+	 *		- field : SELL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : TYP [유형]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 *		- field : G_ID [GROUP_ID]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 * </pre>
+	 */
+	public IDataSet pInqB2CSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqB2CSaleList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+    /**
+	 * <pre>T에코실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:27:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [년도]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_TECHO_SALE_LIST
+	 *		- field : CNSL_YR [년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DATA_SECTION [기준데이터구분]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet pInqTEchoSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqTEchoSaleList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+    /**
+	 * <pre>제휴채널실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:27:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [판매년도]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_JOIN_SALE_LIST
+	 *		- field : CNSL_YR [판매년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DEALCO_TYP [유형]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet pInqJoinSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqJoinSaleList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+    /**
+	 * <pre>클럽T실적현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-23 11:27:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DATA_GB [데이터구분]
+	 *	- field : CNSL_YR [년도]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CLUBT_SALE_LIST
+	 *		- field : CNSL_YR [년도]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : DATA_SECTION [기준데이터구분]
+	 *		- field : RSLT_SUM [합계]
+	 *		- field : MTH_AVG [월평균]
+	 *		- field : MTH_1 [1월]
+	 *		- field : MTH_2 [2월]
+	 *		- field : MTH_3 [3월]
+	 *		- field : MTH_4 [4월]
+	 *		- field : MTH_5 [5월]
+	 *		- field : MTH_6 [6월]
+	 *		- field : MTH_7 [7월]
+	 *		- field : MTH_8 [8월]
+	 *		- field : MTH_9 [9월]
+	 *		- field : MTH_10 [10월]
+	 *		- field : MTH_11 [11월]
+	 *		- field : MTH_12 [12월]
+	 * </pre>
+	 */
+	public IDataSet pInqClubTSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSRPBase", "fInqClubTSaleList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+  
+}

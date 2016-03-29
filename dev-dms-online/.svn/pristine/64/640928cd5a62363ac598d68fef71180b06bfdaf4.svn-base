@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPBoxInveMgmt">
+	<select id="SBoxInveLstPaging" parameterClass="map" resultClass="hmap" fetchSize="100" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBoxInveMgmt.SBoxInveLstPaging 박스재고조회리스트 */
+/* IO: 이준우,2015-08-27T16:32:56(이준우,2015-07-15T12:35:58) */
+SELECT 
+	    PA.*
+  FROM (
+       SELECT  ROW_NUMBER() OVER(ORDER BY V.EQP_SER_NO, V.EQP_MDL_NM, V.CNSL_DT ) AS ROWNO 
+            ,  V.*
+        FROM   (SELECT  '0' AS CHECKED
+                     ,  MAX(A.CNSL_MGMT_NO) AS CNSL_MGMT_NO     /*접수번호*/
+                     ,  MAX(CNSL_DT) AS CNSL_DT                  /*접수일*/
+                     ,  MAX(EQP_SER_NO) AS EQP_SER_NO             /*일련번호*/
+                     ,  MAX(B.MFACT_CD) AS MFACT_CD                            /* 제조사 */
+                     ,  MAX(B.PROD_CHRTIC_1) AS PROD_CHRTIC_1       /*단말그룹 (단말기특성)*/
+                     ,  MAX(B.EQP_MDL_NM) AS EQP_MDL_NM         /* 모델명 */
+                     ,  MAX(EQP_ST) AS EQP_ST                   /* 등급 */
+                     ,  NVL(MAX(EQP_ST_DTL_P),MAX(EQP_ST_DTL_C)) AS EQP_ST_DTL
+                     ,  MAX(A.CNSL_DEALCO_CD) AS CNSL_DEALCO_CD               /*상담처코드*/
+                     ,  MAX(A.CNSL_DEALCO_NM) AS CNSL_DEALCO_NM       /*상담처명*/
+                     ,  MAX(A.DPSTR) AS DPSTR    /*예금주 (고객명)*/
+                     ,  MAX(CTZ_NO) AS CTZ_NO   /*주민번호(생년월일)*/
+                     ,  MAX(DTL_1) AS DTL_1
+                     ,  MAX(DTL_2) AS DTL_2
+                     ,  MAX(DTL_3) AS DTL_3
+                     ,  MAX(DTL_4) AS DTL_4
+                     ,  MAX(DTL_5) AS DTL_5
+                     ,  MAX(S_GB) AS S_GB 
+                     ,  MAX(PRCH_AMT) AS PRCH_AMT   /* 매입가 */
+                     ,  DECODE(NVL(MAX(A.PRCH_AMT),1),1,0,NVL(MAX(A.UBO_AMT),0)) AS UBO_AMT  /* 유보금액 */
+	                 ,  MAX(A.PRCH_AMT) + NVL(MAX(A.UBO_AMT),0) TOT_AMT /* 총금액 */
+                     ,  MAX(IMEI) AS IMEI
+                  FROM  (
+                         SELECT  A.CNSL_MGMT_NO 
+                              ,  CNSL_DT 
+                              ,  EQP_SER_NO 
+                              ,  CNSL_DEALCO_CD 
+                              ,  (SELECT DEALCO_NM 
+                                   FROM TB_DEALCO AB 
+                                  WHERE A.CNSL_DEALCO_CD = AB.DEALCO_CD 
+                                    AND AB.DEAL_STA_DT <= A.CNSL_DT 
+                                    AND AB.DEAL_END_DT >= A.CNSL_DT) AS CNSL_DEALCO_NM
+                              ,  DPSTR 
+                              ,  '' AS CTZ_NO 
+                              ,  A.EQP_MDL_CD 
+                              ,  A.EQP_ST 
+                              ,  DECODE(EQP_ST,'N','N','E','E',EQP_ST_DTAIL) AS EQP_ST_DTL_P
+                              ,  '' AS EQP_ST_DTL_C
+                              ,  DECODE(BB.DTL_CL, '1', 'Y','N') AS DTL_1                              
+                              ,  DECODE(BB.DTL_CL, '2', 'Y','N') AS DTL_2                              
+                              ,  DECODE(BB.DTL_CL, '7', 'Y','N') AS DTL_3                              
+                              ,  DECODE(BB.DTL_CL, '8', 'Y','N') AS DTL_4                              
+                              ,  DECODE(BB.DTL_CL, '4', 'Y','N') AS DTL_5 
+                              ,  'P' AS S_GB 
+                              ,  PRCH_AMT 
+					   		  ,  '0' AS UBO_AMT
+                              ,  IMEI
+                           FROM  TB_EP_CST_PRCHS_MGMT A
+                              ,  TB_EP_CST_PRCHS_DTL BB
+                          WHERE  A.DEL_YN = 'N'
+                            AND  A.PRCH_MGMT_NO = BB.PRCH_MGMT_NO
+                            AND  BB.HLD_QTY > 0
+                            AND  BB.DEL_YN ='N'              
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[          
+                            AND  A.CNSL_MGMT_NO LIKE '%'||#CNSL_MGMT_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[ 
+                            AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+                      
+                      UNION ALL
+                         SELECT  A.CNSL_MGMT_NO 
+                              ,  CNSL_DT 
+                              ,  EQP_SER_NO 
+                              ,  CNSL_DEALCO_CD 
+                              ,  (SELECT  DEALCO_NM 
+                                    FROM  TB_DEALCO AB 
+                                   WHERE  A.CNSL_DEALCO_CD = AB.DEALCO_CD 
+                                     AND  AB.DEAL_STA_DT <= A.CNSL_DT 
+                                     AND  AB.DEAL_END_DT >= A.CNSL_DT) AS CNSL_DEALCO_NM
+                              ,  DPSTR 
+                              ,  SUBSTR(CTZ_NO , 0,6) CTZ_NO
+                              ,  A.EQP_MDL_CD 
+                              ,  EQP_ST
+                              ,  '' AS EQP_ST_DTL_P
+                              ,  DECODE(EQP_ST,'N','N','E','E',EQP_ST_DTAIL) AS EQP_ST_DTL_C
+                              ,  DECODE(BB.DTL_CL, '1', 'Y','N') AS DTL_1                              
+                              ,  DECODE(BB.DTL_CL, '2', 'Y','N') AS DTL_2                              
+                              ,  DECODE(BB.DTL_CL, '7', 'Y','N') AS DTL_3                              
+                              ,  DECODE(BB.DTL_CL, '8', 'Y','N') AS DTL_4                              
+                              ,  DECODE(BB.DTL_CL, '4', 'Y','N') AS DTL_5 
+                              ,  'C' AS S_GB 
+                              ,  0 AS PRCH_AMT
+                              ,  (SELECT  DA.CM_CD_ID          
+	                                FROM  TB_CM_CD DA          /* SC_공통코드 */                
+	                                   ,  TB_CM_GRP_CD DB      /* SC_공통그룹코드 */          
+	                               WHERE  DA.CM_GRP_CD_ID = DB.CM_GRP_CD_ID            
+	                                 AND  DA.CM_GRP_CD_ID = 'DMS182'
+	                                 AND  DA.MGMT_ITEM_CD1 <= A.CNSL_DT
+	                                 AND  DA.MGMT_ITEM_CD2 >= A.CNSL_DT) AS UBO_AMT                              
+                              ,  IMEI
+                           FROM  TB_EP_CST_CONSULT_MGMT A
+                              ,  TB_EP_CST_CONSULT_DTL BB
+                          WHERE  A.DEL_YN = 'N'
+                            AND  A.CNSL_MGMT_NO = BB.CNSL_MGMT_NO
+                            AND  BB.HLD_QTY > 0
+                            AND  BB.DEL_YN ='N'    
+                                                 
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[          
+                            AND  A.CNSL_MGMT_NO LIKE '%'||#CNSL_MGMT_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[ 
+                            AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+                 
+                        ) A
+                    ,   TB_EQP_MDL B
+                 WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD (+)
+              GROUP BY  CNSL_MGMT_NO
+              ORDER BY  CNSL_DT
+              )V
+        )PA  
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SBoxInveLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBoxInveMgmt.SBoxInveLstTotCnt 박스재고조회총건수 */
+/* IO: 이준우,2015-08-24T10:13:01(이준우,2015-07-14T20:56:54) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  (SELECT  MAX(A.CNSL_MGMT_NO) AS CNSL_MGMT_NO
+              ,  MAX(B.EQP_MDL_NM) AS EQP_MDL_NM
+           FROM  (
+                  SELECT  A.CNSL_MGMT_NO
+                       ,  A.EQP_MDL_CD
+                    FROM  TB_EP_CST_PRCHS_MGMT A
+                       ,  TB_EP_CST_PRCHS_DTL BB
+                   WHERE  A.DEL_YN = 'N'
+                     AND  A.PRCH_MGMT_NO = BB.PRCH_MGMT_NO
+                     AND  BB.HLD_QTY > 0
+                     AND  BB.DEL_YN ='N'
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[          
+                     AND  A.CNSL_MGMT_NO LIKE '%'||#CNSL_MGMT_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[ 
+                     AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+               UNION ALL
+                  SELECT  A.CNSL_MGMT_NO
+                       ,  A.EQP_MDL_CD
+                    FROM  TB_EP_CST_CONSULT_MGMT A
+                       ,  TB_EP_CST_CONSULT_DTL BB
+                   WHERE  A.DEL_YN = 'N'
+                     AND  A.CNSL_MGMT_NO = BB.CNSL_MGMT_NO
+                     AND  BB.HLD_QTY > 0
+                     AND  BB.DEL_YN ='N'
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[          
+                     AND  A.CNSL_MGMT_NO LIKE '%'||#CNSL_MGMT_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[ 
+                     AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+		         ) A
+		      ,  TB_EQP_MDL B
+		  WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD (+)
+       GROUP BY  CNSL_MGMT_NO
+        ) 
+     ]]>
+	</select>
+	<update id="UBoxInveTbECCM" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBoxInveMgmt.UBoxInveTbECCM 상담관리정보수정 */
+/* IO: 이준우,2015-08-24T11:04:17(이준우,2015-07-17T14:11:22) */
+UPDATE  TB_EP_CST_CONSULT_MGMT
+   SET  BOX_NO  = ''
+     ,  UPDATE_COUNT = NVL(UPDATE_COUNT, 0) + 1 
+     ,  LS_CHG_DTM = SYSDATE 
+     ,  LS_CHG_USER_ID = #LAST_CHG_USER_ID#
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<select id="SBoxInfoInveLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBoxInveMgmt.SBoxInfoInveLst 박스재고정보조회리스트 */
+/* IO: 이준우,2015-08-24T10:37:26(이준우,2015-07-15T12:35:58) */
+SELECT  BARCDNO AS BOX_NO    
+     ,  QTY    
+     ,  BOX_ST 
+     ,  NVL(PROD_QTY,0) AS PROD_QTY
+  FROM  TB_EP_BAS_BARCODE_LST
+ WHERE  BARCDNO = #BOX_NO#]]>
+	</select>
+	<update id="UBoxInveTbECPM" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBoxInveMgmt.UBoxInveTbECPM 매입관리정보수정 */
+/* IO: 이준우,2015-08-24T17:01:41(이준우,2015-07-17T14:11:22) */
+UPDATE  TB_EP_CST_PRCHS_MGMT
+   SET  BOX_NO  = ''
+     ,  UPDATE_COUNT = NVL(UPDATE_COUNT, 0) + 1 
+     ,  LS_CHG_DTM = SYSDATE
+     ,  LS_CHG_USER_ID = #LAST_CHG_USER_ID#
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UBoxInveTbEBBL" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBoxInveMgmt.UBoxInveTbEBBL 바코드관리정보수정 */
+/* IO: 이준우,2015-08-24T17:08:35(이준우,2015-07-17T14:11:22) */
+UPDATE  TB_EP_BAS_BARCODE_LST
+   SET  PROD_QTY = #PROD_QTY#
+     ,  LS_CHG_DTM = SYSDATE
+     ,  LS_CHG_USER_ID = #LAST_CHG_USER_ID#
+ WHERE  BARCDNO = #BOX_NO#]]>
+	</update>
+</sqlMap>

@@ -1,0 +1,161 @@
+package dms.ep.epssxbase.biz;
+
+import java.util.Map;
+
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]대리점수수료관리</li>
+ * <li>설  명 : <pre>[FU]대리점수수료관리</pre></li>
+ * <li>작성일 : 2015-10-05 10:36:10</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class FEPAgnCmmsMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPAgnCmmsMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]대리점수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-22 10:27:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INCEN_STRD_YM [인센티브 기준 년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_CMMS_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : INCEN_XCL_NO [인센티브 정산 번호]
+	 *		- field : INCEN_STRD_YM [인센티브 기준 년월]
+	 *		- field : INCEN_BIZ_REG_NO [인센티브 사업자 등록 번호]
+	 *		- field : INCEN_CORP_NM [인센티브 법인 명]
+	 *		- field : INCEN_AMT [인센티브 금액]
+	 *		- field : SPLYPRC [공급가격]
+	 *		- field : SURTAXAMT [부가세금액]
+	 *		- field : INCEN_SLIP_DT [인센티브 전표 일자]
+	 *		- field : INCEN_SLIP_NO [인센티브 전표 번호]
+	 *		- field : INCEN_SLIP_ST [인센티브 전표 상태]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 * </pre>
+	 */
+	public IDataSet fSAgnCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;        
+        
+        try {
+            // 1. DU lookup
+            DEPAgnCmmsMgmt dEPAgnCmmsMgmt = (DEPAgnCmmsMgmt)lookupDataUnit(DEPAgnCmmsMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPAgnCmmsMgmt.dSAgnCmmsTotCnt(requestData, onlineCtx); // 검수대상목록총건수            
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));            
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            // 3. LISTDM호출
+            responseData = dEPAgnCmmsMgmt.dSAgnCmmsPaging(requestData, onlineCtx);
+            rsPagingList = responseData.getRecordSet("RS_AGN_CMMS_LIST");          
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]대리점수수료등록</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-22 10:27:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INCEN_STRD_YM [정산기준년월]
+	 *	- field : INCEN_BIZ_REG_NO [인센티브 사업자 등록 번호]
+	 *	- field : INCEN_CORP_NM [인센티브 법인 명]
+	 *	- field : INCEN_AMT [인센티브 금액]
+	 *	- field : USER_ID [등록ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fIAgnCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DEPAgnCmmsMgmt dEPAgnCmmsMgmt = (DEPAgnCmmsMgmt)lookupDataUnit(DEPAgnCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIAgnCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]대리점중복검사</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-22 10:27:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INCEN_STRD_YM [정산기준년월]
+	 *	- field : INCEN_BIZ_REG_NO [인센티브 사업자 등록 번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : RPET_YN [대리점중복여부]
+	 * </pre>
+	 */
+	public IDataSet fSAgnRpetErr(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DEPAgnCmmsMgmt dEPAgnCmmsMgmt = (DEPAgnCmmsMgmt)lookupDataUnit(DEPAgnCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSAgnRpetErr(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    
+  
+}

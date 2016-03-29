@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRSaleXclRgst">
+	<select id="SInqSaleXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRSaleXclRgst.SInqSaleXclList 매출정산그룹리스트 */
+/* IO: 김상오,2015-08-12T18:17:12(김상오,2015-08-12T09:24:45) */
+SELECT 
+      SALE_DT as XCL_YM
+      ,SALE_ITM_CD as XCL_NM
+      ,COUNT(*) as XCL_QTY
+      ,SUM(SALE_AMT) as XCL_AMT
+      ,MAX(FS_REG_DTM) as XCL_DT
+      ,MAX(FS_REG_USER_ID) as XCL_CRTR_NM
+FROM TB_SALE 
+WHERE  1=1
+AND SALE_DT = #IN_DT#
+AND DEL_YN = 'N'
+GROUP BY SALE_DT, SALE_ITM_CD]]>
+	</select>
+	<select id="SInqSaleXclExcelList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRSaleXclRgst.SInqSaleXclExcelList 매출정산엑셀다운로드 리스트 */
+/* IO: 김상오,2015-08-12T17:39:37(김상오,2015-08-12T16:51:56) */
+SELECT
+      SALE_DT             AS XCL_YM 
+     ,SALE_ITM_CD         AS XCL_NM 
+     ,ASSET_NO
+     ,SALE_AMT       AS XCL_AMT 
+     ,FS_REG_DTM     AS XCL_DT 
+     ,FS_REG_USER_ID AS XCL_CRTR_NM
+FROM
+  TB_SALE
+WHERE  1=1
+AND SALE_DT =  #IN_DT#
+AND SALE_ITM_CD = #XCL_GUBUN#
+AND DEL_YN = 'N'
+order by FS_REG_DTM]]>
+	</select>
+</sqlMap>

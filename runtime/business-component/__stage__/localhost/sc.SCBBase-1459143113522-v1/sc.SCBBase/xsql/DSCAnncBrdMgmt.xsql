@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCAnncBrdMgmt">
+	<select id="SAnncBrdTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.SAnncBrdTotCnt 공지사항 총건수 조회 */
+/* IO: 박홍서,2015-10-27T09:07:16(개발자,2015-06-29T13:23:06) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_ANNCE A
+       ,TB_USER B
+ WHERE  A.FS_REG_USER_ID = B.USER_NO
+]]><isNotEqual property="ANNCE_TYPE" compareValue="%"><![CDATA[
+   AND  A.ANNCE_TYP = #ANNCE_TYPE#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="TITL"><![CDATA[
+   AND  A.ANNC_TITL like '%'||#TITL#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CTT"><![CDATA[
+   AND  A.ANNC_CTT like '%'||#CTT#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isEqual property="USE_YN" compareValue="10"><![CDATA[
+   AND  A.USE_YN = 'Y'
+   AND  A.BLTN_FR_DT <= TO_CHAR(SYSDATE,'YYYYMMDD')
+   AND  A.BLTN_TO_DT >= TO_CHAR(SYSDATE,'YYYYMMDD')
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="POPUP_YN"><![CDATA[
+   AND  A.POPUP_YN = #POPUP_YN#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SAnncBrdPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.SAnncBrdPaging 공지사항 페이징 조회 */
+/* IO: 박홍서,2015-10-27T09:11:20(개발자,2015-06-29T13:47:04) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.ANNCE_TYP ASC, A.ANNCE_NUM DESC) AS ROWNO
+                ,A.ANNCE_NUM
+                ,A.ANNCE_TYP AS ANNCE_TYPE
+                ,A.ANNC_TITL AS TITL
+]]><isNotEmpty property="QUERY_TYPE"><![CDATA[
+            	,'' AS BLTN_FR_DT
+                ,'' AS BLTN_TO_DT
+                ,'' AS CTT
+                ,'' AS UPLD_FILE_NO
+                ,'' AS USE_YN 
+                ,'' AS BRWS_CNT
+                ,'' AS FS_REG_USER_ID
+                ,'' AS LS_CHG_USER_ID
+                ,'' AS LS_CHG_DTM
+                ,'' AS POPUP_YN
+]]></isNotEmpty><![CDATA[     
+]]><isEmpty property="QUERY_TYPE"><![CDATA[
+            	,A.BLTN_FR_DT
+                ,A.BLTN_TO_DT
+                ,A.ANNC_CTT AS CTT
+                ,A.UPLD_FILE_NO
+                ,A.USE_YN 
+                ,A.ANNC_BRWS_CNT AS BRWS_CNT
+                ,A.FS_REG_USER_ID
+                ,A.LS_CHG_USER_ID
+                ,A.LS_CHG_DTM
+                ,A.POPUP_YN
+]]></isEmpty><![CDATA[ 
+                ,B.USER_NM AS FS_REG_USER_NM                     
+                ,A.FS_REG_DTM        
+           FROM  TB_ANNCE A,
+                 TB_USER B
+          WHERE  A.FS_REG_USER_ID = B.USER_NO
+]]><isNotEqual property="ANNCE_TYPE" compareValue="%"><![CDATA[
+            AND  A.ANNCE_TYP = #ANNCE_TYPE#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="TITL"><![CDATA[
+            AND  A.ANNC_TITL like '%'||#TITL#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CTT"><![CDATA[
+            AND  A.ANNC_CTT like '%'||#CTT#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isEqual property="USE_YN" compareValue="10"><![CDATA[
+            AND  A.USE_YN = 'Y'
+            AND  A.BLTN_FR_DT <= TO_CHAR(SYSDATE,'YYYYMMDD')
+            AND  A.BLTN_TO_DT >= TO_CHAR(SYSDATE,'YYYYMMDD')
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="POPUP_YN"><![CDATA[
+            AND  A.POPUP_YN = #POPUP_YN#
+]]></isNotEmpty><![CDATA[
+        )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IAnncBrd" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.IAnncBrd 공지사항 입력 */
+/* IO: 박홍서,2015-10-02T13:55:02(개발자,2015-06-29T16:58:17) */
+INSERT
+  INTO  TB_ANNCE
+       (
+        ANNCE_NUM
+       ,ANNCE_TYP
+       ,ANNC_TITL
+       ,BLTN_FR_DT
+       ,BLTN_TO_DT
+       ,ANNC_CTT
+       ,UPLD_FILE_NO
+       ,USE_YN
+       ,POPUP_YN
+       ,ANNC_BRWS_CNT
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+        #ANNCE_NUM#
+       ,#ANNCE_TYPE#
+       ,#TITL#
+       ,#BLTN_FR_DT#
+       ,#BLTN_TO_DT#
+       ,#CTT#
+       ,#UPLD_FILE_NO#
+       ,#USE_YN#
+       ,#POPUP_YN#
+       ,0
+       ,#USER_NO#
+       ,SYSDATE
+       ,#USER_NO#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<update id="UAnncBrd" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.UAnncBrd 공지사항 수정 */
+/* IO: 박홍서,2015-10-02T13:55:16(개발자,2015-06-29T17:04:42) */
+UPDATE  TB_ANNCE
+   SET  ANNCE_TYP     = #ANNCE_TYPE#
+       ,ANNC_TITL      = #TITL#
+       ,BLTN_FR_DT     = #BLTN_FR_DT#
+       ,BLTN_TO_DT     = #BLTN_TO_DT#
+       ,ANNC_CTT       = #CTT#
+       ,UPLD_FILE_NO   = #UPLD_FILE_NO#
+       ,USE_YN         = #USE_YN#
+       ,POPUP_YN       = #POPUP_YN#   
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM     = SYSDATE
+ WHERE  ANNCE_NUM      = #ANNCE_NUM#]]>
+	</update>
+	<update id="UAnncIncreBrwsCnt" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.UAnncIncreBrwsCnt 공지사항 조회수 증가 */
+/* IO: 박홍서,2015-07-08T13:53:16(박홍서,2015-06-30T17:38:38) */
+UPDATE  TB_ANNCE
+   SET  ANNC_BRWS_CNT = ANNC_BRWS_CNT + 1
+ WHERE  ANNCE_NUM = #ANNCE_NUM#]]>
+	</update>
+	<select id="SAnncBrdSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.SAnncBrdSeq 공지사항 번호 채번 */
+/* IO: 박홍서,2015-07-02T09:10:16(박홍서,2015-07-02T09:10:16) */
+SELECT  SQ01_TB_ANNCE.NEXTVAL AS ANNCE_NUM
+  FROM  DUAL]]>
+	</select>
+	<select id="SAnncBrdForWebNotice" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.SAnncBrdForWebNotice 공지사항내용조회_대리점웹 */
+/* IO: admin,2015-12-28T11:05:31(박홍서,2015-07-02T09:10:16) */
+SELECT  ANNC_TITL AS TITL
+       ,ANNC_CTT  AS CTT
+       ,ANNCE_NUM AS NUM
+       ,UPLD_FILE_NO 
+       ,ANNC_BRWS_CNT
+       ,ANNCE_TYP
+  FROM  TB_ANNCE 
+ WHERE  ANNCE_NUM = #NUM#]]>
+	</select>
+	<select id="SAnncBrdNumForWebNotice" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.SAnncBrdNumForWebNotice 공지사항목록조회_대리점웹 */
+/* IO: 박홍서,2015-10-02T14:07:52(박홍서,2015-09-30T15:08:26) */
+SELECT  ANNCE_NUM AS NUM 
+  FROM  TB_ANNCE 
+ WHERE  ANNCE_TYP= '30'
+   AND  USE_YN='Y'
+   AND  TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN BLTN_FR_DT AND BLTN_TO_DT
+]]><isNotEmpty property="POPUP_YN"><![CDATA[
+   AND  POPUP_YN = #POPUP_YN#
+]]></isNotEmpty><![CDATA[   
+ORDER BY NUM]]>
+	</select>
+	<select id="SAnncBrdHomeForWebNotice" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCAnncBrdMgmt.SAnncBrdHomeForWebNotice 공지사항홈게시글조회_대리점웹 */
+/* IO: 박홍서,2015-10-13T13:44:21(박홍서,2015-07-02T09:10:16) */
+SELECT  ANNC_TITL AS TITL
+       ,ANNC_CTT  AS CTT
+       ,ANNCE_NUM AS NUM
+       ,UPLD_FILE_NO 
+       ,ANNC_BRWS_CNT
+  FROM  TB_ANNCE 
+ WHERE  ANNCE_TYP = '40'
+   AND  USE_YN = 'Y']]>
+	</select>
+</sqlMap>

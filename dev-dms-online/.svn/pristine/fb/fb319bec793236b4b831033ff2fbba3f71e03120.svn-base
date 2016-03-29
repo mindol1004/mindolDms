@@ -1,0 +1,328 @@
+package dms.ep.epbsxbase.biz;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]단말기대금계좌송금정산관리</li>
+ * <li>설  명 : <pre>단말기대금계좌송금정산관리 PU</pre></li>
+ * <li>작성일 : 2015-10-23 09:51:09</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PEPEqpAmtRmtXclMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPEqpAmtRmtXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>단말기대금계좌송금조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:51:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STRD_FR [정산기준시작일자]
+	 *	- field : STRD_TO [정산기준종료일자]
+	 *	- field : DATA_GB [데이터구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : ACCORMT_XCL_NO [계좌송금 정산 번호]
+	 *		- field : XCL_STRD_STA_DT [정산 기준 시작 일자]
+	 *		- field : XCL_STRD_END_DT [정산 기준 종료 일자]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_DEALCO_CD [정산 거래처 코드]
+	 *		- field : ACCORMT_AMT [계좌송금 금액]
+	 *		- field : ACCORMT_XCL_CNT [계좌송금 정산 건수]
+	 *		- field : SLIP_DT [전표 일자]
+	 *		- field : SLIP_NO [전표 번호]
+	 *		- field : SLIP_ST [전표 상태]
+	 *		- field : YYYY [전표년도]
+	 *		- field : ACCORMT_CNCL_SLIP_DT [계좌송금 취소 전표 일자]
+	 *		- field : ACCORMT_CNCL_SLIP_NO [계좌송금 취소 전표 번호]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : TOTAL_CNT [총건수]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpAmtRmtXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fInqEqpAmtRmtXclList", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금상세조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:51:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ACCO_RMT_XCL_NO [정산번호]
+	 *	- field : EXCEL_FIRST [시작번호]
+	 *	- field : EXCEL_LAST [종료번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_AMTRMT_DTL
+	 *		- field : ROWNO [번호]
+	 *		- field : EXCEL_TOTAL_CNT [총건수]
+	 *		- field : ACCO_RMT_XCL_NO [요금 선납 정산 번호]
+	 *		- field : ACCO_RMT_XCL_DTL_SEQ [요금 선납 정산 상세 순번]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : CLCT_DT [회수 일자]
+	 *		- field : RMT_DT [송금 일자]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : CUST_GRP [고객그룹]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpAmtRmtXclDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fInqEqpAmtRmtXclDtl", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금재집계</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:51:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STRD_FR [정산기준시작일자]
+	 *	- field : STRD_TO [정산기준종료일자]
+	 *	- field : DATA_GB [구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveEqpAmtRmtXcl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        try {
+            requestData.putField("USERNO", ca.getUserNo());
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSaveEqpAmtRmtXcl", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금전표발행</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:51:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : STRD_FR [정산기준시작일자]
+	 *		- field : STRD_TO [정산기준종료일자]
+	 *		- field : ACCO_RMT_XCL_NO [계좌송금 정산 번호]
+	 *		- field : XCL_STRD_STA_DT [정산 기준 시작 일자]
+	 *		- field : XCL_STRD_END_DT [정산 기준 종료 일자]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_DEALCO_CD [정산 거래처 코드]
+	 *		- field : ACCO_RMT_AMT [계좌송금 금액]
+	 *		- field : ACCO_RMT_XCL_CNT [계좌송금 정산 건수]
+	 *		- field : SLIP_DT [전표 일자]
+	 *		- field : SLIP_NO [전표 번호]
+	 *		- field : SLIP_ST [전표 상태]
+	 *		- field : YYYY [전표년도]
+	 *		- field : ACCO_RMT_CNCL_SLIP_DT [계좌송금 취소 전표 일자]
+	 *		- field : ACCO_RMT_CNCL_SLIP_NO [계좌송금 취소 전표 번호]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveEqpAmtRmtXclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSaveEqpAmtRmtXclSlip", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금계좌송금전표취소</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:51:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : STRD_FR [정산기준시작일자]
+	 *		- field : STRD_TO [정산기준종료일자]
+	 *		- field : ACCO_RMT_XCL_NO [계좌송금 정산 번호]
+	 *		- field : XCL_STRD_STA_DT [정산 기준 시작 일자]
+	 *		- field : XCL_STRD_END_DT [정산 기준 종료 일자]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_DEALCO_CD [정산 거래처 코드]
+	 *		- field : ACCO_RMT_AMT [계좌송금 금액]
+	 *		- field : ACCO_RMT_XCL_CNT [계좌송금 정산 건수]
+	 *		- field : SLIP_DT [전표 일자]
+	 *		- field : SLIP_NO [전표 번호]
+	 *		- field : SLIP_ST [전표 상태]
+	 *		- field : YYYY [전표년도]
+	 *		- field : ACCO_RMT_CNCL_SLIP_DT [계좌송금 취소 전표 일자]
+	 *		- field : ACCO_RMT_CNCL_SLIP_NO [계좌송금 취소 전표 번호]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveEqpAmtRmtXclSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSaveEqpAmtRmtXclSlipDel", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-10-23 09:51:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : ACCO_RMT_XCL_NO [계좌송금 정산 번호]
+	 *		- field : STRD_FR [정산기준시작일자]
+	 *		- field : STRD_TO [정산기준종료일자]
+	 *		- field : CHK [CHK]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveEqpAmtRmtXclDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    IRecordSet rs = requestData.getRecordSet("RS_SLIP_LIST");   
+        try {
+            // 1. FM 호출
+            requestData.putField("USERNO", ca.getUserNo());
+            for(int i=0;i<rs.getRecordCount();i++){
+                if("1".equals(rs.getRecord(i).get("CHK"))){
+                    requestData.putFieldMap(rs.getRecord(i));
+                    responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSaveEqpAmtRmtXclDel", requestData, onlineCtx);
+                }
+            }
+            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-10-23 09:51:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_DT [정산기준시작일자]
+	 *	- field : END_DT [정산기준종료일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqEqpAmtRmtXclSlipReSearh(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fSlipInfoSynchronization", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+  
+}

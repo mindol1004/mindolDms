@@ -1,0 +1,398 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="sample0060" classname="template" inheritanceid="" position="absolute 0 0 1017 567" titletext="파일Upload/Download 샘플" style="color:red;" onload="Form_onload">
+    <Layouts>
+      <Layout>
+        <Static id="staInfo04" text="FileUpload_Single" position="absolute 13 262 131 318" style="background:#edeee6ff; border:1 solid #c6c6c5ff ; align:center middle; font:Tahoma,9,bold antialias; "/>
+        <Static id="staBg02" position="absolute 130 262 1004 318" anchor="left top right" style="background:#ffffffff;border:1 solid #c6c6c5ff ;align:center middle;font:Tahoma,9,bold antialias;"/>
+        <Static id="staBg01" position="absolute 130 25 1004 263" anchor="left top right" style="background:#ffffffff;border:1 solid #c6c6c5ff ;align:center middle;font:Tahoma,9,bold antialias;"/>
+        <Static id="staInfo02" text="Component View" position="absolute 130 0 1004 26" anchor="left top right" style="background:#edeee6ff; border:1 solid #c6c6c5ff ; align:center middle; font:Tahoma,9,bold antialias; "/>
+        <Static id="staInfo01" text="Component Name" position="absolute 13 0 131 26" style="background:#edeee6ff;border:1 solid #c6c6c5ff ;align:center middle;font:Tahoma,9,bold antialias;"/>
+        <Static id="staInfo03" text="FileDownload" position="absolute 13 25 131 263" style="background:#edeee6ff; border:1 solid #c6c6c5ff ; align:center middle; font:Tahoma,9,bold antialias; "/>
+        <Static id="sta_gab10" text="13" visible="false" position="absolute 0 0 13 567" style="background:#ff7f5097;align:center middle;"/>
+        <Static id="sta_gab00" text="13" visible="false" position="absolute 1004 0 1017 567" style="background:#ff7f5097;align:center middle;"/>
+        <Static id="sta_gab01" text="13" visible="false" position="absolute 0 554 1017 567" style="background:#ff7f5097;align:center middle;"/>
+        <Static id="staBg03" position="absolute 130 317 1004 555" anchor="all" style="background:#ffffffff; border:1 solid #c6c6c5ff ; align:center middle; font:Tahoma,9,bold antialias; "/>
+        <Static id="staInfo05" text="FileUpload_Multi" position="absolute 13 317 131 555" anchor="left top bottom" style="background:#edeee6ff; border:1 solid #c6c6c5ff ; align:center middle; font:Tahoma,9,bold antialias; "/>
+        <Button id="btnFileAdd" taborder="5" text="파일추가" position="absolute 642 331 712 351" onclick="btnFileAdd_onclick"/>
+        <Edit id="editFilePath" taborder="6" position="absolute 148 281 638 301" readonly="true"/>
+        <Button id="btnFileUp" taborder="8" text="파일업로드" position="absolute 716 331 786 351" onclick="btnFileUp_onclick"/>
+        <Button id="btnFileDown" taborder="14" text="다운로드" position="absolute 452 34 522 54" onclick="btnFileDown_onclick"/>
+        <Button id="btnSearch" taborder="15" text="파일조회" position="absolute 376 34 446 54" onclick="fn_tranSearchFileInfo"/>
+        <UserGrid id="grdUpList" taborder="16" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" fillareatype="linerow" position="absolute 141 356 786 544" _number="true" _status="false" _check="false" _sort="false" _tooltip="true" _required="" _requiredimage="false" _pmenu="false" _addRowEnterKey="false" autofittype="col" binddataset="dsUpFile">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="453"/>
+                <Column size="191"/>
+              </Columns>
+              <Rows>
+                <Row size="32" band="head"/>
+                <Row size="26"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="Client 파일명"/>
+                <Cell col="1" text="Server 파일 ID"/>
+              </Band>
+              <Band id="body">
+                <Cell style="align:left;" text="bind:clientFileId"/>
+                <Cell col="1" text="bind:serverFileId"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <UserGrid id="grdDownList" taborder="18" binddataset="dsDownFile" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" autofittype="col" fillareatype="linerow" position="absolute 141 60 625 248" _number="true" _status="false" _check="true" _sort="false" _tooltip="true" _required="" _requiredimage="false" _pmenu="false" _addRowEnterKey="false" oncelldblclick="grdDownList_oncelldblclick" oncellclick="grdDownList_oncellclick">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="40"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="fileSeq"/>
+                <Cell col="1" text="oriFileName"/>
+                <Cell col="2" text="newFileName"/>
+                <Cell col="3" text="fileExt"/>
+                <Cell col="4" text="fileSize"/>
+                <Cell col="5" text="blobData"/>
+                <Cell col="6" text="clobData"/>
+                <Cell col="7" text="blob"/>
+                <Cell col="8" text="clob"/>
+              </Band>
+              <Band id="body">
+                <Cell text="bind:fileSeq"/>
+                <Cell col="1" text="bind:oriFileName"/>
+                <Cell col="2" text="bind:newFileName"/>
+                <Cell col="3" text="bind:fileExt"/>
+                <Cell col="4" text="bind:fileSize"/>
+                <Cell col="5" text="bind:blobData"/>
+                <Cell col="6" text="bind:clobData"/>
+                <Cell col="7" displaytype="none" style="background:stretch;background2:stretch;backgroundimage:BIND(blob);"/>
+                <Cell col="8" text="bind:clob"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Button id="btnOneFileAdd" taborder="19" text="파일추가" position="absolute 642 281 712 301" onclick="btnOneFileAdd_onclick"/>
+        <Button id="btnOneFileUp" taborder="20" text="파일업로드" position="absolute 716 281 786 301" onclick="btnOneFileUp_onclick"/>
+        <Button id="btnSave" taborder="21" text="저장(F2)" onclick="btnSave_onclick" class="btn_WF_CRUD" position="absolute 843 524 918 554" anchor="right bottom" hotkey="F2"/>
+        <Button id="btnClose" taborder="22" text="종료(F12)" onclick="btnClose_onclick" class="btn_WF_CRUD" position="absolute 922 524 1004 554" anchor="right bottom" hotkey="F12"/>
+        <Button id="btnFileDel" taborder="24" text="파일삭제" onclick="btnFileDel_onclick" position="absolute 530 34 600 54"/>
+        <Button id="btnTest" taborder="25" text="테스트" onclick="fn_test" position="absolute 613 34 683 54"/>
+        <TextArea id="TextArea00" taborder="26" position="absolute 631 64 794 242"/>
+        <Button id="btnFileSave" taborder="27" text="파일저장" position="absolute 690 34 760 54" onclick="btnFileSave_onclick"/>
+        <Button id="btnFileLoad" taborder="28" text="파일읽기" position="absolute 765 34 835 54" onclick="btnFileLoad_onclick"/>
+        <ImageViewer id="imgViewer" taborder="29" stretch="fit" position="absolute 796 332 980 508" style="border:1 solid #808080ff ;"/>
+        <ImageViewer id="ImageViewer00" taborder="30" stretch="fit" position="absolute 802 64 976 244" style="border:1 solid #808080ff ;"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="dsDownFile" firefirstcount="0" firenextcount="0" useclientlayout="true" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="fileSeq" type="STRING" size="256"/>
+          <Column id="fileOName" type="STRING" size="256"/>
+          <Column id="filePName" type="STRING" size="256"/>
+          <Column id="fileExt" type="STRING" size="256"/>
+          <Column id="fileSize" type="STRING" size="256"/>
+          <Column id="blobData" type="BLOB" size="256"/>
+          <Column id="clobData" type="STRING" size="256"/>
+          <Column id="blob" type="BLOB" size="256"/>
+          <Column id="clob" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="dsUpFile" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="clientFileId" type="STRING" size="256"/>
+          <Column id="serverFileId" type="STRING" size="256"/>
+          <Column id="fileName" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="dsUpFileOne" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="clientFileId" type="STRING" size="256"/>
+          <Column id="serverFileId" type="STRING" size="256"/>
+          <Column id="fileName" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <FileDialog id="FileDialog00" filter="All(*.*)|*.*|" filterindex="0" defaultextension="false"/>
+      <Dataset id="dsUpResult" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="fileSeq" type="STRING" size="256"/>
+          <Column id="fileId" type="STRING" size="256"/>
+          <Column id="newFileName" type="STRING" size="256"/>
+          <Column id="oriFileName" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <VirtualFile id="VirtualFile00"/>
+      <Dataset id="dsFile" firefirstcount="0" firenextcount="0" useclientlayout="true" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="filedata" type="BLOB" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="editFilePath" propid="value" datasetid="dsUpFileOne" columnid="fileName"/>
+      <BindItem id="item2" compid="TextArea00" propid="text" datasetid="dsDownFile" columnid="clob"/>
+      <BindItem id="item3" compid="TextArea00" propid="value" datasetid="dsDownFile" columnid="clob"/>
+      <BindItem id="item4" compid="imgViewer" propid="image" datasetid="dsFile" columnid="filedata"/>
+      <BindItem id="item1" compid="ImageViewer00" propid="image" datasetid="dsDownFile" columnid="blob"/>
+    </Bind>
+    <InitValue/>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : sample0060.xfdl
+ * 03. 화면 설명 : 파일Upload/Download 샘플
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+ 
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "sample0060")
+
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form 종료전 Check 함수(공통)
+-----------------------------------------------------------------------------------------------*/
+function Form_checkBeforeClose()
+{
+	return true;
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 다운로드 목록 조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchDownList()
+{
+	var sSvcID		 = "searchDownList";
+	var sTrID		 = "test";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "rsParam=ds_param";
+	var sOutputDs	 = "ds_authRol=rsAutrRolList";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+	switch(sSvcID) {
+		case "searchDownList" : 
+			if ( iErrorCode == 0 ) {
+				gfn_message("B","DMS00001");	//DMS00001 :정상 조회되었습니다.
+			} else {
+				gfn_message("A",ncMsg);
+			}
+			break;
+		default :
+			break;
+	}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : search
+-----------------------------------------------------------------------------------------------*/
+function btn_search_onclick(obj:Button,  e:ClickEventInfo)
+{
+	fn_searchDownList();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : reset
+-----------------------------------------------------------------------------------------------*/
+function btn_reset_onclick(obj:Button,  e:ClickEventInfo)
+{
+	form.reload();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : print
+-----------------------------------------------------------------------------------------------*/
+function btn_print_onclick(obj:Button,  e:ClickEventInfo)
+{
+	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : save
+-----------------------------------------------------------------------------------------------*/
+function btn_save_onclick(obj:Button,  e:ClickEventInfo)
+{
+	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : insert
+-----------------------------------------------------------------------------------------------*/
+function btn_insert_onclick(obj:Button,  e:ClickEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : delete
+-----------------------------------------------------------------------------------------------*/
+function btn_delete_onclick(obj:Button,  e:ClickEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid filter
+-----------------------------------------------------------------------------------------------*/
+function btn_filter_onclick(obj:Button,  e:ClickEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid excel
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_onclick(obj:Button,  e:ClickEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid expand
+-----------------------------------------------------------------------------------------------*/
+function btn_expand_onclick(obj:Button,  e:ClickEventInfo)
+{
+
+}
+
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 조회조건 점포검색 팝업버튼 클릭Event
+-----------------------------------------------------------------------------------------------*/
+function div_search_btn_jumpo_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var arrArgs = {argAutoSelect:true, argCallProgram:"sample0060", argParam01:"01", argParam02:"점포명"};
+	var sRtnVal = gfn_dialog("sample0051", arrArgs);
+
+	if ( gfn_isNull(sRtnVal) || sRtnVal == "cancel" ) {
+		//취소시 값 제거
+		div_search.edt_jumpo.value     = "";
+		div_search.edt_jumpoName.value = "";
+	} else {	//Object이용시
+		div_search.edt_jumpo.value 		= sRtnVal["value1"];
+		div_search.edt_jumpoName.value  = sRtnVal["value2"];
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 점포검색 팝업버튼 클릭Event
+-----------------------------------------------------------------------------------------------*/
+function grd_main_onexpanddown(obj:Grid, e:GridMouseEventInfo)
+{
+	var objBindDs = eval(obj.binddataset);
+	var nRowPos   = e.row;
+	
+	var sParam01 = objBindDs.getColumn(nRowPos,"col0");
+	var sParam02 = objBindDs.getColumn(nRowPos,"col1");
+	var arrArgs = {argAutoSelect:false, argCallProgram:"sample0060", argParam01:sParam01, argParam02:sParam02};
+	var sRtnVal = gfn_dialog("sample0051", arrArgs);
+	
+	if ( gfn_isNull(sRtnVal) || sRtnVal == "cancel" ) {
+		//취소시 값 제거
+		//objBindDs.setColumn(nRowPos,"col0","");
+		//objBindDs.setColumn(nRowPos,"col1","");
+		//objBindDs.setColumn(nRowPos,"col2","");
+	} else {	//Object이용시
+		objBindDs.setColumn(nRowPos,"col0",sRtnVal["value1"]);
+		objBindDs.setColumn(nRowPos,"col1",sRtnVal["value2"]);
+		objBindDs.setColumn(nRowPos,"col2",sRtnVal["value3"]);
+	}
+}
+
+
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+]]></Script>
+  </Form>
+</FDL>

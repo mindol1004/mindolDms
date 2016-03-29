@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRUnpdBondDisProcMgmt">
+	<select id="SUnpdBondDisProcTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.SUnpdBondDisProcTotCnt 채권추심미납채권조회총건수 */
+/* IO: 김혁범,2015-12-18T14:46:05(김혁범,2015-11-11T09:50:23) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM
+      (  
+        SELECT  ROW_NUMBER() OVER(ORDER BY PA.SVC_MGMT_NO ASC) AS ROWNO
+               ,PA.SVC_MGMT_NO /*서비스관리번호*/
+               ,PA.CNTRT_NO /*계약번호*/
+               ,MIN(PA.FR_INV_PROC_DT)AS FR_INV_PROC_DT /*최초미납일*/
+               ,(SELECT TRUNC(MONTHS_BETWEEN(SYSDATE,TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD'))) FROM DUAL) AS INV_PROC_DATE/*미납기간(개월수)*/
+               ,SUM(NVL(PA.UNPAID,0)) AS UNPAID /*손해상금 + 위약금 + 렌탈금액 합계 (미납금액)*/
+        /*전표번호*/
+        /*전표상태*/
+        /*처리일자*/
+          FROM (
+  
+  /*■■■■■■■■ 렌탈미납계산 ■■■■■■■■■*/
+                 SELECT  B.SVC_MGMT_NO /*서비스관리번호*/ 
+                        ,A.CNTRT_NO
+                        ,( 
+                          CASE A.RECV_DT WHEN NULL THEN (SELECT TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(A.INV_DT),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') FROM DUAL)
+                          ELSE MIN(A.RECV_DT)
+                          END
+                         ) AS FR_INV_PROC_DT /*렌탈미납일*/
+                        ,NVL(A.INV_AMT,0) - NVL(A.RECV_AMT,0) AS UNPAID /*렌탈*/         
+                   FROM  TB_EQP_CNTRT_DTL A
+                        ,TB_NR_CNTRT B
+                  WHERE  A.CNTRT_NO = B.CNTRT_NO
+                    AND  A.INV_AMT != A.RECV_AMT  /*미납금액*/
+                    AND  A.INV_DT IS NOT NULL     /*렌탈료*/
+                GROUP BY B.SVC_MGMT_NO 
+                        ,A.CNTRT_NO 
+                        ,A.RECV_DT
+                        ,A.INV_DT
+                        ,A.INV_AMT
+                        ,A.RECV_AMT                
+/*■■■■■■■■ 손해배상금미납계산 ■■■■■■■■■*/ 
+                UNION ALL       
+                 SELECT  C.SVC_MGMT_NO /*서비스관리번호*/ 
+                        ,A.CNTRT_NO
+                        ,( 
+                          CASE A.DMG_CMP_RECV_DT WHEN NULL THEN (SELECT TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(A.DMG_CMP_INV_DT),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') FROM DUAL)
+                          ELSE MIN(A.DMG_CMP_RECV_DT)
+                          END
+                         ) AS FR_INV_PROC_DT /*손배금미납일*/
+                         ,NVL(A.UKEY_DMG_CMP_AMT,0) - NVL(A.DMG_CMP_RECV_AMT,0) AS UNPAID/*손해배상금*/
+                   FROM  TB_RENTAL_DCP A
+                        ,TB_EQP_CNTRT_DTL B
+                        ,TB_NR_CNTRT C
+                  WHERE  A.CNTRT_NO = B.CNTRT_NO
+                    AND  B.CNTRT_NO = C.CNTRT_NO
+                    AND  A.UKEY_DMG_CMP_AMT != A.DMG_CMP_RECV_AMT
+                    AND  A.DMG_CMP_INV_DT IS NOT NULL /*손배금*/
+                GROUP BY C.SVC_MGMT_NO
+                        ,A.CNTRT_NO 
+                        ,A.DMG_CMP_RECV_DT
+                        ,A.DMG_CMP_INV_DT
+                        ,A.UKEY_DMG_CMP_AMT
+                        ,A.DMG_CMP_RECV_AMT
+                 
+/*■■■■■■■■ 위약금미납계산 ■■■■■■■■■*/  
+                UNION ALL     
+                 SELECT  C.SVC_MGMT_NO /*서비스관리번호*/
+                        ,A.CNTRT_NO
+                        ,( 
+                           CASE A.PEN_RECV_DT WHEN NULL THEN (SELECT TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(A.PEN_INV_DT),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') FROM DUAL)
+                           ELSE MIN(A.PEN_RECV_DT)
+                           END
+                         ) AS FR_INV_PROC_DT /*위약금미납일*/
+                        ,NVL(A.UKEY_PEN_AMT,0) - NVL(A.PEN_RECV_AMT,0) AS UNPAID /*위약금*/
+                   FROM  TB_RENTAL_PEN A
+                        ,TB_EQP_CNTRT_DTL B
+                        ,TB_NR_CNTRT C
+                  WHERE  A.CNTRT_NO = B.CNTRT_NO
+                    AND  B.CNTRT_NO = C.CNTRT_NO
+                    AND  A.PEN_INV_DT != A.PEN_RECV_DT 
+                    AND  A.PEN_INV_DT IS NOT NULL /*위약금*/
+                GROUP BY C.SVC_MGMT_NO
+                        ,A.CNTRT_NO
+                        ,A.PEN_RECV_DT
+                        ,A.PEN_INV_DT
+                        ,A.UKEY_PEN_AMT
+                        ,A.PEN_RECV_AMT  
+               )PA
+]]><dynamic prepend="WHERE"><![CDATA[                
+]]><isNotEmpty prepend="AND" property="INV_PROC_DATE"><![CDATA[
+                 (SELECT TRUNC(MONTHS_BETWEEN(SYSDATE,TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD'))) FROM DUAL) = #INV_PROC_DATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                 PA.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="FR_INV_PROC_STA_DT"><![CDATA[
+                 PA.FR_INV_PROC_DT BETWEEN #FR_INV_PROC_STA_DT# AND #FR_INV_PROC_END_DT#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[                 
+           GROUP BY  PA.SVC_MGMT_NO
+                    ,PA.CNTRT_NO
+                    ,PA.FR_INV_PROC_DT
+      )]]>
+	</select>
+	<select id="SUnpdBondDisProcLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRUnpdBondDisProcMgmt.SUnpdBondDisProcLstPaging 채권추심미납채권조회 */
+/* IO: 김혁범,2015-12-18T14:46:53(김혁범,2015-11-11T09:51:11) */
+SELECT  * 
+  FROM  (
+          SELECT  ROW_NUMBER() OVER(ORDER BY PA.SVC_MGMT_NO ASC) AS ROWNO
+                 ,PA.SVC_MGMT_NO /*서비스관리번호*/
+                 ,PA.CNTRT_NO /*계약번호*/
+                 ,MIN(PA.FR_INV_PROC_DT)AS FR_INV_PROC_DT /*최초미납일*/
+                 ,(SELECT TRUNC(MONTHS_BETWEEN(SYSDATE,TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD'))) FROM DUAL) AS INV_PROC_DATE/*미납기간(개월수)*/
+                 ,SUM(NVL(PA.UNPAID,0)) AS UNPAID /*손해상금 + 위약금 + 렌탈금액 합계 (미납금액)*/
+        /*전표번호*/
+        /*전표상태*/
+        /*처리일자*/
+            FROM (
+  
+  /*■■■■■■■■ 렌탈미납계산 ■■■■■■■■■*/
+                   SELECT  B.SVC_MGMT_NO /*서비스관리번호*/ 
+                          ,A.CNTRT_NO
+                          ,( 
+                            CASE A.RECV_DT WHEN NULL THEN (SELECT TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(A.INV_DT),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') FROM DUAL)
+                            ELSE MIN(A.RECV_DT)
+                            END
+                           ) AS FR_INV_PROC_DT /*렌탈미납일*/
+                          ,NVL(A.INV_AMT,0) - NVL(A.RECV_AMT,0) AS UNPAID /*렌탈*/             
+                     FROM  TB_EQP_CNTRT_DTL A
+                          ,TB_NR_CNTRT B
+                    WHERE  A.CNTRT_NO = B.CNTRT_NO
+                      AND  A.INV_AMT != A.RECV_AMT  /*미납금액*/
+                      AND  A.INV_DT IS NOT NULL     /*렌탈료*/
+                  GROUP BY B.SVC_MGMT_NO 
+                          ,A.CNTRT_NO 
+                          ,A.RECV_DT
+                          ,A.INV_DT
+                          ,A.INV_AMT
+                          ,A.RECV_AMT
+                                           
+/*■■■■■■■■ 손해배상금미납계산 ■■■■■■■■■*/ 
+                  UNION ALL       
+                  SELECT  C.SVC_MGMT_NO /*서비스관리번호*/ 
+                         ,A.CNTRT_NO
+                         ,( 
+                            CASE A.DMG_CMP_RECV_DT WHEN NULL THEN (SELECT TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(A.DMG_CMP_INV_DT),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') FROM DUAL)
+                            ELSE MIN(A.DMG_CMP_RECV_DT)
+                            END
+                          ) AS FR_INV_PROC_DT /*손배금미납일*/
+                         ,NVL(A.UKEY_DMG_CMP_AMT,0) - NVL(A.DMG_CMP_RECV_AMT,0) AS UNPAID/*손해배상금*/
+                    FROM  TB_RENTAL_DCP A
+                         ,TB_EQP_CNTRT_DTL B
+                         ,TB_NR_CNTRT C
+                   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  B.CNTRT_NO = C.CNTRT_NO
+                     AND  A.UKEY_DMG_CMP_AMT != A.DMG_CMP_RECV_AMT
+                     AND  A.DMG_CMP_INV_DT IS NOT NULL /*손배금*/
+                 GROUP BY C.SVC_MGMT_NO
+                         ,A.CNTRT_NO 
+                         ,A.DMG_CMP_RECV_DT
+                         ,A.DMG_CMP_INV_DT
+                         ,A.UKEY_DMG_CMP_AMT
+                         ,A.DMG_CMP_RECV_AMT
+                 
+/*■■■■■■■■ 위약금미납계산 ■■■■■■■■■*/  
+                  UNION ALL     
+                  SELECT  C.SVC_MGMT_NO /*서비스관리번호*/
+                         ,A.CNTRT_NO
+                         ,( 
+                            CASE A.PEN_RECV_DT WHEN NULL THEN (SELECT TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(TO_CHAR(A.PEN_INV_DT),'YYYYMMDD'), + 1),'MM') ,'YYYY/MM/DD') FROM DUAL)
+                            ELSE MIN(A.PEN_RECV_DT)
+                            END
+                          ) AS FR_INV_PROC_DT /*위약금미납일*/
+                         ,NVL(A.UKEY_PEN_AMT,0) - NVL(A.PEN_RECV_AMT,0) AS UNPAID /*위약금*/
+                    FROM  TB_RENTAL_PEN A
+                         ,TB_EQP_CNTRT_DTL B
+                         ,TB_NR_CNTRT C
+                   WHERE  A.CNTRT_NO = B.CNTRT_NO
+                     AND  B.CNTRT_NO = C.CNTRT_NO
+                     AND  A.PEN_INV_DT != A.PEN_RECV_DT 
+                     AND  A.PEN_INV_DT IS NOT NULL /*위약금*/
+                 GROUP BY C.SVC_MGMT_NO
+                         ,A.CNTRT_NO
+                         ,A.PEN_RECV_DT
+                         ,A.PEN_INV_DT
+                         ,A.UKEY_PEN_AMT
+                         ,A.PEN_RECV_AMT
+                
+               )PA
+]]><dynamic prepend="WHERE"><![CDATA[                
+]]><isNotEmpty prepend="AND" property="INV_PROC_DATE"><![CDATA[
+                 (SELECT TRUNC(MONTHS_BETWEEN(SYSDATE,TO_DATE(PA.FR_INV_PROC_DT,'YYYYMMDD'))) FROM DUAL) = #INV_PROC_DATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                 PA.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="FR_INV_PROC_STA_DT"><![CDATA[
+                 PA.FR_INV_PROC_DT BETWEEN #FR_INV_PROC_STA_DT# AND #FR_INV_PROC_END_DT#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[                 
+           GROUP BY  PA.SVC_MGMT_NO
+                    ,PA.CNTRT_NO
+                    ,PA.FR_INV_PROC_DT
+      )              
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

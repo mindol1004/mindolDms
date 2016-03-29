@@ -1,0 +1,189 @@
+package dms.ep.epbsxbase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]대리점수수료관리</li>
+ * <li>설  명 : <pre>[PU]대리점수수료관리</pre></li>
+ * <li>작성일 : 2015-10-05 10:35:55</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class PEPSktCmmsMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPSktCmmsMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]SKT수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:35:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_CMMS_LIST
+	 *		- field : XCL_STRD_YM [정산연월]
+	 *		- field : DEDC_TYP_CD [중고폰 공제유형구분]
+	 *		- field : INVE_TYP_CD [중고폰 재고유형구분]
+	 *		- field : CMMS_COUNT [수수료 건수]
+	 *		- field : XCL_AMT [수수료 금액]
+	 * </pre>
+	 */
+	public IDataSet pSSktCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSSktCmmsLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]SKT수수료재집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:35:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산연월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_RESULT
+	 *		- field : INSERT_ROW [등록건수]
+	 * </pre>
+	 */
+	public IDataSet pSaveSktCmmsRpetCalc(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        Log logger = LogManager.getFwkLog();
+        
+        // 오류 검사후 리턴 시켜줄 레코드셋 생성
+        IRecordSet rsReturn = new RecordSet("RS_RESULT", new String[]{"INSERT_ROW"});
+        
+        int insertRow = 0;  // 수수료집계 건수
+        
+        try {
+            requestData.putField("USER_ID", ca.getUserNo());
+            // 1. 기준연월 수수료 정산 삭제
+            callSharedBizComponentByDirect("ep.EPSSXBase", "fDTbEpCmmsXcl", requestData, onlineCtx);            
+            // 2. 선할인대리점수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIPreDcSktCmms", requestData, onlineCtx).getField("insertRow"));
+            // 3. 계좌송금확정재고대리점수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIAccoRmtConfSktCmms", requestData, onlineCtx).getField("insertRow"));
+            // 4. 계좌송금미착재고대리점수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIAccoRmtNonConffSktCmms", requestData, onlineCtx).getField("insertRow"));
+            // 5. 요금선납확정재고대리점수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIFeePpayConfSktCmms", requestData, onlineCtx).getField("insertRow"));
+            // 6. 요금선납미착재고대리점수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIFeePpayNonConffSktCmms", requestData, onlineCtx).getField("insertRow"));
+            
+            if (logger.isDebugEnabled()) {                 
+                logger.debug("#### 집계건수 #### =======>> "+insertRow+"\n");
+            }
+            
+            IRecord record = rsReturn.newRecord();
+            record.set("INSERT_ROW", insertRow);  
+            
+            responseData.putRecordSet("RS_RESULT", rsReturn);   
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]SKT수수료상세목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:35:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_STRD_YM [필드1]
+	 *	- field : DEDC_TYP_CD [필드2]
+	 *	- field : INVE_TYP_CD [필드3]
+	 *	- field : EXCEL_FIRST [필드4]
+	 *	- field : EXCEL_LAST [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_DTL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [전체건수]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : DPSTR [성명]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : CNSL_AMT [상담금액]
+	 *		- field : EQP_ST [단말기상태등급]
+	 * </pre>
+	 */
+	public IDataSet pSSktCmmsDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSPreDcSktCmmsLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+  
+}

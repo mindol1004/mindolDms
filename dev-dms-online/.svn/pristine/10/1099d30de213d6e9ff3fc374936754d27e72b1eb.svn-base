@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRReqpInveInfoSend">
+	<select id="SReqpInveLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpInveInfoSend.SReqpInveLstTotCnt 임대폰재고조회총건수 */
+/* IO: 박민정,2015-08-18T15:22:33(박민정,2015-07-24T14:10:42) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_EQP_ASSET A                 /*단말기자산*/
+      ,(SELECT IA.*
+          FROM TB_EQP_IN IA
+         WHERE IA.DEL_YN = 'N'
+           AND IA.IN_DTL_CD ='10'   /*단말기 입고상태:매입입고*/
+           AND IA.EQP_IN_NO = (SELECT MAX(EQP_IN_NO) 
+                                 FROM TB_EQP_IN 
+                                WHERE ASSET_NO = IA.ASSET_NO 
+                                  AND DEL_YN = 'N'
+                                  AND IN_DTL_CD ='10')
+        ) B   /*단말기입고*/                   
+      ,TB_EQP_MDL C                   /*단말기모델*/
+      ,TB_EQP_CNTRT E                 /*단말기계약*/     
+ WHERE A.ASSET_NO= B.ASSET_NO
+   AND A.ASSET_NO = E.ASSET_NO(+)
+   AND A.EQP_MDL_CD = C.EQP_MDL_CD
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.OP_CL_CD ='PR'               /*업무구분코드:임대*/
+   AND E.DEL_YN(+) = 'N'
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+   AND B.EQP_IN_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+   AND B.EQP_IN_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_NM"><![CDATA[
+   AND C.EQP_MDL_NM LIKE #EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="STA_RENT_IN_DT"><![CDATA[
+   AND E.RENT_STA_DT >= #STA_RENT_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_RENT_IN_DT"><![CDATA[
+   AND E.RENT_STA_DT <= #END_RENT_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isEqual property="RENT_APRV_YN" compareValue="C"><![CDATA[
+   AND E.RENT_APRV_YN is null
+]]></isEqual><![CDATA[
+]]><isEqual property="RENT_APRV_YN" compareValue="Y"><![CDATA[
+   AND E.RENT_APRV_YN = #RENT_APRV_YN#
+]]></isEqual><![CDATA[
+]]><isEqual property="RENT_APRV_YN" compareValue="N"><![CDATA[
+   AND E.RENT_APRV_YN = #RENT_APRV_YN#
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+   AND  A.BOX_NO <= #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SReqpInveLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpInveInfoSend.SReqpInveLstPaging 임대폰재고조회페이징 */
+/* IO: 박민정,2015-08-18T15:34:31(박민정,2015-07-24T14:13:38) */
+SELECT  *  
+  FROM  (SELECT ROW_NUMBER() OVER(ORDER BY A.ASSET_NO DESC) AS ROWNO
+               ,A.ASSET_NO		            /*자산번호*/
+               ,A.EQP_MDL_CD	            /*단말기모델코드*/
+               ,A.EQP_SER_NO	            /*단말기일련번호*/
+               ,A.EQP_IMEI_NO	            /*단말기IMEI번호*/
+               ,A.EQP_COLOR_CD	            /*단말기색상코드*/
+               ,A.OP_CL_CD	                /*업무구분코드*/
+               ,A.INVE_ST_CD	            /*재고상태코드*/
+               ,A.EQP_PRCH_AMT AS PRCH_AMT	/*매입금액*/
+               ,A.FST_IN_DT	                /*최초입고일자*/
+               ,A.EQP_PRCH_DT AS PRCH_DT    /*단말기매입일자*/
+               ,A.LAST_EXPART_DT	        /*최종교품일자*/
+               ,A.LAST_IN_OUT_NO	        /*최종입출고번호*/
+               ,A.EQP_LOSS_DT AS LOSS_DT 	/*단말기분실일자*/
+               ,A.BOX_NO	                /*BOX NO*/
+               ,B.EQP_IN_NO	                /*단말기입고번호*/
+               ,B.EQP_IN_DT AS IN_DT		/*단말기입고일자*/
+               ,B.IN_DTL_CD		            /*입고상세코드*/
+               ,B.IN_DEALCO_CD		        /*입고처코드*/
+               ,B.CHRG_DEPT_CD		        /*담당부서코드*/
+               ,C.EQP_MDL_NM                /*단말기모델명*/
+               ,E.CNTRT_NO                  /*계약번호*/
+               ,E.RENT_STA_DT	            /*렌트시작일자*/
+               ,E.RENT_END_SCHD_DT          /*렌트종료예정일자*/
+               ,E.RENT_END_DT	            /*렌트종료일자*/
+               ,NVL(E.RENT_APRV_YN,'C') AS	RENT_APRV_YN  /*렌트승인여부*/  
+          FROM TB_EQP_ASSET A                /*단말기자산*/
+              ,(SELECT IA.*
+                  FROM TB_EQP_IN IA
+                 WHERE IA.DEL_YN = 'N'
+                   AND IA.IN_DTL_CD ='10'   /*단말기 입고상태:매입입고*/
+                   AND IA.EQP_IN_NO = (SELECT MAX(EQP_IN_NO) 
+                                         FROM TB_EQP_IN 
+                                        WHERE ASSET_NO = IA.ASSET_NO 
+                                          AND DEL_YN = 'N'
+                                          AND IN_DTL_CD ='10')
+                ) B   /*단말기입고*/ 
+              ,TB_EQP_MDL C                  /*단말기모델*/
+              ,TB_EQP_CNTRT E                /*단말기계약*/           
+        WHERE A.ASSET_NO = B.ASSET_NO
+          AND A.ASSET_NO = E.ASSET_NO(+)
+          AND A.EQP_MDL_CD = C.EQP_MDL_CD
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.OP_CL_CD ='PR'              /*업무구분코드:임대*/
+          AND E.DEL_YN(+) = 'N'
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+          AND B.EQP_IN_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+          AND B.EQP_IN_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_NM"><![CDATA[
+          AND C.EQP_MDL_NM LIKE #EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="STA_RENT_IN_DT"><![CDATA[
+          AND E.RENT_STA_DT >= #STA_RENT_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_RENT_IN_DT"><![CDATA[
+          AND E.RENT_STA_DT <= #END_RENT_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isEqual property="RENT_APRV_YN" compareValue="C"><![CDATA[
+          AND E.RENT_APRV_YN is null
+]]></isEqual><![CDATA[          
+]]><isEqual property="RENT_APRV_YN" compareValue="Y"><![CDATA[
+          AND E.RENT_APRV_YN = #RENT_APRV_YN#
+]]></isEqual><![CDATA[
+]]><isEqual property="RENT_APRV_YN" compareValue="N"><![CDATA[
+          AND E.RENT_APRV_YN = #RENT_APRV_YN#
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+          AND A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+          ORDER BY B.EQP_IN_DT DESC)PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<update id="IReqpOutCntrtRgst" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpInveInfoSend.IReqpOutCntrtRgst 임대폰출고단말기계약등록 */
+/* IO: 박민정,2015-07-30T10:58:49(박민정,2015-07-28T09:10:30) */
+MERGE INTO  TB_EQP_CNTRT A
+USING DUAL
+ON (
+        A.ASSET_NO = #ASSET_NO# 
+    AND A.CNTRT_NO = #CNTRT_NO#
+    )
+WHEN MATCHED THEN
+     UPDATE 
+        SET  RENT_STA_DT = #RENT_STA_DT#
+            ,RENT_END_SCHD_DT = #RENT_END_SCHD_DT#
+            ,RENT_END_DT = #RENT_END_DT#
+            ,RENT_APRV_YN =  #RENT_APRV_YN#
+            ,DEL_YN = #DEL_YN#
+            ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+            ,LS_CHG_DTM = SYSDATE
+      WHERE  ASSET_NO = #ASSET_NO#
+        AND  CNTRT_NO = #CNTRT_NO#
+WHEN NOT MATCHED THEN
+    INSERT
+       (
+        ASSET_NO	         /*자산번호*/
+       ,CNTRT_NO	         /*계약번호*/
+       ,RENT_STA_DT	         /*렌트시작일자*/
+       ,RENT_END_SCHD_DT     /*렌트종료예정일자*/
+       ,RENT_END_DT	         /*렌트종료일자*/
+       ,RENT_APRV_YN	     /*렌트승인여부*/
+       ,DEL_YN	             /*삭제여부*/
+       ,FS_REG_USER_ID	     /*최초등록사용자ID*/
+       ,FS_REG_DTM	         /*최초등록일시*/
+       ,LS_CHG_USER_ID	     /*최종변경사용자ID*/
+       ,LS_CHG_DTM	         /*최종변경일시*/
+      )
+VALUES
+     (
+      #ASSET_NO#	         /*자산번호*/
+     ,#CNTRT_NO#	         /*계약번호*/
+     ,#RENT_STA_DT# 	     /*렌트시작일자*/ 
+     ,#RENT_END_SCHD_DT#     /*렌트종료예정일자*/
+     ,#RENT_END_DT#	         /*렌트종료일자*/
+     ,#RENT_APRV_YN#	     /*렌트승인여부*/
+     ,#DEL_YN#	             /*삭제여부*/
+     ,#FS_REG_USER_ID#	     /*최초등록사용자ID*/
+     ,SYSDATE	             /*최초등록일시*/
+     ,#LS_CHG_USER_ID#	     /*최종변경사용자ID*/
+     ,SYSDATE	             /*최종변경일시*/
+     )]]>
+	</update>
+	<update id="UReqpOutCntrtStat" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpInveInfoSend.UReqpOutCntrtStat 임대폰출고단말기계약취소 */
+/* IO: 박민정,2015-07-29T11:28:45(박민정,2015-07-28T09:17:08) */
+UPDATE TB_EQP_CNTRT                            /*단말기계약*/
+   SET RENT_APRV_YN  = #RENT_APRV_YN#          /*렌트승인여부*/
+      ,DEL_YN = 'Y'                            /*삭제여부*/
+      ,LS_CHG_USER_ID  = #LS_CHG_USER_ID#      /*최종변경사용자ID*/
+      ,LS_CHG_DTM = SYSDATE                    /*최종변경일시*/
+WHERE ASSET_NO = #ASSET_NO#                    /*자산번호*/
+  AND CNTRT_NO = #CNTRT_NO#                    /*계약번호*/]]>
+	</update>
+</sqlMap>

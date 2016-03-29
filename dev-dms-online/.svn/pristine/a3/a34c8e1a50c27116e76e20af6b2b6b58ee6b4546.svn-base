@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DBCMainMgmt">
+	<select id="SMthSaleRate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bc.bcbbase.db.DBCMainMgmt.SMthSaleRate 월별판매현황조회 */
+/* IO: 정동현,2015-12-11T13:38:45(정동현,2015-12-11T13:38:45) */
+SELECT  A.*
+       ,NVL(B.TARG_CNT,0) AS  EXPR_VAL                                         /* 목표건수 */
+       ,''  AS  COLOR
+  FROM  (
+          SELECT  /*+ ORDERED */
+                  TO_NUMBER(IB.NUM)||'월'  AS  LABEL                              /* 판매월 */ 
+                 ,NVL(IA.SELL_YR,TO_CHAR(SYSDATE,'YYYY'))||IB.NUM  AS  MONTH      /* 판매년월 */
+                 ,NVL(SUM(IA.SELL_QTY),0)  AS VAL                                /* 판매건수 */
+                 ,NVL(SUM(IA.SELL_PRC),0) AS SUM_PRC                             /* 판매금액 */
+            FROM  (SELECT  SUBSTR(IAA.SELL_DTM,0,4)  AS SELL_YR                  /* 판매년도 */
+                          ,SUBSTR(IAA.SELL_DTM,5,2)  AS SELL_DTM                 /* 판매월 */
+                          ,1                        AS SELL_QTY                 /* 판매건수 */
+                          ,NVL(IAB.SELL_PRC,0)       AS SELL_PRC                 /* 판매금액 */
+                     FROM  TB_EP_SAL_GNRL_SALE  IAA
+                          ,TB_EP_SAL_EQUIPMENT_SALE  IAB
+                    WHERE  IAA.SELL_DTM LIKE TO_CHAR(SYSDATE,'YYYY')||'%'
+                      AND  IAA.SELL_CNCL_YN <> 'Y'                               /* 판매취소여부 */
+                      AND  IAA.SELL_TYP         IN ('01','02','03')              /* 판매유형 (01: b2b, 02: b2c, 03: b2c온라인) */
+                      AND  IAA.GNRL_SELL_NO      = IAB.GNRL_SELL_NO
+                      AND  IAA.GNRL_SELL_CHG_SEQ = IAB.GNRL_SELL_CHG_SEQ
+                      AND  IAB.EQP_MDL_CD       IS NOT NULL
+                      AND  IAA.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                                     FROM  TB_EP_SAL_GNRL_SALE
+                                                    WHERE  GNRL_SELL_NO = IAA.GNRL_SELL_NO)
+                      AND  IAA.DEL_YN = 'N'
+                      AND  IAB.DEL_YN = 'N'
+                  )  IA ,
+                  (SELECT LPAD(LEVEL,2,'0') AS NUM FROM DUAL CONNECT BY LEVEL <=12)  IB
+           WHERE  IB.NUM = IA.SELL_DTM(+)
+           GROUP  BY IA.SELL_YR, IB.NUM
+           ORDER  BY IB.NUM
+        )  A
+       ,(SELECT  IB.TARG_STRD_YM           /* 목표기준년월 */
+                ,IB.TARG_CNT               /* 목표건수 */ 
+           FROM  TB_EP_OP_TARG  IB
+          WHERE  IB.DEL_YN='N'
+            AND  IB.OP_CL_CD = 'EP'  /* 업무구분코드 DMS102  NR:신규, PR:임대R, EP:중고폰 */
+            AND  IB.TARG_CL_CD = 'S'  /* 목표구분코드 DMS268 S:판매, P:매입, J:가입 */)  B
+ WHERE  A.MONTH = B.TARG_STRD_YM(+)]]>
+	</select>
+	<select id="SPmthSaleRate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bc.bcbbase.db.DBCMainMgmt.SPmthSaleRate 전월판매현황조회 */
+/* IO: 정동현,2015-12-09T17:28:34(정동현,2015-12-09T17:28:34) */
+SELECT  /*+ ORDERED */
+        SELL_YM  AS   MONTH                             /* 판매년월 */
+       ,SUBSTR(A.SELL_YM,5,2)||'월'  AS  LABEL          /* 판매월 */
+       ,NVL(SUM(A.SELL_QTY),0)  AS VAL                  /* 판매건수 */
+       ,''  AS  EXPR_VAL
+       ,NVL(SUM(A.SELL_PRC),0) AS SUM_PRC               /* 판매금액 */
+  FROM  (SELECT  SUBSTR(IA.SELL_DTM,0,6)  AS SELL_YM    /* 판매년월 */
+                ,1                        AS SELL_QTY   /* 판매건수 */
+                ,NVL(IB.SELL_PRC,0)       AS SELL_PRC   /* 판매금액 */
+           FROM  TB_EP_SAL_GNRL_SALE  IA
+                ,TB_EP_SAL_EQUIPMENT_SALE  IB
+          WHERE  IA.SELL_DTM LIKE TO_CHAR(ADD_MONTHS(SYSDATE,-1),'YYYYMM')||'%'
+            AND  IA.SELL_CNCL_YN <> 'Y'                 /* 판매취소여부 */
+            AND  IA.SELL_TYP         IN ('01','02','03')/* 판매유형 (01: b2b, 02: b2c, 03: b2c온라인) */
+            AND  IA.GNRL_SELL_NO      = IB.GNRL_SELL_NO
+            AND  IA.GNRL_SELL_CHG_SEQ = IB.GNRL_SELL_CHG_SEQ
+            AND  IB.EQP_MDL_CD       IS NOT NULL
+            AND  IA.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                           FROM  TB_EP_SAL_GNRL_SALE
+                                          WHERE  GNRL_SELL_NO = IA.GNRL_SELL_NO)
+            AND  IA.DEL_YN = 'N'
+            AND  IB.DEL_YN = 'N'
+  ) A
+ GROUP  BY A.SELL_YM]]>
+	</select>
+	<select id="SMthPrchsRate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bc.bcbbase.db.DBCMainMgmt.SMthPrchsRate 월별매입현황조회 */
+/* IO: 정동현,2015-12-11T13:42:09(정동현,2015-12-10T13:06:04) */
+SELECT  A.*
+       ,B.TARG_CNT  AS  EXPR_VAL                                                       /* 목표건수 */
+       ,''  AS  COLOR
+  FROM  (
+          SELECT  /*+ ORDERED */
+                  TO_NUMBER(IB.NUM)||'월'  AS LABEL                                    /* 재고월 */
+                 ,NVL(IA.INVE_SLIP_YR,TO_CHAR(SYSDATE,'YYYY'))||IB.NUM  AS  MONTH      /* 재고 전표 년월 */
+                 ,NVL(SUM(IA.INVE_XCL_CNT),0)  AS VAL                                  /* 재고 정산 건수 */
+                 ,NVL(SUM(IA.XCL_AMT),0) AS SUM_PRC                                    /* 정산 금액 */
+            FROM  (
+                    SELECT  SUBSTR(IAA.INVE_SLIP_DT,0,4)  AS  INVE_SLIP_YR             /* 재고 전표 년월 */
+                           ,SUBSTR(IAA.INVE_SLIP_DT,5,2)  AS  INVE_SLIP_DT             /* 재고 전표 년월 */
+                           ,IAA.INVE_XCL_CNT                                           /* 재고 정산 건수 */
+                           ,IAA.XCL_AMT                                                /* 정산 금액 */
+                      FROM  TB_EP_INVE_XCL  IAA
+                     WHERE  IAA.INVE_TYP_CD ='10'
+                       AND  IAA.CNCL_SLIP_YN='N'
+                       AND  IAA.DEL_YN='N'
+                       AND  IAA.INVE_SLIP_DT LIKE TO_CHAR(SYSDATE,'YYYY')||'%'
+                  )  IA
+                 ,(SELECT LPAD(LEVEL,2,'0') AS NUM FROM DUAL CONNECT BY LEVEL <=12)  IB
+           WHERE  IB.NUM = IA.INVE_SLIP_DT(+)
+           GROUP  BY IA.INVE_SLIP_YR, IB.NUM
+           ORDER  BY IB.NUM
+        )  A
+        ,(SELECT  IB.TARG_STRD_YM           /* 목표기준년월 */
+                 ,IB.TARG_CNT               /* 목표건수 */ 
+            FROM  TB_EP_OP_TARG  IB
+           WHERE  IB.DEL_YN='N'
+             AND  IB.OP_CL_CD = 'EP'        /* 업무구분코드 DMS102  NR:신규, PR:임대R, EP:중고폰 */
+             AND  IB.TARG_CL_CD = 'P'       /* 목표구분코드 DMS268 S:판매, P:매입, J:가입 */)  B
+ WHERE  A.MONTH = B.TARG_STRD_YM(+)]]>
+	</select>
+	<select id="SPmthPrchsRate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bc.bcbbase.db.DBCMainMgmt.SPmthPrchsRate 전월매입현황조회 */
+/* IO: 정동현,2015-12-10T13:14:15(정동현,2015-12-10T13:13:55) */
+SELECT  /*+ ORDERED */
+        SUBSTR(A.INVE_SLIP_YM,5,2)||'월'  AS LABEL
+       ,A.INVE_SLIP_YM  AS  MONTH                                       /* 재고 전표 년월 */
+       ,NVL(SUM(A.INVE_XCL_CNT),0)  AS VAL                              /* 재고 정산 건수 */
+       ,20000  AS  EXPR_VAL
+       ,NVL(SUM(A.XCL_AMT),0) AS SUM_PRC                                /* 정산 금액 */
+       ,''  AS  COLOR
+  FROM  (
+          SELECT  SUBSTR(IA.INVE_SLIP_DT,0,6)  AS  INVE_SLIP_YM         /* 재고 전표 년월 */
+                 ,IA.INVE_XCL_CNT                                       /* 재고 정산 건수 */
+                 ,IA.XCL_AMT                                            /* 정산 금액 */
+            FROM  TB_EP_INVE_XCL IA
+           WHERE  IA.INVE_TYP_CD ='10'
+             AND  IA.CNCL_SLIP_YN='N'
+             AND  IA.DEL_YN='N'
+             AND  IA.INVE_SLIP_DT LIKE TO_CHAR(ADD_MONTHS(SYSDATE,-1),'YYYYMM')||'%'
+        )  A
+ GROUP  BY A.INVE_SLIP_YM]]>
+	</select>
+</sqlMap>

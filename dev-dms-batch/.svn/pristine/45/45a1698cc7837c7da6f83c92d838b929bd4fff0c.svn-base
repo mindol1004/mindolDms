@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBS001">
+	<select id="SIFInsuScrbChg" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBS001.SIFInsuScrbChg 인터페이스테이블 SGI보증보험정보 조회 */
+/* IO: 안진갑,2015-10-13T17:08:45(안진갑,2015-08-20T20:32:44) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,OP_CL_CD
+       ,CUST_TYP_CD
+       ,CTZ_COPREG_NO
+       ,CTZ_COPREG_NO_ENPT
+       ,CUST_NM
+       ,CUST_NM_ENPT
+       ,BIZ_NUM
+       ,INSU_MGMT_NO
+       ,SVC_MGMT_NO
+       ,SVC_SCRB_DT
+       ,SVC_TERM_DT
+       ,TTUL_CHG_DT
+       ,INSU_SCUR_NO
+       ,INSU_STA_DT
+       ,INSU_END_DT
+       ,INSU_SCRB_AMT
+       ,INSU_FEE
+       ,CBACK_INSU_FEE
+       ,RUSER_EXTT_YN   
+  FROM  TF_INSU_SCRB_TERM
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UIFInsuScrbChg" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS001.UIFInsuScrbChg 인터페이스테이블상태변경 */
+/* IO: 안진갑,2015-10-14T09:01:30(안진갑,2015-08-20T20:33:31) */
+UPDATE  TF_INSU_SCRB_TERM
+   SET  PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #PROC_DT#]]>
+	</update>
+	<insert id="IInsuSgi" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS001.IInsuSgi 보증보험SGI정보등록 */
+/* IO: 안진갑,2015-10-13T19:38:59(안진갑,2015-08-20T20:34:45) */
+INSERT INTO TB_INSU_SGI
+(
+  SGI_INSU_NO
+ ,CNTRT_NO
+ ,OP_TYP_CD
+ ,SGI_CUST_CL
+ ,SGI_CUST_NM
+ ,SGI_CUST_NM_ENPT
+ ,SGI_CTZ_COPREG_NO
+ ,SGI_CTZ_COPREG_NO_ENPT
+ ,SGI_BIZ_REG_NO
+ ,SGI_INSURE_MGMT_NO
+ ,SGI_SVC_MGMT_NO
+ ,SVC_SCRB_DT
+ ,SVC_TERM_DT
+ ,TTUL_CHG_DT
+ ,USER_EXTT_YN
+ ,SGI_INSURE_SCUR_NO
+ ,SGI_INSURE_SCRB_AMT
+ ,SGI_INSURE_FEE
+ ,SGI_INSURE_STA_DT
+ ,SGI_INSURE_END_DT
+ ,SGI_INSURE_TERM_DT
+ ,SGI_CBACK_INSURE_FEE
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+SELECT  'IS'||LPAD(SQ01_TB_INSU_SGI.NEXTVAL,10,'0')
+       ,(SELECT MAX(CNTRT_NO) FROM TB_NR_CNTRT WHERE SVC_MGMT_NO = #SVC_MGMT_NO#)
+       ,#OP_CL_CD#
+       ,#CUST_TYP_CD#
+       ,#CUST_NM#
+       ,#CUST_NM_ENPT#
+       ,#CTZ_COPREG_NO#
+       ,#CTZ_COPREG_NO_ENPT#
+       ,#BIZ_NUM#
+       ,#INSU_MGMT_NO#
+       ,#SVC_MGMT_NO#
+       ,#SVC_SCRB_DT#
+       ,#SVC_TERM_DT#
+       ,#TTUL_CHG_DT#
+ 	   ,#RUSER_EXTT_YN#
+	   ,#INSU_SCUR_NO#
+       ,#INSU_SCRB_AMT#
+ 	   ,#INSU_FEE#
+       ,#INSU_STA_DT#
+       ,#INSU_END_DT#
+       ,#SGI_INSURE_TERM_DT#
+	   ,#CBACK_INSU_FEE#
+	   ,'BAT'
+	   ,SYSDATE
+	   ,'BAT'
+	   ,SYSDATE
+  FROM  DUAL]]>
+	</insert>
+</sqlMap>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.EPR001">
+	<update id="USlip" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR001.USlip 전표상태동기화 */
+/* IO: 진병수,2015-10-30T10:20:26(진병수,2015-08-26T10:33:09) */
+UPDATE TB_SLIP
+   SET LS_CHG_USER_ID = 'EPR001'
+     , LS_CHG_DTM     = SYSDATE
+     , SLIP_CL_CD   = SLIP_ST_CD
+     , SLIP_ST_CD   = DECODE(#SLIP_TRMS_YN#,'Z' ,'05','V' ,'10', 'P', '20' ,'R','30')
+     , SLIP_TRMS_YN  = #SLIP_TRMS_YN#
+     , ORGL_SLIP_NO   = #ORGL_SLIP_NO#
+     , SLIP_NORM_CNCL_CL = #SLIP_NORM_CNCL_CL#       
+ WHERE SLIP_NO       = #SLIP_NO#]]>
+	</update>
+	<select id="SSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR001.SSlip 전표데이터조회 */
+/* IO: 진병수,2015-10-30T10:17:52(진병수,2015-08-26T10:55:18) */
+SELECT *
+  FROM TB_SLIP
+ WHERE SLIP_DT BETWEEN NVL(#I_DATE_FROM#,TO_CHAR(SYSDATE-60,'YYYYMMDD')) AND NVL(#I_DATE_TO#,TO_CHAR(SYSDATE,'YYYYMMDD'))]]>
+	</select>
+	<update id="UTaxInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR001.UTaxInfo 세금계산서상태동기화 */
+/* IO: 진병수,2015-08-31T16:13:19(진병수,2015-08-26T10:33:09) */
+UPDATE TB_SLIP
+   SET LS_CHG_USER_ID = 'BAT'
+     , LS_CHG_DTM     = SYSDATE
+     , TAX_BILL_NO    = #TAX_BILL_NO#
+     , TAX_BILL_ST_CD = #TAX_BILL_ST_CD#
+ WHERE SLIP_NO       = #SLIP_NO#]]>
+	</update>
+	<update id="UAssetSlip" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR001.UAssetSlip 자산전표상태동기화 */
+/* IO: 진병수,2015-09-16T17:55:54(진병수,2015-08-26T10:33:09) */
+UPDATE TB_ASSET_SLIP
+   SET LS_CHG_USER_ID = 'BAT'
+     , LS_CHG_DTM     = SYSDATE
+     , ASSET_SLIP_ST  = DECODE(#SLIP_TRMS_YN#,'Z' ,'05','V' ,'10', 'P', '20' ,'R','30')
+ WHERE ASSET_SLIP_NO  = #SLIP_NO#]]>
+	</update>
+	<update id="UAsmptSlip" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR001.UAsmptSlip 매출추정전표상태동기화 */
+/* IO: 진병수,2015-09-16T17:55:20(진병수,2015-09-15T10:45:48) */
+UPDATE TB_SALE_ASMPT
+   SET LS_CHG_USER_ID = 'BAT'
+     , LS_CHG_DTM     = SYSDATE
+     , ASMPT_SLIP_ST  = DECODE(#SLIP_TRMS_YN#,'Z' ,'05','V' ,'10', 'P', '20' ,'R','30')
+ WHERE ASMPT_SLIP_NO  = #SLIP_NO#]]>
+	</update>
+	<update id="UPrchTaxInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR001.UPrchTaxInfo 세금계산서상태동기화(매입) */
+/* IO: 진병수,2015-09-21T16:01:06(진병수,2015-08-26T10:33:09) */
+UPDATE TB_PRCH
+   SET TAXBILL_NO     = #TAX_BILL_NO#
+     , LS_CHG_USER_ID = NVL(#USER_NO#,'BAT')
+     , LS_CHG_DTM     = SYSDATE
+ WHERE PRCH_SLIP_NO   = #SLIP_NO#]]>
+	</update>
+	<update id="UEPInve" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR001.UEPInve 중고_재고테이블_전표상태동기화 */
+/* IO: 진병수,2015-10-28T10:04:13(장미진,2015-08-28T13:54:15) */
+UPDATE TB_EP_INVE_XCL
+   SET INVE_SLIP_ST   =  DECODE(#SLIP_TRMS_YN#,'Z' ,'05','V' ,'10', 'P', '20' ,'R','30')
+     , LS_CHG_USER_ID = #USER_NO#
+     , LS_CHG_DTM     = SYSDATE 
+ WHERE INVE_SLIP_NO   = #SLIP_NO#]]>
+	</update>
+	<update id="UEPFeePPay" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR001.UEPFeePPay 중고_재고테이블_전표상태동기화 */
+/* IO: 진병수,2015-10-28T10:04:40(장미진,2015-08-28T13:54:15) */
+UPDATE TB_EP_FEE_PPAY_XCL
+   SET FEE_PPAY_SLIP_ST   =  DECODE(#SLIP_TRMS_YN#,'Z' ,'05','V' ,'10', 'P', '20' ,'R','30')
+     , LS_CHG_USER_ID = #USER_NO#
+     , LS_CHG_DTM     = SYSDATE 
+ WHERE FEE_PPAY_SLIP_NO   = #SLIP_NO#]]>
+	</update>
+</sqlMap>

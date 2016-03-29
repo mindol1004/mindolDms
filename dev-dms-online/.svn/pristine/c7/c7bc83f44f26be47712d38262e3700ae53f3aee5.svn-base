@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCBatJobOpHst">
+	<select id="SBatJobOpHstPasing" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCBatJobOpHst.SBatJobOpHstPasing 배치작업처리이력 목록조회 */
+/* IO: 이영진,2015-07-30T13:30:38(정혜미,2014-09-24T11:10:27) */
+SELECT  * 
+  FROM (  
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.TASK_DT DESC, A.TASK_NO DESC)   AS ROWNO
+               ,A.TASK_DT           /* 작업일자 */
+               ,A.TASK_ID           /* 프레임웍잡ID */
+               ,A.TASK_NO           /* 작업일련번호 */
+               ,A.TASK_NM           /* 작업명 */
+               ,A.GRP_ID            /* 그룹ID */
+               ,A.INST_CD           /* 기관코드 */
+               ,A.BAT_TASK_OP_ST_CD /* 배치작업처리상태코드 */
+               ,TO_CHAR(A.OP_STA_DTM, 'YYYY-MM-DD HH24:MI:SS') AS OP_STA_DTM 	/* 처리시작일시 */
+               ,TO_CHAR(A.OP_END_DTM, 'YYYY-MM-DD HH24:MI:SS') AS OP_END_DTM	/* 처리종료일시 */
+               ,A.OP_CNT            /* 처리건수 */ 
+               ,A.FS_REG_USER_ID    /* 최초등록사용자 */ 
+               ,TO_CHAR(A.FS_REG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM    /* 최초등록일시 */ 
+               ,A.LS_CHG_USER_ID       /* 최종변경사용자 */ 
+               ,TO_CHAR(A.LS_CHG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS LS_CHG_DTM     /* 최종변경일시 */  
+         FROM  TH_BAT_TASK_OP_HST A
+        ]]><dynamic prepend="WHERE"><![CDATA[ 
+        ]]><isNotEmpty prepend="AND" property="TASK_STA_DTM"><![CDATA[
+                A.TASK_DT BETWEEN #TASK_STA_DTM# AND #TASK_END_DTM#
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="TASK_ID"><![CDATA[
+                A.TASK_ID LIKE '%'||#TASK_ID#||'%'
+        ]]></isNotEmpty><![CDATA[     
+        ]]><isNotEmpty prepend="AND" property="TASK_NM"><![CDATA[
+                A.TASK_NM LIKE '%'||#TASK_NM#||'%'
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="INST_CD"><![CDATA[
+                A.INST_CD LIKE '%'||#INST_CD#||'%'
+        ]]></isNotEmpty><![CDATA[    
+        ]]><isNotEqual prepend="AND" property="BAT_TASK_OP_ST_CD" compareValue="%"><![CDATA[
+                A.BAT_TASK_OP_ST_CD   = #BAT_TASK_OP_ST_CD#
+        ]]></isNotEqual><![CDATA[
+        ]]></dynamic><![CDATA[
+        
+       ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SBatJobOpHstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCBatJobOpHst.SBatJobOpHstTotCnt 배치작업처리이력 전체건수조회 */
+/* IO: 이영진,2015-07-30T13:30:54(정혜미,2014-09-24T11:10:41) */
+SELECT
+        COUNT(1) AS TOTAL_CNT  /* 전체건수 */
+  FROM  TH_BAT_TASK_OP_HST A  /* SC_개인정보조회이력 */
+        ]]><dynamic prepend="WHERE"><![CDATA[ 
+        ]]><isNotEmpty prepend="AND" property="TASK_STA_DTM"><![CDATA[
+                A.TASK_DT BETWEEN #TASK_STA_DTM# AND #TASK_END_DTM#
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="TASK_ID"><![CDATA[
+                A.TASK_ID LIKE '%'||#TASK_ID#||'%'
+        ]]></isNotEmpty><![CDATA[     
+        ]]><isNotEmpty prepend="AND" property="TASK_NM"><![CDATA[
+                A.TASK_NM LIKE '%'||#TASK_NM#||'%'
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="INST_CD"><![CDATA[
+                A.INST_CD LIKE '%'||#INST_CD#||'%'     
+        ]]></isNotEmpty><![CDATA[  
+        ]]><isNotEqual prepend="AND" property="BAT_TASK_OP_ST_CD" compareValue="%"><![CDATA[
+                A.BAT_TASK_OP_ST_CD   = #BAT_TASK_OP_ST_CD#
+        ]]></isNotEqual><![CDATA[
+        ]]></dynamic><![CDATA[]]>
+	</select>
+</sqlMap>

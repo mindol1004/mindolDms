@@ -1,0 +1,290 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  comDomain.xjs
+ * 03. js 설명 :  공통 Multi-Language 구현 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+/************************************************************************************************
+ * _gfn_getDomain                       : 다국어지원을 위한 DB에서 Text데이타 가져오기
+ * _getDomain_Callback                  : 다국어지원을 위한 DB에서 Text데이타 가져오기 Callback
+ * gfn_setTitle                         : Form에 속한 모든 컴포넌트의 다국어설정을 변경시키는 함수
+ * gfn_getTitleChild                    : Form에 속한 모든 컴포넌트의 다국어설정을 변경시키는 함수
+ * gfn_setGridHead                      : Grid의 header를 공통 정의된 다국어 기반으로 처리하는 함수
+ * gfn_setTitleTab                      : gfnSetTitle 함수에서 Tab 객체의 하위 컴포넌트에 접근
+                                          하기위해 내부적으로 사용
+ * gfn_getLabel                         : 다국어 ID와 언어에 해당하는 항목명을 가져온다.
+ * gfn_getHeadLabel                     : 다국어 ID와 언어에 해당하는 항목명을 가져온다.
+************************************************************************************************/
+/************************************************************************************************
+ * Function : 다국어지원을 위한 DB에서 Text데이타 가져오기
+ * @param   : objForm - Form Object
+ * @param   : sScrID - Program ID(화면ID)
+ * Return   : void
+************************************************************************************************/
+function gfn_setDomain(obj:Form, sScrID)
+{
+	gds_domain.clearData();
+	
+	//임시데이터셋 생성
+	var objDataset = gfn_makeDataSet("ds_ncFieldMapDomain");
+	objDataset.addColumn("FRM_ID","string");
+	objDataset.addColumn("USE_YN","string");
+	objDataset.addRow();
+	objDataset.setColumn(0,"FRM_ID", sScrID);
+	objDataset.setColumn(0,"USE_YN", "Y");
+	
+	var sSvcID		 = "getDomain";	
+	var sTrID		 = "PSCFrmItemMgmt_pInqFrmItemLst";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_ncFieldMapDomain";
+	var sOutputDs	 = "gds_domainTemp=rsFrmItemList";
+	var sArgs		 = "";
+	var sCallBackFnc = "_getDomain_Callback";
+	var bAsync 		 = false;
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc, bAsync);
+		
+	gds_domain.appendData(gds_domainTemp, true);
+	
+	var nFindRow = gds_domain.findRow("FRM_ID","com");
+	if ( nFindRow == -1 ) {	//공통 자료 가져오기
+		gds_domain.appendData(gds_domainCom,true);
+	}
+	gfn_setTitle(obj);	//다국어 적용
+}
+
+/************************************************************************************************
+ * Function : 다국어지원을 위한 DB에서 Text데이타 가져오기 Callback
+ * @param   : sSvcID, iErrorCode, sErrorMsg
+ * Return   : void
+************************************************************************************************/
+function _getDomain_Callback(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+
+}
+
+/************************************************************************************************
+ * Function : Form에 속한 모든 컴포넌트의 다국어설정을 변경시키는 함수
+ * @param   : obj - Form Object
+ * Return   : void
+************************************************************************************************/
+function gfn_setTitle(obj:Form)
+{
+	//trace( "gfn_setTitle>>>>>" );
+	if(gv_Language=="KOR") obj.locale = "ko_KR";
+	else if(gv_Language=="ENG") obj.locale = "en_US";
+	
+	var aComponents = obj.components;
+	for(var i=0; i<aComponents.length; i++){
+		//trace("aComponents[i].name===="+aComponents[i].name);
+		if(aComponents[i] instanceof CheckBox || 
+		   aComponents[i] instanceof GroupBox ||
+		   aComponents[i] instanceof Static   || aComponents[i] instanceof Button)
+			aComponents[i].text = gfn_getLabel(aComponents[i]);
+		else if(aComponents[i] instanceof Div)
+			gfn_getTitleChild(aComponents[i]);
+		else if(aComponents[i] instanceof Grid || aComponents[i] instanceof UserGrid)
+			gfn_setGridHead(aComponents[i]);
+		else if(aComponents[i] instanceof Tab)
+			gfn_setTitleTab(aComponents[i]);
+		else if(aComponents[i] instanceof Combo || aComponents[i] instanceof Radio)
+		{
+			//공통코드 다국어 제외
+			//var nCmbIdx = aComponents[i].index;
+			
+			//if(gv_Language=="KOR")aComponents[i].datacolumn = "Value_KO";
+			//else if(gv_Language=="ENG")aComponents[i].datacolumn = "Value_EN";
+			
+			//aComponents[i].index = nCmbIdx;
+		}
+		else if(aComponents[i] instanceof Calendar)
+		{
+			if(gv_Language=="KOR")aComponents[i].locale = "ko_KR";
+			else if(gv_Language=="ENG")aComponents[i].locale = "en_US";
+		}
+	}
+	
+	obj.redraw();
+}
+
+/************************************************************************************************
+ * Function : Form에 속한 모든 컴포넌트의 다국어설정을 변경시키는 함수
+ * @param   : obj - Div Object / Tabpage Object
+ * Return   : void
+************************************************************************************************/
+function gfn_getTitleChild(obj)
+{
+	var aComponents = obj.components;
+
+	for(var i=0; i<aComponents.length; i++){
+		if(aComponents[i] instanceof CheckBox || 
+		   aComponents[i] instanceof GroupBox ||
+		   aComponents[i] instanceof Static   || aComponents[i] instanceof Button)
+			aComponents[i].text = gfn_getLabel(aComponents[i]);
+		else if(aComponents[i] instanceof Div )
+			gfn_getTitleChild(aComponents[i]);
+		else if(aComponents[i] instanceof Grid || aComponents[i] instanceof UserGrid)
+			gfn_setGridHead(aComponents[i]);
+		else if(aComponents[i] instanceof Tab)
+			gfn_setTitleTab(aComponents[i]);
+		else if(aComponents[i] instanceof Combo || aComponents[i] instanceof Radio)
+		{
+			//공통코드 다국어 제외
+			//var nCmbIdx = aComponents[i].index;
+			
+			//if(gv_Language=="KOR")aComponents[i].datacolumn = "Value_KO";
+			//else if(gv_Language=="ENG")aComponents[i].datacolumn = "Value_EN";
+			
+			//aComponents[i].index = nCmbIdx;
+		}
+		else if(aComponents[i] instanceof Calendar)
+		{
+			if(gv_Language=="KOR")aComponents[i].locale = "ko_KR";
+			else if(gv_Language=="ENG")aComponents[i].locale = "en_US";
+		}	
+	}
+}
+
+/************************************************************************************************
+ * Function : Grid의 header를 공통 정의된 다국어 기반으로 처리하는 함수
+ * @param   : obj - Grid Object
+ * Return   : void
+************************************************************************************************/
+function gfn_setGridHead(obj:Grid)
+{
+	var sHeadText;
+	var sMsgTxt;
+	var sAsterisk;
+	var sHeadName = "";
+	var arrHeadName;
+	if( gfn_isNull(obj.arrHeadName) )
+	{
+		for(var i=0; i<obj.getCellCount("head"); i++)
+		{
+			sHeadName += obj.getCellText(-1, i)+"|";
+		}
+		obj.arrHeadName = sHeadName;
+	}
+	
+	arrHeadName = obj.arrHeadName.split("|");
+	
+	for(var i=0; i<obj.getCellCount("head"); i++){
+		sHeadText = arrHeadName[i];
+		if(gfn_isNull(sHeadText)) continue;
+
+		sMsgTxt = gfn_getHeadLabel(sHeadText);
+
+		obj.setCellProperty("head", i, "text", sMsgTxt);
+	}
+}
+
+/************************************************************************************************
+ * Function : gfnSetTitle 함수에서 Tab 객체의 하위 컴포넌트에 접근
+              하기위해 내부적으로 사용
+ * @param   : obj - Tab Object
+ * Return   : void
+************************************************************************************************/
+function gfn_setTitleTab(obj:Tab)
+{
+	var aTabPages = obj.tabpages;
+
+	for(var i=0; i<aTabPages.length; i++){
+		aTabPages[i].text = gfn_getLabel(aTabPages);
+
+		gfn_getTitleChild(aTabPages[i]);
+	}
+}
+
+/************************************************************************************************
+ * Function : 다국어 ID와 언어에 해당하는 항목명을 가져온다.
+ * @param   : obj - Object Component
+ * Return   : 메세지 ID와 언어에 해당하는 항목명
+************************************************************************************************/
+function gfn_getLabel(obj)
+{
+	if(gfn_isNull(obj.orgText)) obj.orgText = obj.text;
+
+	if(gds_domain.rowcount == 0) return obj.orgText;
+	if(gfn_isNull(obj.orgText)) return "";
+	if(gfn_isNull(gv_Language)) gv_Language = "KOR";
+
+	var sRtn = "";
+	var iRow = gds_domain.findRow("FRM_ITEM_NM", obj.orgText);
+	
+	if(iRow > -1){
+		if ( gv_Language == "KOR" ) {
+			sRtn = gds_domain.getColumn(iRow, "FRM_ITEM_NM");
+		} else {
+			sRtn = gds_domain.getColumn(iRow, "FRM_ITEM_CTT");
+		}
+		if(gfn_isNull(sRtn.trim())) sRtn = obj.orgText;
+	} else {
+		sRtn = obj.orgText;
+	}
+
+	return sRtn;
+}
+
+/************************************************************************************************
+ * Function : 다국어 ID와 언어에 해당하는 항목명을 가져온다.
+ * @param   : sMsgId - 가져올 Label의 ID
+ * Return   : 메세지 ID와 언어에 해당하는 항목명
+************************************************************************************************/
+function gfn_getHeadLabel(sMsgId)
+{
+	if(gds_domain.rowcount == 0) return sMsgId;
+	if(gfn_isNull(sMsgId)) return "";
+	if(gfn_isNull(gv_Language)) gv_Language = "KOR";
+
+	var sRtn = "";
+	var iRow = gds_domain.findRow("FRM_ITEM_NM", sMsgId);
+	
+	if(iRow > -1){
+		if ( gv_Language == "KOR" ) {
+			sRtn = gds_domain.getColumn(iRow, "FRM_ITEM_NM");
+		} else {
+			sRtn = gds_domain.getColumn(iRow, "FRM_ITEM_CTT");
+		}
+		if(gfn_isNull(sRtn.trim())) sRtn = sMsgId;
+	}
+	else
+		sRtn = sMsgId;
+
+	return sRtn;
+}
+
+/************************************************************************************************
+ * Function : 다국어 ID와 언어에 해당하는 항목명을 가져온다.
+ * @param   : obj - Object Component
+ * Return   : 메세지 ID와 언어에 해당하는 항목명
+************************************************************************************************/
+function gfn_getValidText(strOrg)
+{
+	if(gds_domain.rowcount == 0) return strOrg;
+	if(gfn_isNull(strOrg)) return "";
+	if(gfn_isNull(gv_Language)) gv_Language = "KOR";
+
+	var sRtn = "";
+	var iRow = gds_domain.findRow("FRM_ITEM_NM", strOrg);
+	
+	if(iRow > -1){
+		if ( gv_Language == "KOR" ) {
+			sRtn = gds_domain.getColumn(iRow, "FRM_ITEM_NM");
+		} else {
+			sRtn = gds_domain.getColumn(iRow, "FRM_ITEM_CTT");
+		}
+		if(gfn_isNull(sRtn.trim())) sRtn = strOrg;
+	} else {
+		sRtn = strOrg;
+	}
+
+	return sRtn;
+}]]></Script>

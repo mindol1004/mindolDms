@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRAgnClctComMgnt">
+	<select id="SAgnClctTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnClctComMgnt.SAgnClctTotCnt 대리점회수수수료정산정보총건수 */
+/* IO: 김혁범,2015-08-05T17:32:22(김혁범,2015-08-05T17:23:14) */
+SELECT COUNT(1)AS TOTAL_CNT
+  FROM TB_EQP_CLCT_OBJ A
+      ,TB_DEAL_CO      B
+ WHERE A.AGN_CD = B.DEAL_CO_CD(+)]]>
+	</select>
+	<select id="SAgnClctLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnClctComMgnt.SAgnClctLstPaging 대리점회수수수료정산정보조회 */
+/* IO: 김혁범,2015-08-05T18:25:44(김혁범,2015-08-05T17:23:41) */
+SELECT *
+  FROM(SELECT  ROW_NUMBER() OVER(ORDER BY A.AGN_CD ASC) AS ROWNO
+               A.AGN_CD /*대리점코드*/
+       ,B.DEAL_CO_NM /*대리점명*/
+       ,COUNT(*) AS COUNT
+       ,COUNT(*)*10000 AS JUNG_FEE/*정산액*/
+  FROM  TB_EQP_CLCT_OBJ A
+       ,TB_DEAL_CO      B
+ WHERE  A.AGN_CD = B.DEAL_CO_CD(+)
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+               A.SALE_ASMPT_YM LIKE '%'||#YDATE#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[     
+GROUP BY A.AGN_CD, B.DEAL_CO_NM
+ )PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

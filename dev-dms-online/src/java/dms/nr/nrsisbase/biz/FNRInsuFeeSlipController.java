@@ -1,0 +1,241 @@
+package dms.nr.nrsisbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]보증보험료정산(가입)전표관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-10-14 14:27:27</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class FNRInsuFeeSlipController extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRInsuFeeSlipController(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-10-14 14:27:27
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInsuScrbFeeSlipCreat(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        Log log = getLog(onlineCtx);
+        IRecordSet rs = requestData.getRecordSet("RS_SLIP_LIST");
+        IDataSet paramData = new DataSet();
+
+        try {
+            //for(int i=0; i<rs.getRecordCount(); i++){                
+                // 1. 입력 RS설정
+                requestData.putField("USERNO", ca.getUserNo());
+                requestData.putField("SLIP_TYPE", "NR_IP");
+
+                ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+                DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+                String dsXml = bout.toString("UTF-8");
+
+                // call on-demand batch job
+                HashMap params = new HashMap<String,String>();
+                params.put("TASK_ID", "EPR010");
+                params.put("TASK_NM", "전표발행");
+                params.put("USER_NO", ca.getUserNo());
+                params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");               
+                params.put("POST_SLIP_DATASET", dsXml);
+                String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+                waitBatchJobEnd(jobExecutionId, 10000);
+                int result = getJobReturnCode(jobExecutionId);
+                                
+                log.debug("(((((((((((((((((((((((((((((((fSlipInveInfoHandl() result :"+ result);
+
+                if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.             
+            //}      
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-10-14 14:27:27
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInsuScrbFeeSlipCancle(IDataSet requestData, IOnlineContext onlineCtx) {
+        Log log = getLog(onlineCtx);
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try{            
+                ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+                DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+                String dsXml = bout.toString("UTF-8");
+
+                // call on-demand batch job
+                HashMap params = new HashMap<String,String>();
+                params.put("TASK_ID", "EPR011");
+                params.put("TASK_NM", "전표삭제");
+                params.put("USER_NO", ca.getUserNo());
+                params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");               
+                params.put("POST_SLIP_DATASET", dsXml);
+                log.info("(((((((((((((((((((((((((((((((fSaveAgnEqpStlSlipDel() params :"+ params);
+                String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+                waitBatchJobEnd(jobExecutionId, 10000);
+                int result = getJobReturnCode(jobExecutionId);
+                
+                
+                log.info("(((((((((((((((((((((((((((((((fSaveAgnEqpStlSlipDel() result :"+ result);
+
+                if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다
+            
+        
+        } catch(BizRuntimeException e){
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        
+	    return responseData;
+	}
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-10-20 16:05:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInsuTermFeeSlipCreat(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        Log log = getLog(onlineCtx);
+        IRecordSet rs = requestData.getRecordSet("RS_SLIP_LIST");
+        IDataSet paramData = new DataSet();
+
+        try {
+            //for(int i=0; i<rs.getRecordCount(); i++){                
+                // 1. 입력 RS설정
+                requestData.putField("USERNO", ca.getUserNo());
+                requestData.putField("SLIP_TYPE", "NR_IC");
+
+                ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+                DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+                String dsXml = bout.toString("UTF-8");
+
+                // call on-demand batch job
+                HashMap params = new HashMap<String,String>();
+                params.put("TASK_ID", "EPR010");
+                params.put("TASK_NM", "전표발행");
+                params.put("USER_NO", ca.getUserNo());
+                params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");               
+                params.put("POST_SLIP_DATASET", dsXml);
+                String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+                waitBatchJobEnd(jobExecutionId, 10000);
+                int result = getJobReturnCode(jobExecutionId);
+                                
+                log.debug("(((((((((((((((((((((((((((((((fSlipInveInfoHandl() result :"+ result);
+
+                if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.             
+            //}      
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-10-14 14:27:27
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInsuTermFeeSlipCancle(IDataSet requestData, IOnlineContext onlineCtx) {
+	    Log log = getLog(onlineCtx);
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try{            
+                ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+                DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+                String dsXml = bout.toString("UTF-8");
+
+                // call on-demand batch job
+                HashMap params = new HashMap<String,String>();
+                params.put("TASK_ID", "EPR011");
+                params.put("TASK_NM", "전표삭제");
+                params.put("USER_NO", ca.getUserNo());
+                params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");               
+                params.put("POST_SLIP_DATASET", dsXml);
+                log.info("(((((((((((((((((((((((((((((((fSaveAgnEqpStlSlipDel() params :"+ params);
+                String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+                waitBatchJobEnd(jobExecutionId, 10000);
+                int result = getJobReturnCode(jobExecutionId);
+                
+                
+                log.info("(((((((((((((((((((((((((((((((fSaveAgnEqpStlSlipDel() result :"+ result);
+
+                if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다
+            
+        
+        } catch(BizRuntimeException e){
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,81 @@
+package dms.sc.scbbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: PSCPrnInfoInqHst</li>
+ * <li>설  명 : [PU]개인정보조회이력관리</li>
+ * <li>작성일 : 2014-07-31 14:57:50</li>
+ * <li>작성자 : 심상준 (simair)</li>
+ * </ul>
+ *
+ * @author 정혜미 (junghaemi)
+ */
+public class PSCPrnInfoInqHst extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PSCPrnInfoInqHst() {
+		super();
+	}
+
+	/**
+	 * <pre>개인정보 조회이력 목록조회</pre>
+	 *
+	 * @author admin (admin)
+	 * @since 2015-06-22 16:59:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INQ_REQ_STA_DTM [조회요청일시FROM]
+	 *	- field : INQ_REQ_END_DTM [조회요청일시TO]
+	 *	- field : INQ_OBJ_CL_CD [조회대상구분코드]
+	 *	- field : INQ_OBJ_NO [조회대상번호]
+	 *	- field : INQ_REQ_IDF_NO [조회요청식별번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PRN_INFO_INQ_HST
+	 *		- field : INQ_REQ_DTM [조회요청일시]
+	 *		- field : INQ_OBJ_CL_CD [조회대상구분코드]
+	 *		- field : INQ_OBJ_NO [조회대상번호]
+	 *		- field : PRN_INFO_INQ_ITEM_CD [개인정보조회항목코드]
+	 *		- field : PRN_INFO_INQ_CTT [개인정보조회내용]
+	 *		- field : INQ_REQ_CHNL_CD [조회요청채널코드]
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : INQ_REQ_IDF_NO [조회요청식별번호]
+	 *		- field : IP_ADDR [IP주소]
+	 *		- field : MAC_ADDR [MAC주소]
+	 *		- field : GLB_ID [글로벌ID]
+	 * </pre>
+	 */
+	public IDataSet pInqPrnInfoInqHst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			//1. FU lookup
+			FSCPrnInfoInqHstMgmt fRM0025M = (FSCPrnInfoInqHstMgmt) lookupFunctionUnit(FSCPrnInfoInqHstMgmt.class);
+			// 2. FM 호출
+			responseData = fRM0025M.fInqPrnInfoInqHst(requestData, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+}

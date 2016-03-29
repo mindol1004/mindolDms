@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInsuInvRjctLstMgnt">
+	<select id="SInsuInvRjctTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuInvRjctLstMgnt.SInsuInvRjctTotCnt 보증보험기각정보총건수 */
+/* IO: 김혁범,2015-10-13T09:28:25(김혁범,2015-10-12T17:48:14) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  
+       (
+        SELECT  ROW_NUMBER() OVER(ORDER BY A.INSU_INV_NO) AS ROWNO 
+                ,A.INSU_INV_NO /*보증보험청구번호*/
+                ,A.UKEY_INSU_NO /*UKEY보증보험번호*/
+                ,A.UKEY_INSURE_MGMT_NO /*UKEY보험관리번호*/
+                ,A.INV_STAT_CD /*청구상태코드*/
+                ,A.UKEY_INV_DT /*UKEY청구일자*/
+                ,A.UKEY_INV_AMT /*UKEY청구금액*/
+                ,A.DMS_INV_DT /*DMS청구일자*/
+                ,A.DMS_INV_AMT /*DMS청구금액*/
+                ,A.UNPD_RENTAL_FEE /*미납렌탈요금*/
+                ,A.DMG_CMP_UNRTN_AMT /*손해배상금미반납금액*/
+                ,A.ARR_ADD_AMT /*연체가산금액*/
+                ,A.RECV_STAT_CD /*수납상태*/
+                ,A.UKEY_RECV_DT /*UKEY수납일자*/
+                ,A.UKEY_RECV_AMT /*UKEY수납금액*/
+                ,A.RSN_CD /*사유코드*/
+                ,A.INSU_INV_MEMO /*보증보험청구비고*/
+                ,A.FS_REG_USER_ID /*최초등록사용자ID*/
+                ,A.FS_REG_DTM /*최초등록일시*/
+                ,A.LS_CHG_USER_ID /*최종변경사용자ID*/
+                ,A.LS_CHG_DTM /*최종변경일시*/
+           FROM  TB_INSU_INV A
+          )]]>
+	</select>
+	<select id="SInsuInvRjctLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuInvRjctLstMgnt.SInsuInvRjctLstPaging 보증보험기각정보조회 */
+/* IO: 김혁범,2015-10-13T09:24:31(김혁범,2015-10-12T17:48:47) */
+SELECT  * 
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.INSU_INV_NO) AS ROWNO 
+                ,A.INSU_INV_NO /*보증보험청구번호*/
+                ,A.UKEY_INSU_NO /*UKEY보증보험번호*/
+                ,A.UKEY_INSURE_MGMT_NO /*UKEY보험관리번호*/
+                ,A.INV_STAT_CD /*청구상태코드*/
+                ,A.UKEY_INV_DT /*UKEY청구일자*/
+                ,A.UKEY_INV_AMT /*UKEY청구금액*/
+                ,A.DMS_INV_DT /*DMS청구일자*/
+                ,A.DMS_INV_AMT /*DMS청구금액*/
+                ,A.UNPD_RENTAL_FEE /*미납렌탈요금*/
+                ,A.DMG_CMP_UNRTN_AMT /*손해배상금미반납금액*/
+                ,A.ARR_ADD_AMT /*연체가산금액*/
+                ,A.RECV_STAT_CD /*수납상태*/
+                ,A.UKEY_RECV_DT /*UKEY수납일자*/
+                ,A.UKEY_RECV_AMT /*UKEY수납금액*/
+                ,A.RSN_CD /*사유코드*/
+                ,A.INSU_INV_MEMO /*보증보험청구비고*/
+                ,A.FS_REG_USER_ID /*최초등록사용자ID*/
+                ,A.FS_REG_DTM /*최초등록일시*/
+                ,A.LS_CHG_USER_ID /*최종변경사용자ID*/
+                ,A.LS_CHG_DTM /*최종변경일시*/
+           FROM  TB_INSU_INV A
+         )
+  WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

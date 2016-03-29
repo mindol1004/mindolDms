@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.EPR011">
+	<update id="USlipStatus" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.USlipStatus 전표상태수정 */
+/* IO: 진병수,2015-08-31T14:02:52(진병수,2015-08-25T16:46:31) */
+UPDATE TB_SLIP
+   SET SLIP_ST_CD = #SLIP_ST_CD#
+     , LS_CHG_USER_ID = NVL(#USER_NO#, LS_CHG_USER_ID)
+     , LS_CHG_DTM	  = SYSDATE
+ WHERE SLIP_NO    = #SLIP_NO#]]>
+	</update>
+	<select id="SSlipInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.SSlipInfo 전표정보조회 */
+/* IO: 진병수,2015-09-04T19:13:31(진병수,2015-09-04T19:12:33) */
+SELECT *
+  FROM TB_SLIP
+ WHERE SLIP_NO = #SLIP_NO#]]>
+	</select>
+	<update id="UAssetSlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UAssetSlipInfo 단말자산전표취소처리 */
+/* IO: 진병수,2015-09-14T18:14:37(장미진,2015-08-28T13:54:15) */
+UPDATE  TB_ASSET_SLIP
+   SET  ASSET_SLIP_ST = '05'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM     = SYSDATE
+ WHERE  ASSET_SLIP_NO = NVL(#ASSET_SLIP_NO#,#SLIP_NO#)]]>
+	</update>
+	<update id="UAsmptSlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UAsmptSlipInfo 매출추정전표취소처리 */
+/* IO: 진병수,2015-09-30T16:54:41(장미진,2015-08-28T13:54:15) */
+UPDATE  TB_SALE_ASMPT
+   SET  ASMPT_SLIP_ST = '05'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM     = SYSDATE
+ WHERE  ASMPT_SLIP_NO = NVL(#ASMPT_SLIP_NO#,#SLIP_NO#)]]>
+	</update>
+	<insert id="ISlipTrmsHst" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.ISlipTrmsHst 전표이력상위테이블 */
+/* IO: 진병수,2015-10-13T19:49:55(진병수,2015-10-13T19:49:55) */
+INSERT INTO TB_SLIP_TRMS_HST
+            (
+             SLIP_TRMS_HST_NO
+           , DMS_SLIP_NO
+           , FISCL_SLIP_NO
+           , SLIP_TYP_CD
+           , TRMS_STA_DT
+           , TRMS_END_DT
+           , TRMS_SUSS_YN
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+           , LS_CHG_USER_ID
+           , LS_CHG_DTM
+             )
+       VALUES  
+             (
+             #SLIP_TRMS_HST_NO#
+           , #DMS_SLIP_NO#
+           , #FISCL_SLIP_NO#
+           , #SLIP_TYP_CD#
+           , #TRMS_STA_DT#
+           , #TRMS_END_DT#
+           , #TRMS_SUSS_YN#
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+            )]]>
+	</insert>
+	<insert id="ISlipTrmsDtlHst" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.ISlipTrmsDtlHst 전표이력중간테이블 */
+/* IO: 진병수,2015-10-13T19:59:15(진병수,2015-10-13T19:49:55) */
+INSERT INTO TB_SLIP_TRMS_DTL_HST
+            (            
+             SLIP_TRMS_HST_NO
+           , SLIP_TRMS_DTL_HST_NO
+           , SLIP_TRMS_DTL_EVNT
+           , SLIP_TRMS_DTL_CONT
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+           , LS_CHG_USER_ID
+           , LS_CHG_DTM
+             )
+       VALUES  
+             (
+             #SLIP_TRMS_HST_NO#
+           , #SLIP_TRMS_DTL_HST_NO#
+           , #SLIP_TRMS_DTL_EVNT#
+           , #SLIP_TRMS_DTL_CONT#
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+            )]]>
+	</insert>
+	<insert id="ISlipTrmsDtlDtailHst" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.ISlipTrmsDtlDtailHst 전표이력하위테이블 */
+/* IO: 진병수,2015-10-13T20:04:01(진병수,2015-10-13T19:49:55) */
+INSERT INTO TB_SLIP_TRMS_DTL_DTAIL_HST
+            (            
+             SLIP_TRMS_HST_NO
+           , SLIP_TRMS_DTL_HST_NO
+           , SLIP_TRMS_DTL_DTAIL_HST_NO
+           , SLIP_TRMS_DTL_DTAIL_HST_EVNT
+           , SLIP_TRMS_DTL_DTAIL_HST_CONT
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+           , LS_CHG_USER_ID
+           , LS_CHG_DTM
+             )
+       VALUES  
+             (
+             #SLIP_TRMS_HST_NO#
+           , #SLIP_TRMS_DTL_HST_NO#
+           , #SLIP_TRMS_DTL_DTAIL_HST_NO#
+           , #SLIP_TRMS_DTL_DTAIL_HST_EVNT#
+           , #SLIP_TRMS_DTL_DTAIL_HST_CONT#
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+           , NVL(#USER_ID#,'BAT')
+           , SYSDATE
+            )]]>
+	</insert>
+	<select id="SUserInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR010.SUserInfo 사용자정보조회 */
+/* IO: 진병수,2015-09-08T15:58:17(진병수,2015-09-08T15:57:33) */
+SELECT *
+  FROM TB_USER
+ WHERE USER_NO = #USER_NO#]]>
+	</select>
+	<select id="SSlipLogHstSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR011.SSlipLogHstSeq 전표전송로그시퀀스조회 */
+/* IO: 진병수,2015-10-16T16:13:15(진병수,2015-08-28T20:11:23) */
+SELECT SQ01_TB_SLIP_TRMS_HST.NEXTVAL AS SLIP_HST_NO  
+  FROM DUAL]]>
+	</select>
+	<update id="UEPInve" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UEPInve 중고_재고테이블_전표취소처리 */
+/* IO: 진병수,2015-10-27T17:26:29(장미진,2015-08-28T13:54:15) */
+UPDATE TB_EP_INVE_XCL
+   SET INVE_SLIP_ST = '05'
+     , LS_CHG_USER_ID = #USER_NO#
+     , LS_CHG_DTM     = SYSDATE 
+ WHERE INVE_SLIP_NO   = #SLIP_NO#]]>
+	</update>
+	<update id="UEPFeePPay" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UEPFeePPay 중고_요금선납테이블_전표취소처리 */
+/* IO: 진병수,2015-10-28T10:02:58(장미진,2015-08-28T13:54:15) */
+UPDATE TB_EP_FEE_PPAY_XCL
+   SET FEE_PPAY_SLIP_ST = '05'
+     , LS_CHG_USER_ID = #USER_NO#
+     , LS_CHG_DTM     = SYSDATE 
+ WHERE FEE_PPAY_SLIP_NO   = #SLIP_NO#]]>
+	</update>
+	<update id="UEPAccRmt" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UEPAccRmt 중고_계좌선납_전표취소처리 */
+/* IO: 진병수,2015-11-02T15:24:18(장미진,2015-08-28T13:54:15) */
+UPDATE TB_EP_ACCO_RMT_XCL
+   SET ACCO_RMT_SLIP_ST = '05'
+     , LS_CHG_USER_ID   = #USER_NO#
+     , LS_CHG_DTM       = SYSDATE 
+ WHERE ACCO_RMT_SLIP_NO = #SLIP_NO#]]>
+	</update>
+	<update id="UEPEqpSale" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UEPEqpSale 중고_단말기판매테이블_전표취소처리 */
+/* IO: 진병수,2015-11-04T15:03:36(진병수,2015-11-04T14:21:09) */
+UPDATE TB_EP_EQP_SALE
+   SET XCL_SLIP_ST = '05'
+     , LS_CHG_USER_ID = #USER_NO#
+     , LS_CHG_DTM     = SYSDATE 
+ WHERE XCL_SLIP_NO   = #SLIP_NO#]]>
+	</update>
+	<update id="UEPInveMovXcl" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UEPInveMovXcl 재고이관테이블_전표취소처리 */
+/* IO: 진병수,2015-11-25T16:53:49(진병수,2015-09-14T10:48:49) */
+UPDATE TB_EP_INVE_MOV_XCL
+   SET INVE_MOV_SLIP_ST       = '05'
+     , LS_CHG_USER_ID      = NVL(NVL(#USER_NO#,#OPER_ID#),'EPR011')
+     , LS_CHG_DTM          = SYSDATE
+ WHERE INVE_MOV_SLIP_NO         = #SLIP_NO#]]>
+	</update>
+	<update id="UEPDcinad" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UEPDcinad 중고_요금선할인테이블_전표취소처리 */
+/* IO: 진병수,2016-01-11T15:27:10(진병수,2015-09-14T10:48:49) */
+UPDATE TB_EP_DCINAD_XCL
+   SET DCINAD_SLIP_ST = '05'
+     , LS_CHG_USER_ID = #USER_NO#
+     , LS_CHG_DTM     = SYSDATE 
+ WHERE DCINAD_SLIP_NO   = #SLIP_NO#]]>
+	</update>
+	<update id="UEPIncenxcl" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UEPIncenxcl 중고_인센티브테이블_전표취소처리 */
+/* IO: 진병수,2016-01-21T10:22:57(진병수,2015-09-14T10:48:49) */
+UPDATE TB_EP_INCEN_XCL
+   SET INCEN_SLIP_ST        = '05'
+     , LS_CHG_USER_ID        = NVL(NVL(#USER_NO#,#OPER_ID#),'BAT')
+     , LS_CHG_DTM            = SYSDATE
+ WHERE INCEN_SLIP_NO        = #SLIP_NO#]]>
+	</update>
+</sqlMap>

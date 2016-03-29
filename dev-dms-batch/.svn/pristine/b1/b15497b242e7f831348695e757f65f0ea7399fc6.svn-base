@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.DBE009">
+	<select id="STfDsnetInfoBrCd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE009.STfDsnetInfoBrCd TF 유통망정보-BR코드조회 */
+/* IO: 이준우,2015-10-30T09:32:32(이준우,2015-08-11T14:15:42) */
+  SELECT  IF_PROC_DT             /*IF처리일자             */
+         ,IF_FILE_NM             /*IF파일명               */
+         ,IF_SEQ                 /*IF순번                 */
+         ,BAS_SETUP_PRICE        /*기본설정값             */
+         ,ORG_ID                 /*조직ID                 */
+         ,ORG_NM                 /*조직명                 */
+         ,ORG_ABR_NM             /*조직약어명             */
+         ,ORG_CD                 /*조직코드               */
+         ,SUB_ORG_CD             /*서브조직코드           */
+         ,PSNEL_ORG_CD           /*인사조직코드           */
+         ,ORG_PRINT_SEQ          /*조직출력순번           */
+         ,HIGHR_ORG_ID           /*상위조직ID             */
+         ,HIGHR_ORG_CD           /*상위조직코드           */
+         ,HIGHR_SUB_ORG_CD       /*상위서브조직코드       */
+         ,HIGHR_ORG_NM           /*상위조직명             */
+         ,CNTR_ORG_ID            /*센터조직ID             */
+         ,CNTR_ORG_CD            /*센터조직코드           */
+         ,CNTR_SUB_ORG_CD        /*센터서브조직코드       */
+         ,CNTR_ORG_NM            /*센터조직명             */
+         ,HEADQ_ORG_ID           /*본부조직ID             */
+         ,HEADQ_ORG_CD           /*본부조직코드           */
+         ,HEADQ_SUB_ORG_CD       /*본부서브조직코드       */
+         ,HEADQ_ORG_NM           /*본부조직명             */
+         ,ORG_CLFC_CD            /*조직분류코드           */
+         ,ORG_TYP_CD             /*조직유형코드           */
+         ,MGPL_CD                /*광역코드               */
+         ,AREA_CD                /*지역코드               */
+         ,APPLY_STA_DT           /*적용시작일자           */
+         ,APPLY_END_DT           /*적용종료일자           */
+         ,VIRT_ORG_TYP_CD        /*가상조직유형코드       */
+         ,AFS_CNTR_TYP_CD        /*AS센터유형코드         */
+         ,SPS_GRADE_CD           /*SPEEDSHOP등급코드      */
+         ,CTZ_REG_SER_NO         /*주민등록일련번호       */
+         ,BIZ_REG_NO             /*사업자등록번호         */
+         ,INVE_MGMT_YN           /*재고관리여부           */
+         ,DEL_YN                 /*삭제여부               */
+         ,ACTVN_YN               /*활성화여부             */
+         ,FFM_BYAGN_QUOTA_PRICE  /*FFM대리점별쿼터값      */
+         ,CURT_DUTYP_ID          /*현근무지ID             */
+         ,FINC_REQT_ST_CD        /*재무의뢰상태코드       */
+         ,TEL_NO                 /*전화번호               */
+         ,FAX_NO                 /*팩스번호               */
+         ,ZIPCD                  /*우편번호               */
+         ,BAS_ADDR               /*기본주소               */
+         ,DTL_ADDR               /*상세주소               */
+         ,DTL_ADDR_ENPT          /*상세주소암호화         */
+         ,MKT_ORG_LVL_CD         /*마케팅조직레벨코드     */
+         ,UKEY_LAST_CHG_DTM      /*UKEY최종변경일시       */
+         ,CTZ_REG_NO_SECT_INFO   /*주민등록번호부분정보   */
+         ,CO_CL_CD               /*회사구분코드           */
+         ,CNSL_ORG_INOUT_CL_CD   /*상담조직입출구분코드   */
+         ,RELT_ORG_ID            /*연관조직ID             */
+         ,ADDR_ID                /*주소ID                 */
+         ,BUILD_DONG_NO          /*건물동번호             */
+         ,BUILD_HHOLD_NO         /*건물호번호             */
+         ,ASTN_ADDR              /*보조주소               */
+         ,ASTN_ADDR_ENPT         /*보조주소암호화         */
+         ,ROADN_ADDR_YN          /*도로명주소여부         */
+    FROM  TF_DSNET_INFO_BR_CD
+   WHERE  PROC_ST_CD = '09'
+     AND  IF_PROC_DT = #PROC_DT#		/*전문송신일자  iv_op_dt*/
+ORDER BY  IF_SEQ]]>
+	</select>
+	<insert id="IDealCoMarketing" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE009.IDealCoMarketing 마켓팅정보등록 */
+/* IO: 이준우,2015-10-30T14:55:35(이준우,2015-07-29T10:19:57) */
+INSERT INTO  TB_EP_BAS_DEAL_CO_MARKETING (
+             UKEY_AGN_CD
+            ,AGN_SEQ
+            ,HEADQ_CD
+            ,HEADQ_NM
+            ,MKT_TEAM_CD
+            ,MKT_TEAM_NM
+            ,STA_DT
+            ,END_DT
+            ,DEL_YN
+            ,UPDATE_COUNT
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM
+          ) VALUES (
+             #UKEY_AGN_CD#             /*UKEY 대리점 코드    */
+            ,NVL(#AGN_SEQ#,0) +1       /*대리점 순번         */
+            ,#HEADQ_CD#                /*본부 코드           */
+            ,#HEADQ_NM#                /*본부 명             */
+            ,#MKT_TEAM_CD#             /*마케팅 팀 코드      */
+            ,#MKT_TEAM_NM#             /*마케팅 팀 명        */
+            ,#STA_DT#                  /*시작 일자           */
+            ,#END_DT#                  /*종료 일자           */
+            ,'N'                       /*삭제 여부           */
+            ,'0'                       /*UPDATE COUNT        */
+            ,'BAT'                     /*최초 등록 사용자 ID */
+            ,SYSDATE                   /*최초 등록 일시      */
+            ,'BAT'                     /*최종 변경 사용자 ID */
+            ,SYSDATE                   /*최종 변경 일시      */
+             )]]>
+	</insert>
+	<select id="SDealCoMarketigCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE009.SDealCoMarketigCnt 마켓팅팀코드카운트 */
+/* IO: 이준우,2015-10-30T14:04:17(이준우,2015-09-30T13:15:09) */
+SELECT  COUNT(*) AS CNT
+       ,NVL(MAX(AGN_SEQ),0) AS AGN_SEQ		
+  FROM  TB_EP_BAS_DEAL_CO_MARKETING
+ WHERE  UKEY_AGN_CD = #UKEY_AGN_CD#
+   ]]>
+	</select>
+	<update id="UDealCoMarketing" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE009.UDealCoMarketing 마켓팅정보수정 */
+/* IO: 이준우,2015-11-20T15:59:15(이준우,2015-09-30T13:24:28) */
+UPDATE  TB_EP_BAS_DEAL_CO_MARKETING
+   SET  END_DT = TO_CHAR((TO_DATE(#STA_DT#) -1), 'YYYYMMDD')
+       ,UPDATE_COUNT = NVL(UPDATE_COUNT,0)+1 
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  UKEY_AGN_CD = #UKEY_AGN_CD#
+   AND  AGN_SEQ = #AGN_SEQ#]]>
+	</update>
+	<update id="UTfDsnetInfoBrCd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE009.UTfDsnetInfoBrCd TF 유통망정보-BR코드수정 */
+/* IO: 이준우,2015-10-30T13:58:34(이준우,2015-09-30T13:24:28) */
+UPDATE  TF_DSNET_INFO_BR_CD
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) Y,N*/
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_PROC_DT   = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ    = #IF_SEQ#]]>
+	</update>
+</sqlMap>

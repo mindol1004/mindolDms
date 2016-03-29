@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 프레임워크 DB관련 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+	<bean id="nc.db.ISqlManagerFactory.datasourceMap" class="nexcore.framework.core.ioc.SpringOptionalMapFactoryBean">
+		<description><![CDATA[데이타소스 매핑 정보.]]></description>    
+		<property name="option" value="${nexcore.runtime.mode.${system.id}}"/> <!-- 프레임워크 환경 구분을 옵션으로 사용한다. -->
+		<property name="optionSourceMap">
+			<map>
+				<entry key="L"> <!-- 로컬용 -->
+					<map>
+			          <!-- FRAMEWORK -->
+			          <entry key="DefaultDs"       value="jdbc/NexcoreDS"/>
+			          <entry key="DefaultDs_NonXA" value="jdbc/NexcoreDS_NonXA"/>
+			          
+			          <!-- 업무용 componentFqId를 기준으로 정규표현식을 사용하여 매핑한다. -->
+			          <entry key=".*_NonXA$"       value="jdbc/BizDS_NonXA"/>
+			          <entry key=".*\.FW.*"        value="jdbc/NexcoreDS"/>
+			          <entry key=".*\.XYZ.*"       value="jdbc/BizDS"/>
+			          <entry key=".*"              value="jdbc/BizDS"/>
+					</map>
+				</entry>
+				<entry key="D"> <!-- 개발용 -->
+					<map>
+			          <!-- FRAMEWORK -->
+			          <entry key="DefaultDs"       value="jdbc/NexcoreDS"/>
+			          <entry key="DefaultDs_NonXA" value="jdbc/NexcoreDS_NonXA"/>
+			          
+			          <!-- 업무용 componentFqId를 기준으로 정규표현식을 사용하여 매핑한다. -->
+			          <entry key=".*_NonXA$"       value="jdbc/BizDS_NonXA"/>
+			          <entry key=".*\.FW.*"        value="jdbc/NexcoreDS"/>
+			          <entry key=".*\.XYZ.*"       value="jdbc/BizDS"/>
+			          <entry key=".*"              value="jdbc/BizDS"/>
+					</map>
+				</entry>
+				<entry key="R"> <!-- 운영용 -->
+					<map>
+			          <!-- FRAMEWORK -->
+			          <entry key="DefaultDs"       value="jdbc/NexcoreDS"/>
+			          <entry key="DefaultDs_NonXA" value="jdbc/NexcoreDS_NonXA"/>
+			          
+			          <!-- 업무용 componentFqId를 기준으로 정규표현식을 사용하여 매핑한다. -->
+			          <entry key=".*_NonXA$"       value="jdbc/BizDS_NonXA"/>
+			          <entry key=".*\.FW.*"        value="jdbc/NexcoreDS"/>
+			          <entry key=".*\.XYZ.*"       value="jdbc/BizDS"/>
+			          <entry key=".*"              value="jdbc/BizDS"/>
+					</map>
+				</entry>
+			</map>
+		</property>
+	</bean>  
+
+</beans>

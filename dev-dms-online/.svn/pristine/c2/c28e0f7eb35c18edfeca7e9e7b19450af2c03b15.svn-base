@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPREqpDpspslMgmt">
+	<select id="SInqDpspslObjEqpListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpDpspslMgmt.SInqDpspslObjEqpListTotCnt 매각대상단말기조회총건수 */
+/* IO: 양재석,2015-09-02T11:00:04(양재석,2015-09-01T16:56:46) */
+SELECT COUNT(A.EQP_SER_NO) AS TOTAL_CNT
+  FROM TB_EQP_CLCT_OBJ A      /*단말기회수대상*/
+       ,TB_EQP_ASSET B
+       ,TB_EQP_MDL C
+       ,TB_EQP_IN D           /*단말기입고*/
+       ,TB_EQP_JDG E          /*단말기감정*/
+       ,TB_EQP_OUT F          /*단말기출고*/
+/*       ,TB_EQP_CNTRT G*/
+ WHERE A.OP_CL_CD = 'PR' /*회수 업무구분코드*/
+   AND A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND A.EQP_SER_NO = B.EQP_SER_NO
+   AND A.EQP_MDL_CD = C.EQP_MDL_CD
+   AND B.ASSET_NO = D.ASSET_NO
+   AND D.ASSET_NO = D.ASSET_NO
+   AND A.EQP_CLCT_OBJ_NO = D.EQP_CLCT_OBJ_NO
+   AND D.ASSET_NO = E.ASSET_NO
+   AND D.EQP_IN_DT = E.EQP_IN_DT
+   AND B.ASSET_NO = F.ASSET_NO(+)
+/*   
+   AND B.ASSET_NO = G.ASSET_NO
+   AND G.EXPART_ASSET_NUM IS NULL
+*/   
+   AND A.EQP_IN_DT IS NOT NULL
+   AND A.IN_OBJ_DTL_CD IN ('10','20','40') /*고객반납,불량,분실습득*/
+   AND E.EQP_JDG_RSLT_CD IN ('20','30') /*감정결과코드 : 20(불량), 30(계약종료)*/
+   AND F.OUT_DTL_CD(+) = '40'  /*출고상세코드 : 부서이동*/
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN = 'N'
+   AND E.DEL_YN = 'N'
+   AND F.DEL_YN(+) = 'N'
+   AND A.EQP_IN_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT#   /*회수일자*/
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[    
+   AND A.EQP_MDL_CD = #EQP_MDL_CD#   /*모델코드*/
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[    
+   AND A.EQP_SER_NO = #EQP_SER_NO#   /*단말기일련번호*/
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqDpspslObjEqpListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpDpspslMgmt.SInqDpspslObjEqpListPaging 매각대상단말기조회 */
+/* IO: 양재석,2015-09-02T10:59:39(양재석,2015-09-02T10:28:29) */
+SELECT  *  
+  FROM  (SELECT ROW_NUMBER() OVER(ORDER BY A.EQP_CLCT_OBJ_NO DESC) AS ROWNO
+                ,A.EQP_MDL_CD
+                ,C.EQP_MDL_NM
+                ,B.EQP_SER_NO
+                ,B.EQP_COLOR_CD
+                ,B.ASSET_NO
+                ,A.EQP_IN_DT
+                ,'' AS FISCL_REMPRC    /*회계잔존가*/
+                ,E.EQP_JDG_RSLT_CD	    /*단말기감정결과코드*/
+                ,F.EQP_OUT_DT          /*출고일자(매각일자)*/
+                ,DECODE(NVL(F.EQP_OUT_DT,''),'','N','Y') AS CONF_YN /*확정여부*/
+                ,DECODE(NVL(F.EQP_OUT_DT,''),'',TO_DATE(TO_CHAR(SYSDATE,'yyyymmdd')) - ADD_MONTHS(A.EQP_IN_DT, TRUNC(MONTHS_BETWEEN( TO_CHAR(SYSDATE,'yyyymmdd'), A.EQP_IN_DT ))),
+                        TO_DATE(F.EQP_OUT_DT) - ADD_MONTHS(A.EQP_IN_DT, TRUNC(MONTHS_BETWEEN( F.EQP_OUT_DT, A.EQP_IN_DT )))) AS EXP_DT /*경과기간*/
+           FROM TB_EQP_CLCT_OBJ A      /*단말기회수대상*/
+                ,TB_EQP_ASSET B
+                ,TB_EQP_MDL C
+                ,TB_EQP_IN D           /*단말기입고*/
+                ,TB_EQP_JDG E          /*단말기감정*/
+                ,TB_EQP_OUT F          /*단말기출고*/
+/*                ,TB_EQP_CNTRT G*/
+          WHERE A.OP_CL_CD = 'PR' /*회수 업무구분코드*/
+            AND A.EQP_MDL_CD = B.EQP_MDL_CD
+            AND A.EQP_SER_NO = B.EQP_SER_NO
+            AND A.EQP_MDL_CD = C.EQP_MDL_CD
+            AND B.ASSET_NO = D.ASSET_NO
+            AND D.ASSET_NO = D.ASSET_NO
+            AND A.EQP_CLCT_OBJ_NO = D.EQP_CLCT_OBJ_NO
+            AND D.ASSET_NO = E.ASSET_NO
+            AND D.EQP_IN_DT = E.EQP_IN_DT
+            AND B.ASSET_NO = F.ASSET_NO(+)
+/*            
+            AND B.ASSET_NO = G.ASSET_NO
+            AND G.EXPART_ASSET_NUM IS NULL
+*/            
+            AND A.EQP_IN_DT IS NOT NULL
+            AND A.IN_OBJ_DTL_CD IN ('10','20','40') /*고객반납,불량,분실습득*/
+            AND E.EQP_JDG_RSLT_CD IN ('20','30') /*감정결과코드 : 20(불량), 30(계약종료)*/
+            AND F.OUT_DTL_CD(+) = '40'  /*출고상세코드 : 부서이동*/
+            AND A.DEL_YN = 'N'
+            AND B.DEL_YN = 'N'
+            AND C.DEL_YN = 'N'
+            AND D.DEL_YN = 'N'
+            AND E.DEL_YN = 'N'
+            AND F.DEL_YN(+) = 'N'
+            AND A.EQP_IN_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT#   /*회수일자*/
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[    
+            AND A.EQP_MDL_CD = #EQP_MDL_CD#   /*모델코드*/
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[    
+            AND A.EQP_SER_NO = #EQP_SER_NO#   /*단말기일련번호*/
+]]></isNotEmpty><![CDATA[
+)PA                                                              
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SDpspslObjEqpOutNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpDpspslMgmt.SDpspslObjEqpOutNum 매각대상단말기출고일련번호 */
+/* IO: 양재석,2015-09-01T17:42:59(양재석,2015-09-01T17:42:59) */
+SELECT  'EO'||LPAD(SQ01_TB_EQP_OUT.NEXTVAL,10,'0') AS EQP_OUT_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IDpspslObjEqpOutReg" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpDpspslMgmt.IDpspslObjEqpOutReg 매각대상단말기출고등록 */
+/* IO: 양재석,2015-09-01T17:44:39(양재석,2015-09-01T17:44:06) */
+INSERT
+  INTO TB_EQP_OUT
+     (
+       EQP_OUT_NO,       /* 단말기출고번호 */
+       EQP_OUT_DT,       /* 출고일자 */
+       ASSET_NO,         /* 자산번호 */
+       EQP_MDL_CD,       /* 단말기모델코드 */
+       EQP_SER_NO,       /* 단말기일련번호 */
+       OUT_DTL_CD,       /* 출고상세코드 */
+       OUT_DEALCO_CD,    /* 출고처코드 */
+       CHRG_DEPT_CD,
+       DEL_YN,
+       FS_REG_USER_ID,   /* 최초등록사용자ID */
+       FS_REG_DTM,
+       LS_CHG_USER_ID,   /* 최종변경사용자ID */
+       LS_CHG_DTM
+     )
+VALUES
+     (
+       #EQP_OUT_NO#,       /* 단말기출고번호 */
+       #EQP_OUT_DT#,       /* 출고일자 */
+       #ASSET_NO#,         /* 자산번호 */
+       #EQP_MDL_CD#,       /* 단말기모델코드 */
+       #EQP_SER_NO#,       /* 단말기일련번호 */
+       #OUT_DTL_CD#,       /* 출고상세코드 */
+       #OUT_DEALCO_CD#,     /* 출고처코드 */
+       #CHRG_DEPT_CD#,
+       'N',
+       #FS_REG_USER_ID#,    /* 최초등록사용자ID */
+       SYSDATE,
+       #LS_CHG_USER_ID#,    /* 최종변경사용자ID */
+       SYSDATE
+     )]]>
+	</insert>
+	<select id="SDpspslObjEqpInNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpDpspslMgmt.SDpspslObjEqpInNum 매각대상단말기입고일련번호 */
+/* IO: 양재석,2015-09-01T17:46:18(양재석,2015-09-01T17:46:18) */
+SELECT  'EI'||LPAD(SQ01_TB_EQP_IN.NEXTVAL,10,'0') AS EQP_IN_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IDpspslObjEqpInReg" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpDpspslMgmt.IDpspslObjEqpInReg 매각대상단말기입고등록 */
+/* IO: 양재석,2015-09-01T17:51:10(양재석,2015-09-01T17:51:10) */
+INSERT
+  INTO TB_EQP_IN
+     (
+       EQP_IN_NO,                   /*단말기입고번호    */
+       ASSET_NO,                    /*자산번호          */
+       EQP_MDL_CD,                  /*단말기모델코드    */
+       EQP_SER_NO,                  /*단말기일련번호    */
+       EQP_IN_DT,                   /*단말기입고일자    */
+       IN_DTL_CD,                   /*입고상세코드      */
+       IN_DEALCO_CD,                /*입고거래처코드    */
+       CHRG_DEPT_CD,                /*담당부서코드      */
+       EQP_CLCT_OBJ_NO,             /*단말기회수대상번호*/
+       DEL_YN,                      /*삭제여부          */
+       FS_REG_USER_ID,              /*최초등록사용자ID  */
+       FS_REG_DTM,                  /*최초등록일시      */
+       LS_CHG_USER_ID,              /*최종변경사용자ID  */
+       LS_CHG_DTM                   /*최종변경일시      */
+     )
+VALUES
+    (
+       #EQP_IN_NO#,
+       #ASSET_NO#,
+       #EQP_MDL_CD#,
+       #EQP_SER_NO#,
+       #EQP_IN_DT#,
+       #IN_DTL_CD#,
+       #IN_DEALCO_CD#,
+       #CHRG_DEPT_CD#,
+       #EQP_CLCT_OBJ_NO#,
+       'N',
+       #FS_REG_USER_ID#,
+       SYSDATE,
+       #LS_CHG_USER_ID#,
+       SYSDATE
+    )]]>
+	</insert>
+	<update id="UDpspslObjEqpAssetInfoUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpDpspslMgmt.UDpspslObjEqpAssetInfoUpd 매각대상단말기자산정보수정 */
+/* IO: 양재석,2015-09-01T17:55:10(양재석,2015-09-01T17:55:10) */
+UPDATE TB_EQP_ASSET
+   SET OP_CL_CD      = #OP_CL_CD# /* 업무구분코드 */
+       ,LAST_IN_OUT_NO = #LAST_IN_OUT_NO# /* 최종입고출고번호 */
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+WHERE ASSET_NO     = #ASSET_NO#
+  AND DEL_YN = 'N']]>
+	</update>
+</sqlMap>

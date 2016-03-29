@@ -1,0 +1,214 @@
+package dms.nr.nrsplbase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]손해배상금정책 관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-07-10 09:43:49</li>
+ * <li>작성자 : 안진갑 (bella21cjk)</li>
+ * </ul>
+ *
+ * @author 안진갑 (bella21cjk)
+ */
+public class FNRCmpPolyMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRCmpPolyMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-07-10 09:45:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqCmpPolyLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+		IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet cmpPolyListRs = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DNRCmpPolyMgmt dNRCmpPolyMgmt = (DNRCmpPolyMgmt) lookupDataUnit(DNRCmpPolyMgmt.class);
+			
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dNRCmpPolyMgmt.dSCmpPolyTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+			// 3. LISTDM호출
+			responseData = dNRCmpPolyMgmt.dSCmpPolyLstPaging(reqDs, onlineCtx);
+			cmpPolyListRs = responseData.getRecordSet("RS_CMP_POLY_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(cmpPolyListRs, reqDs, intTotalCnt);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-07-10 09:47:20
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegCmpPoly(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet reqDs = new DataSet();
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	    try {
+	    	// 필수값 체크
+	    	/*
+			if ( StringUtils.isEmpty(requestData.getField("EQP_MDL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("EQP_MDL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} 
+	    	*/
+	    	
+			// 1. DU lookup
+			DNRCmpPolyMgmt dNRCmpPolyMgmt = (DNRCmpPolyMgmt) lookupDataUnit(DNRCmpPolyMgmt.class);
+			
+			// 2. 손해배상금정책 채번
+			String DMG_CMP_AMT_POLY_NO = dNRCmpPolyMgmt.dSCmpPolyNo(requestData, onlineCtx).getField("DMG_CMP_AMT_POLY_NO");
+			String USERNO = requestData.getField("USERNO");
+			
+			// 3. 업무 DM호출
+			IRecordSet rs = requestData.getRecordSet("RS_CMP_POLY");
+
+			for(int idx=0; idx<rs.getRecordCount(); ++idx){
+				reqDs.initField();
+				reqDs.putFieldMap( rs.getRecord(idx) );
+				reqDs.putField("DMG_CMP_AMT_POLY_NO", DMG_CMP_AMT_POLY_NO);
+				reqDs.putField("USERNO", USERNO);
+				responseData = dNRCmpPolyMgmt.dICmpPoly(reqDs, onlineCtx);
+			}
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-07-10 09:47:48
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdCmpPoly(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	    try {
+	    	// 필수값 체크
+	    	/*
+			if ( StringUtils.isEmpty(requestData.getField("EQP_MDL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("EQP_MDL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} 
+	    	*/
+			// 1. DU lookup
+			DNRCmpPolyMgmt dNRCmpPolyMgmt = (DNRCmpPolyMgmt) lookupDataUnit(DNRCmpPolyMgmt.class);
+			// 3. 업무 DM호출
+			responseData = dNRCmpPolyMgmt.dUCmpPoly(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-07-13 12:31:31
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqEqpConsPen(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+		try {
+			// 1. DU lookup
+			DNRCmpPolyMgmt dNRCmpPolyMgmt = (DNRCmpPolyMgmt) lookupDataUnit(DNRCmpPolyMgmt.class);
+
+			// 2. LISTDM호출
+			responseData = dNRCmpPolyMgmt.dSEqpConsPen(reqDs, onlineCtx);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-07-16 10:12:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fIngCmpPolyDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+		try {
+			// 1. DU lookup
+			DNRCmpPolyMgmt dNRCmpPolyMgmt = (DNRCmpPolyMgmt) lookupDataUnit(DNRCmpPolyMgmt.class);
+
+			// 2. LISTDM호출
+			responseData = dNRCmpPolyMgmt.dSCmpPolyDtl(requestData, onlineCtx);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}	
+	    return responseData;
+	}
+  
+}

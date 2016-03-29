@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 웹 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+	<!-- RequestHandler 정의 부분 -->
+    <bean id="nc.channel.IFlatRequestHandler"
+        class="nexcore.framework.online.channel.handler.internal.NewStandardFlatHandler"
+        init-method="init" destroy-method="destroy">
+        <description>
+            <![CDATA[표준 웹-고정길이전문 요청 분석]]>
+        </description>
+        <property name="frontDataLog"         ref="nc.core.IFrontDataLog"/>
+        <property name="frontDataTransformer" ref="nc.core.IFrontDataTransformer"/>
+    </bean>
+
+	<!-- ApplicationController 정의 부분 -->
+    <bean id="nc.channel.web.IFlatApplicationController"
+        class="nexcore.framework.online.channel.core.internal.DefaultApplicationController">
+        <description>
+            <![CDATA[표준 웹-고정길이전문 요청에서 사용하는 ApplicationController임]]>
+        </description>
+        <property name="commandViewMapResolver" ref="nc.channel.web.IFlatCommandViewMapResolver" />
+        <property name="commandProcessor"       ref="nc.channel.web.ICommandProcessor" />
+        <property name="preCheckers">
+            <list>
+                <!-- ref bean="nc.channel.IValidationManager" /-->
+                <!-- ref bean="nc.channel.IFormattingManager" /-->
+                <!-- ref bean="nc.channel.IDataMappingManager" /-->
+            </list>
+        </property>
+        <property name="postCheckers">
+            <list>
+                <!-- ref bean="nc.channel.IDataMappingManager" /-->
+                <!-- ref bean="nc.channel.IFormattingManager" /-->
+            </list>
+        </property>
+    </bean>
+
+	<!-- 성공시 기본 VIEW -->
+	<bean id="nc.channel.web.IFlatView"
+        class="nexcore.framework.online.channel.web.NewStandardFlatView">
+        <description>
+            <![CDATA[표준 웹-고정길이전문 응답 처리]]>
+        </description>
+        <property name="frontDataLog"         ref="nc.core.IFrontDataLog"/>
+        <property name="frontDataTransformer" ref="nc.core.IFrontDataTransformer"/>
+    </bean>
+    
+	<!-- CommandViewMapResolver 정의 부분 -->
+    <bean id="nc.channel.web.IFlatCommandViewMapResolver"
+        class="nexcore.framework.online.channel.core.internal.DefaultCommandViewMapResolver">
+        <description>
+            <![CDATA[표준 웹-고정길이전문 요청에서 사용하는 CommandViewMapResolver임]]>
+        </description>
+        
+		<!-- 기본 에러 view -->
+        <property name="defaultErrorView" ref="nc.channel.web.IFlatView"/>
+
+		<!-- 기본 CommandViewMap -->
+        <property name="defaultCommandViewMap">
+            <bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+                <property name="command">
+                    <bean class="nexcore.framework.online.channel.core.command.StdCommand">
+						<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+					</bean>
+                </property>
+                <property name="viewMap">	
+                    <map>
+                        <entry key="SUCCESS" value-ref="nc.channel.web.IFlatView"/>
+                        <entry key="FAIL"    value-ref="nc.channel.web.IFlatView"/>
+                    </map>
+                </property>
+            </bean>
+        </property>
+
+		<!-- 에러별로 View 할당하는 경우를 위한 ViewMap -->
+		<!--  
+		<property name="errorViewMap">
+			<map>
+				<entry key="NC_TrControlErr" value-ref="nc.channel.web.IFlatView" />
+				<entry key="NC_NoViewMap"    value-ref="nc.channel.web.IFlatView" />
+			</map>
+		</property>
+		-->
+
+		<!-- 커맨드별로 설정하는 경우 CommandViewMap -->
+		<!--  
+		<property name="commandViewMaps">
+			<map>
+				<entry key="/login.fmd">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[로그인 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.DelegationLoginCommand">
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.IFlatView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.IFlatView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+				<entry key="/logout.fmd">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[로그아웃 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.DelegationLogoutCommand">
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.IFlatView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.IFlatView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+			</map>
+		</property>
+		-->		
+    </bean>
+    
+</beans>            

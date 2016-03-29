@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.DBP018">
+	<select id="SEqpLossAdj" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP018.SEqpLossAdj 단말기분실습득목록조회 */
+/* IO: 김윤환,2015-08-28T11:20:44(김윤환,2015-08-27T15:29:52) */
+SELECT 
+	   G.SVC_MGMT_NO  									/* 서비스관리번호 */
+	   ,(0+A.EQP_CMP_AMT_TOT) AS ADJ_REQS_AMT				/* 조정요청금액 */
+  FROM TB_EQP_JDG A
+	   ,TB_EQP_ASSET B
+	   ,TB_EQP_CNTRT C
+	   ,TB_RENTAL_CNTRT D	   
+	   ,TB_EQP_IN F
+       ,TB_EQP_CLCT_OBJ G
+ WHERE A.ASSET_NO = B.ASSET_NO
+   AND B.ASSET_NO = C.ASSET_NO
+   AND C.CNTRT_NO = D.CNTRT_NO   
+   AND A.ASSET_NO = F.ASSET_NO
+   AND F.EQP_MDL_CD = G.EQP_MDL_CD
+   AND F.EQP_SER_NO = G.EQP_SER_NO 
+   AND A.EQP_IN_DT = F.EQP_IN_DT
+   AND F.EQP_IN_DT = G.EQP_IN_DT
+   AND (A.DEL_YN = 'N' AND B.DEL_YN = 'N' AND C.DEL_YN = 'N' AND D.DEL_YN = 'N' AND F.DEL_YN = 'N' AND G.DEL_YN = 'N')
+   AND B.OP_CL_CD = 'PR'
+   AND A.JDG_APRV_YN = 'Y'
+   AND G.IN_OBJ_DTL_CD = '40'	/* 입고대상 습득반납(40) 인 경우에만 송신*/
+   AND A.JDG_APRV_DT = #PROC_DT#]]>
+	</select>
+	<insert id="ITfLossFndBajtReqs" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP018.ITfLossFndBajtReqs IF분실습득전조정정보등록 */
+/* IO: 김윤환,2015-08-28T11:12:48(김윤환,2015-08-28T11:12:48) */
+INSERT 
+  INTO TF_LOSS_FND_BAJT_REQS
+  (
+	IF_PROC_DT				/* IF처리일자 */
+	,IF_FILE_NM				/* IF파일명 */
+	,IF_SEQ					/* IF순번 */
+	,SVC_MGMT_NO			/* 서비스관리번호 */
+	,SALE_ITM_CD			/* 매출항목코드 */
+	,ADJ_REQS_AMT			/* 조정요청금액 */
+	,ADJ_RSN_CD				/* 조정사유코드 */
+	,ADJ_DTAIL_RSN_CD		/* 조정세부사유코드 */
+	,FILLER					/* FILLER */
+	,PROC_ST_CD				/* 처리상태코드 */
+	,FS_REG_USER_ID			/* 최초등록사용자ID */
+	,FS_REG_DTM				/* 최초등록일시 */
+	,LS_CHG_USER_ID			/* 최종변경사용자ID */
+	,LS_CHG_DTM				/* 최종변경일시 */
+  ) VALUES (
+	#IF_PROC_DT#			/* IF처리일자 */
+	,#IF_FILE_NM#			/* IF파일명 */
+	,#IF_SEQ#				/* IF순번 */
+	,#SVC_MGMT_NO#			/* 서비스관리번호 */
+	,#SALE_ITM_CD#			/* 매출항목코드 */
+	,#ADJ_REQS_AMT#			/* 조정요청금액 */
+	,#ADJ_RSN_CD#			/* 조정사유코드 */
+	,#ADJ_DTAIL_RSN_CD#		/* 조정세부사유코드 */
+	,#FILLER#				/* FILLER */
+	,'09'		
+	,'BAT'	
+	,SYSDATE		
+	,'BAT'	
+	,SYSDATE  
+  )]]>
+	</insert>
+</sqlMap>

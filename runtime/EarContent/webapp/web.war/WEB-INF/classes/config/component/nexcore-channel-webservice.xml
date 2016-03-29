@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 웹 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+	<bean id="nc.channel.IAxisRequestHandler"
+		class="nexcore.framework.online.channel.webservice.internal.SoapRequestHandler"
+		init-method="init" destroy-method="destroy">
+		<description>
+			<![CDATA[표준 웹서비스 요청에서 사용하는 RequestHandler임]]>
+		</description>
+		<property name="componentRegistry" ref="nc.core.IBizComponentMetaDataRegistry"/>
+		<property name="contextHandler">
+			<bean class="nexcore.framework.online.channel.webservice.internal.DefaultWsOnlineContextHandler">
+				<property name="identityGenerator" ref="nc.core.IdentityGenerator"/>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="nc.channel.web.IAxisApplicationController"
+		class="nexcore.framework.online.channel.core.internal.DefaultApplicationController">
+		<description>
+			<![CDATA[표준 웹서비스 요청에서 사용하는 ApplicationController임]]>
+		</description>
+		<property name="commandViewMapResolver" ref="nc.channel.web.IAxisCommandViewMapResolver" />
+		<property name="commandProcessor" ref="nc.channel.web.ICommandProcessor" />
+        <property name="preCheckers">
+            <list>
+                <!-- ref bean="nc.channel.IValidationManager" /-->
+                <!-- ref bean="nc.channel.IFormattingManager" /-->
+                <!-- ref bean="nc.channel.IDataMappingManager" /-->
+            </list>
+        </property>
+        <property name="postCheckers">
+            <list>
+                <!-- ref bean="nc.channel.IDataMappingManager" /-->
+                <!-- ref bean="nc.channel.IFormattingManager" /-->
+            </list>
+        </property>
+	</bean>
+	
+	<bean id="nc.channel.webservice.IWsdlNamingRule"
+		class="nexcore.framework.online.channel.webservice.internal.DefaultWsdlNamingRule">
+	</bean>
+
+	<!-- 성공시 기본 VIEW -->
+	<bean id="nc.channel.webservice.DefaultSoapView"
+		class="nexcore.framework.online.channel.webservice.NewStandardSoapView">
+		<description>
+			<![CDATA[표준 웹서비스 요청에서 사용하는 기본 성공 VIEW]]>
+		</description>
+		<property name="namingRule"                   ref="nc.channel.webservice.IWsdlNamingRule" />
+		<property name="bizComponentMetaDataRegistry" ref="nc.core.IBizComponentMetaDataRegistry" />
+		<property name="messageManager"               ref="nc.core.IMessageManager" />
+	</bean>
+	
+	<bean id="nc.channel.web.IAxisCommandViewMapResolver"
+		class="nexcore.framework.online.channel.core.internal.DefaultCommandViewMapResolver">
+		<description>
+			<![CDATA[표준 웹서비스 요청에서 사용하는 CommandViewMapResolver임]]>
+		</description>
+
+		<!-- 기본 에러 view -->
+		<property name="defaultErrorView" ref="nc.channel.webservice.DefaultSoapView" />
+
+		<!-- 기본 CommandViewMap -->
+		<property name="defaultCommandViewMap">
+			<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				<property name="command">
+					<bean class="nexcore.framework.online.channel.core.command.StdCommand">
+						<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+					</bean>
+				</property>
+				<property name="viewMap">
+					<map>
+						<entry key="SUCCESS" value-ref="nc.channel.webservice.DefaultSoapView" />
+						<entry key="FAIL"    value-ref="nc.channel.webservice.DefaultSoapView" />
+					</map>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="nc.channel.webservice.IWsdlManager"
+		class="nexcore.framework.online.channel.webservice.internal.JdomWsdlManager"
+		init-method="init" destroy-method="destroy">
+		<description>컴포넌트 메타정보를 기반으로 WSDL 동적 생성하는 컴포넌트</description>
+		<property name="serviceUrlPattern"   value="http://${server}:${port}${contextPath}/services/WsFrontController" />
+		<property name="commonXsdUrlPattern" value="http://${server}:${port}${contextPath}/wsdl/CommonTypes.xsd" />
+		<property name="namingRule" ref="nc.channel.webservice.IWsdlNamingRule" />
+		<property name="schemaConverterMap">
+			<map>
+				<entry key="00">
+					<bean class="nexcore.framework.online.channel.webservice.internal.StringSchemaConverter" />
+				</entry>
+				<entry key="TS">
+					<bean class="nexcore.framework.online.channel.webservice.internal.StringSchemaConverter" />
+				</entry>
+			</map>
+		</property>
+	</bean>
+	
+</beans>            

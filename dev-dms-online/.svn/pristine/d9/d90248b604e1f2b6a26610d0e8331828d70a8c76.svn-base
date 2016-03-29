@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRColsClctCmmsXclMgmt">
+	<select id="SColsClctCmmsXclSlipLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRColsClctCmmsXclMgmt.SColsClctCmmsXclSlipLstPaging 추심회수금전표조회 */
+/* IO: 김혁범,2015-11-16T15:11:22(김혁범,2015-11-13T10:23:44) */
+WITH  INSU_INV_DATA AS
+  ( 
+   SELECT  SUM(C.AMT) AS AMT
+          ,C.ITEM
+     FROM (
+           SELECT  AMT
+                   ,DECODE(RN,0,'CD' /*추심수수료_손해배상금(단말파손)*/
+                             ,5,'CX'/*추심수수료_연체가산금*/
+                             ,4,'CE' /*추심수수료_반납지연위약금*/
+                             ,3,'CY' /*추심수수료_손해배상금(단말미반납)*/
+                             ,2,'CN' /*추심수수료_중도해지*/
+                             ,'CR'  /*추심수수료_미납금*/
+                          ) AS ITEM
+             FROM (
+                   SELECT  AMT
+                          ,MOD(ROWNUM,6) AS RN
+                     FROM  TB_INSU_INV
+                  UNPIVOT (AMT FOR GRP IN (UNPD_RENTAL_FEE, DMG_CMP_UNRTN_AMT, ARR_ADD_AMT, MID_TERM_PEN_AMT, RTN_DELAY_PEN_AMT, DMG_CMP_BKAG_AMT))
+                )
+          ) C
+             GROUP  BY C.ITEM
+  )
+  
+ SELECT  C.DEBT_XCL_YM AS YYYYMM /*정산년월일*/
+         ,A.ITEM/*매출항목*/
+         ,SUBSTR(C.DEBT_XCL_YM,0,4) AS YYYY /*정산년월*/
+         ,COUNT(A.AMT)AS DMS_AMT_CNT /*DMS매출항목총건수*/
+         /*UKEY총건수*/
+         /*UKEY총금액*/
+         ,A.AMT AS DMS_AMT /*DMS매출항목금액*/
+         ,B.XCL_AMT /*수수료*/
+         ,C.DEBT_SLIP_NO AS SLIP_NO /*전표번호*/
+         ,D.SLIP_ST_CD /*전표상태코드*/
+         ,C.DEBT_SLIP_DT AS SLIP_DT /*전표처리일자*/
+         ,MIN(DECODE(B.XCL_AMT-B.XCL_UKEY_INV_AMT,0,'Y','N')) AS MATCHED_YN
+   FROM  INSU_INV_DATA A
+        ,TB_ETC_XCL B
+        ,TB_XCL_DEBT C
+        ,TB_SLIP D
+  WHERE  A.ITEM = B.XCL_ITM_CD(+)
+    AND  SUBSTR(XCL_DT,0,6) = C.DEBT_XCL_YM
+    AND  B.XCL_ITM_CD = C.XCL_ITM_CL
+    AND  B.ETC_XCL_TS = C.DEBT_PRCH_TS
+    AND  C.DEBT_SLIP_NO = D.SLIP_NO(+)
+    AND  C.OP_CL_CD       = 'NR'
+    AND  C.DEBT_XCL_YM =  #XCL_YM#
+ GROUP BY  C.DEBT_XCL_YM
+          ,A.ITEM
+          ,SUBSTR(C.DEBT_XCL_YM,0,4)
+          ,A.AMT
+          ,B.XCL_AMT
+          ,C.DEBT_SLIP_NO
+          ,D.SLIP_ST_CD
+          ,C.DEBT_SLIP_DT]]>
+	</select>
+	<select id="SColsClctCmmsXclSlipTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRColsClctCmmsXclMgmt.SColsClctCmmsXclSlipTotCnt 추심회수금전표조회총건수 */
+/* IO: 김혁범,2015-11-16T15:11:32(김혁범,2015-11-16T13:10:03) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM
+      ( 
+        WITH  INSU_INV_DATA AS
+        ( 
+         SELECT  SUM(C.AMT) AS AMT
+                ,C.ITEM
+           FROM (
+                 SELECT  AMT
+                        ,DECODE(RN,0,'CD'
+                                   ,5,'CX'
+                                   ,4,'CE'
+                                   ,3,'CY'
+                                   ,2,'CN'
+                                   ,'CR') AS ITEM
+                   FROM (
+                         SELECT  AMT
+                                ,MOD(ROWNUM,6) AS RN
+                           FROM  TB_INSU_INV
+                                 UNPIVOT (AMT FOR GRP IN (UNPD_RENTAL_FEE, DMG_CMP_UNRTN_AMT, ARR_ADD_AMT, MID_TERM_PEN_AMT, RTN_DELAY_PEN_AMT, DMG_CMP_BKAG_AMT))
+                        )
+                 ) C
+                         GROUP  BY C.ITEM
+         )
+
+         SELECT  C.DEBT_XCL_YM AS YYYYMM /*정산년월일*/
+                ,A.ITEM/*매출항목*/
+                ,SUBSTR(C.DEBT_XCL_YM,0,4) AS YYYY /*정산년월*/
+                ,COUNT(A.AMT)AS DMS_AMT_CNT /*DMS매출항목총건수*/
+                /*UKEY총건수*/
+                /*UKEY총금액*/
+                ,A.AMT AS DMS_AMT /*DMS매출항목금액*/
+                ,B.XCL_AMT /*수수료*/
+                ,C.DEBT_SLIP_NO AS SLIP_NO /*전표번호*/
+                ,D.SLIP_ST_CD /*전표상태코드*/
+                ,C.DEBT_SLIP_DT AS SLIP_DT /*전표처리일자*/
+                ,MIN(DECODE(B.XCL_AMT-B.XCL_UKEY_INV_AMT,0,'Y','N')) AS MATCHED_YN
+           FROM  INSU_INV_DATA A
+                ,TB_ETC_XCL B
+                ,TB_XCL_DEBT C
+                ,TB_SLIP D
+          WHERE  A.ITEM = B.XCL_ITM_CD(+)
+            AND  SUBSTR(XCL_DT,0,6) = C.DEBT_XCL_YM
+            AND  B.XCL_ITM_CD = C.XCL_ITM_CL
+            AND  B.ETC_XCL_TS = C.DEBT_PRCH_TS
+            AND  C.DEBT_SLIP_NO = D.SLIP_NO(+)
+            AND  C.OP_CL_CD       = 'NR'
+        GROUP BY  C.DEBT_XCL_YM
+                 ,SUBSTR(C.DEBT_XCL_YM,0,4)
+                 ,A.ITEM
+                 ,A.AMT
+                 ,B.XCL_AMT
+                 ,C.DEBT_SLIP_NO
+                 ,D.SLIP_ST_CD
+                 ,C.DEBT_SLIP_DT 
+      )]]>
+	</select>
+	<select id="SColsClctCmmsXclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRColsClctCmmsXclMgmt.SColsClctCmmsXclTotCnt 추심회수금조회총건수 */
+/* IO: 김혁범,2015-11-18T13:41:25(김혁범,2015-11-16T14:03:58) */
+SELECT COUNT(1) AS TOTAL_CNT
+  FROM
+      (
+         WITH  INSU_INV_DATA AS
+         ( 
+          SELECT  SUM(C.AMT) AS AMT
+                 ,C.ITEM
+                 ,C.UKEY_INSU_NO
+            FROM (
+                  SELECT  AMT
+                         ,DECODE(RN,0,'CD'
+                                   ,5,'CX'
+                                   ,4,'CE'
+                                   ,3,'CY'
+                                   ,2,'CN'
+                                   ,'CR') AS ITEM
+                         ,UKEY_INSU_NO       
+                    FROM (
+                          SELECT  AMT
+                                 ,MOD(ROWNUM,6) AS RN
+                                 ,UKEY_INSU_NO
+                            FROM  TB_INSU_INV
+                                  UNPIVOT (AMT FOR GRP IN (UNPD_RENTAL_FEE, DMG_CMP_UNRTN_AMT, ARR_ADD_AMT, MID_TERM_PEN_AMT, RTN_DELAY_PEN_AMT, DMG_CMP_BKAG_AMT))
+                         )
+                 ) C
+                 GROUP  BY C.ITEM,C.UKEY_INSU_NO
+         )
+          SELECT  B.XCL_DT
+                 ,A.UKEY_INSU_NO
+                 ,A.AMT/*매출항목*/
+                 /*UKEY총건수*/
+                 /*UKEY총금액*/
+                 /*차액*/
+                 ,MIN(DECODE(B.XCL_AMT-B.XCL_UKEY_INV_AMT,0,'Y','N')) AS MATCHED_YN
+                 ,C.UKEY_SVC_MGMT_NO
+            FROM  INSU_INV_DATA A
+                 ,TB_ETC_XCL B
+                 ,TB_INSU_UKEY C
+           WHERE  A.ITEM = B.XCL_ITM_CD(+)
+             AND  A.UKEY_INSU_NO = C.UKEY_INSU_NO(+)
+             AND  SUBSTR(B.XCL_DT,0,6) =  #XCL_YM#
+          GROUP BY B.XCL_DT
+                  ,A.UKEY_INSU_NO
+                  ,A.AMT
+                  ,C.UKEY_SVC_MGMT_NO
+                  
+       )]]>
+	</select>
+	<select id="SColsClctCmmsXclLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRColsClctCmmsXclMgmt.SColsClctCmmsXclLstPaging 추심회수금조회 */
+/* IO: 김혁범,2015-11-18T13:39:16(김혁범,2015-11-16T14:09:49) */
+WITH  INSU_INV_DATA AS
+         ( 
+          SELECT  SUM(C.AMT) AS AMT
+                 ,C.ITEM
+                 ,C.UKEY_INSU_NO
+            FROM (
+                  SELECT  AMT
+                         ,DECODE(RN,0,'CD' 
+                                   ,5,'CX'
+                                   ,4,'CE'
+                                   ,3,'CY'
+                                   ,2,'CY'
+                                   ,'CR') AS ITEM
+                         ,UKEY_INSU_NO       
+                    FROM (
+                          SELECT  AMT
+                                 ,MOD(ROWNUM,6) AS RN
+                                 ,UKEY_INSU_NO
+                            FROM  TB_INSU_INV
+                                  UNPIVOT (AMT FOR GRP IN (UNPD_RENTAL_FEE, DMG_CMP_UNRTN_AMT, ARR_ADD_AMT, MID_TERM_PEN_AMT, RTN_DELAY_PEN_AMT, DMG_CMP_BKAG_AMT))
+                         )
+                 ) C
+                 GROUP  BY C.ITEM,C.UKEY_INSU_NO
+         )
+          SELECT  B.XCL_DT
+                 ,A.UKEY_INSU_NO
+                 ,A.AMT/*매출항목*/
+                 /*UKEY총건수*/
+                 /*UKEY총금액*/
+                 /*차액*/
+                 ,MIN(DECODE(B.XCL_AMT-B.XCL_UKEY_INV_AMT,0,'Y','N')) AS MATCHED_YN
+                 ,C.UKEY_SVC_MGMT_NO
+            FROM  INSU_INV_DATA A
+                 ,TB_ETC_XCL B
+                 ,TB_INSU_UKEY C
+           WHERE  A.ITEM = B.XCL_ITM_CD(+)
+             AND  A.UKEY_INSU_NO = C.UKEY_INSU_NO(+)
+             AND  SUBSTR(B.XCL_DT,0,6) =  #XCL_YM#
+          GROUP BY B.XCL_DT
+                  ,A.UKEY_INSU_NO
+                  ,A.AMT
+                  ,C.UKEY_SVC_MGMT_NO]]>
+	</select>
+</sqlMap>

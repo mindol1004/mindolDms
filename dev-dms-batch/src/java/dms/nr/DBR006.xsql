@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR006">
+	<select id="SEqpClctInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR006.SEqpClctInfo 단말기회수정보IF조회 */
+/* IO: 장미진,2015-08-13T17:07:54(장미진,2015-08-04T17:18:40) */
+SELECT 
+	    IF_PROC_DT		  	/* IF_처리일자 */
+	   ,IF_FILE_NM		  	/* IF_파일명 */
+	   ,IF_SEQ			  	/* IF_순번 */
+	   ,EQP_MDL_CD		  	/* 단말기모델코드 */
+	   ,EQP_SER_NO			/* 단말기일련번호 */
+	   ,EQP_COLOR_CD
+	   ,CLCT_CL    			/* 회수구분코드*/
+	   ,RTN_REG_BR_CD AS AGN_CD		/* 반납등록영업장코드 */
+	   ,TO_CHAR(TO_DATE(RTN_REG_DT,'YYYYMMDD')+1,'YYYYMMDD') AS IN_SCHD_DT 	/* 입고예정일자 */
+       ,CLCT_OBJ_REG_DT     /* 회수대상등록일자 */  
+	   ,RTN_REG_DT			/* 반납등록일자 */
+	   ,PROC_ST_CD			/* 처리상태코드 */
+	   ,SKN_CLCT_DT	   		/* SKN 입고 */
+	   ,FS_REG_USER_ID		/* 최초등록사용자ID */
+	   ,FS_REG_DTM			/* 최초등록일시 */
+	   ,LS_CHG_USER_ID		/* 최종변경사용자ID */
+	   ,LS_CHG_DTM			/* 최종변경일시 */
+  FROM  TF_SKN_IN 
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UEqpClctInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR006.UEqpClctInfo 단말기회수정보IF수정 */
+/* IO: 장미진,2015-11-06T15:09:45(장미진,2015-08-04T17:19:34) */
+UPDATE  TF_SKN_IN
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) */
+	   ,LS_CHG_USER_ID = 'BAT'
+	   ,LS_CHG_DTM = SYSDATE
+ WHERE  PROC_ST_CD = '09'
+   AND  IF_PROC_DT = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<update id="UEqpClctObj" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR006.UEqpClctObj 단말기회수정보입력 */
+/* IO: 장미진,2015-08-17T14:12:24(장미진,2015-08-04T17:20:07) */
+UPDATE  TB_EQP_CLCT_OBJ
+   SET  IN_OBJ_DTL_CD = #IN_OBJ_DTL_CD# 	/* 회수구분코드 */
+       ,IN_SCHD_DT = #IN_SCHD_DT#			/* SKN회수예정일 */        
+       ,AGN_CD = #AGN_CD#					/* 대리점코드 */
+       ,RTN_REG_DT = #RTN_REG_DT#			/* 대리점반납일 */
+       ,CLCT_OBJ_REG_DT = #CLCT_OBJ_REG_DT# /* 회수대상등록일 */
+       ,SKN_CLCT_DT = #SKN_CLCT_DT#			/* SKN회수일 */
+       ,LS_CHG_USER_ID = 'BAT'				/* 최종변경사용자ID */
+       ,LS_CHG_DTM = SYSDATE				/* 최종변경일시 */
+ WHERE  OP_CL_CD = 'NR'
+   AND  EQP_SER_NO = #EQP_SER_NO#
+   AND  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EQP_COLOR_CD = #EQP_COLOR_CD#]]>
+	</update>
+	<select id="SEqpClctObj" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR006.SEqpClctObj 단말기회수테이블조회 */
+/* IO: 장미진,2015-11-13T17:47:57(장미진,2015-11-06T14:50:21) */
+SELECT   MAX(IN_OBJ_DTL_CD) AS IN_OBJ_DTL_CD
+  FROM  TB_EQP_CLCT_OBJ
+ WHERE  OP_CL_CD='NR'
+   AND  (EQP_MDL_CD = #EQP_MDL_CD# AND EQP_SER_NO=#EQP_SER_NO#)]]>
+	</select>
+</sqlMap>

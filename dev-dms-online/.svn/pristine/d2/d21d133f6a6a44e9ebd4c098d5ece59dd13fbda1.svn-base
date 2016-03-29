@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPOpTargMgmt">
+	<select id="SOpTargLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPOpTargMgmt.SOpTargLst 업무목표조회 */
+/* IO: 박민정,2015-12-11T18:08:56(박민정,2015-12-11T17:52:57) */
+SELECT *
+  FROM (
+        SELECT '' AS CHECKED
+              ,A.OP_CL_CD                                /*업무 구분 코드*/  
+              ,A.TARG_CL_CD                              /*목표 구분 코드*/
+              ,SUBSTR(A.TARG_STRD_YM,0,4) as TARG_YY     /*목표 기준 년*/  
+              ,SUBSTR(A.TARG_STRD_YM,5,6) as TARG_MM     /*목표 기준 월*/ 
+              ,A.TARG_CNT                                /*목표 건수*/       
+          FROM TB_EP_OP_TARG A
+         WHERE A.DEL_YN ='N'
+           AND SUBSTR(A.TARG_STRD_YM,0,4) BETWEEN #FR_YR# AND #TO_YR#  
+]]><isNotEqual property="OP_CL_CD" compareValue="%"><![CDATA[
+           AND A.OP_CL_CD = #OP_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="TARG_CL_CD" compareValue="%"><![CDATA[
+           AND A.TARG_CL_CD = #TARG_CL_CD#
+]]></isNotEqual><![CDATA[
+           GROUP BY A.OP_CL_CD, A.TARG_CL_CD, A.TARG_STRD_YM, A.TARG_CNT     
+      ) 
+   PIVOT (
+         MAX(TARG_CNT)
+         FOR TARG_MM IN ( '01' AS MTH_1 ,'02' AS MTH_2 ,'03' AS MTH_3 ,'04' AS MTH_4 ,'05' AS MTH_5 ,'06' AS MTH_6
+                         ,'07' AS MTH_7 ,'08' AS MTH_8 ,'09' AS MTH_9 ,'10' AS MTH_10 ,'11' AS MTH_11 ,'12' AS MTH_12 )
+         )
+ORDER BY  OP_CL_CD, TARG_CL_CD, TARG_YY]]>
+	</select>
+</sqlMap>

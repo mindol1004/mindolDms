@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+    <bean id="nc.deferred.ProcessorList" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <description><![CDATA[디퍼드 본처리 프로세서 목록.]]></description>    
+    	<property name="sourceList">
+			<list>
+	 			<ref bean="deferred.processor-0"/>
+	 			<ref bean="deferred.processor-1"/>
+	 			<ref bean="deferred.processor-2"/>
+	 			<ref bean="deferred.processor-3"/>
+	 			<ref bean="deferred.processor-4"/>
+	 			<ref bean="deferred.processor-5"/>
+	 			<ref bean="deferred.processor-6"/>
+	 			<ref bean="deferred.processor-7"/>
+	 			<ref bean="deferred.processor-8"/>
+	 			<ref bean="deferred.processor-9"/>
+			</list>
+    	</property>
+	</bean>
+
+    <bean id="nc.deferred.ReProcessorList" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <description><![CDATA[디퍼드 재처리 프로세서 목록.]]></description>    
+    	<property name="sourceList">
+			<list>
+    			<ref bean="deferred.reprocessor-0"/>
+    			<ref bean="deferred.reprocessor-1"/>
+    			<ref bean="deferred.reprocessor-2"/>
+    			<ref bean="deferred.reprocessor-3"/>
+    			<ref bean="deferred.reprocessor-4"/>
+    			<ref bean="deferred.reprocessor-5"/>
+    			<ref bean="deferred.reprocessor-6"/>
+    			<ref bean="deferred.reprocessor-7"/>
+    			<ref bean="deferred.reprocessor-8"/>
+    			<ref bean="deferred.reprocessor-9"/>
+			</list>
+    	</property>
+	</bean>
+
+    <bean id="nc.deferred.TargetCheckManager" class="nexcore.framework.deferred.checker.DefaultTargetCheckManager" scope="prototype" >
+        <description><![CDATA[디퍼드 대상 거래코드 판단할 체커 관리.]]></description>    
+        <property name="deferredTargetCheckerList" ref="nc.deferred.TargetCheckerList" />
+    </bean> 
+
+    <bean id="nc.deferred.TargetCheckerList" class="org.springframework.beans.factory.config.ListFactoryBean" scope="prototype" >
+        <description><![CDATA[디퍼드 대상 거래코드 판단할 체커 목록.]]></description>    
+    	<property name="sourceList">
+			<list>
+            	<ref bean="nc.deferred.JournalChecker"/>
+			</list>
+    	</property>
+	</bean>
+
+    <bean id="nc.deferred.JournalChecker" class="nexcore.framework.deferred.checker.DefaultTargetChecker" scope="prototype" >
+        <description><![CDATA[DB에 등록된 패턴 기반으로 대상 거래를 판단하는 체커.]]></description>    
+        <property name="deferredCacheManager"      ref="nc.deferred.CacheManager" />
+    </bean> 
+
+    <bean id="nc.deferred.AbstractProcessor" class="nexcore.framework.deferred.processor.DeferredProcessor" abstract="true">
+        <description><![CDATA[디퍼드 본처리 추상화 프로세서]]></description>
+        <property name="reprocess"                 value="false" />
+        <property name="maxReadSize"               value="${nexcore.deferred.processor.maxReadSize}" />
+        <property name="failRetryCnt"              value="0" />
+        <property name="lostRetryCnt"              value="0" />
+        <property name="runInterval"               value="${nexcore.deferred.processor.runInterval}" />
+        <property name="queueSize"                 value="${nexcore.deferred.processor.queueSize}" />
+        <property name="threadCount"               value="${nexcore.deferred.processor.threadCount}" />
+    </bean>
+
+    <bean id="nc.deferred.AbstractReProcessor" class="nexcore.framework.deferred.processor.DeferredProcessor" abstract="true">
+        <description><![CDATA[디퍼드 재처리 추상화 프로세서]]></description>
+        <property name="reprocess"                 value="true" />
+        <property name="maxReadSize"               value="${nexcore.deferred.reprocessor.maxReadSize}" />
+        <property name="failRetryCnt"              value="${nexcore.deferred.reprocessor.failRetryCnt}" />
+        <property name="lostRetryCnt"              value="${nexcore.deferred.reprocessor.lostRetryCnt}" />
+        <property name="runInterval"               value="${nexcore.deferred.reprocessor.runInterval}" />
+        <property name="queueSize"                 value="${nexcore.deferred.reprocessor.queueSize}" />
+        <property name="threadCount"               value="${nexcore.deferred.reprocessor.threadCount}" />
+    </bean>
+
+    <bean id="nc.deferred.processor.ISqlManagerRead" class="nexcore.framework.integration.db.internal.XmlSqlManager" init-method="init">
+        <description>디퍼드 프로세서 SQL Manager - 조회용</description>
+        <property name="configFile" value="${nexcore.deferred.processor.sqlMapConfigFile}" />
+        <property name="userThreadManager" ref="nc.core.IUserThreadManager" />
+    </bean>
+
+    <bean id="nc.deferred.processor.ISqlManagerWrite" class="nexcore.framework.integration.db.internal.XmlSqlManager" init-method="init">
+        <description>디퍼드 프로세서 SQL Manager - 쓰기용</description>
+        <property name="configFile" value="${nexcore.deferred.processor.sqlMapConfigFile}" />
+        <property name="userThreadManager" ref="nc.core.IUserThreadManager" />
+    </bean>
+
+    <bean id="deferred.TransLogDAO" class="nexcore.framework.deferred.sample.dao.SampleTransLogDAO" scope="prototype">
+    	<description><![CDATA[거래로그 조회 DAO]]></description>  
+        <property name="sqlManager"                 ref="nc.deferred.processor.ISqlManagerRead" />
+    </bean>
+
+    <bean id="deferred.DeferredLogDAO" class="nexcore.framework.deferred.sample.dao.SampleDeferredLogDAO" scope="prototype">
+    	<description><![CDATA[디퍼드로그 조회 DAO]]></description>  
+        <property name="sqlManager"                 ref="nc.deferred.processor.ISqlManagerRead" />
+    </bean>
+
+    <bean id="deferred.DeferredLogWriteDAO" class="nexcore.framework.deferred.sample.dao.SampleDeferredLogDAO" scope="prototype">
+    	<description><![CDATA[디퍼드로그 쓰기 DAO]]></description>  
+        <property name="sqlManager"                 ref="nc.deferred.processor.ISqlManagerWrite" />
+    </bean>
+
+    <bean id="deferred.AbstractSourceReader" class="nexcore.framework.deferred.sample.reader.SampleDeferredSourceReader" abstract="true">
+    	<description><![CDATA[디퍼드 대상 추상화 조회기]]></description>  
+    	<property name="deferredTargetCheckManager" ref="nc.deferred.TargetCheckManager" />
+    	<property name="transLogDAO"                ref="deferred.TransLogDAO" />
+    	<property name="deferredLogDAO"             ref="deferred.DeferredLogDAO" />
+    	<property name="deferredLogWriteDAO"        ref="deferred.DeferredLogWriteDAO" />
+        <property name="logBsnDtSelectQuery"        value="${sample.deferred.reader.logbsndt.sql}"/>
+        <property name="disabledTxIdPattern"        value="${sample.deferred.executor.txid.disabled.pattern}"/>
+    </bean>
+
+    <bean id="deferred.DeferredExecutor" class="nexcore.framework.deferred.sample.executor.SampleDeferredExecutor" scope="prototype" >
+    	<description><![CDATA[디퍼드 본처리 대상 서비스 실행.]]></description>    
+    	<property name="deferredLogWriteDAO"        ref="deferred.DeferredLogWriteDAO" />
+    	<property name="forcedLocalLookup"          value="${sample.deferred.executor.forcedLocalLookup}" />
+    </bean>
+        
+    <bean id="deferred.DeferredRepExecutor" class="nexcore.framework.deferred.sample.executor.SampleDeferredExecutor" scope="prototype" >
+    	<description><![CDATA[디퍼드 재처리 대상 서비스 실행.]]></description>    
+    	<property name="deferredLogWriteDAO"        ref="deferred.DeferredLogWriteDAO" />
+    	<property name="forcedLocalLookup"          value="${sample.deferred.executor.forcedLocalLookup}" />
+    </bean>
+
+    <bean id="deferred.DeferredSourceReader-0" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션0]]></description>  
+        <property name="initSeqNo"       value="0"/>
+        <property name="lastSeqNo"       value="99999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-1" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션1]]></description>    
+        <property name="initSeqNo"       value="100000000"/>
+        <property name="lastSeqNo"       value="199999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-2" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션2]]></description>    
+        <property name="initSeqNo"       value="200000000"/>
+        <property name="lastSeqNo"       value="299999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-3" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션3]]></description>    
+        <property name="initSeqNo"       value="300000000"/>
+        <property name="lastSeqNo"       value="399999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-4" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션4]]></description>    
+        <property name="initSeqNo"       value="400000000"/>
+        <property name="lastSeqNo"       value="499999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-5" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션5]]></description>    
+        <property name="initSeqNo"       value="500000000"/>
+        <property name="lastSeqNo"       value="599999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-6" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션6]]></description>    
+        <property name="initSeqNo"       value="600000000"/>
+        <property name="lastSeqNo"       value="699999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-7" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션7]]></description>    
+        <property name="initSeqNo"       value="700000000"/>
+        <property name="lastSeqNo"       value="799999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-8" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션8]]></description>    
+        <property name="initSeqNo"       value="800000000"/>
+        <property name="lastSeqNo"       value="899999999"/>
+    </bean>
+    <bean id="deferred.DeferredSourceReader-9" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 본처리 대상 조회기 - 파티션9]]></description>    
+        <property name="initSeqNo"       value="900000000"/>
+        <property name="lastSeqNo"       value="999999999"/>
+    </bean>
+    
+	<bean id="deferred.DeferredRepSourceReader-0" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션0]]></description>    
+        <property name="initSeqNo"       value="0"/>
+        <property name="lastSeqNo"       value="99999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-1" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션1]]></description>    
+        <property name="initSeqNo"       value="100000000"/>
+        <property name="lastSeqNo"       value="199999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-2" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션2]]></description>    
+        <property name="initSeqNo"       value="200000000"/>
+        <property name="lastSeqNo"       value="299999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-3" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션3]]></description>    
+        <property name="initSeqNo"       value="300000000"/>
+        <property name="lastSeqNo"       value="399999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-4" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션4]]></description>    
+        <property name="initSeqNo"       value="400000000"/>
+        <property name="lastSeqNo"       value="499999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-5" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션5]]></description>    
+        <property name="initSeqNo"       value="500000000"/>
+        <property name="lastSeqNo"       value="599999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-6" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션6]]></description>    
+        <property name="initSeqNo"       value="600000000"/>
+        <property name="lastSeqNo"       value="699999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-7" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션7]]></description>    
+        <property name="initSeqNo"       value="700000000"/>
+        <property name="lastSeqNo"       value="799999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-8" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션8]]></description>    
+        <property name="initSeqNo"       value="800000000"/>
+        <property name="lastSeqNo"       value="899999999"/>
+	</bean>
+	<bean id="deferred.DeferredRepSourceReader-9" parent="deferred.AbstractSourceReader">
+    	<description><![CDATA[디퍼드 재처리 대상 조회기 - 파티션9]]></description>    
+        <property name="initSeqNo"       value="900000000"/>
+        <property name="lastSeqNo"       value="999999999"/>
+	</bean>
+    
+    <bean id="deferred.processor-0" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션0]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-0"/>
+    </bean>
+    <bean id="deferred.processor-1" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션1]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-1"/>
+    </bean>
+    <bean id="deferred.processor-2" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션2]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-2"/>
+    </bean>
+    <bean id="deferred.processor-3" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션3]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-3"/>
+    </bean>
+    <bean id="deferred.processor-4" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션4]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-4"/>
+    </bean>
+    <bean id="deferred.processor-5" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션5]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-5"/>
+    </bean>
+    <bean id="deferred.processor-6" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션6]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-6"/>
+    </bean>
+    <bean id="deferred.processor-7" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션7]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-7"/>
+    </bean>
+    <bean id="deferred.processor-8" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션8]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-8"/>
+    </bean>
+    <bean id="deferred.processor-9" parent="nc.deferred.AbstractProcessor" >
+        <description><![CDATA[디퍼드 본처리 프로세서 - 파티션9]]></description>
+        <property name="executor"       ref="deferred.DeferredExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredSourceReader-9"/>
+    </bean>
+
+    <bean id="deferred.reprocessor-0" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션0]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-0"/>
+    </bean>
+    <bean id="deferred.reprocessor-1" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션1]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-1"/>
+    </bean>
+    <bean id="deferred.reprocessor-2" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션2]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-2"/>
+    </bean>
+    <bean id="deferred.reprocessor-3" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션3]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-3"/>
+    </bean>
+    <bean id="deferred.reprocessor-4" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션4]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-4"/>
+    </bean>
+    <bean id="deferred.reprocessor-5" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션5]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-5"/>
+    </bean>
+    <bean id="deferred.reprocessor-6" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션6]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-6"/>
+    </bean>
+    <bean id="deferred.reprocessor-7" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션7]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-7"/>
+    </bean>
+    <bean id="deferred.reprocessor-8" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션8]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-8"/>
+    </bean>
+    <bean id="deferred.reprocessor-9" parent="nc.deferred.AbstractReProcessor" >
+        <description><![CDATA[디퍼드 재처리 프로세서 - 파티션9]]></description>
+        <property name="executor"       ref="deferred.DeferredRepExecutor"/>
+        <property name="sourceReader"   ref="deferred.DeferredRepSourceReader-9"/>
+    </bean>
+    
+</beans>

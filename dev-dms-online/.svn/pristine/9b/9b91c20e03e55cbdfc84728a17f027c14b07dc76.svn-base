@@ -1,0 +1,314 @@
+package dms.sc.scbbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.logging.Log;
+
+import fwk.code.internal.HpcCode;
+import fwk.common.CommonArea;
+import fwk.utils.HpcUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: PSCLginOp</li>
+ * <li>설  명 : 로그인처리</li>
+ * <li>작성일 : 2014-07-29 13:40:44</li>
+ * <li>작성자 : 김석영 (kimsukyoung)</li>
+ * </ul>
+ *
+ * @author 김석영 (kimsukyoung)
+ */
+public class PSCLginOp extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+	/**
+	 * Default Constructor
+	 */
+	public PSCLginOp() {
+		super();
+	}
+
+	/**
+	 * <pre>로그인</pre>
+	 *
+	 * @author admin (admin)
+	 * @since 2015-06-22 16:59:54
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : USER_ID [로그인아이디]
+	 *	- field : USER_PWD [로그인비밀번호]
+	 *	- field : LINK_SYSTEM [연계시스템]
+	 *	- field : FORCED_YN [강제로그인여부]
+	 *	- field : DOMAIN_CD [도메인코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_MENU_AUTR
+	 *		- field : MENU_ID [메뉴ID]
+	 *		- field : MENU_NM [메뉴명]
+	 *		- field : MENU_DESC [메뉴설명]
+	 *		- field : MENU_LV [메뉴레벨]
+	 *		- field : MENU_SORT_ORD [메뉴정렬순서]
+	 *		- field : FULL_PATH_NM [메뉴경로]
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : FRM_NM [화면명]
+	 *		- field : FRM_URL [화면URL]
+	 *		- field : FRM_CL_CD [화면구분코드]
+	 *		- field : FRM_ITEM_GRP_ID [화면항목ID]
+	 *		- field : SUP_MENU_ID [상위메뉴ID]
+	 *	- record : RS_MSG_LIST
+	 *		- field : LOCALE_XD [LOCALE_XD]
+	 *		- field : MESSAGE_ID [메시지ID]
+	 *		- field : MESSAGE_NAME [메시지명]
+	 *		- field : MESSAGE_REASON [메시지사유]
+	 *		- field : MESSAGE_TYPE_XD [메시지TYPE]
+	 *		- field : MESSAGE_REMARK [메시지설명]
+	 *		- field : BIZ_GROUP_XD [BIZ_GROUP_XD]
+	 *	- record : RS_USER
+	 *		- field : USER_NO [사용자번호]
+	 *		- field : USER_NM [사용자명]
+	 *		- field : USER_CL_CD [사용자구분코드]
+	 *		- field : USER_ST_CD [사용자상태코드]
+	 *		- field : LGIN_ID [로그인아이디]
+	 *		- field : PWD_ERR_CNT [비밀번호오류횟수]
+	 *		- field : LS_PWD_CHG_DT [최종비밀번호변경일자]
+	 *		- field : LS_LGIN_DTM [최종로그인일시]
+	 *		- field : EML_ADDR [이메일주소]
+	 *		- field : EML_ADDR_ENPT [이메일주소암호화]
+	 *		- field : HP_NO [휴대전화번호]
+	 *		- field : HP_NO_ENPT [휴대전화번호암호화]
+	 *		- field : GRPC_JOBR_CD [그룹사직급코드]
+	 *		- field : GRPC_JTIL_CD [그룹사직책코드]
+	 *		- field : GRPC_DEPT_CD [그룹사부서코드]
+	 *		- field : GRPC_CO_CD [그룹사회사코드]
+	 *		- field : DEALCO_CD [대리점코드]
+	 *		- field : EMP_NO [사원번호]
+	 *		- field : SESS_NO [세션번호]
+	 *		- field : REQ_BRND_CD [요청브랜드코드]
+	 *		- field : CO_CD [회사코드]
+	 *		- field : REQ_CHNL_CD [요청채널코드]
+	 *		- field : VIEW_ALL_YN [브랜드가맹점전체조회여부]
+	 *	- record : RS_USER_FAVI
+	 *		- field : FAVI_NO [즐겨찾기번호]
+	 *		- field : USER_NO [사용자번호]
+	 *		- field : MENU_ID [메뉴ID]
+	 *		- field : MENU_NM [메뉴명]
+	 *		- field : MENU_DESC [메뉴설명]
+	 *		- field : MENU_LV [메뉴레벨]
+	 *		- field : MENU_SORT_ORD [메뉴정렬순서]
+	 *		- field : FULL_PATH_NM [메뉴경로]
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : FRM_NM [화면명]
+	 *		- field : FRM_URL [화면URL]
+	 *		- field : FRM_CL_CD [화면구분코드]
+	 *		- field : SUP_MENU_ID [상위메뉴ID]
+	 *	- record : RS_FRM_LIST
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : FRM_NM [화면명]
+	 *		- field : FRM_DESC [화면설명]
+	 *		- field : FRM_CL_CD [화면구분코드]
+	 *		- field : FRM_URL [화면경로]
+	 *		- field : MENU_ID [메뉴ID]
+	 * </pre>
+	 */
+	public IDataSet pLgin(IDataSet requestData, IOnlineContext onlineCtx) {
+
+		//레코드셋초기화 
+		IDataSet responseData = new DataSet();
+		IDataSet lginDs = new DataSet();
+
+		//변수초기화
+		StringBuffer sbMcht = new StringBuffer(); //팀장/SV인 경우 접근권한가맹점목록
+		String sessionKey = new String("");         //세션키
+		String linkSystem = new String("");         //접속경로
+
+		try {
+			//1. 입력값, FU lookup 설정
+			linkSystem = requestData.getField("LINK_SYSTEM");                 //접속경로
+			requestData.putField("LGIN_ID", requestData.getField("USER_ID")); //로그인ID
+			FSCLginOp fSCLginOp = (FSCLginOp) lookupFunctionUnit(FSCLginOp.class);
+
+			/*****************************************************************************
+			* 로그인 처리  
+			* LINK_SYSTEM 값이  GW일 경우 fSsoLgin fm호출 
+			*                          GW가 아닌 경우 fLgin fm호출
+			* 
+			* [LINK_SYSTEM 종류]
+			* 1. GW   - SSO연계 GW사용자
+			* 2. VOC  - 상담원  
+			* 3. NO   - 브랜드 관리자,제휴사, 가맹점주 
+			******************************************************************************/
+			
+			//2. 접속경로(linkSystem)별 로그인fm 호출 분기처리
+			if ( "GW".equals(linkSystem) ) {
+				//접속경로가 GW인 경우 
+				//2.1 SSO로그인 fm 호출
+				lginDs = fSCLginOp.fSsoLgin(requestData, onlineCtx);
+				
+				//2.3 로그인 성공시 세션키 생성 
+				// TODO 2015.03.12 김석영 질의 필요 : SSO 인경우 67~69라인 삭제후 SSO세션키 받아서 사용하도록 설정 필요 
+			
+			} else {				
+				//접속경로가 GW가 아닌 경우 
+				//2.1 일반로그인 fm 호출
+				lginDs = fSCLginOp.fLgin(requestData, onlineCtx);
+
+				//2.2 로그인 성공시 세션키 생성 
+				
+			}
+			sessionKey = _getNewSessionKey();
+			/********************************************************************************************
+			* 로그인 성공 후 처리사항
+			* 1. 중복로그인여부 확인
+			* 2. 세션키 INSERT 등록
+			* 3. return용 목록 조회
+			*    1) RS_USER              - 사용자정보 
+			*        fLgin, fSsoLgin 응답 데이터셋에 이메일복호화값, 핸드폰번호 복호화 값,
+			*        브랜드,가맹점 전체조회여부, 요청브랜드코드, 요청채널코드 컬럼 추가함
+			*    2) RS_FRM_LIST_ALL   - 전체화면목록
+			*    3) RS_MSG_LIST        - 메시지
+			*    4) RS_AUTR             - 권한/메뉴
+			*    5) RS_USER_FAVI_LIST - 사용자즐겨찾기
+			*********************************************************************************************/
+			
+			//-----------------------------------------------------------------------------------------------
+			//3. 사용자정보 
+			
+			//3.1 사용자정보 레코드셋 생성 (로그인결과 레코드셋 복사)
+			IRecordSet userRs = lginDs.getRecordSet("RS_USER");
+			
+			//3.2 입력 파라미터 설정 
+			CommonArea ca = getCommonArea(onlineCtx);			
+			requestData.putField("USER_NO", userRs.get(0, "USER_NO"));
+			requestData.putField("SESS_NO", sessionKey);
+			requestData.putField("LGIN_DTM", userRs.get(0, "LS_LGIN_DTM"));
+			requestData.putField("IP_ADDR", ca.getIpad());
+			//requestData.putField("IP_ADDR", "10.0.0.0");
+			requestData.putField("FS_REG_USER_ID", userRs.get(0, "USER_NO"));
+			requestData.putField("LS_CHG_USER_ID", userRs.get(0, "USER_NO"));
+			requestData.putField("AUTR_OBJ_MCHT_INFO", String.valueOf(sbMcht));   // 가맹점목록		
+			
+			//3.2.1  중복 로그인 확인 조회  fm 호출 
+			callSharedBizComponentByDirect("sc.SCSBase", "fInqSeonDup", requestData, onlineCtx);
+
+			//3.3 세션키 등록 
+			//3.3.2 세션키등록 fm호출
+			callSharedBizComponentByRequiresNew("sc.SCSBase", "fRegSeonInfo", requestData, onlineCtx);
+			//3.3.3 세션키 등록 성공후 사용자정보 레코드셋에 세션키 설정 
+			userRs.addHeader(new RecordHeader("SESS_NO"));
+			userRs.getRecord(0).set("SESS_NO", sessionKey);
+
+			//3.4 사용자의 이메일, 핸드폰번호 복호화 컬럼 추가 
+			if ( StringUtils.isNotEmpty(userRs.get(0, "EML_ADDR_ENPT")) ) {
+				userRs.getRecord(0).set("EML_ADDR", HpcUtils.decodeByAES(userRs.get(0, "EML_ADDR_ENPT")));
+			}
+			if ( StringUtils.isNotEmpty(userRs.get(0, "HP_NO_ENPT")) ) {
+				userRs.getRecord(0).set("HP_NO", HpcUtils.decodeByAES(userRs.get(0, "HP_NO_ENPT")));
+			}
+
+			//3.5 사용자의 브랜드, 가맹점 전체조회여부 컬럼 추가 
+			//[VIEW_ALL_YN 확인방법 : DMS002 공통그룹코드에 등록된 사용자구분 코드의  MGMT_ITEM_CD1 값이 Y인지 확인]
+			/*
+			HpcCode cmCd = HpcUtils.getCode("DMS002", userRs.get(0, "USER_CL_CD")); 
+			userRs.addHeader(new RecordHeader("VIEW_ALL_YN")); 			
+			if ( StringUtils.equalsIgnoreNull("Y", cmCd.getMgmtItemCd1()) ) {
+				userRs.getRecord(0).set("VIEW_ALL_YN", "Y"); //전체조회 가능
+			} else {
+				userRs.getRecord(0).set("VIEW_ALL_YN", "N"); //전체조회 불가
+			}		
+			*/
+			//3.6 요청브랜드코드, 요청채널코드 추가   
+			/*
+			userRs.addHeader(new RecordHeader("REQ_BRND_CD"));
+			userRs.addHeader(new RecordHeader("REQ_CHNL_CD"));
+			userRs.getRecord(0).set("REQ_BRND_CD", "H999");
+			
+			if ( "VOC".equals(linkSystem) ) {
+				userRs.getRecord(0).set("REQ_CHNL_CD", "40");
+			} else {
+				userRs.getRecord(0).set("REQ_CHNL_CD", "10");
+			}*/
+			//3.7 설정된 사용자레코드셋을  responseData에 추가 
+			responseData.putRecordSet("RS_USER", userRs);
+			
+			//사용자정보 설정 END 
+			//-----------------------------------------------------------------------------------------------
+			
+			//4. 전체화면목록 조회
+			FSCFrmMgmt fSCFrmMgmt = (FSCFrmMgmt) lookupFunctionUnit(FSCFrmMgmt.class);
+			IDataSet frmDs = fSCFrmMgmt.fInqFrmlAll(requestData, onlineCtx);
+			responseData.putRecordSet("RS_FRM_LIST", frmDs.getRecordSet("RS_FRM_LIST_ALL"));
+
+			//5. 메시지 조회 
+			IDataSet msgDs = callSharedBizComponentByDirect("fw.FWSBase", "fSelectMsaageListForAll", requestData, onlineCtx);
+			responseData.putRecordSet("RS_MSG_LIST", msgDs.getRecordSet("RS_MSG_LIST"));
+
+			//6. 권한메뉴목록 조회 
+			IDataSet autrMenuDs = fSCLginOp.fInqAutrLst(requestData, onlineCtx);
+			responseData.putRecordSet("RS_MENU_AUTR", autrMenuDs.getRecordSet("RS_AUTR"));
+
+			//7. 사용자즐겨찾기 메뉴 목록 조회 
+			FSCUserFaviMgmt fSCUserFaviMgmt = (FSCUserFaviMgmt) lookupFunctionUnit(FSCUserFaviMgmt.class);
+			IDataSet userFaviDs = fSCUserFaviMgmt.fInqUserFaviLst(requestData, onlineCtx);
+			responseData.putRecordSet("RS_USER_FAVI", userFaviDs.getRecordSet("RS_USER_FAVI_LIST"));
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e);	// 시스템 오류
+		}
+
+		responseData.setOkResultMessage("DMS00000", null);	// 정상 처리되었습니다.
+		return responseData;
+	}
+
+	/**
+	 * 로그아웃
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pLgout(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			requestData.putField("USER_NO", getCommonArea(onlineCtx).getUserNo());
+			requestData.putField("SESS_NO", getCommonArea(onlineCtx).getSsoSesnKey());
+			callSharedBizComponentByDirect("sc.SCSBase", "fUpdSeonInfo", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e);
+		}
+		return responseData;
+	}
+	
+	/**
+	 * 로그인 세션키 생성 
+	 * @param requestData
+	 * @param onlineCtx
+	 */
+	private String  _getNewSessionKey() {
+		String rSessionKey = new String("");
+		StringBuilder sbT = new StringBuilder(String.valueOf(System.currentTimeMillis()));
+		sbT.append(RandomStringUtils.randomAlphabetic(17));
+		rSessionKey = sbT.toString();
+		return rSessionKey;
+	}
+}

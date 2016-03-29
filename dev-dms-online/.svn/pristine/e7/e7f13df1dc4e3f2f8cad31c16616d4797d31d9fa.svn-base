@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPSellGradeMgmt">
+	<select id="SSellGradeListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPSellGradeMgmt.SSellGradeListPaging 판매등급현황조회 */
+/* IO: 정동현,2015-09-14T13:40:00(정동현,2015-09-03T16:52:11) */
+SELECT  PA.*
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_MGMT_NO )  AS  ROWNO
+                ,NVL(B.PROGR_ST,A.PROGR_ST)  AS  PROGR_ST                                              /* 진행상태 공통코드:DMS179 */
+                ,A.CNSL_MGMT_NO                                                                        /* 상담 관리 번호*/
+                ,A.CNSL_DT                                                                             /* 상담 일자 */
+                ,A.IN_CONF_DT                                                                          /* 입고 확정 일자 */
+                ,C.MFACT_CD                                                                            /* 제조사 공통코드:DMS101 */
+                ,C.EQP_MDL_NM                                                                          /* 단말기 모델명 */
+                ,A.EQP_SER_NO                                                                          /* 단말기 일련 번호 */
+                ,A.EQP_ST                                                                              /* 단말기상태*/
+                ,NVL(B.EQP_COLOR_CD,A.EQP_COLOR_CD)  AS  EQP_COLOR_CD                                  /* DMS100:색상 단말기색상코드 */
+                ,B.SELL_GRADE                                                                          /* 판매등급 */
+                ,B.PRCH_AMT                                                                            /* 매입 금액 */
+                ,(SELECT  USER_NM
+                    FROM  TB_USER
+                   WHERE  USER_ST_CD = D.FST_REG_USER_ID
+                  )  AS  INS_USER_NM                                                                   /* 입력자 명 */
+                ,D.PROC_DT                                                                             /* 처리일자 */
+                ,NVL(B.BOX_NO, A.BOX_NO)  AS  BOX_NO                                                   /* 박스 번호*/
+                ,B.EQP_ST_DTAIL                                                                        /* 단말기 상태 세부 */
+                ,NVL(B.IMEI,A.IMEI)  AS  IMEI                                                          /* IMEI */
+                ,SUBSTR(D.PWR_ST,0,2)  AS  PWR_ST                                                      /* 전원불량 공통코드:DMS199*/
+                ,SUBSTR(D.RECG_ST,0,2)  AS  RECG_ST                                                    /* 충전불량 공통코드:DMS200 */
+                ,SUBSTR(D.USIM_ST,0,2)  AS  USIM_ST                                                    /* USIM불량 공통코드:DMS201*/
+                ,SUBSTR(D.SBELL_ST,0,2)  AS  SBELL_ST                                                  /* 벨소리불량 공통코드:DMS202 */
+                ,SUBSTR(D.VIBR_ST,0,2)  AS  VIBR_ST                                                    /* 진동불량 공통코드:DMS203 */
+                ,SUBSTR(D.SPK_ST,0,2)  AS  SPK_ST                                                      /* 스피커불량 공통코드:DMS204 */
+                ,SUBSTR(D.ILRM_SENSOR_ST,0,2)  AS  ILRM_SENSOR_ST                                      /* 조도센서불량 공통코드:DMS205 */
+                ,SUBSTR(D.GRCP_ST,0,2)  AS  GRCP_ST                                                    /* 자이로센서불량 공통코드:DMS206 */
+                ,SUBSTR(D.APRC_SENSOR_ST,0,2)  AS  APRC_SENSOR_ST                                      /* 근접센서불량 공통코드:DMS207 */
+                ,SUBSTR(D.CAMR_ST,0,2)  AS  CAMR_ST                                                    /* 카메라불량 공통코드:DMS208 */
+                ,SUBSTR(D.BATER_ST,0,2)  AS  BATER_ST                                                  /* B/T불량 공통코드:DMS209 */
+                ,SUBSTR(D.AFIMG_ST,0,2)  AS  AFIMG_ST                                                  /* 잔상불량 공통코드:DMS210 */
+                ,SUBSTR(D.TOUCH_ST,0,2)  AS  TOUCH_ST                                                  /* 터치불량 공통코드:DMS211 */
+                ,SUBSTR(D.WIFI_ST,0,2)  AS  WIFI_ST                                                    /* WIFI불량 공통코드:DMS212 */
+                ,SUBSTR(D.STAIN_ST,0,2)  AS  STAIN_ST                                                  /* 얼룩 공통코드:DMS213 */
+                ,SUBSTR(D.BRUI_ST,0,2)  AS  BRUI_ST                                                    /* 멍 공통코드:DMS214 */
+                ,SUBSTR(D.SQUS_ST,0,2)  AS  SQUS_ST                                                    /* 눌림 공통코드:DMS215 */
+                ,SUBSTR(D.LQFD_INFLO_ST,0,2)  AS  LQFD_INFLO_ST                                        /* 액상유입 공통코드:DMS216 */
+                ,SUBSTR(D.LED_ST,0,2)  AS  LED_ST                                                      /* LED파손 공통코드:DMS217 */
+                ,SUBSTR(D.BUTN_ST,0,2)  AS  BUTN_ST                                                    /* 버튼불량 공통코드:DMS218 */
+                ,SUBSTR(D.BOTM_TOUCH_ST,0,2)  AS  BOTM_TOUCH_ST                                        /* 하단터치메뉴 공통코드:DMS219 */
+                ,SUBSTR(D.BODY_ST,0,2)  AS  BODY_ST                                                    /* 몸체미세휨 공통코드:DMS220 */
+                ,SUBSTR(D.DMB_ST,0,2)  AS  DMB_ST                                                      /* DMB안테나손상 공통코드:DMS221 */
+                ,SUBSTR(D.LCGLS_ST,0,2)  AS  LCGLS_ST                                                  /* 액정유리 공통코드:DMS222 */
+                ,SUBSTR(D.CHIP_ST,0,2)  AS  CHIP_ST                                                    /* 이나감 공통코드:DMS223 */
+                ,SUBSTR(D.CAMR_WINDO_ST,0,2)  AS  CAMR_WINDO_ST                                        /* 카메라윈도우손상 공통코드:DMS224 */
+                ,SUBSTR(D.EDGE_ST,0,2)  AS  EDGE_ST                                                    /* 테두리및몸체 공통코드:DMS224 */
+                ,SUBSTR(D.BACK_ST,0,2)  AS  BACK_ST                                                    /* 매입불가 공통코드:DMS225 */
+                ,DECODE(D.BACK_CL,1,'Y','')  AS  BACK_CL                                               /* 매입불가여부 */
+                ,B.CMCT_CO                                                                             /* 통신사 공통코드:DMS226*/
+                ,DECODE(NVL(B.SCRB_MTHD,'A'),'C','기변','')  AS  SCRB_MTHD                               /* 가입방법 */
+                ,NVL(B.SKN_EQP_ST, A.SKN_EQP_ST)  AS  SKN_EQP_ST                                       /* SKN 단말기상태 */
+                ,NVL(B.AGN_DDCT_YN,'N')  AS  AGN_DDCT_YN                                               /* 대리점 차감 여부*/
+           FROM  TB_EP_CST_CONSULT_MGMT A
+                ,TB_EP_CST_PRCHS_MGMT B
+                ,TB_EQP_MDL C
+                ,TB_EP_CST_SALE_EQP D  
+          WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+            AND  B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+            AND  A.EQP_MDL_CD = C.EQP_MDL_CD 
+            AND  A.DEL_YN = 'N'
+            AND  B.DEL_YN = 'N'
+            AND  C.DEL_YN = 'N'
+            AND  D.DEL_YN = 'N'
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[
+            AND  A.CNSL_DT BETWEEN #FROM_DT# AND #TO_DT#                                               /* 상담일자 */
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[
+            AND  B.TLY_DT BETWEEN #FROM_DT# AND #TO_DT#                                                /* 검수일자 */
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="3"><![CDATA[
+            AND  A.IN_CONF_YN = 'Y'
+            AND  A.IN_CONF_DT BETWEEN #FROM_DT# AND #TO_DT#                                            /* 입고일자 */
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  NVL(B.EQP_MDL_CD,A.EQP_MDL_CD) = #EQP_MDL_CD#                                         /* 단말기 모델코드 */
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+            AND  NVL(B.EQP_SER_NO,A.EQP_SER_NO) = #EQP_SER_NO#                                         /* 단말기 일련번호 */
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+            AND  A.CNSL_MGMT_NO = #CNSL_MGMT_NO#                                                       /* 상담관리번호 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="SELL_GRADE" compareValue="%"><![CDATA[ 
+            AND  B.SELL_GRADE = #SELL_GRADE#                                                           /* 판매등급 */
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="SCRB_MTHD" compareValue="A"><![CDATA[
+            AND  NVL(A.SCRB_MTHD,'A') = #SCRB_MTHD#                                                    /* 가입방법 */
+]]></isNotEqual><![CDATA[
+]]><isEqual property="JDC_CL" compareValue="NO"><![CDATA[
+		    AND A.SKN_CL = 'N'																           /* SKN 구분: 일반감정 등록건 */		   
+]]></isEqual><![CDATA[		   		   
+]]><isEqual property="JDC_CL" compareValue="RE"><![CDATA[
+		    AND A.SKN_CL = 'Y'																           /* SKN 구분 : 재감정 등록건*/		   	
+]]></isEqual><![CDATA[
+          ORDER  BY A.CNSL_DT
+         )  PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSellGradeListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPSellGradeMgmt.SSellGradeListTotCnt 판매등급현황총건수 */
+/* IO: 정동현,2015-09-14T13:39:39(정동현,2015-09-03T16:10:05) */
+SELECT  COUNT(*)  AS  TOTAL_CNT
+  FROM  TB_EP_CST_CONSULT_MGMT A
+       ,TB_EP_CST_PRCHS_MGMT B
+       ,TB_EQP_MDL C
+       ,TB_EP_CST_SALE_EQP D  
+ WHERE  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+   AND  B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+   AND  A.EQP_MDL_CD = C.EQP_MDL_CD 
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+   AND  C.DEL_YN = 'N'
+   AND  D.DEL_YN = 'N'
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[
+   AND  A.CNSL_DT BETWEEN #FROM_DT# AND #TO_DT#                                               /* 상담일자 */
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[
+   AND  B.TLY_DT BETWEEN #FROM_DT# AND #TO_DT#                                                /* 검수일자 */
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="3"><![CDATA[
+   AND  A.IN_CONF_YN = 'Y'
+   AND  A.IN_CONF_DT BETWEEN #FROM_DT# AND #TO_DT#                                            /* 입고일자 */
+]]></isEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        NVL(B.EQP_MDL_CD,A.EQP_MDL_CD) = #EQP_MDL_CD#                                         /* 단말기 모델코드 */
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+        NVL(B.EQP_SER_NO,A.EQP_SER_NO) = #EQP_SER_NO#                                         /* 단말기 일련번호 */
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[
+        A.CNSL_MGMT_NO = #CNSL_MGMT_NO#                                                       /* 상담관리번호 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="SELL_GRADE" compareValue="%"><![CDATA[ 
+   AND  B.SELL_GRADE = #SELL_GRADE#                                                           /* 판매등급 */
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="SCRB_MTHD" compareValue="A"><![CDATA[
+   AND  NVL(A.SCRB_MTHD,'A') = #SCRB_MTHD#                                                    /* 가입방법 */
+]]></isNotEqual><![CDATA[
+]]><isEqual property="JDC_CL" compareValue="NO"><![CDATA[
+   AND A.SKN_CL = 'N'																          /* SKN 구분: 일반감정 등록건 */		   
+]]></isEqual><![CDATA[		   		   
+]]><isEqual property="JDC_CL" compareValue="RE"><![CDATA[
+   AND A.SKN_CL = 'Y'																          /* SKN 구분 : 재감정 등록건*/		   	
+]]></isEqual><![CDATA[]]>
+	</select>
+	<select id="SSellGrade" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPSellGradeMgmt.SSellGrade 판매등급조회 */
+/* IO: 정동현,2015-09-10T19:19:00(정동현,2015-09-10T13:57:18) */
+SELECT  CNSL_MGMT_NO                                                /* 상담관리번호 */
+       ,SEQ                                                         /* 순번 */
+       ,PWR_ST                                                      /* 전원불량 공통코드:DMS199*/
+       ,USIM_ST                                                     /* USIM불량 공통코드:DMS201*/
+       ,RECG_ST                                                     /* 충전불량 공통코드:DMS200 */
+       ,SBELL_ST                                                    /* 벨소리불량 공통코드:DMS202 */
+       ,VIBR_ST                                                     /* 진동불량 공통코드:DMS203 */
+       ,SPK_ST                                                      /* 스피커불량 공통코드:DMS204 */
+       ,ILRM_SENSOR_ST                                              /* 조도센서불량 공통코드:DMS205 */
+       ,GRCP_ST                                                     /* 자이로센서불량 공통코드:DMS206 */
+       ,APRC_SENSOR_ST                                              /* 근접센서불량 공통코드:DMS207 */
+       ,CAMR_ST                                                     /* 카메라불량 공통코드:DMS208 */
+       ,BATER_ST                                                    /* B/T불량 공통코드:DMS209 */
+	   ,DECODE(AFIMG_ST,'513','511',AFIMG_ST)  AS  AFIMG_ST         /* 잔상불량 공통코드:DMS210 */
+       ,TOUCH_ST                                                    /* 터치불량 공통코드:DMS211 */
+       ,WIFI_ST                                                     /* WIFI불량 공통코드:DMS212 */
+       ,STAIN_ST                                                    /* 얼룩 공통코드:DMS213 */
+       ,BRUI_ST                                                     /* 멍 공통코드:DMS214 */
+       ,SQUS_ST                                                     /* 눌림 공통코드:DMS215 */
+       ,LQFD_INFLO_ST                                               /* 액상유입 공통코드:DMS216 */
+       ,LED_ST                                                      /* LED파손 공통코드:DMS217 */
+       ,BUTN_ST                                                     /* 버튼불량 공통코드:DMS218 */
+       ,BOTM_TOUCH_ST                                               /* 하단터치메뉴 공통코드:DMS219 */
+       ,BODY_ST                                                     /* 몸체미세휨 공통코드:DMS220 */
+       ,DMB_ST                                                      /* DMB안테나손상 공통코드:DMS221 */
+       ,LCGLS_ST                                                    /* 액정유리 공통코드:DMS222 */
+       ,CHIP_ST                                                     /* 이나감 공통코드:DMS223 */
+       ,CAMR_WINDO_ST                                               /* 카메라윈도우손상 공통코드:DMS224 */
+       ,EDGE_ST                                                     /* 테두리및몸체 공통코드:DMS224 */
+       ,BACK_CL                                                     /* 매입불가여부 */
+       ,BACK_ST                                                     /* 매입불가 공통코드:DMS225 */
+       ,SELL_GRADE                                                  /* 판매등급 */
+       ,FST_REG_USER_ID                                             /* 최초 등록 사용자 ID */
+       ,LAST_CHG_USER_ID                                            /* 최종 변경 사용자 ID */
+       ,PRCH_GRADE                                                  /* 매입등급 */
+/*     ,EQP_RMK           해당컬럼 없음    */
+  FROM  TB_EP_CST_SALE_EQP
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND  SEQ = (SELECT  MAX(SEQ) 
+                 FROM  TB_EP_CST_SALE_EQP
+                WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO# 
+                  AND  DEL_YN = 'N')
+   AND  DEL_YN = 'N']]>
+	</select>
+	<insert id="ISellGrade" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPSellGradeMgmt.ISellGrade 판매등급등록 */
+/* IO: 정동현,2015-09-11T10:26:09(정동현,2015-09-11T09:21:51) */
+INSERT INTO TB_EP_CST_SALE_EQP
+      (
+       CNSL_MGMT_NO                                                /* 상담관리번호 */
+      ,SEQ                                                         /* 순번 */
+      ,PROC_DT                                                     /* 처리일자 */
+	  ,PWR_ST                                                      /* 전원불량 공통코드:DMS199*/
+      ,USIM_ST                                                     /* USIM불량 공통코드:DMS201*/
+      ,RECG_ST                                                     /* 충전불량 공통코드:DMS200 */
+      ,SBELL_ST                                                    /* 벨소리불량 공통코드:DMS202 */
+      ,VIBR_ST                                                     /* 진동불량 공통코드:DMS203 */
+      ,SPK_ST                                                      /* 스피커불량 공통코드:DMS204 */
+      ,ILRM_SENSOR_ST                                              /* 조도센서불량 공통코드:DMS205 */
+      ,GRCP_ST                                                     /* 자이로센서불량 공통코드:DMS206 */
+      ,APRC_SENSOR_ST                                              /* 근접센서불량 공통코드:DMS207 */
+      ,CAMR_ST                                                     /* 카메라불량 공통코드:DMS208 */
+      ,BATER_ST                                                    /* B/T불량 공통코드:DMS209 */
+	  ,AFIMG_ST                                                    /* 잔상불량 공통코드:DMS210 */
+      ,TOUCH_ST                                                    /* 터치불량 공통코드:DMS211 */
+      ,WIFI_ST                                                     /* WIFI불량 공통코드:DMS212 */
+      ,STAIN_ST                                                    /* 얼룩 공통코드:DMS213 */
+      ,BRUI_ST                                                     /* 멍 공통코드:DMS214 */
+      ,SQUS_ST                                                     /* 눌림 공통코드:DMS215 */
+      ,LQFD_INFLO_ST                                               /* 액상유입 공통코드:DMS216 */
+      ,LED_ST                                                      /* LED파손 공통코드:DMS217 */
+      ,BUTN_ST                                                     /* 버튼불량 공통코드:DMS218 */
+      ,BOTM_TOUCH_ST                                               /* 하단터치메뉴 공통코드:DMS219 */
+      ,BODY_ST                                                     /* 몸체미세휨 공통코드:DMS220 */
+      ,DMB_ST                                                      /* DMB안테나손상 공통코드:DMS221 */
+      ,LCGLS_ST                                                    /* 액정유리 공통코드:DMS222 */
+      ,CHIP_ST                                                     /* 이나감 공통코드:DMS223 */
+      ,CAMR_WINDO_ST                                               /* 카메라윈도우손상 공통코드:DMS224 */
+      ,EDGE_ST                                                     /* 테두리및몸체 공통코드:DMS224 */
+      ,BACK_CL                                                     /* 매입불가여부 */
+      ,BACK_ST                                                     /* 매입불가 공통코드:DMS225 */
+      ,SELL_GRADE                                                  /* 판매등급 */
+	  ,DEL_YN                                                      /* 삭제여부 */
+	  ,UPDATE_COUNT                                                /* UPDATE_COUNT */
+	  ,FST_REG_DTM                                                 /* 최초 등록 일시 */
+      ,FST_REG_USER_ID                                             /* 최초 등록 사용자 ID */
+	  ,LAST_CHG_DTM                                                /* 최종 변경 일시 */
+      ,LAST_CHG_USER_ID                                            /* 최종 변경 사용자 ID */
+      ,PRCH_GRADE                                                  /* 매입등급 */
+/*    ,EQP_RMK           해당컬럼 없음    */
+      )
+	  VALUES
+	  (
+	   #CNSL_MGMT_NO#                                              /* 상담관리번호 */
+      ,(SELECT  NVL(MAX(SEQ)+1,1)
+          FROM  TB_EP_CST_SALE_EQP 
+         WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#)
+      ,TO_CHAR(SYSDATE,'YYYYMMDD')                                 /* 처리일자 */
+	  ,#PWR_ST#                                                    /* 전원불량 공통코드:DMS199*/
+      ,#USIM_ST#                                                   /* USIM불량 공통코드:DMS201*/
+      ,#RECG_ST#                                                   /* 충전불량 공통코드:DMS200 */
+      ,#SBELL_ST#                                                  /* 벨소리불량 공통코드:DMS202 */
+      ,#VIBR_ST#                                                   /* 진동불량 공통코드:DMS203 */
+      ,#SPK_ST#                                                    /* 스피커불량 공통코드:DMS204 */
+      ,#ILRM_SENSOR_ST#                                            /* 조도센서불량 공통코드:DMS205 */
+      ,#GRCP_ST#                                                   /* 자이로센서불량 공통코드:DMS206 */
+      ,#APRC_SENSOR_ST#                                            /* 근접센서불량 공통코드:DMS207 */
+      ,#CAMR_ST#                                                   /* 카메라불량 공통코드:DMS208 */
+      ,#BATER_ST#                                                  /* B/T불량 공통코드:DMS209 */
+	  ,#AFIMG_ST#                                                  /* 잔상불량 공통코드:DMS210 */
+      ,#TOUCH_ST#                                                  /* 터치불량 공통코드:DMS211 */
+      ,#WIFI_ST#                                                   /* WIFI불량 공통코드:DMS212 */
+      ,#STAIN_ST#                                                  /* 얼룩 공통코드:DMS213 */
+      ,#BRUI_ST#                                                   /* 멍 공통코드:DMS214 */
+      ,#SQUS_ST#                                                   /* 눌림 공통코드:DMS215 */
+      ,#LQFD_INFLO_ST#                                             /* 액상유입 공통코드:DMS216 */
+      ,#LED_ST#                                                    /* LED파손 공통코드:DMS217 */
+      ,#BUTN_ST#                                                   /* 버튼불량 공통코드:DMS218 */
+      ,#BOTM_TOUCH_ST#                                             /* 하단터치메뉴 공통코드:DMS219 */
+      ,#BODY_ST#                                                   /* 몸체미세휨 공통코드:DMS220 */
+      ,#DMB_ST#                                                    /* DMB안테나손상 공통코드:DMS221 */
+      ,#LCGLS_ST#                                                  /* 액정유리 공통코드:DMS222 */
+      ,#CHIP_ST#                                                   /* 이나감 공통코드:DMS223 */
+      ,#CAMR_WINDO_ST#                                             /* 카메라윈도우손상 공통코드:DMS224 */
+      ,#EDGE_ST#                                                   /* 테두리및몸체 공통코드:DMS224 */
+      ,#BACK_CL#                                                   /* 매입불가여부 */
+      ,#BACK_ST#                                                   /* 매입불가 공통코드:DMS225 */
+      ,#SELL_GRADE#                                                /* 판매등급 */
+	  ,'N'                                                         /* 삭제여부 */
+	  ,0                                                           /* UPDATE_COUNT */
+	  ,SYSDATE                                                     /* 최초 등록 일시 */
+      ,#USER_NO#                                                   /* 최초 등록 사용자 ID */
+	  ,SYSDATE                                                     /* 최종 변경 일시 */
+      ,#USER_NO#                                                   /* 최종 변경 사용자 ID */
+      ,#PRCH_GRADE#                                                /* 매입등급 */
+	   )]]>
+	</insert>
+	<update id="UCnslSellGrade" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPSellGradeMgmt.UCnslSellGrade 상담관리판매등급등록 */
+/* IO: 정동현,2015-09-11T10:56:46(정동현,2015-09-11T10:46:57) */
+UPDATE  TB_EP_CST_CONSULT_MGMT
+   SET  SELL_GRADE = #SELL_GRADE#               /* 판매등급 */
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#           /* 상담관리번호 */
+   AND  DEL_YN = 'N']]>
+	</update>
+	<update id="UPrchSellGrade" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPSellGradeMgmt.UPrchSellGrade 매입관리판매등급등록 */
+/* IO: 정동현,2015-09-11T10:57:16(정동현,2015-09-11T10:47:51) */
+UPDATE  TB_EP_CST_PRCHS_MGMT 
+   SET  SELL_GRADE = #SELL_GRADE#        /* 판매등급 */
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#    /* 상담관리번호 */
+   AND  DEL_YN = 'N']]>
+	</update>
+	<update id="USellGradeDelYn" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPSellGradeMgmt.USellGradeDelYn 판매등급삭제여부등록 */
+/* IO: 정동현,2015-09-11T10:57:03(정동현,2015-09-11T10:50:40) */
+UPDATE  TB_EP_CST_SALE_EQP
+   SET  DEL_YN = 'Y'
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#                /* 상담관리번호 */
+   AND  SEQ < (SELECT NVL(MAX(SEQ),0)
+                FROM TB_EP_CST_SALE_EQP
+               WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#)]]>
+	</update>
+</sqlMap>

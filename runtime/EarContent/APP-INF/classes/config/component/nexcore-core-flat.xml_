@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 코어 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <bean id="nc.core.IFrontServiceApplicationController"
+        class="nexcore.framework.core.service.front.DefaultFrontServiceApplicationController">
+        <description>
+            <![CDATA[ FrontServiceBean 에서 사용되는 ApplicationController ]]>
+        </description>
+        <property name="serviceDelegator" ref="nc.LocalEjbDelegator" />
+        <property name="preCheckers">
+            <list>
+            </list>
+        </property>
+        <property name="postCheckers">
+            <list>
+            </list>
+        </property>
+    </bean>
+	
+    <!-- trailer : 출력 전문 맨 끝에 구분자가 필요한 경우 지정함. asc 코드값을 지정할 경우는 [0x40, 0x40] 와 같이 지정할 수 있음 -->
+    <!-- bean id="nc.core.IFrontDataTransformer"
+        class="nexcore.framework.core.transform.FlatTransformer">
+        <description>
+            <![CDATA[ Flat변환을 위한 변환 앤진. FrontServiceBean, StandardFlatHandler, FlatView 에서 사용됨 ]]>
+        </description>
+        <property name="byteArrayMemoryPool"               ref  ="nc.core.IByteArrayMemoryPool" />
+        <property name="cmdRegistry"                       ref  ="nc.core.IBizComponentMetaDataRegistry" />
+        <property name="encoding"                          value="${flat.encoding}" />
+        <property name="headerParser"                      ref  ="nc.core.IFlatHeaderParser" />
+        <property name="headerLengthAbout"                 value="300" />
+        <property name="totalLengthAbout"                  value="2048" />
+        <property name="userDataPaddingForErrorResponse"   value="false" />
+        <property name="trailer"                           value="${flat.trailer}" />
+        <property name="userDataSizeMismatchError"         value="${flat.transformer.userDataSizeMismatchError}" />
+    </bean-->
+
+	<!--  flatBulkSplitSender항목은 nexcore.framework.core.transform.IFlatBulkSplitSender 인터페이스를 구현해야 함. -->
+    <bean id="nc.core.IFrontDataTransformer"
+        class="nexcore.framework.core.transform.FlatBulkTransformer"
+        init-method="init">
+        <description>
+            <![CDATA[ Flat변환을 위한 변환 앤진. FrontServiceBean, StandardFlatHandler, FlatView 에서 사용됨 ]]>
+        </description>
+        <property name="byteArrayMemoryPool"               ref  ="nc.core.IByteArrayMemoryPool" />
+        <property name="cmdRegistry"                       ref  ="nc.core.IBizComponentMetaDataRegistry" />
+        <property name="encoding"                          value="${flat.encoding}" />
+        <property name="headerParser"                      ref  ="nc.core.IFlatHeaderParser" />
+        <property name="headerLengthAbout"                 value="300" />
+        <property name="totalLengthAbout"                  value="2048" />
+        <property name="userDataPaddingForErrorResponse"   value="false" />
+        <property name="trailer"                           value="${flat.trailer}" />
+        <property name="userDataSizeMismatchError"         value="${flat.transformer.userDataSizeMismatchError}" />
+        <property name="userDataSplitSize"                 value="${flat.userDataSplitSize}" /> <!-- 100K -->
+        <property name="userDataSplitIndexLimit"           value="${flat.userDataSplitIndexLimit}" /> <!-- 99 -->
+        <property name="flatBulkSplitSender"               ref  ="nc.core.FlatBulkSplitSender" />
+        <property name="tempFileUsing"                     value="${flat.tempFileUsing}" />
+        <property name="tempFileDir"                       value="${flat.tempFileDir}/${system.id}" />
+    </bean>
+
+    <bean id="nc.core.IFlatHeaderParser" 
+    		class="nexcore.framework.core.transform.SampleFlatHeaderParser" 
+    		init-method="init">
+        <description>
+            <![CDATA[ Flat변환의 헤더 변환 앤진.]]> 
+        </description>
+        <property name="byteArrayMemoryPool"  ref   ="nc.core.IByteArrayMemoryPool" />
+        <property name="encoding"             value ="${flat.encoding}" />
+        <!-- property name="trailer"              value ="${flat.trailer}" / -->
+    </bean>
+
+	<bean id="nc.core.FlatBulkSplitSender" 
+			class="nexcore.framework.core.transform.SampleBulkSplitSender">
+        <description>
+            <![CDATA[ 대량 출력을 위해 분할된 전문 전송기 ]]>
+        </description>
+	</bean>
+
+</beans>
+

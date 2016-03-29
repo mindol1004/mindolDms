@@ -1,0 +1,1143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="EqpAmtRmtXclMgmtM" classname="ProgramReg" inheritanceid="" position="absolute 0 0 1038 528" titletext="단말기대금-계좌송금" style="font:arial,11;" onload="Form_onload" onkeyup="Form_onkeyup">
+    <Layouts>
+      <Layout>
+        <Static id="Static06" text="w&#13;&#10;20" class="tip_guide" visible="false" position2="absolute l:1018 w:20 t:11 h:274" positiontype="position2"/>
+        <Div id="div_search" anchor="left top right" taborder="0" class="bg_search" position="absolute 0 0 1018 40" onkeydown="div_search_onkeydown">
+          <Layouts>
+            <Layout>
+              <Static id="stc_msgInDate" text="정산기준일자" class="sta_WFDA_detail_Label_P" position="absolute 127 9 269 29" anchor="default"/>
+              <Static id="Static08" text="w&#13;&#10;&#13;10" onclick="div_search_Static08_onclick" class="tip_guide" visible="false" position2="absolute l:208 w:10 t:0 h:42" positiontype="position2"/>
+              <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:0 w:15 t:0 h:42" positiontype="position2"/>
+              <Button id="btn_search" taborder="3" text="조회" onclick="btn_search_onclick" class="btn_WFSA_Search_M" position="absolute 958 11 1016 38" anchor="top right" style="align:center middle;"/>
+              <CommCalendarPred id="cmc_StrdDt" titletext="From_To달력" taborder="4" scrollbars="none" position="absolute 218 9 423 29" style="background:transparent; "/>
+              <Combo id="cbo_gb" taborder="5" codecolumn="codecolumn" datacolumn="datacolumn" position="absolute 15 9 117 29" index="0" value="%" text="전체" onitemchanged="div_search_cbo_gb_onitemchanged">
+                <Dataset id="innerdataset">
+                  <ColumnInfo>
+                    <Column id="codecolumn" size="256"/>
+                    <Column id="datacolumn" size="256"/>
+                  </ColumnInfo>
+                  <Rows>
+                    <Row>
+                      <Col id="codecolumn">H</Col>
+                      <Col id="datacolumn">행복한에코폰</Col>
+                    </Row>
+                    <Row>
+                      <Col id="codecolumn">E</Col>
+                      <Col id="datacolumn">에코폰4U</Col>
+                    </Row>
+                    <Row>
+                      <Col id="codecolumn">R</Col>
+                      <Col id="datacolumn">반제전표</Col>
+                    </Row>
+                  </Rows>
+                </Dataset>
+              </Combo>
+              <Static id="Static03" text="w&#13;&#10;&#13;10" class="tip_guide" visible="false" position2="absolute l:117 w:10 t:0 h:106" positiontype="position2"/>
+            </Layout>
+          </Layouts>
+          <InitValue>
+            <Combo id="cbo_gb" index="0"/>
+          </InitValue>
+        </Div>
+        <UserGrid id="grd_main" taborder="8" autoenter="select" autofittype="col" position="absolute 0 73 1018 528" anchor="all" _required="" _requiredimage="false" hideendline="col" enable="true" readonly="false" _number="true" binddataset="ds_main" oncellclick="grd_main_oncellclick" autosizingtype="none" _check="true" _checkColumnName="CHK" _checkedallevent="false">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="104"/>
+                <Column size="104"/>
+                <Column size="149"/>
+                <Column size="121"/>
+                <Column size="154"/>
+                <Column size="145"/>
+                <Column size="119"/>
+                <Column size="73"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="정산기준시작일자"/>
+                <Cell col="1" text="정산기준종료일자"/>
+                <Cell col="2" style="align: ;" text="구분상세"/>
+                <Cell col="3" text="건수"/>
+                <Cell col="4" text="금액"/>
+                <Cell col="5" style="align:center;" text="전표번호"/>
+                <Cell col="6" style="align:center;" text="전표발행상태"/>
+                <Cell col="7" style="align:center;" text="엑셀다운"/>
+              </Band>
+              <Band id="body">
+                <Cell displaytype="text" edittype="none" style="align:center;" text="bind:XCL_STRD_STA_DT" mask="@@@@-@@-@@" suppress="0" calendardisplaynulltype="none"/>
+                <Cell col="1" displaytype="text" edittype="none" style="align:center;" text="bind:XCL_STRD_END_DT" mask="@@@@-@@-@@" suppress="0" calendardisplaynulltype="none"/>
+                <Cell col="2" displaytype="combo" style="align:left;" text="bind:INVE_TYP_CD" expr="expr:gfn_isNull(getColumn(currow,'INVE_TYP_CD'))?30:getColumn(currow,'INVE_TYP_CD')" combodataset="ds_gubunDtl" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="3" displaytype="number" edittype="none" style="align:right middle;" text="bind:ACCO_RMT_XCL_CNT"/>
+                <Cell col="4" displaytype="number" edittype="none" style="align:right middle;" text="bind:ACCO_RMT_AMT"/>
+                <Cell col="5" style="align:center;" text="bind:SLIP_NO" calendardisplaynulltype="none"/>
+                <Cell col="6" displaytype="combo" style="align:center;" text="bind:SLIP_ST" combodataset="ds_DMS153" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM" calendardisplaynulltype="none"/>
+                <Cell col="7" displaytype="image" style="align:center;" text="theme://Img/ico_Excel.png" calendardisplaynulltype="none" tooltiptext="엑셀다운"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Static id="stc_subTitle" text="조회결과" class="sub_title" position="absolute 0 50 299 70" anchor="left top" onclick="stc_subTitle01_onclick"/>
+        <Static id="Static00" text="h10" class="tip_guide" visible="false" position2="absolute l:105 w:42 t:0 h:10" positiontype="position2"/>
+        <Static id="Static14" text="h10" class="tip_guide" visible="false" position2="absolute l:105 w:42 t:30 h:10" positiontype="position2"/>
+        <Static id="Static02" text="h14" class="tip_guide" visible="false" position2="absolute l:4 w:42 t:40 h:14" positiontype="position2"/>
+        <Static id="Static04" text="h8" class="tip_guide" visible="false" position2="absolute l:4 w:42 t:65 h:8" positiontype="position2"/>
+        <Static id="Static13" text="h33" class="tip_guide" visible="false" position2="absolute l:309 w:42 t:40 h:33" positiontype="position2"/>
+        <Button id="btn_excel" taborder="7" onclick="btn_excel_onclick" class="btn_common_excel" position="absolute 996 50 1018 70" anchor="top right" tooltiptext="액셀출력" userautr="sample0021:EXL_AUTR_YN"/>
+        <Button id="btn_filter" taborder="6" class="btn_common_filterTxt" position="absolute 973 50 995 70" tooltiptext="필터" userdata="" onclick="btn_filter_onclick" anchor="top right"/>
+        <Button id="btn_slipOnline" taborder="2" text="재집계" onclick="btn_slipOnline_onclick" class="btn_common" position="absolute 724 50 781 70" anchor="top right"/>
+        <Button id="btn_slipI" taborder="3" text="전표발행" class="btn_common" position="absolute 782 50 851 70" anchor="top right" onclick="btn_slipI_onclick" userdata="GRP2:SAVE_AUTR_YN"/>
+        <Button id="btn_slipC" taborder="4" text="전표취소" class="btn_common" position="absolute 852 50 921 70" anchor="top right" onclick="btn_slipC_onclick" userdata="GRP2:SAVE_AUTR_YN"/>
+        <UserGrid id="grd_excelNotArriv" taborder="14" binddataset="ds_excel" readonly="true" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" autofittype="col" hideendline="col" oncelldblclick="grd_oncelldblclick" visible="false" position="absolute 1046 112 1440 255" anchor="all" _number="false" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="false" _tooltip="false">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="36"/>
+                <Column size="112"/>
+                <Column size="112"/>
+                <Column size="86"/>
+                <Column size="164"/>
+                <Column size="121"/>
+                <Column size="122"/>
+                <Column size="115"/>
+                <Column size="86"/>
+                <Column size="86"/>
+                <Column size="112"/>
+                <Column size="86"/>
+                <Column size="112"/>
+                <Column size="86"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="구분상세"/>
+                <Cell col="2" text="접수번호"/>
+                <Cell col="3" text="접수일자"/>
+                <Cell col="4" text="모델"/>
+                <Cell col="5" style="align: ;" text="일련번호"/>
+                <Cell col="6" text="등급"/>
+                <Cell col="7" text="에코센터감정금액"/>
+                <Cell col="8" text="회수일자"/>
+                <Cell col="9" text="송금일자"/>
+                <Cell col="10" text="미착AP번호"/>
+                <Cell col="11" text="미착AP기산일"/>
+                <Cell col="12" text="확정AP번호"/>
+                <Cell col="13" text="확정AP기산일"/>
+              </Band>
+              <Band id="body">
+                <Cell edittype="none" style="align:center;" text="expr:currow+1"/>
+                <Cell col="1" displaytype="combo" style="align:left;" text="bind:INVE_TYP_CD" expr="expr:gfn_isNull(getColumn(currow,'INVE_TYP_CD'))?30:getColumn(currow,'INVE_TYP_CD')" combodataset="ds_gubunDtl" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="2" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="3" displaytype="date" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="4" displaytype="normal" edittype="none" style="align: ;" class="alignLeft" text="bind:EQP_MDL_NM"/>
+                <Cell col="5" displaytype="text" style="align: ;" class="alignLeft" text="bind:EQP_SER_NO"/>
+                <Cell col="6" edittype="none" style="align: ;" text="bind:EQP_ST"/>
+                <Cell col="7" displaytype="number" class="alignRight" text="bind:XCL_AMT"/>
+                <Cell col="8" displaytype="date" text="bind:CLCT_DT" calendardisplaynulltype="none"/>
+                <Cell col="9" displaytype="date" text="bind:RMT_DT" calendardisplaynulltype="none"/>
+                <Cell col="10" text="bind:NOT_INVE_SLIP_NO"/>
+                <Cell col="11" displaytype="date" text="bind:NOT_INVE_SLIP_DT" calendardisplaynulltype="none"/>
+                <Cell col="12" text="bind:FIX_INVE_SLIP_NO"/>
+                <Cell col="13" displaytype="date" text="bind:FIX_INVE_SLIP_DT" calendardisplaynulltype="none"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <UserGrid id="grd_excelArriv" taborder="15" binddataset="ds_excel" readonly="true" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" autofittype="col" hideendline="col" oncelldblclick="grd_oncelldblclick" visible="false" position="absolute 1046 264 1440 407" anchor="all" _number="false" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="false" _tooltip="false">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="36"/>
+                <Column size="112"/>
+                <Column size="112"/>
+                <Column size="86"/>
+                <Column size="164"/>
+                <Column size="121"/>
+                <Column size="122"/>
+                <Column size="115"/>
+                <Column size="91"/>
+                <Column size="112"/>
+                <Column size="86"/>
+                <Column size="112"/>
+                <Column size="86"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="구분상세"/>
+                <Cell col="2" text="접수번호"/>
+                <Cell col="3" text="접수일자"/>
+                <Cell col="4" text="모델"/>
+                <Cell col="5" style="align: ;" text="일련번호"/>
+                <Cell col="6" text="등급"/>
+                <Cell col="7" text="등급산정액"/>
+                <Cell col="8" text="입금일자"/>
+                <Cell col="9" text="미착AP번호"/>
+                <Cell col="10" text="미착AP기산일"/>
+                <Cell col="11" text="확정AP번호"/>
+                <Cell col="12" text="확정AP기산일"/>
+              </Band>
+              <Band id="body">
+                <Cell edittype="none" style="align:center;" text="expr:currow+1"/>
+                <Cell col="1" displaytype="combo" style="align:left;" text="bind:INVE_TYP_CD" expr="expr:gfn_isNull(getColumn(currow,'INVE_TYP_CD'))?30:getColumn(currow,'INVE_TYP_CD')" combodataset="ds_gubunDtl" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="2" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="3" displaytype="date" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="4" displaytype="normal" edittype="none" style="align: ;" class="alignLeft" text="bind:EQP_MDL_NM"/>
+                <Cell col="5" displaytype="text" style="align: ;" class="alignLeft" text="bind:EQP_SER_NO"/>
+                <Cell col="6" edittype="none" style="align: ;" text="bind:EQP_ST"/>
+                <Cell col="7" displaytype="number" class="alignRight" text="bind:XCL_AMT"/>
+                <Cell col="8" displaytype="date" text="bind:RMT_DT" calendardisplaynulltype="none"/>
+                <Cell col="9" text="bind:NOT_INVE_SLIP_NO"/>
+                <Cell col="10" displaytype="date" text="bind:NOT_INVE_SLIP_DT" calendardisplaynulltype="none"/>
+                <Cell col="11" text="bind:FIX_INVE_SLIP_NO"/>
+                <Cell col="12" displaytype="date" text="bind:FIX_INVE_SLIP_DT" calendardisplaynulltype="none"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <UserGrid id="grd_excelE4u" taborder="16" binddataset="ds_excel" readonly="true" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" autofittype="col" hideendline="col" oncelldblclick="grd_oncelldblclick" visible="false" position="absolute 1046 424 1440 567" anchor="all" _number="false" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="false" _tooltip="false">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="36"/>
+                <Column size="112"/>
+                <Column size="112"/>
+                <Column size="164"/>
+                <Column size="86"/>
+                <Column size="164"/>
+                <Column size="121"/>
+                <Column size="122"/>
+                <Column size="115"/>
+                <Column size="91"/>
+                <Column size="112"/>
+                <Column size="91"/>
+                <Column size="112"/>
+                <Column size="91"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="구분상세"/>
+                <Cell col="2" text="접수번호"/>
+                <Cell col="3" text="고객그룹"/>
+                <Cell col="4" text="접수일자"/>
+                <Cell col="5" text="모델"/>
+                <Cell col="6" style="align: ;" text="일련번호"/>
+                <Cell col="7" text="등급"/>
+                <Cell col="8" text="에코센터감정금액"/>
+                <Cell col="9" text="입금일자"/>
+                <Cell col="10" text="미착AP번호"/>
+                <Cell col="11" text="미착AP기산일"/>
+                <Cell col="12" text="확정AP번호"/>
+                <Cell col="13" text="확정AP기산일"/>
+              </Band>
+              <Band id="body">
+                <Cell edittype="none" style="align:center;" text="expr:currow+1"/>
+                <Cell col="1" displaytype="combo" style="align:left;" text="bind:INVE_TYP_CD" expr="expr:gfn_isNull(getColumn(currow,'INVE_TYP_CD'))?30:getColumn(currow,'INVE_TYP_CD')" combodataset="ds_gubunDtl" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="2" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="3" displaytype="normal" edittype="none" style="align: ;" class="alignLeft" text="bind:CUST_GRP"/>
+                <Cell col="4" displaytype="date" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="5" displaytype="normal" edittype="none" style="align: ;" class="alignLeft" text="bind:EQP_MDL_NM"/>
+                <Cell col="6" displaytype="text" style="align: ;" class="alignLeft" text="bind:EQP_SER_NO"/>
+                <Cell col="7" edittype="none" style="align: ;" text="bind:EQP_ST"/>
+                <Cell col="8" displaytype="number" class="alignRight" text="bind:XCL_AMT"/>
+                <Cell col="9" displaytype="date" text="bind:RMT_DT" calendardisplaynulltype="none"/>
+                <Cell col="10" text="bind:NOT_INVE_SLIP_NO"/>
+                <Cell col="11" displaytype="date" text="bind:NOT_INVE_SLIP_DT" calendardisplaynulltype="none"/>
+                <Cell col="12" text="bind:FIX_INVE_SLIP_NO"/>
+                <Cell col="13" displaytype="date" text="bind:FIX_INVE_SLIP_DT" calendardisplaynulltype="none"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Button id="btn_delete" taborder="5" text="삭제" onclick="btn_delete_onclick" class="btn_common_delTxt" position="absolute 922 50 972 70" anchor="top right"/>
+        <Button id="btn_slipRe" taborder="1" text="전표상태재조회" onclick="btn_slipRe_onclick" class="btn_common" position="absolute 618 50 723 70" anchor="top right"/>
+        <UserGrid id="grd_excelSlipDel" taborder="19" binddataset="ds_excel" readonly="true" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" autofittype="col" hideendline="col" oncelldblclick="grd_oncelldblclick" visible="false" position="absolute 1446 424 1840 567" anchor="all" _number="false" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="false" _tooltip="false">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="36"/>
+                <Column size="120"/>
+                <Column size="112"/>
+                <Column size="136"/>
+                <Column size="164"/>
+                <Column size="121"/>
+                <Column size="115"/>
+                <Column size="125"/>
+                <Column size="91"/>
+                <Column size="125"/>
+                <Column size="91"/>
+                <Column size="112"/>
+                <Column size="91"/>
+                <Column size="112"/>
+                <Column size="91"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="구분"/>
+                <Cell col="2" text="접수번호"/>
+                <Cell col="3" text="매입관리번호"/>
+                <Cell col="4" text="모델"/>
+                <Cell col="5" style="align: ;" text="일련번호"/>
+                <Cell col="6" text="정산금액"/>
+                <Cell col="7" text="전표번호"/>
+                <Cell col="8" text="전표일자"/>
+                <Cell col="9" text="취소 전표번호"/>
+                <Cell col="10" text="취소 전표일자"/>
+                <Cell col="11" text="미착AP번호"/>
+                <Cell col="12" text="미착AP기산일"/>
+                <Cell col="13" text="확정AP번호"/>
+                <Cell col="14" text="확정AP기산일"/>
+              </Band>
+              <Band id="body">
+                <Cell edittype="none" style="align:center;" text="expr:currow+1"/>
+                <Cell col="1" displaytype="combo" text="bind:INVE_TYP_CD" combodataset="ds_gubunDtl" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="2" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="3" text="bind:PRCH_MGMT_NO"/>
+                <Cell col="4" displaytype="normal" edittype="none" style="align: ;" class="alignLeft" text="bind:EQP_MDL_NM"/>
+                <Cell col="5" displaytype="text" style="align: ;" class="alignLeft" text="bind:EQP_SER_NO"/>
+                <Cell col="6" displaytype="number" class="alignRight" text="bind:XCL_AMT"/>
+                <Cell col="7" text="bind:ACCO_RMT_SLIP_NO"/>
+                <Cell col="8" displaytype="date" text="bind:ACCO_RMT_SLIP_DT" calendardisplaynulltype="none"/>
+                <Cell col="9" text="bind:ACCO_RMT_CNCL_SLIP_NO"/>
+                <Cell col="10" displaytype="date" text="bind:ACCO_RMT_CNCL_SLIP_DT" calendardisplaynulltype="none"/>
+                <Cell col="11" text="bind:NOT_INVE_SLIP_NO"/>
+                <Cell col="12" displaytype="date" text="bind:NOT_INVE_SLIP_DT" calendardisplaynulltype="none"/>
+                <Cell col="13" text="bind:FIX_INVE_SLIP_NO"/>
+                <Cell col="14" displaytype="date" text="bind:FIX_INVE_SLIP_DT" calendardisplaynulltype="none"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Button id="btn_excel_upload" taborder="20" text="Excel 업로드" onclick="btn_excel_upload_onclick" class="btn_common" position="absolute 536 50 617 70" anchor="top right" tooltiptext="Excel업로드" enable="false"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_search" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="STRD_FR" type="STRING" size="256"/>
+          <Column id="STRD_TO" type="STRING" size="256"/>
+          <Column id="STA_DT" type="STRING" size="256"/>
+          <Column id="END_DT" type="STRING" size="256"/>
+          <Column id="DATA_GB" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_main" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ACCO_RMT_XCL_NO" type="STRING" size="256"/>
+          <Column id="XCL_STRD_STA_DT" type="STRING" size="256"/>
+          <Column id="XCL_STRD_END_DT" type="STRING" size="256"/>
+          <Column id="XCL_DEALCO_CD" type="STRING" size="256"/>
+          <Column id="INVE_TYP_CD" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_AMT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_XCL_CNT" type="STRING" size="256"/>
+          <Column id="SLIP_DT" type="STRING" size="256"/>
+          <Column id="SLIP_NO" type="STRING" size="256"/>
+          <Column id="SLIP_ST" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_DT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_NO" type="STRING" size="256"/>
+          <Column id="DEALCO_BLICENS_NO" type="STRING" size="256"/>
+          <Column id="YYYY" type="STRING" size="256"/>
+          <Column id="TOTAL_CNT" type="STRING" size="256"/>
+          <Column id="CHK" type="STRING" size="256"/>
+          <Column id="CNCL_SLIP_YN" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_DMS153" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_GRP_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CHG_DTM" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_DESC" type="STRING" size="256"/>
+          <Column id="CM_CD_SORT_ORD" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="SUP_CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="SUP_CM_CD_ID" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD1" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD2" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD3" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD4" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD5" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD6" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD7" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD8" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD9" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD10" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_gubunDtl" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="CM_CD_ID">20</Col>
+            <Col id="CM_CD_NM">현장감정(미착재고)</Col>
+          </Row>
+          <Row>
+            <Col id="CM_CD_ID">10</Col>
+            <Col id="CM_CD_NM">비현장감정(재고)</Col>
+          </Row>
+          <Row>
+            <Col id="CM_CD_ID">30</Col>
+            <Col id="CM_CD_NM">에코폰4U</Col>
+          </Row>
+          <Row>
+            <Col id="CM_CD_ID">40</Col>
+            <Col id="CM_CD_NM">요금공제</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_excel" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ROWNO" type="STRING" size="256"/>
+          <Column id="EXCEL_TOTAL_CNT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_XCL_NO" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_XCL_DTL_SEQ" type="STRING" size="256"/>
+          <Column id="INVE_TYP_CD" type="STRING" size="256"/>
+          <Column id="CNSL_MGMT_NO" type="STRING" size="256"/>
+          <Column id="PRCH_MGMT_NO" type="STRING" size="256"/>
+          <Column id="EQP_MDL_NM" type="STRING" size="256"/>
+          <Column id="EQP_MDL_CD" type="STRING" size="256"/>
+          <Column id="EQP_SER_NO" type="STRING" size="256"/>
+          <Column id="EQP_ST" type="STRING" size="256"/>
+          <Column id="XCL_AMT" type="STRING" size="256"/>
+          <Column id="CNSL_DT" type="STRING" size="256"/>
+          <Column id="CLCT_DT" type="STRING" size="256"/>
+          <Column id="EQP_ST_DTAIL" type="STRING" size="256"/>
+          <Column id="RMT_DT" type="STRING" size="256"/>
+          <Column id="CUST_GRP" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_DT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_NO" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_SLIP_DT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_SLIP_NO" type="STRING" size="256"/>
+          <Column id="NOT_INVE_SLIP_NO" type="STRING" size="256"/>
+          <Column id="NOT_INVE_SLIP_DT" type="STRING" size="256"/>
+          <Column id="FIX_INVE_SLIP_NO" type="STRING" size="256"/>
+          <Column id="FIX_INVE_SLIP_DT" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_search_dtl" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ACCO_RMT_XCL_NO" type="STRING" size="256"/>
+          <Column id="EXCEL_FIRST" type="STRING" size="256"/>
+          <Column id="EXCEL_LAST" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_tmpExcel" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ROWNO" type="STRING" size="256"/>
+          <Column id="EXCEL_TOTAL_CNT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_XCL_NO" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_XCL_DTL_SEQ" type="STRING" size="256"/>
+          <Column id="INVE_TYP_CD" type="STRING" size="256"/>
+          <Column id="CNSL_MGMT_NO" type="STRING" size="256"/>
+          <Column id="PRCH_MGMT_NO" type="STRING" size="256"/>
+          <Column id="EQP_MDL_NM" type="STRING" size="256"/>
+          <Column id="EQP_MDL_CD" type="STRING" size="256"/>
+          <Column id="EQP_SER_NO" type="STRING" size="256"/>
+          <Column id="EQP_ST" type="STRING" size="256"/>
+          <Column id="CNSL_DT" type="STRING" size="256"/>
+          <Column id="CLCT_DT" type="STRING" size="256"/>
+          <Column id="XCL_AMT" type="STRING" size="256"/>
+          <Column id="EQP_ST_DTAIL" type="STRING" size="256"/>
+          <Column id="RMT_DT" type="STRING" size="256"/>
+          <Column id="CUST_GRP" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_DT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_NO" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_SLIP_DT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_SLIP_NO" type="STRING" size="256"/>
+          <Column id="NOT_INVE_SLIP_NO" type="STRING" size="256"/>
+          <Column id="NOT_INVE_SLIP_DT" type="STRING" size="256"/>
+          <Column id="FIX_INVE_SLIP_NO" type="STRING" size="256"/>
+          <Column id="FIX_INVE_SLIP_DT" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_xclDel" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ACCO_RMT_XCL_NO" type="STRING" size="256"/>
+          <Column id="XCL_STRD_STA_DT" type="STRING" size="256"/>
+          <Column id="XCL_STRD_END_DT" type="STRING" size="256"/>
+          <Column id="XCL_DEALCO_CD" type="STRING" size="256"/>
+          <Column id="INVE_TYP_CD" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_AMT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_XCL_CNT" type="STRING" size="256"/>
+          <Column id="SLIP_DT" type="STRING" size="256"/>
+          <Column id="SLIP_NO" type="STRING" size="256"/>
+          <Column id="SLIP_ST" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_DT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_NO" type="STRING" size="256"/>
+          <Column id="DEALCO_BLICENS_NO" type="STRING" size="256"/>
+          <Column id="YYYY" type="STRING" size="256"/>
+          <Column id="TOTAL_CNT" type="STRING" size="256"/>
+          <Column id="CHK" type="STRING" size="256"/>
+          <Column id="STRD_FR" type="STRING" size="256"/>
+          <Column id="STRD_TO" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_mainTmp" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ACCO_RMT_XCL_NO" type="STRING" size="256"/>
+          <Column id="XCL_STRD_STA_DT" type="STRING" size="256"/>
+          <Column id="XCL_STRD_END_DT" type="STRING" size="256"/>
+          <Column id="XCL_DEALCO_CD" type="STRING" size="256"/>
+          <Column id="INVE_TYP_CD" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_AMT" type="INT" size="256"/>
+          <Column id="ACCO_RMT_XCL_CNT" type="STRING" size="256"/>
+          <Column id="SLIP_DT" type="STRING" size="256"/>
+          <Column id="SLIP_NO" type="STRING" size="256"/>
+          <Column id="SLIP_ST" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_DT" type="STRING" size="256"/>
+          <Column id="ACCO_RMT_CNCL_SLIP_NO" type="STRING" size="256"/>
+          <Column id="DEALCO_BLICENS_NO" type="STRING" size="256"/>
+          <Column id="YYYY" type="STRING" size="256"/>
+          <Column id="CNCL_SLIP_YN" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="div_search.cbo_gb" propid="value" datasetid="ds_search" columnid="DATA_GB"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 중고폰
+ * 02. 화면 : EqpAmtRmtXclMgmtM.xfdl
+ * 03. 화면 설명 : 단말기대금-계좌송금
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 정동현
+ * 06. 작성일 : 2015.10.27
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.10.27    정동현    최초 작성 
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+include "LIB::comEpBiz.xjs"; //중고폰 공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{	
+	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "FEP055M");
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+	var strCode = "DMS153=ds_DMS153=N";	// 전표상태
+		 
+		 
+	gfn_getCodeDs( this
+				  , strCode
+				  ,"fn_afterCodeCallBack");	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{
+	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+	// 그리드 초기화 
+	//gfn_initGrid(objGrid:UserGrid, bReadonly, bSortable, bTooltip, sSelectType, innerDs, sPage, sPageSize, sTotCnt);
+	gfn_initGrid(grd_main, false, true, true, "row", null);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{	
+	div_search.cmc_StrdDt.setData(gfn_getFirstDate(), gfn_today());
+	div_search.cbo_gb.index = 0;
+	div_search.cmc_StrdDt.setFocus();	
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchMain()
+{	
+	var sSvcID		 = "searchMain";
+	var sTrID		 = "PEPEqpAmtRmtXclMgmt_pInqEqpAmtRmtXclList";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "ds_main=RS_SLIP_LIST";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 대리점 수수료 재집계
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_saveAmtRmtXcl()
+{	
+	var sSvcID		 = "saveAmtRmtXcl";
+	var sTrID		 = "PEPEqpAmtRmtXclMgmt_pSaveEqpAmtRmtXcl";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 대리점 수수료 재집계 삭제
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_delAmtRmtXcl()
+{	
+	var sSvcID		 = "delAmtRmtXcl";
+	var sTrID		 = "PEPEqpAmtRmtXclMgmt_pSaveEqpAmtRmtXclDel";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_SLIP_LIST=ds_xclDel";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 상세조회(Excel)
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchDtl()
+{
+	var sSvcID		 = "searchDtl";
+	var sTrID		 = "PEPEqpAmtRmtXclMgmt_pInqEqpAmtRmtXclDtl";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search_dtl";
+	var sOutputDs	 = "ds_tmpExcel=RS_EQP_AMTRMT_DTL";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표생성 (insert, update)
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_saveSlip()
+{	
+	var sSvcID		 = "saveSlip";
+	var sTrID		 = "PEPEqpAmtRmtXclMgmt_pSaveEqpAmtRmtXclSlip";
+	var sPtrn		 = "I";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_SLIP_LIST=ds_mainTmp";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표취소 (update)
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_deleteSlip(){
+	var sSvcID		 = "delSlip";
+	var sTrID		 = "PEPEqpAmtRmtXclMgmt_pSaveEqpAmtRmtXclSlipDel";
+	var sPtrn		 = "U";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_SLIP_LIST=ds_mainTmp";
+	var sOutputDs	 = ""; 
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표처리상태 재조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_ReState()
+{
+	var sSvcID		 = "ReState";
+	var sTrID		 = "PEPEqpAmtRmtXclMgmt_pInqEqpAmtRmtXclSlipReSearh";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+	switch(sSvcID) {
+		case "searchMain": 
+			if ( iErrorCode == 0 ) {										
+				//ds_main.keystring = 'G:+XCL_STRD_STA_DT-XCL_STRD_END_DT)';
+				if( !gfn_isEmpty(ds_main.getColumn(0,"TOTAL_CNT")) ){
+					gfn_setGridTitleCountPaging(stc_subTitle, ds_main.getColumn(0,"TOTAL_CNT"));
+				}else{
+					stc_subTitle.text="조회결과";
+				}
+				grd_main.setCellProperty("Head", 1, "displaytype",  'none');
+			}
+			break;
+		case "searchDtl": 
+			if ( iErrorCode == 0 ) {
+				
+				ds_excel.appendData(ds_tmpExcel,true);
+				if(ds_tmpExcel.getRowCount()>0){
+					var excelTotCnt =  ds_tmpExcel.getColumn(0,"EXCEL_TOTAL_CNT");	// 데이터 총 건수		
+															
+					var sRtnVal = gfn_excelPageIndex(excelPage,excelTotCnt);												
+					if ( !gfn_isNull(sRtnVal) && sRtnVal["excelProcYn"] == true){
+						ds_search_dtl.setColumn(0, "ACCO_RMT_XCL_NO", ds_main.getColumn(ds_main.rowposition, "ACCO_RMT_XCL_NO"));
+						ds_search_dtl.setColumn(0, "EXCEL_FIRST" ,sRtnVal["excelFirst"]);
+						ds_search_dtl.setColumn(0, "EXCEL_LAST" ,sRtnVal["excelLast"]);	
+						fn_searchDtl();
+					}													
+				}
+				
+				if(ds_main.getColumn(ds_main.rowposition, "INVE_TYP_CD") == "20" && ds_main.getColumn(ds_main.rowposition, "CNCL_SLIP_YN") != "Y"){
+					grd_excelNotArriv.redraw();						
+					gfn_baseExcelExpert(grd_excelNotArriv,"단말기대금계좌송금상세목록","단말기대금계좌송금상세목록");	
+				}else if(ds_main.getColumn(ds_main.rowposition, "INVE_TYP_CD") == "10" && ds_main.getColumn(ds_main.rowposition, "CNCL_SLIP_YN") != "Y"){
+					grd_excelArriv.redraw();						
+					gfn_baseExcelExpert(grd_excelArriv,"단말기대금계좌송금상세목록","단말기대금계좌송금상세목록");	
+				}else if(ds_main.getColumn(ds_main.rowposition, "INVE_TYP_CD") == "30" && ds_main.getColumn(ds_main.rowposition, "CNCL_SLIP_YN") != "Y"){
+					grd_excelE4u.redraw();						
+					gfn_baseExcelExpert(grd_excelE4u,"단말기대금계좌송금상세목록","단말기대금계좌송금상세목록");	
+				}else{
+					grd_excelSlipDel.redraw();						
+					gfn_baseExcelExpert(grd_excelSlipDel,"단말기대금계좌송금상세목록","단말기대금계좌송금상세목록");	
+				}
+			}
+			break;	
+		case "saveAmtRmtXcl": 
+			if ( iErrorCode == 0 ) {		
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+				ds_main.clearData();
+				ds_mainTmp.clearData();
+				btn_search_onclick();										
+			}			
+			break;
+		case "delAmtRmtXcl": 					
+			if ( iErrorCode == 0 ) {								
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+				ds_main.clearData();
+				ds_xclDel.clearData();
+				btn_search_onclick();										
+			}			
+			break;
+			
+		case "saveSlip":
+			if ( iErrorCode == 0 ) {
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+				ds_main.clearData();
+				btn_search_onclick();
+			}else{
+				gfn_message("A","XYZE0000","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+			}
+		break;
+		
+		case "delSlip":
+			if (iErrorCode == 0) {
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+				ds_main.clearData();
+				btn_search_onclick();
+			}else{
+				gfn_message("A","XYZE0000","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+			}
+		break;
+		
+		case "ReState":
+			if (iErrorCode == 0) {
+				gfn_message("A","DMS00000","I");	//DMS00000 : 정상 처리되었습니다.
+				btn_search_onclick();
+			}
+		break;	
+		default:
+			break;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 재집계 버튼 클릭시
+-----------------------------------------------------------------------------------------------*/
+function btn_slipOnline_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var arrTerm = div_search.cmc_StrdDt.getData();
+	// 필수 입력 항목 Validate Check
+	if(gfn_isNull(arrTerm[0]) || gfn_isNull(arrTerm[1])){
+		gfn_message("A","DMS00002","E","",div_search.stc_msgInDate.text);  //필수입력항목 {0}이/가 누락되었습니다.
+		div_search.cmc_StrdDt.setFocus();
+		return false;
+	}else{			
+		var xclYm = arrTerm[0].substr(0,4)+"년 "+arrTerm[0].substr(4,2)+"월"+arrTerm[0].substr(6,2)+"일 ~";		// 정산기준연월
+			xclYm += arrTerm[1].substr(0,4)+"년 "+arrTerm[1].substr(4,2)+"월"+arrTerm[1].substr(6,2)+"일 ";
+	    var xclGb = div_search.cbo_gb.text;
+		if(gfn_message("C","DMS00144","Q","",xclYm+xclGb+" 정산")){
+			// 조건: 정산기준연월
+			ds_search.setColumn(0, "STRD_FR", arrTerm[0]);
+			ds_search.setColumn(0, "STRD_TO", arrTerm[1]);
+			fn_saveAmtRmtXcl();		
+		}		
+	}
+
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 삭제 버튼 클릭시
+-----------------------------------------------------------------------------------------------*/
+function btn_delete_onclick(obj:Button,  e:ClickEventInfo)
+{
+	ds_main.filter("CHK=='1'");
+	if(ds_main.getRowCount() == 0){
+		ds_main.filter("");
+		gfn_message("A","DMS00004","I");
+		return;
+	}
+	ds_main.filter("");
+	
+	if(gfn_message("C","DMS00026","I")){//데이터를 삭제합니다. 계속하시겠습니까?
+		ds_main.filter("CHK=='1'");
+		for(var i=0; i<ds_main.getRowCount(); i++){
+			ds_xclDel.addRow();
+			ds_xclDel.copyRow(i,ds_main,i);
+			ds_xclDel.setColumn(i, "STRD_FR", ds_main.getColumn(i,'XCL_STRD_STA_DT'));
+			ds_xclDel.setColumn(i, "STRD_TO", ds_main.getColumn(i,'XCL_STRD_END_DT'));
+		}
+		ds_main.filter("");
+		fn_delAmtRmtXcl();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : search
+-----------------------------------------------------------------------------------------------*/
+function btn_search_onclick(obj:Button,  e:ClickEventInfo)
+{	
+	var arrTerm = div_search.cmc_StrdDt.getData();
+	// 필수 입력 항목 Validate Check
+	if (!gfn_getValidateCompList(div_search)) {	
+		return false;
+	}
+	if(gfn_isNull(arrTerm[0]) || gfn_isNull(arrTerm[1])){
+		gfn_message("A","DMS00002","E","",div_search.stc_msgInDate.text);  //필수입력항목 {0}이/가 누락되었습니다.
+		div_search.cmc_StrdDt.setFocus();
+		return false;
+	}
+	
+	// 검색조건: 적용일자
+	ds_search.setColumn(0, "STRD_FR", arrTerm[0]);
+	ds_search.setColumn(0, "STRD_TO", arrTerm[1]);
+	
+	fn_searchMain();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid filter
+-----------------------------------------------------------------------------------------------*/
+function btn_filter_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_toggleGridFilter(grd_main);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Grid의 내용을 Excel로 Export 한다.
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_baseExcelExpert(grd_main,"단말기대금계좌송금목록", "단말기대금계좌송금목록");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표발행 버튼 클릭시
+-----------------------------------------------------------------------------------------------*/
+function btn_slipI_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if(ds_main.getRowCount() == 0){
+		gfn_message("A","DMS00004","I");
+		return;
+	}
+	
+	ds_main.filter("CHK=='1'");
+	if(ds_main.getColumn(0,"INVE_TYP_CD") == '30'){
+		if(ds_main.getSum("ACCO_RMT_AMT",0,ds_main.getRowCount()) == 0){
+		ds_main.filter("");
+		gfn_message("A","DMS00157","I");
+		return false;
+		}
+	}else{
+		ds_main.filter("CHK=='1' && INVE_TYP_CD !='30'");
+		if(ds_main.getSum("ACCO_RMT_AMT",0,ds_main.getRowCount()) == 0){
+		ds_main.filter("");
+		gfn_message("A","DMS00157","I");
+		return false;
+		}
+	}
+	if(ds_main.getSum("ACCO_RMT_AMT",0,ds_main.getRowCount()) == 0){
+		ds_main.filter("");
+		gfn_message("A","DMS00157","I");
+		return false;
+	}
+	
+	for(i=0; i<ds_main.getRowCount(); i++){
+		if(ds_main.getColumn(i,"SLIP_ST") == '10' || ds_main.getColumn(i,"SLIP_ST") == '20' || ds_main.getColumn(i,"SLIP_ST") == '30'){
+			ds_main.filter("");
+			gfn_message("A","DMS00087","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+			return false;
+		}
+	}
+
+	var msg = ds_main.getColumn(0,'XCL_STRD_STA_DT').substr(0,4)+"년 "+ds_main.getColumn(0,'XCL_STRD_STA_DT').substr(4,2)+"월"+ds_main.getColumn(0,'XCL_STRD_STA_DT').substr(6,2)+"일 ~";		// 정산기준연월
+		msg += ds_main.getColumn(0,'XCL_STRD_END_DT').substr(0,4)+"년 "+ds_main.getColumn(0,'XCL_STRD_END_DT').substr(4,2)+"월"+ds_main.getColumn(0,'XCL_STRD_END_DT').substr(6,2)+"일 ";
+		msg += ds_main.getSum("ACCO_RMT_XCL_CNT",0,ds_main.getRowCount())+"건, 총 금액 "+gfn_toFixedLocaleString(ds_main.getSum("ACCO_RMT_AMT",0,ds_main.getRowCount())) +"원에 대한  전표를 생성 하시겠습니까?";  
+	
+	ds_mainTmp.clearData();	
+	for(var i=0; i<ds_main.getRowCount(); i++){
+		ds_mainTmp.addRow();
+		ds_mainTmp.copyRow(i,ds_main,i);
+	}
+	
+	ds_main.filter("");
+	if(gfn_message("A",msg,"I","","")){
+		fn_saveSlip();
+	}
+	
+	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표취소 버튼 클릭시
+-----------------------------------------------------------------------------------------------*/
+function btn_slipC_onclick(obj:Button,  e:ClickEventInfo)
+{
+	/*var xclDtFr = ds_main.getColumn(ds_main.rowposition,'XCL_STRD_STA_DT');
+	var xclDtTo = ds_main.getColumn(ds_main.rowposition,'XCL_STRD_END_DT');*/
+	
+	if(ds_main.getRowCount() == 0){
+		gfn_message("A","DMS00004","I");
+		return;
+	}
+	ds_main.filter("CHK=='1'");
+	if(ds_main.getRowCount() == 0){
+		ds_main.filter("");
+		gfn_message("A","DMS00157","I");
+		return;
+	}
+	for(i=0; i<ds_main.getRowCount(); i++){
+		if(ds_main.getColumn(i,"SLIP_ST") != '10' ){
+			ds_main.filter("");
+			gfn_message("A","DMS00087","E","ERROR" ,"해당"); //{해당} 건은 처리가 불가능 합니다.
+			return false;
+		}  
+	}
+	
+	ds_mainTmp.clearData();		
+	for(var i=0; i<ds_main.getRowCount(); i++){
+		ds_mainTmp.addRow();
+		ds_mainTmp.copyRow(i,ds_main,i);
+	}
+	ds_main.filter("");		
+	if(gfn_message("A","해당전표를 취소하시겠습니까?","I","","")){
+		fn_deleteSlip();	
+	}	
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 전표상태재조회
+-----------------------------------------------------------------------------------------------*/
+function btn_slipRe_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var arrTerm = div_search.cmc_StrdDt.getData();
+	// 필수 입력 항목 Validate Check
+	if (!gfn_getValidateCompList(div_search)) {	
+		return false;
+	}
+	if(gfn_isNull(arrTerm[0]) || gfn_isNull(arrTerm[1])){
+		gfn_message("A","DMS00002","E","",div_search.stc_msgInDate.text);  //필수입력항목 {0}이/가 누락되었습니다.
+		div_search.cmc_StrdDt.setFocus();
+		return false;
+	}
+	
+	
+	
+	if(gfn_message("A","전표상태재조회를 진행하시겠습니까?","I","","")){
+		// 검색조건: 적용일자
+		ds_search.setColumn(0, "STA_DT", arrTerm[0]);
+		ds_search.setColumn(0, "END_DT", arrTerm[1]);
+		fn_ReState();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 엑셀업로드
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_upload_onclick(obj:Button,  e:ClickEventInfo)
+{   
+    gfn_dialog("FEP069P");
+}
+
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 이벤트
+-----------------------------------------------------------------------------------------------*/
+function grd_main_oncellclick(obj:Grid, e:GridClickEventInfo)
+{
+	if("9" == e.col){
+		var sRtnVal = gfn_excelPageIndex(0,"");								
+		if ( !gfn_isNull(sRtnVal) && sRtnVal["excelProcYn"] == true){
+			ds_excel.clearData();
+			ds_search_dtl.setColumn(0, "ACCO_RMT_XCL_NO", ds_main.getColumn(ds_main.rowposition, "ACCO_RMT_XCL_NO"));
+			ds_search_dtl.setColumn(0, "EXCEL_FIRST" ,sRtnVal["excelFirst"]);
+	        ds_search_dtl.setColumn(0, "EXCEL_LAST" ,sRtnVal["excelLast"]);	
+			fn_searchDtl();
+		}		
+	}
+	if("1" == e.col){
+		var chk = ds_main.getColumn(e.row,'CHK');
+		for(i=0; i<ds_main.getRowCount(); i++){
+			if(ds_main.getColumn(e.row,'CNCL_SLIP_YN') != 'Y'){
+				if(ds_main.getColumn(i,'INVE_TYP_CD') !=  30 && ds_main.getColumn(e.row,'INVE_TYP_CD') !=  30){
+					if(ds_main.getColumn(e.row,'XCL_STRD_STA_DT') == ds_main.getColumn(i, "XCL_STRD_STA_DT") && ds_main.getColumn(e.row,'XCL_STRD_END_DT') == ds_main.getColumn(i, "XCL_STRD_END_DT")){
+						ds_main.setColumn(i, "CHK", chk);
+					}else{
+						ds_main.setColumn(i, "CHK", 0);
+					}
+				}else{
+					if("1" == chk){
+						if(e.row != i){
+							ds_main.setColumn(i, "CHK", 0);
+						}
+					}
+				}
+			}else{
+				if(e.row != i){
+					ds_main.setColumn(i, "CHK", 0);
+				}
+			}
+			
+		}
+	}
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 구분 ComboBox 이벤트
+-----------------------------------------------------------------------------------------------*/
+function div_search_cbo_gb_onitemchanged(obj:Combo, e:ItemChangeEventInfo)
+{
+	if("R" == e.postvalue){
+		btn_slipOnline.enable = false;
+		btn_excel_upload.enable = true;
+	}else{
+		btn_slipOnline.enable = true;
+		btn_excel_upload.enable = false;
+	}
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 검색 조건에서 엔터키가 눌러졌을때 검색
+-----------------------------------------------------------------------------------------------*/
+function div_search_onkeydown(obj:Div, e:KeyEventInfo)
+{
+	if (e.keycode == KEYCODE_ENTER) {
+		div_search.btn_search.setFocus();
+		btn_search_onclick();
+	}
+}
+
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+
+
+]]></Script>
+  </Form>
+</FDL>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 웹 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+	<bean id="nc.channel.IXmlRequestHandler"
+		class="nexcore.framework.online.channel.handler.internal.NewStandardXmlHandler">
+		<description>
+			<![CDATA[표준 UI(XML) 요청 처리기]]>
+		</description>
+		<property name="encoding"          value="UTF-8" />
+		<property name="identityGenerator" ref="nc.core.IdentityGenerator"/>
+		<property name="frontDataLog"      ref="nc.core.IXmlFrontDataLog" />
+	</bean>
+
+	<bean id="nc.channel.web.IXmlApplicationController"
+		class="nexcore.framework.online.channel.core.internal.DefaultApplicationController">
+		<description>
+			<![CDATA[표준 웹-XML 요청에서 사용하는 ApplicationController임]]>
+		</description>
+		<property name="commandViewMapResolver"    ref="nc.channel.web.IXmlCommandViewMapResolver" />
+		<property name="commandProcessor"          ref="nc.channel.web.ICommandProcessor" />
+		<property name="preCheckers">
+			<list>
+				<!-- ref bean="nc.channel.IValidationManager" /-->
+				<!-- ref bean="nc.channel.IFormattingManager" /-->
+				<!-- ref bean="nc.channel.IDataMappingManager" /-->
+			</list>
+		</property>
+		<property name="postCheckers">
+			<list>
+				<!-- ref bean="nc.channel.IDataMappingManager" /-->
+				<!-- ref bean="nc.channel.IFormattingManager" /-->
+			</list>
+		</property>
+	</bean>	
+	
+	<!-- 웹-XML 기본 VIEW -->
+	<bean id="nc.channel.web.DefaultXmlView"
+		class="nexcore.framework.online.channel.web.NewStandardXmlView">
+		<description>
+			<![CDATA[표준 웹-XML 요청에서 사용하는 기본 성공 VIEW]]>
+		</description>
+		<property name="encoding"     value="UTF-8" />
+		<property name="frontDataLog" ref="nc.core.IXmlFrontDataLog" />
+		<property name="causeMaxSize" value="0" />
+	</bean>
+	
+	<bean id="nc.channel.web.IXmlCommandViewMapResolver"
+		class="nexcore.framework.online.channel.core.internal.DefaultCommandViewMapResolver">
+		<description>
+			<![CDATA[표준 웹-XML 요청에서 사용하는 CommandViewMapResolver임]]>
+		</description>
+		
+		<!-- 기본 에러 view -->
+		<property name="defaultErrorView" ref="nc.channel.web.DefaultXmlView" />
+		
+		<!-- 기본 CommandViewMap -->
+		<property name="defaultCommandViewMap">
+			<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				<!-- 커맨드 맵의 커맨드 정보 -->
+				<property name="command">
+					<bean class="nexcore.framework.online.channel.core.command.StdCommand">
+						<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+					</bean>
+				</property>
+				<!-- 커맨드 맵의 View 정보 -->
+				<property name="viewMap">
+					<map>
+						<entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmlView" />
+						<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmlView" />
+					</map>
+				</property>
+			</bean>
+		</property>
+
+		<!-- 에러별로 View 할당하는 경우를 위한 ViewMap -->
+		<!--  
+		<property name="errorViewMap">
+			<map>
+				<entry key="NC_TrControlErr" value-ref="nc.channel.web.DefaultXmlView" />
+				<entry key="NC_NoViewMap"    value-ref="nc.channel.web.DefaultXmlView" />
+			</map>
+		</property>
+		-->
+		
+		<!-- 커맨드별로 설정하는 경우 CommandViewMap -->
+		<property name="commandViewMaps">
+			<map>
+				<entry key="/login.xmd">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[로그인 처리. 
+				        	로그인시 세션이 존재하는 경우 invalidate 해야 하는 경우는 sessionInvalidate를 true 설정
+				        ]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.DelegationLoginCommand" >
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+								<property name="sessionInvalidate"       value="false" />
+								<property name="requestHeaderEnable"     value="false" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmlView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmlView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+				<entry key="/logout.xmd">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[로그아웃 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.DelegationLogoutCommand">
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmlView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmlView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+				<entry key="/filedownload.xmd">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[파일 다운로드 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.FileDownloadCommand">
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.DefaultNullView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmlView" />
+							</map>
+						</property>
+					</bean>
+				</entry>
+				<entry key="/filedelete.xmd">
+					<bean class="nexcore.framework.online.channel.core.DefaultCommandViewMap">
+				        <description><![CDATA[파일 삭제 처리]]></description>
+						<property name="command">
+							<bean class="nexcore.framework.online.channel.core.command.FileDeleteCommand">
+								<property name="serviceComponentLocator" ref="nc.DefaultComponentLocator" />
+							</bean>
+						</property>
+						<property name="viewMap">
+							<map>
+								<entry key="SUCCESS" value-ref="nc.channel.web.DefaultXmlView" />
+								<entry key="FAIL"    value-ref="nc.channel.web.DefaultXmlView" />
+							</map>
+						</property>
+					</bean>
+				</entry>		
+			</map>
+		</property>
+	</bean>
+
+</beans>            

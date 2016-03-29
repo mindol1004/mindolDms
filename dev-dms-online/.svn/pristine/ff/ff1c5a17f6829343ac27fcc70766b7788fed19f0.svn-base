@@ -1,0 +1,201 @@
+package dms.sc.scsbase.biz;
+
+import fwk.utils.HpcUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.logging.Log;
+
+import fwk.constants.DmsConstants;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: FSCBatTaskOpHstMgmt</li>
+ * <li>설  명 : 일괄작업처리이력관리</li>
+ * <li>작성일 : 2014-09-30 11:40:43</li>
+ * <li>작성자 : 임정택 (jtlim)</li>
+ * </ul>
+ *
+ * @author 임정택 (jtlim)
+ */
+public class FSCBatTaskOpHstMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FSCBatTaskOpHstMgmt() {
+		super();
+	}
+
+	/**
+	 * 작업번호시퀀스조회
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqTaskNoSeq(IDataSet requestData, IOnlineContext onlineCtx) {
+		Log log = getLog(onlineCtx);
+		IDataSet reqData = (IDataSet) requestData.clone();
+		IDataSet responseData = new DataSet();
+
+		try {
+			DSCBatTaskOpHstMgmt dSCBatTaskOpHstMgmt = (DSCBatTaskOpHstMgmt) lookupDataUnit(DSCBatTaskOpHstMgmt.class);
+			responseData = dSCBatTaskOpHstMgmt.dSTaskNoSeq(reqData, onlineCtx);
+
+			if ( log.isDebugEnabled() ) {
+				log.debug("작업일자  : [" + responseData.getField("TASK_DT") + "]");
+				log.debug("작업번호  : [" + responseData.getField("TASK_NO") + "]");
+			}
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+
+		return responseData;
+	}
+
+	/**
+	 * <pre>일괄작업처리이력등록</pre>
+	 *
+	 * @author admin (admin)
+	 * @since 2015-07-13 12:41:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : TASK_DT [작업일자]
+	 *	- field : TASK_NO [작업번호]
+	 *	- field : TASK_ID [작업ID]
+	 *	- field : TASK_NM [작업명]
+	 *	- field : GRP_ID [그룹ID]
+	 *	- field : INST_CD [기관코드]
+	 *	- field : BAT_TASK_OP_ST_CD [일괄작업처리상태코드]
+	 *	- field : OP_STA_DTM [처리시작일시]
+	 *	- field : OP_END_DTM [처리종료일시]
+	 *	- field : OP_CNT [처리건수]
+	 *	- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *	- field : OP_FILE_NM [처리파일명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegBatTaskOpHst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet reqData = (IDataSet) requestData.clone();
+
+		try {
+
+			//일괄작업처리이력등록 필수입력값 체크
+			_chkBatTaskOpHstInputValue(requestData, onlineCtx);
+			
+			DSCBatTaskOpHstMgmt dSCBatTaskOpHstMgmt = (DSCBatTaskOpHstMgmt) lookupDataUnit(DSCBatTaskOpHstMgmt.class);
+			responseData = dSCBatTaskOpHstMgmt.dIBatTaskOpHst(reqData, onlineCtx);
+
+			if ( !(Boolean) responseData.getObjectField(DmsConstants.IS_SUCCESS) ) {
+				throw new BizRuntimeException("DMS00009", new String[] {});//INSERT 시 오류 발생. 잠시 후 다시 이용해 주세요. 
+			}
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+
+		return responseData;
+	}
+
+	/**
+	 * 일괄작업처리이력수정
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : TASK_DT [작업일자]
+	 *	- field : TASK_NO [작업번호]
+	 *	- field : BAT_TASK_OP_ST_CD [일괄작업처리상태코드]
+	 *	- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdBatTaskOpHst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet reqData = (IDataSet) requestData.clone();
+		try {
+			//일괄작업처리이력수정 필수입력값 체크
+			_chkBatTaskOpHstInputValue(requestData, onlineCtx);
+
+			DSCBatTaskOpHstMgmt dSCBatTaskOpHstMgmt = (DSCBatTaskOpHstMgmt) lookupDataUnit(DSCBatTaskOpHstMgmt.class);
+			responseData = dSCBatTaskOpHstMgmt.dUBatTaskOpHst(reqData, onlineCtx);
+
+			if ( !(Boolean) responseData.getObjectField(DmsConstants.IS_SUCCESS) ) {
+				throw new BizRuntimeException("DMS00009", new String[] {});//UPDATE 시 오류 발생. 잠시 후 다시 이용해 주세요.  
+			}
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 일괄작업처리이력 PK필수입력 체크 
+	 * @param requestData
+	 * @param onlineCtx
+	 * @return
+	 */
+	private boolean _chkBatTaskOpHstInputValue(IDataSet requestData, IOnlineContext onlineCtx) {
+
+		IDataSet reqData = (IDataSet) requestData.clone();
+
+		//필수 입력값 체크 (작업번호)
+		if ( StringUtils.isEmpty(reqData.getField("TASK_NO")) ) {
+			throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("TASK_NO") });
+		}
+
+		return true;
+	}
+
+    /**
+	 * <pre>작업상태조회</pre>
+	 *
+	 * @author admin (admin)
+	 * @since 2015-07-13 12:41:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet fInqTaskSTCD(IDataSet requestData, IOnlineContext onlineCtx) {
+    	Log log = getLog(onlineCtx);
+    	IDataSet reqData = (IDataSet) requestData.clone();
+    	IDataSet responseData = new DataSet();
+    
+    	try {
+    		DSCBatTaskOpHstMgmt dSCBatTaskOpHstMgmt = (DSCBatTaskOpHstMgmt) lookupDataUnit(DSCBatTaskOpHstMgmt.class);
+    		responseData = dSCBatTaskOpHstMgmt.dSTaskSTCD(reqData, onlineCtx);
+    
+    		if ( log.isDebugEnabled() ) {
+    		    log.debug("작업번호  : [" + responseData.getField("TASK_NO") + "]");
+    		    log.debug("작업상태  : [" + responseData.getField("BAT_TASK_PROC_ST_CD") + "]");
+    		}
+    
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	}
+    
+    	return responseData;
+    }
+
+}

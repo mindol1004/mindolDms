@@ -1,0 +1,820 @@
+package dms.ep.epsesbase.biz;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]B2B상품판매관리</li>
+ * <li>설  명 : <pre>B2B상품판매관리</pre></li>
+ * <li>작성일 : 2015-08-18 16:26:26</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class FEPB2BSaleMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPB2BSaleMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>B2B상품판매관리조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-18 16:26:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_STA_DTM [판매시작일자]
+	 *	- field : SELL_END_DTM [판매종료일자]
+	 *	- field : SELL_DEALCO_CD [판매처코드]
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : SALEPLC [매출처코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2B_SALE_LIST
+	 *		- field : SELL_DTM [판매일자]
+	 *		- field : SELL_CHG_DTM [변경일자]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SALEPLC_UKEY [매출처U.KEY코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : SELL_DEALCO_CD_UKEY [판매처U.KEY코드]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SALE_QTY [수량]
+	 *		- field : SELL_PRC [판매가]
+	 *		- field : SELL_PCOST [매입가]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [현금금액]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [변경전신용카드수납금액1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [변경전신용카드수납금액2]
+	 *		- field : CRDTCRD_PAY_AMT [카드금액]
+	 *		- field : TOT_PAY_AMT [수납계]
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : AFFIL_AGN [소속대리점코드]
+	 *		- field : AFFIL_ORG_ID [소속조직ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_NM [U.KEY 대리점]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)]
+	 *		- field : SLIP_DT [전표일자]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST [전표상태]
+	 *		- field : CNCL_SLIP_DT [취소전표일자]
+	 *		- field : CNCL_SLIP_NO [취소전표번호]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : SALEPLC_BLICENS_NO [매출처사업자번호]
+	 *		- field : SELL_BLICENS_NO [판매처사업자번호]
+	 * </pre>
+	 */
+	public IDataSet fInqB2bSaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+	    
+        try {
+            // 1. DU lookup
+            DEPB2BSaleMgmt dEPB2BSaleMgmt = (DEPB2BSaleMgmt) lookupDataUnit(DEPB2BSaleMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPB2BSaleMgmt.dSB2bSaleList(reqDs, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+	    
+	}
+
+    /**
+	 * <pre>B2B상품판매등록상세조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:26:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : GNRL_SELL_NO [일반판매번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2B_MASTER_DTL
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHRGR_ID [판매담당자ID]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SELL_CHG_DTM [판매변경일시]
+	 *		- field : SELL_CHGR_ID [판매변경자ID]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : XCL_DEALCO_NM [정산거래처명]
+	 *		- field : INVE_HLD_DEALCO_CD [재고보유거래처코드]
+	 *		- field : AGN_ORG_CD [대리점조직코드]
+	 *		- field : AFFIL_AGN [팀(소속대리점)코드]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)명]
+	 *		- field : SELL_DEALCO_CD [판매거래처코드]
+	 *		- field : SELL_DEALCO_NM [판매거래처명]
+	 *		- field : SELL_CHG_DEALCO_CD [판매변경거래처코드]
+	 *		- field : EQP_STTL_COND [단말기결제조건]
+	 *		- field : RMK [비고]
+	 *		- field : DCLS_YN [일마감여부]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : ATFIL_ID [첨부파일ID]
+	 *		- field : FLAG [구분]
+	 *		- field : TRMS_YN [전송여부]
+	 *		- field : XCL_SLIP_NO [전표번호]
+	 *		- field : XCL_SLIP_ST [전표상태]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *	- record : RS_B2B_ITEM_DTL
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : FIX_PRC_YN [고정가여부]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : MFACT_NM [제조사명]
+	 *		- field : HLD_DEALCO_ID [보유처코드]
+	 *		- field : HLD_DEALCO_NM [보유처명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : XCL_SLIP_DT [전표일자]
+	 *		- field : XCL_SLIP_NO [전표번호]
+	 *		- field : XCL_SLIP_ST [전표상태]
+	 *		- field : XCL_CNCL_SLIP_DT [취소전표일자]
+	 *		- field : XCL_CNCL_SLIP_NO [취소전표번호]
+	 *		- field : SALEPLC [매출처]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *	- record : RS_B2B_PAYMENT_DTL
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : BCHG_SELL_PRC_CASH_RECV_AMT [변경전 판매 가격 현금 수납 금액]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [판매 가격 현금 수납 금액]
+	 *		- field : CHG_SELL_PRC_CASH_RECV_AMT [변경후 판매 가격 현금 수납 금액]
+	 *		- field : BCHG_SELL_PRC_CCARD_CO_1 [변경전 판매 가격 신용카드 회사 1]
+	 *		- field : SELL_PRC_CCARD_CO_1 [판매 가격 신용카드 회사 1]
+	 *		- field : BCHG_SELL_PRC_CCARD_RECV_AMT_1 [변경전 판매 가격 신용카드 수납 금액 1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [판매 가격 신용카드 수납 금액 1]
+	 *		- field : CHG_SELL_PRC_CCARD_RECV_AMT_1 [변경후 판매 가격 신용카드 수납 금액 1]
+	 *		- field : CCARD_XCL_CONF_YN_1 [신용카드 정산 확정 여부 1]
+	 *		- field : CCARD_XCL_CONF_DT_1 [신용카드 정산 확정 일자 1]
+	 *		- field : BCHG_SELL_PRC_CCARD_CO_2 [변경전 판매 가격 신용카드 회사 2]
+	 *		- field : SELL_PRC_CCARD_CO_2 [판매 가격 신용카드 회사 2]
+	 *		- field : BCHG_SELL_PRC_CCARD_RECV_AMT_2 [변경전 판매 가격 신용카드 수납 금액 2]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [판매 가격 신용카드 수납 금액 2]
+	 *		- field : CHG_SELL_PRC_CCARD_RECV_AMT_2 [변경후 판매 가격 신용카드 수납 금액 2]
+	 *		- field : CCARD_XCL_CONF_YN_2 [신용카드 정산 확정 여부 2]
+	 *		- field : CCARD_XCL_CONF_DT_2 [신용카드 정산 확정 일자 2]
+	 *		- field : BCHG_INVE_AMT [변경전 재고 금액]
+	 *		- field : INVE_AMT [재고 금액]
+	 *		- field : CHG_INVE_AMT [변경후 재고 금액]
+	 *		- field : BCHG_MRGN_AMT [변경전 마진 금액]
+	 *		- field : MRGN_AMT [마진 금액]
+	 *		- field : CHG_MRGN_AMT [변경후 마진 금액]
+	 *		- field : BCHG_CMMS_AMT [변경전 수수료 금액]
+	 *		- field : CMMS_AMT [수수료 금액]
+	 *		- field : CHG_CMMS_AMT [변경후 수수료 금액]
+	 *		- field : BCHG_SURTAX_AMT [변경전 부가세 금액]
+	 *		- field : SURTAX_AMT [부가세 금액]
+	 *		- field : CHG_SURTAX_AMT [변경후 부가세 금액]
+	 *		- field : BCHG_SELL_AMT [변경전 판매금액]
+	 *		- field : SELL_AMT [판매금액]
+	 *		- field : CHG_SELL_AMT [변경후 판매금액]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : UKEY_AGN_CD [UKEY대리점코드]
+	 *	- record : RS_B2B_REPORT_DTL
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : MFACT_NM [제조사명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : CNT [수량]
+	 *		- field : SELL_PRC [판매가]
+	 *		- field : SURTAX [부가세]
+	 *	- record : NC_FILE_LIST
+	 *		- field : UPLD_FILE_NO [업로드파일번호]
+	 *		- field : FILE_ID [파일ID]
+	 *		- field : FILE_NM [파일명]
+	 *		- field : FILE_TYP_VAL [파일유형값]
+	 *		- field : FILE_SIZE [파일크기]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet fInqB2bSaleSaveDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IDataSet masterData = new DataSet();
+        IDataSet itemData = new DataSet();
+        IDataSet paymentData = new DataSet();
+        IDataSet reportData = new DataSet();
+        
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DEPB2BSaleMgmt dEPB2BSaleMgmt = (DEPB2BSaleMgmt) lookupDataUnit(DEPB2BSaleMgmt.class);
+
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPB2BSaleMgmt.dSB2bSaleItemDtlTotCnt(reqDs, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            
+            // 3. LISTDM호출
+            masterData = dEPB2BSaleMgmt.dSB2bSaleMasterDtl(reqDs, onlineCtx);
+            paymentData = dEPB2BSaleMgmt.dSB2bSalePaymentDtl(reqDs, onlineCtx);
+            reportData = dEPB2BSaleMgmt.dSB2bSaleReportDtl(reqDs, onlineCtx);
+            itemData = dEPB2BSaleMgmt.dSB2bSaleItemDtl(reqDs, onlineCtx);
+            rsPagingList = itemData.getRecordSet("RS_B2B_ITEM_DTL");
+            
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+            
+            // 4. 업로드파일 조회
+            reqDs.putField("UPLD_FILE_NO", masterData.getRecordSet("RS_B2B_MASTER_DTL").getRecord(0).get("ATFIL_ID"));
+            IDataSet fileListDS = callSharedBizComponentByDirect("sc.SCSBase", "fInqUpFileInfo", reqDs, onlineCtx);
+            responseData.putRecordSet(fileListDS.getRecordSet("NC_FILE_LIST"));
+            
+            responseData.putRecordSet("RS_B2B_MASTER_DTL", masterData.getRecordSet("RS_B2B_MASTER_DTL"));
+            responseData.putRecordSet("RS_B2B_PAYMENT_DTL", paymentData.getRecordSet("RS_B2B_PAYMENT_DTL"));
+            responseData.putRecordSet("RS_B2B_REPORT_DTL", reportData.getRecordSet("RS_B2B_REPORT_DTL"));
+            responseData.putRecordSet("RS_B2B_ITEM_DTL", rsPagingList);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B상품판매등록전송여부조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:26:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_MASTER_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매번호순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_TRMS_YN
+	 *		- field : TRMS_YN [전송여부]
+	 * </pre>
+	 */
+	public IDataSet fInqB2bSaleTrmsYn(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        try {
+            // 1. DU lookup
+            DEPB2BSaleMgmt dEPB2BSaleMgmt = (DEPB2BSaleMgmt) lookupDataUnit(DEPB2BSaleMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dEPB2BSaleMgmt.dSB2bSaleTrmsYn(reqDs, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B상품판매등록저장</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:26:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : FIX_PRC_YN [고정가여부]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : HLD_DEALCO_ID [보유처코드]
+	 *		- field : HLD_DEALCO_NM [보유처명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- record : RS_MASTER_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHRGR_ID [판매담당자ID]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SELL_CHG_DTM [판매변경일시]
+	 *		- field : SELL_CHGR_ID [판매변경자ID]
+	 *		- field : XCL_DEALCO_CD [정산거래처코드]
+	 *		- field : XCL_DEALCO_NM [정산거래처명]
+	 *		- field : INVE_HLD_DEALCO_CD [재고보유거래처코드]
+	 *		- field : AGN_ORG_CD [대리점 조직코드]
+	 *		- field : AFFIL_AGN [팀(소속대리점)코드]
+	 *		- field : AFFIL_AGN_NM [팀(소속대리점)명]
+	 *		- field : SELL_DEALCO_CD [판매거래처코드]
+	 *		- field : SELL_DEALCO_NM [판매거래처명]
+	 *		- field : SELL_CHG_DEALCO_CD [판매변경거래처코드]
+	 *		- field : EQP_STTL_COND [단말기결제조건]
+	 *		- field : RMK [비고]
+	 *		- field : DCLS_YN [일마감여부]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : ATFIL_ID [첨부파일ID]
+	 *		- field : FLAG [구분]
+	 *		- field : TRMS_YN [전송여부]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *	- record : RS_PAYMENT_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : BCHG_SELL_PRC_CASH_RECV_AMT [변경전 판매 가격 현금 수납 금액]
+	 *		- field : SELL_PRC_CASH_RECV_AMT [판매 가격 현금 수납 금액]
+	 *		- field : CHG_SELL_PRC_CASH_RECV_AMT [변경후 판매 가격 현금 수납 금액]
+	 *		- field : BCHG_SELL_PRC_CCARD_CO_1 [변경전 판매 가격 신용카드 회사 1]
+	 *		- field : SELL_PRC_CCARD_CO_1 [판매 가격 신용카드 회사 1]
+	 *		- field : BCHG_SELL_PRC_CCARD_RECV_AMT_1 [변경전 판매 가격 신용카드 수납 금액 1]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_1 [판매 가격 신용카드 수납 금액 1]
+	 *		- field : CHG_SELL_PRC_CCARD_RECV_AMT_1 [변경후 판매 가격 신용카드 수납 금액 1]
+	 *		- field : CCARD_XCL_CONF_YN_1 [신용카드 정산 확정 여부 1]
+	 *		- field : CCARD_XCL_CONF_DT_1 [신용카드 정산 확정 일자 1]
+	 *		- field : BCHG_SELL_PRC_CCARD_CO_2 [변경전 판매 가격 신용카드 회사 2]
+	 *		- field : SELL_PRC_CCARD_CO_2 [판매 가격 신용카드 회사 2]
+	 *		- field : BCHG_SELL_PRC_CCARD_RECV_AMT_2 [변경전 판매 가격 신용카드 수납 금액 2]
+	 *		- field : SELL_PRC_CCARD_RECV_AMT_2 [판매 가격 신용카드 수납 금액 2]
+	 *		- field : CHG_SELL_PRC_CCARD_RECV_AMT_2 [변경후 판매 가격 신용카드 수납 금액 2]
+	 *		- field : CCARD_XCL_CONF_YN_2 [신용카드 정산 확정 여부 2]
+	 *		- field : CCARD_XCL_CONF_DT_2 [신용카드 정산 확정 일자 2]
+	 *		- field : BCHG_INVE_AMT [변경전 재고 금액]
+	 *		- field : INVE_AMT [재고 금액]
+	 *		- field : CHG_INVE_AMT [변경후 재고 금액]
+	 *		- field : BCHG_MRGN_AMT [변경전 마진 금액]
+	 *		- field : MRGN_AMT [마진 금액]
+	 *		- field : CHG_MRGN_AMT [변경후 마진 금액]
+	 *		- field : BCHG_CMMS_AMT [변경전 수수료 금액]
+	 *		- field : CMMS_AMT [수수료 금액]
+	 *		- field : CHG_CMMS_AMT [변경후 수수료 금액]
+	 *		- field : BCHG_SURTAX_AMT [변경전 부가세 금액]
+	 *		- field : SURTAX_AMT [부가세 금액]
+	 *		- field : CHG_SURTAX_AMT [변경후 부가세 금액]
+	 *		- field : BCHG_SELL_AMT [변경전 판매금액]
+	 *		- field : SELL_AMT [판매금액]
+	 *		- field : CHG_SELL_AMT [변경후 판매금액]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *	- record : RS_DEL_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : SPLST_YN [고정가여부]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : HLD_DEALCO_ID [보유처코드]
+	 *		- field : HLD_DEALCO_NM [보유처명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : SELL_TYP [판매유형]
+	 *	- record : NC_FILE_LIST
+	 *		- field : fullpath [파일경로]
+	 *		- field : UPLD_FILE_NO [파일번호]
+	 *		- field : FILE_ID [파일ID]
+	 *		- field : FILE_NM [파일명]
+	 *		- field : FILE_TYP_VAL [파일타입]
+	 *		- field : FILE_SIZE [파일크기]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종등록자ID]
+	 *		- field : LS_CHG_DTM [최종등록일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegB2bSaleSave(IDataSet requestData, IOnlineContext onlineCtx) {
+	    CommonArea ca = getCommonArea(onlineCtx);
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        IDataSet saleDs = null;
+        IDataSet masterDs = null;
+        IDataSet paymentDs = null;
+        IDataSet seqDs = null;
+        
+        String TRMS_CL = "";
+    
+        try {
+
+            // 1. DU lookup
+            FEPDisSaleMgmt fEPDisSaleMgmt = (FEPDisSaleMgmt) lookupFunctionUnit(FEPDisSaleMgmt.class);
+            DEPB2BSaleMgmt dEPB2BSaleMgmt = (DEPB2BSaleMgmt) lookupDataUnit(DEPB2BSaleMgmt.class);
+            
+            IRecordSet masterRs = reqDs.getRecordSet("RS_MASTER_LIST");
+            IRecordSet paymentRs = reqDs.getRecordSet("RS_PAYMENT_LIST");
+
+            // 마스터정보,수납정보
+            if (masterRs != null && paymentRs != null) {
+                masterDs = new DataSet();
+                paymentDs = new DataSet();
+                
+                masterDs.putFieldMap(masterRs.getRecordMap(0));
+                paymentDs.putFieldMap(paymentRs.getRecordMap(0));
+                
+                SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
+                long currentTime = System.currentTimeMillis();
+                
+                String GNRL_SELL_NO = masterDs.getField("GNRL_SELL_NO");
+                int GNRL_SELL_CHG_SEQ = Integer.parseInt(StringUtils.nvlEmpty(masterDs.getField("GNRL_SELL_CHG_SEQ"), "0"));
+                
+                if (StringUtils.isEmpty(GNRL_SELL_NO)) { // 신규
+                    seqDs = new DataSet();
+                    seqDs = dEPB2BSaleMgmt.dSB2bSaleGnrlNo(reqDs, onlineCtx);
+                    GNRL_SELL_NO = seqDs.getField("GNRL_SELL_NO");
+                    GNRL_SELL_CHG_SEQ = 1;
+                }else{ // 수정
+                    GNRL_SELL_CHG_SEQ = GNRL_SELL_CHG_SEQ + 1;
+                }
+
+                masterDs.putField("GNRL_SELL_NO", GNRL_SELL_NO);
+                masterDs.putField("GNRL_SELL_CHG_SEQ", GNRL_SELL_CHG_SEQ);
+                masterDs.putField("USERNO", ca.getUserNo());
+                masterDs.putField("ATFIL_ID", reqDs.getField("UPLD_FILE_NO"));
+                masterDs.putField("SALEPLC", paymentDs.getField("SALEPLC"));
+                
+                paymentDs.putField("GNRL_SELL_NO", GNRL_SELL_NO);
+                paymentDs.putField("GNRL_SELL_CHG_SEQ", GNRL_SELL_CHG_SEQ);
+                paymentDs.putField("USERNO", ca.getUserNo());
+
+                if ("I".equals(ca.getTrnPtrnDvcd())){ // 판매
+                    
+                    masterDs.putField("SELL_CHG_HST_CL", "01");
+                    masterDs.putField("SELL_CNCL_YN", "N");
+                    TRMS_CL = "A";
+                    
+                }else if ("U".equals(ca.getTrnPtrnDvcd())){ // 판매수정
+                    
+                    masterDs.putField("SELL_CHG_HST_CL", "09");
+                    masterDs.putField("SELL_CNCL_YN", "N");
+                    
+                }else if ("D".equals(ca.getTrnPtrnDvcd())){ // 판매취소
+                    
+                    masterDs.putField("SELL_CHG_HST_CL", "07");
+                    masterDs.putField("SELL_CNCL_YN", "Y");
+                    masterDs.putField("SELL_CNCL_DTM", df.format(new Date(currentTime)));
+                    masterDs.putField("SELL_CNCL_CL", "1");
+                    
+                    if("Y".equals(masterDs.getField("TRMS_YN"))){
+                        TRMS_CL = "C";
+                    }else{
+                        TRMS_CL = "N";
+                    }
+                }
+                
+                masterDs.putField("TRMS_CL", TRMS_CL);
+                
+                // 업무 DM호출
+                dEPB2BSaleMgmt.dIB2bGnrlSale(masterDs, onlineCtx); // 일반판매저장
+                dEPB2BSaleMgmt.dIB2bSaleAmt(paymentDs, onlineCtx); // 현금매출저장
+                dEPB2BSaleMgmt.dIB2bPayment(paymentDs, onlineCtx); // 수납저장
+
+                // 단말기판매정보
+                IRecordSet saleRs = reqDs.getRecordSet("RS_SALE_LIST");
+                IRecord saleRc = null;
+                if (saleRs != null) {
+                    
+                    saleRs.addHeader(new RecordHeader("USERNO"));
+                    saleRs.addHeader(new RecordHeader("DEL_YN"));
+                    saleRs.addHeader(new RecordHeader("SELL_CNCL_YN"));
+                    saleRs.addHeader(new RecordHeader("SELL_CNCL_DTM"));
+                    saleRs.addHeader(new RecordHeader("SELL_CNCL_CL"));
+                    
+                    IDataSet sellDs = dEPB2BSaleMgmt.dSB2bSaleEquipmentSellSeq(reqDs, onlineCtx);
+                    int sellSeq = Integer.parseInt(sellDs.getField("SELL_SEQ"));
+                    
+                    for (int i = 0; i < saleRs.getRecordCount(); i++) {
+                        saleRc = saleRs.getRecord(i);
+                        
+                        saleRc.set("USERNO", ca.getUserNo());
+                        saleRc.set("GNRL_SELL_NO", GNRL_SELL_NO);
+                        saleRc.set("GNRL_SELL_CHG_SEQ", GNRL_SELL_CHG_SEQ);
+                        saleRc.set("SELL_SEQ", sellSeq + i);
+                        if ("D".equals(ca.getTrnPtrnDvcd())) {
+                            saleRc.set("DEL_YN", "Y");
+                            saleRc.set("SELL_CNCL_YN", "Y");
+                            saleRc.set("SELL_CNCL_DTM", df.format(new Date(currentTime)));
+                            saleRc.set("SELL_CNCL_CL", "1");
+                        }else{
+                            saleRc.set("SELL_CNCL_YN", "N");
+                            saleRc.set("DEL_YN", "N");
+                        }
+                        
+                        saleRs.setRecord(i, saleRc);
+                    }
+                    
+                    saleDs = new DataSet();
+                    saleDs.putRecordSet(saleRs);
+                    dEPB2BSaleMgmt.dIB2bSaleEquipment(saleDs, onlineCtx); // 단말기판매저장
+                }
+                
+            } else {
+                throw new BizRuntimeException("DMS00004"); //데이터가 존재하지 않습니다.
+            }
+            
+            // 상품판매 재고처리
+            IDataSet reqData = new DataSet();
+            
+            if ("D".equals(ca.getTrnPtrnDvcd())) {
+                reqData.putFieldMap(masterDs.getFieldMap());
+                reqData.putRecordSet(reqDs.getRecordSet("RS_DEL_LIST"));
+                fEPDisSaleMgmt.fRegDisSaleIn(reqData, onlineCtx);
+            }else if ("U".equals(ca.getTrnPtrnDvcd())) {
+                reqData.putFieldMap(masterDs.getFieldMap());
+                reqData.putRecordSet(reqDs.getRecordSet("RS_SALE_LIST"));
+                reqData.putRecordSet(reqDs.getRecordSet("RS_DEL_LIST"));
+                fEPDisSaleMgmt.fRegDisSaleIn(reqData, onlineCtx);
+            }else if ("I".equals(ca.getTrnPtrnDvcd())) {
+                reqData.putFieldMap(masterDs.getFieldMap());
+                reqData.putRecordSet(reqDs.getRecordSet("RS_SALE_LIST"));
+                fEPDisSaleMgmt.fRegDisSaleOut(reqData, onlineCtx);
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B상품판매취소조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:26:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_DEALCO_CD [판매처]
+	 *	- field : SALEPLC [매출처]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : PROD_SER_NO [상품일련번호]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_B2B_CNCL_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SELL_DEALCO_CD [판매처코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : RMK [비고]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : SELL_CL_CD [판매구분]
+	 * </pre>
+	 */
+	public IDataSet fInqB2bSaleCnclList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPB2BSaleMgmt dEPB2BSaleMgmt = (DEPB2BSaleMgmt) lookupDataUnit(DEPB2BSaleMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPB2BSaleMgmt.dSB2bSaleCnclListTotCnt(reqDs, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseData = dEPB2BSaleMgmt.dSB2bSaleCnclListPaging(reqDs, onlineCtx);
+            rsPagingList = responseData.getRecordSet("RS_B2B_CNCL_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>B2B상품판매취소</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 16:26:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_DEL_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_TYP [판매유형]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처]
+	 *		- field : SELL_DEALCO_CD [판매처코드]
+	 *		- field : SELL_DEALCO_CD_NM [판매처]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [모델색상]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_MRGN [판매마진]
+	 *		- field : SELL_CMMS [판매수수료]
+	 *		- field : SURTAX [부가세]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PROD_OUT_MGMT_NO [출고관리번호]
+	 *		- field : SELL_CL_CD [판매구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegB2bSaleCncl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    CommonArea ca = getCommonArea(onlineCtx);
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        IDataSet saleDs = null;
+        IDataSet seqDs = null;
+        IDataSet dsCnt = null;
+        int cnt = 0;
+    
+        try {
+            
+            // 1. DU lookup
+            FEPDisSaleMgmt fEPDisSaleMgmt = (FEPDisSaleMgmt) lookupFunctionUnit(FEPDisSaleMgmt.class);
+            DEPB2BSaleMgmt dEPB2BSaleMgmt = (DEPB2BSaleMgmt) lookupDataUnit(DEPB2BSaleMgmt.class);
+            
+            IRecordSet saleRs = reqDs.getRecordSet("RS_DEL_LIST");
+            
+            if (saleRs != null) {
+                
+                dsCnt = new DataSet();
+                Map<Object, Object> saleMap = new HashMap<Object, Object>();
+                
+                // 판매
+                for (int i = 0; i < saleRs.getRecordCount(); i++) {
+                    saleDs = new DataSet();
+                    seqDs = new DataSet();
+                    saleDs.putFieldMap(saleRs.getRecordMap(i));
+                    
+                    dsCnt = dEPB2BSaleMgmt.dSB2bGnrlSaleCount(saleDs, onlineCtx);
+                    cnt = Integer.parseInt(dsCnt.getField("CNT"));
+                    
+                    if(cnt == 1){
+                        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
+                        long currentTime = System.currentTimeMillis();
+                        
+                        saleDs.putField("SELL_CHG_HST_CL","07"); // 판매취소
+                        saleDs.putField("SELL_CNCL_YN","Y");
+                        saleDs.putField("SELL_CNCL_DTM", df.format(new Date(currentTime)));
+                        saleDs.putField("SELL_CNCL_CL","1");
+                    }else{
+                        saleDs.putField("SELL_CHG_HST_CL","09"); // 판매수정
+                        saleDs.putField("SELL_CNCL_YN","N");
+                    }
+                    
+                    seqDs = dEPB2BSaleMgmt.dSB2bSaleGnrlChgNo(saleDs, onlineCtx);
+                    saleMap.put(saleDs.getField("GNRL_SELL_NO"), seqDs.getField("GNRL_SELL_CHG_SEQ"));
+                    saleDs.putField("GNRL_SELL_CHG_SEQ_NEW", seqDs.getField("GNRL_SELL_CHG_SEQ"));
+                    saleDs.putField("USERNO", ca.getUserNo());
+
+                    dEPB2BSaleMgmt.dIB2bGnrlSaleCncl(saleDs, onlineCtx); // 일반판매저장
+                    dEPB2BSaleMgmt.dIB2bSaleEquipmentCncl(saleDs, onlineCtx); // 단말기판매저장
+                    dEPB2BSaleMgmt.dIB2bSaleAmtCncl(saleDs, onlineCtx); // 현금매출저장
+                    dEPB2BSaleMgmt.dIB2bPaymentCncl(saleDs, onlineCtx); // 수납저장
+                }
+                // 단말기판매취소
+                for (int i = 0; i < saleRs.getRecordCount(); i++) {
+                    saleDs = new DataSet();
+                    saleDs.putFieldMap(saleRs.getRecordMap(i));
+                    
+                    saleDs.putField("GNRL_SELL_CHG_SEQ_NEW", (String) saleMap.get((String) saleDs.getField("GNRL_SELL_NO")));
+                    saleDs.putField("USERNO", ca.getUserNo());
+                    
+                    dEPB2BSaleMgmt.dUB2bSaleEquipmentCncl(saleDs, onlineCtx); // 단말기판매취소수정
+                }
+                
+                // 상품판매 재고처리
+                reqDs.putField("TRMS_CL", "C");
+                reqDs.putField("USERNO", ca.getUserNo());
+                fEPDisSaleMgmt.fRegDisSaleIn(reqDs, onlineCtx);
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+  
+}

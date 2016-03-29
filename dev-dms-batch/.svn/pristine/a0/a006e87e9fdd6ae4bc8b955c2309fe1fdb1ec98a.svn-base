@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.BNR045">
+	<select id="SEqpSKN" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR045.SEqpSKN SKN여신에서 채무정보 조회 */
+/* IO: 진병수,2015-08-12T09:47:41(진병수,2015-08-10T09:49:43) */
+SELECT   
+       'NR'              AS OP_CL_CD
+     , A.PAY_YM          AS DEBT_XCL_YM
+     , 'KN'              AS XCL_CL
+     , '100092'          AS BOND_DEALCO_CD
+     , 'IN'              AS XCL_ITM_CL
+     , AGN_SALE_AMT      AS DEBT_ITM_AMT
+     , AGN_SALE_AMT*0.1  AS DEBT_SURTAX
+     , 'DEL'             AS ACNT_CD
+     , NULL              AS DEBT_SLIP_DT
+     , NULL              AS DEBT_CNCL_SLIP_NO
+     , NULL              AS DEBT_CNCL_DT
+     , 'BAT'             AS FS_REG_USER_ID
+     , SYSDATE           AS FS_REG_DTM
+  FROM TB_NR_SKN_CRD A
+ WHERE A.PAY_YM = NVL('' ,TO_CHAR(SYSDATE,'YYYYMM'))
+UNION ALL
+SELECT   
+       'NR'              AS OP_CL_CD
+     , A.PAY_YM          AS DEBT_XCL_YM
+     , 'KN'              AS XCL_CL
+     , AGN_CD            AS BOND_DEALCO_CD
+     , 'IN'              AS XCL_ITM_CL
+     , CRD_SALE_DAMT     AS DEBT_ITM_AMT
+     , CRD_SALE_DAMT*0.1  AS DEBT_SURTAX
+     , 'DEL'             AS ACNT_CD
+     , NULL              AS DEBT_SLIP_DT
+     , NULL              AS DEBT_CNCL_SLIP_NO
+     , NULL              AS DEBT_CNCL_DT
+     , 'BAT'             AS FS_REG_USER_ID
+     , SYSDATE           AS FS_REG_DTM
+  FROM TB_NR_SKN_CRD A
+ WHERE A.PAY_YM = NVL('' ,TO_CHAR(SYSDATE,'YYYYMM'))
+   AND A.CRD_SALE_DAMT > 0]]>
+	</select>
+	<insert id="IXclDebt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR405.IXclDebt 채무정보입력 */
+/* IO: 진병수,2015-08-10T10:02:06(진병수,2015-08-10T09:53:17) */
+INSERT INTO TB_XCL_DEBT
+            (
+             OP_CL_CD
+           , DEBT_XCL_YM
+           , XCL_CL
+           , BOND_DEALCO_CD
+           , XCL_ITM_CL
+           , DEBT_ITM_AMT
+           , DEBT_SURTAX
+           , DEBT_SLIP_NO
+           , ACNT_CD
+           , DEBT_SLIP_DT
+           , DEBT_ORGL_SLIP_NO
+           , DEBT_CNCL_SLIP_NO
+           , DEBT_CNCL_DT
+           , FS_REG_USER_ID
+           , FS_REG_DTM
+            )
+     VALUES (
+             #OP_CL_CD#
+           , #DEBT_XCL_YM#
+           , #XCL_CL#
+           , #BOND_DEALCO_CD#
+           , #XCL_ITM_CL#
+           , #DEBT_ITM_AMT#
+           , #DEBT_SURTAX#
+           , #DEBT_SLIP_NO#
+           , #ACNT_CD#
+           , #DEBT_SLIP_DT#
+           , #DEBT_ORGL_SLIP_NO#
+           , #DEBT_CNCL_SLIP_NO#
+           , #DEBT_CNCL_DT#
+           , #FS_REG_USER_ID#
+           , #FS_REG_DTM#
+            )]]>
+	</insert>
+</sqlMap>

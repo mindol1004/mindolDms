@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 업무 프로젝트별 전체 배포 -->
+<project name="NEXCORE Build Business ALL" default="all" basedir=".">
+	<!-- USE ANT LIB ant-contrib.jar -->
+	<!-- ANT CONTRIBUTE OPTIONAL TASK -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" classpath="${NEXCORE_HOME}/lib/ant-contrib.jar"/>
+
+	<property name="source.dir" value="${WORKSPACE_HOME}/src/java" />
+
+	<target name="all" depends="deploy"></target>
+	
+	<!-- search build-biz.xml -->
+	<path id="build.files">
+		<fileset dir="${source.dir}">
+			<include name="**/build-biz.xml" />
+		</fileset>
+	</path>
+
+	<!-- exec build-biz.xml -->
+	<target name="deploy" description="deploy">
+		<pathconvert pathsep="," property="antfiles" refid="build.files"/>
+		<echo>ant files : ${antfiles}</echo>
+
+		<for list="${antfiles}" param="antfile" delimiter=",">
+			<sequential>
+				<trycatch reference="exception_ref">
+					<try>
+						<echo>=============================================================================</echo>
+						<echo>start : @{antfile}</echo>
+						<echo>=============================================================================</echo>
+						<ant antfile="@{antfile}">
+							<property name="antfile.absolute.path" value="@{antfile}"/>
+						</ant>
+					</try>
+					<catch>
+						<property name="exception_@{antfile}" refid="exception_ref" />
+						<echo>##################################################################</echo>
+						<echo> Error in trycatch block:${line.separator}${exception_@{antfile}}</echo>
+						<echo>##################################################################</echo>
+						<property name="exception_occurd" value="false" />
+						<!-- fail>error : @{antfile} </fail-->
+					</catch>
+					<finally>
+						<echo>finish : @{antfile}</echo>
+					    <echo>=============================================================================</echo>
+					</finally>
+				</trycatch>
+			</sequential>
+		</for>
+		
+		<condition property="isExceptionOccurd">
+			<equals arg1="true" arg2="${exception_occurd}" />
+		</condition>
+		<antcall target="deploy.fail" />
+	</target>
+	
+	<target name="deploy.fail" if="isExceptionOccurd">
+		<fail message="처리 중 1개이상의 컴포넌트에서 에러가 발생했습니다." />
+	</target>
+
+</project>

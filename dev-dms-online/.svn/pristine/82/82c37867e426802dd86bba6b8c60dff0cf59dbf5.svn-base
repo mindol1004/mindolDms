@@ -1,0 +1,148 @@
+package dms.bi.bibbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/기준정보</li>
+ * <li>단위업무명: [PU]단말기바코드관리</li>
+ * <li>설  명 : <pre>단말기바코드관리</pre></li>
+ * <li>작성일 : 2015-08-27 15:36:40</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class PBIEqpBarcdMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PBIEqpBarcdMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>단말기바코드정보조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-27 15:36:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : OP_CL_CD [업무구분]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : BARCODE_LIST
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : DEALCO_NM [거래처명]
+	 *		- field : UKEY_SUB_CD [UKEY 서브 코드]
+	 *		- field : DEALCO_ADDR [거래처주소]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : CNSL_MGMT_SER_NO [일련번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : EQP_ST_DTAIL [단말기상태세부]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : DPSTR [예금주]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : COMC [통긴방식]
+	 *		- field : PROD_CHRTIC_1 [상품특성1]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : FEE_DEDC_YN [요금공제처리여부]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *	- record : BARCODE_DTL_LIST
+	 *		- field : HLD_QTY [보유수량]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *	- record : BARCODE_RD_LIST
+	 *		- field : CNSL_MGMT_SER_NO [일련번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : SKN_EQP_ST [SKN단말기상태]
+	 *		- field : SKN_CL [SKN구분]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpBarcdInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSBIBase", "fInqBarCodePrchsInfoList", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-08-27 15:36:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_SER_NO [일련번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_SEQ_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpseq(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        try {
+            // 1. FU lookup
+            FBIBoxBarcdMgmt fBIBoxBarcdMgmt = (FBIBoxBarcdMgmt) lookupFunctionUnit(FBIBoxBarcdMgmt.class);
+            // 2. FM 호출
+            responseData = fBIBoxBarcdMgmt.fInqEqpseq(requestData, onlineCtx);
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+    }
+  
+}

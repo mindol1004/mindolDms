@@ -1,0 +1,508 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="SendSMSP" classname="popup_sample1" inheritanceid="" position="absolute 0 0 317 620" titletext="SMS전송" class="frm_bg_popup" onload="Form_onload" scrollbars="none" style=":selected {border:0 none #808080ff ;}">
+    <Layouts>
+      <Layout>
+        <Div id="Div01" taborder="1" text="SMS전송" class="popUp_title_bg" transparenthittest="true" position="absolute 22 11 377 39"/>
+        <Static id="Static00" text="h38" class="tip_guide" visible="false" position2="absolute l:205 w:26 t:0 h:38" positiontype="position2"/>
+        <Button id="btn_close" taborder="1" position="absolute 278 13 296 31" class="popUp_close" onclick="btn_close_onclick"/>
+        <Static id="Static02" text="h32" class="tip_guide" visible="false" position2="absolute l:149 w:42 t:6 h:32" positiontype="position2"/>
+        <Static id="Static04" text="h10" class="tip_guide" visible="false" position2="absolute l:117 w:42 t:39 h:10" positiontype="position2"/>
+        <Static id="Static05" text="h10" class="tip_guide" visible="false" position2="absolute l:85 w:42 t:6 h:10" positiontype="position2"/>
+        <Static id="Static08" text="h10" class="tip_guide" visible="false" position2="absolute l:245 w:42 t:31 h:7" positiontype="position2"/>
+        <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:7 w:15 t:18 h:42" positiontype="position2"/>
+        <ImageViewer id="img_bg" taborder="3" position="absolute 7 39 307 610" style="background:transparent URL('theme://Img/sendSMS_bg.png') stretch 0,0; :disabled {background:transparent URL('theme://Img/sendSMS_background.png') stretch 0,0;}" enable="false"/>
+        <TextArea id="txt_msg" taborder="4" position="absolute 51 125 257 240" style="caretcolor:#999999ff;selectcolor:#333333ff;selectbackground:#c0c0c0ff;compositecolor:#333333ff;background:#333333ff;border:0 solid #333333ff ;color:#999999ff;font:Dotum,10;" scrollbars="fixedvert" updatebindingvalue="default" wordwrap="char" validate="title:메세지내용,required:true" lengthunit="utf8" cancharchange="txt_msg_cancharchange" ontextchanged="txt_msg_ontextchanged" onkeydown="txt_msg_onkeydown"/>
+        <Static id="stc_msgCttMaxLen" text="/2000Byte" position="absolute 184 248 241 272" style="border:0 solid #e4e4e4ff ;color:#999999ff;align:right middle;"/>
+        <Static id="stc_msgCttLen" text="0" position="absolute 128 248 185 272" style="border:0 solid #e4e4e4ff ;color:#999999ff;align:right middle;"/>
+        <Grid id="grd_smsParam" taborder="5" binddataset="ds_smsRetnTelNoLst" autoenter="select" useinputpanel="false" selecttype="row" cellsizingtype="col" cellmovingtype="col" autofittype="col" hideendline="none" selectscrollmode="scroll" position="absolute 52 295 258 414" tooltiptype="default" style="focusborder:0 none #808080ff ;background:#222222ff;border:1 solid #1d1d22ff ;color:#999999ff;cursor:default; :focused {border:0 none #808080ff ;} :mouseover {border:0 none #808080ff ;}" _number="false" _status="false" _check="false" _checkColumnName="false" _checkedallevent="false" _nodataimage="false" _sort="false" _tooltip="false" nodatatext="수신번호를 추가해주세요." useselcolor="false">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="35" band="left"/>
+                <Column size="170"/>
+              </Columns>
+              <Rows>
+                <Row size="25"/>
+              </Rows>
+              <Band id="body">
+                <Cell displaytype="normal" edittype="none" style="line:1 solid #333333ff ;background:#434343ff;background2:#434343ff;selectbackground:0;selectline:1 solid #333333ff ; :focused {selectbackground:#434343ff;}" class="cellFixed_B" text="expr:currow+1"/>
+                <Cell col="1" displaytype="normal" edittype="text" editfilter="digit" style="line:1 solid #333333ff ;background:#434343ff;background2:#434343ff;selectbackground:0;selectline:1 solid #333333ff ; :focused {selectbackground:#434343ff;}" class="cellFixed_B" text="bind:RETN_TEL_NO" mask="expr:gfn_tel_mask(RETN_TEL_NO)" editlimit="11" edittrimtype="both" expandsize="11"/>
+              </Band>
+            </Format>
+          </Formats>
+        </Grid>
+        <Button id="btn_smsParamAdd" taborder="6" onclick="btn_smsParamAdd_onclick" class="btn_common_add" position="absolute 211 419 233 439" anchor="top right" tooltiptext="추가" style="background:#282828ff;color:#999999ff; :pushed {background:#0d0d0dff;}"/>
+        <Button id="btn_smsParamDel" taborder="7" onclick="btn_smsParamDel_onclick" class="btn_common_del" position="absolute 235 419 257 439" anchor="top right" tooltiptext="삭제" style="background:#282828ff;color:#999999ff; :pushed {background:#0d0d0dff;}"/>
+        <Static id="stc_maxRetnNumInfo" text="최대 10명" position="absolute 143 417 206 441" style="border:0 solid #e4e4e4ff ;color:#999999ff;align:right middle;font:Dotum,8;"/>
+        <Edit id="edt_mmsFilePath" taborder="8" readonly="true" position="absolute 54 482 226 507" style="selectbackground:#434343ff;background:#222222ff;border:1 solid #1d1d22ff ; :disabled {align:left middle;}" tooltiptext="1MB이하의 jpg파일만 가능합니다." tooltiptype="hover" displaynulltext="첨부파일 (1MB이하 jpg만)" enable="false"/>
+        <Button id="btn_fileUpload" taborder="9" class="btn_common_save" position="absolute 230 482 254 506" anchor="top right" tooltiptext="첨부파일올리기" style="background:#282828ff; :pushed {background:#0d0d0dff;}" onclick="btn_fileUpload_onclick"/>
+        <Static id="Static17" text="발신번호" position="absolute 57 450 107 471" style="color:#999999ff;" rtldirection="ltr"/>
+        <Combo id="cbo_chrgdeptcl" taborder="11" innerdataset="ds_DMS258" codecolumn="CM_CD_ID" datacolumn="MGMT_ITEM_CD3" position="absolute 112 448 255 473" style="itembackground:#222222ff;itemcolor:#999999ff;itemborder:1 solid #1d1d22ff ;itembordertype:normal 0 0 ;background:#222222ff;border:1 solid #1d1d22ff ;color:#999999ff; :focused {itemborder:1 solid #1d1d22ff ;border:1 solid #1d1d22ff ;} :selected {itembackground:#c0c0c0ff;itemcolor:#333333ff;itemborder:1 solid #1d1d22ff ;border:1 solid #1d1d22ff ;}" validate="title:발신번호,required:true" onitemchanged="cbo_chrgdeptcl_onitemchanged" ondropdown="cbo_chrgdeptcl_ondropdown"/>
+        <Button id="btn_Send" taborder="12" position="absolute 37 528 152 587" anchor="top right" tooltiptext="추가" style="background:transparent;border:0 none #e0e0e0ff ;color:#c9c9c9ff;font:돋움,13,bold; :pushed {color:#787878ff;}" text="보내기" onclick="btn_Send_onclick"/>
+        <Button id="btn_reset" taborder="13" text="초기화" position="absolute 159 528 274 587" anchor="top right" tooltiptext="추가" style="background:transparent;border:0 none #e0e0e0ff ;color:#c9c9c9ff;font:돋움,13,bold; :pushed {color:#787878ff;}" onclick="btn_reset_onclick"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_ncFieldMap" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="FRM_ID" type="STRING" size="256"/>
+          <Column id="INQ_OBJ_NO" type="STRING" size="256"/>
+          <Column id="REG_HST_YN" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_smsSend" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CHRG_DEPT_CL_CD" type="STRING" size="256"/>
+          <Column id="ATTACH_FILE1" type="STRING" size="256"/>
+          <Column id="ATTACH_FILE2" type="STRING" size="256"/>
+          <Column id="ATTACH_FILE3" type="STRING" size="256"/>
+          <Column id="MSG_CTT" type="STRING" size="4000"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_upFile" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="fullpath" type="STRING" size="256"/>
+          <Column id="UPLD_FILE_NO" type="STRING" size="256"/>
+          <Column id="FILE_ID" type="STRING" size="256"/>
+          <Column id="FILE_NM" type="STRING" size="256"/>
+          <Column id="FILE_TYP_VAL" type="STRING" size="256"/>
+          <Column id="FILE_SIZE" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+          <Column id="SVC_URL" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_smsRetnTelNoLst" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="RETN_TEL_NO" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_DMS258" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_GRP_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CHG_DTM" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_DESC" type="STRING" size="256"/>
+          <Column id="CM_CD_SORT_ORD" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="SUP_CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="SUP_CM_CD_ID" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD1" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD2" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD3" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD4" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD5" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD6" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD7" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD8" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD9" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD10" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="txt_msg" propid="value" datasetid="ds_smsSend" columnid="MSG_CTT"/>
+      <BindItem id="item6" compid="edt_mmsFilePath" propid="value" datasetid="ds_upFile" columnid="FILE_NM"/>
+      <BindItem id="item2" compid="cbo_chrgdeptcl" propid="value" datasetid="ds_smsSend" columnid="CHRG_DEPT_CL_CD"/>
+    </Bind>
+    <InitValue>
+      <Combo id="cbo_chrgdeptcl" index="0"/>
+    </InitValue>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : SendSMSP.xfdl
+ * 03. 화면 설명 : SMS전송(팝업)
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 임지후
+ * 06. 작성일 : 2015.11.09
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름          사유
+ ************************************************************************************************
+ *     2015.11.09    임지후     최초 작성
+ ************************************************************************************************
+ */
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+include "LIB::comFile.xjs"; //파일공통함수 호출
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+ 
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitPop(obj, e, "FSC037P")
+	
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(grd_smsParam, e);
+ 	//기본값 초기화 - 화면 오픈시 수신전화번호 파라미터 수신번호목록 데이터셋에 추가 
+ 	fn_setInitForm(obj, e);  
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form 종료전 Check 함수(공통)
+-----------------------------------------------------------------------------------------------*/
+function Form_checkBeforeClose()
+{
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+	var strCode =  "DMS258=ds_DMS258=S";
+	gfn_getCodeDs( this
+				  , strCode
+				  ,"fn_afterCodeCallBack");	
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{
+	//공통코드 초기화
+	var cdNm = "";
+	var telNo = "";
+	 
+	ds_DMS258.setColumn(0,"MGMT_ITEM_CD3"," 발신번호 선택");
+	for(var i=1,len= ds_DMS258.rowcount; i<len; i++){
+		cdNm = ds_DMS258.getColumn(i,"CM_CD_NM");
+		telNo = ds_DMS258.getColumn(i,"MGMT_ITEM_CD3");
+		if(!gfn_isEmpty(telNo)){
+			telNo = gfn_tel_format(telNo);
+		} 
+		ds_DMS258.setColumn(i,"MGMT_ITEM_CD3", telNo);
+		ds_DMS258.setColumn(i,"CM_CD_NM", "["+cdNm+"] "+telNo);
+	}
+	cbo_chrgdeptcl.index=0;
+	
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Grid, e:LoadEventInfo)
+{
+	obj.nodataimage = "";
+	obj.style.border = "0 solid #808080ff";
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{	
+	var nRow = 0;
+	//화면 오픈시 수신전화번호 파라미터 수신번호목록 데이터셋에 추가 
+	if(!gfn_isNull(pRetnTelNo)){
+		nRow = ds_smsRetnTelNoLst.addRow();
+		ds_smsRetnTelNoLst.setColumn(nRow,"RETN_TEL_NO",pRetnTelNo);
+	}
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : SMS전송 서비스호출
+-----------------------------------------------------------------------------------------------*/
+function fn_sendSMS(obj:Button,  e:ClickEventInfo)
+{
+	
+	var sSvcID	 = "sendSMS";
+	var sTrID		 = "PSCAlrtSvcMgmt_pSendSMS";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_smsSend RS_RETN_TEL_LIST=ds_smsRetnTelNoLst";
+	var sOutputDs	= "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+		
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : MMS 발송 전 파일업로드
+-----------------------------------------------------------------------------------------------*/
+function fn_fileUpload()
+{
+	var sFileSvcId       = "uploadFile";
+	var sCallBackFnc     = "fn_callBackFile";
+	var objFileDS        = ds_upFile;
+	var sFullPathCol     = "fullpath";
+	var objButton        = "";
+	gfn_fileUpload(sFileSvcId, sCallBackFnc, objFileDS, sFullPathCol, objButton);
+}
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+	switch(sSvcID) {
+		case "sendSMS" : 
+			if ( iErrorCode == 0 ) {
+				gfn_message("A",ncMsg,"I");
+			}
+			break;		
+		default :
+			break;
+	}
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : FileUpload CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg, objRtnDs
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBackFile(sSvcID, iErrorCode, sErrorMsg, objRtnDs)
+{
+			
+ 	switch(sSvcID) {
+		case "uploadFile":		
+			var sServiceUrl = "";
+			var fileId = "";
+			var fileNm = "";
+			if(objRtnDs.rowcount == 1) {
+				fileId = objRtnDs.getColumn(0 ,"ncUploadedFileId");
+				fileNm = objRtnDs.getColumn(0,"ncUploadedFileName");
+			    //file download Full Path 입력 
+			    sServiceUrl = fileId+"||"+fileNm;
+				ds_smsSend.setColumn(0,"ATTACH_FILE1" , sServiceUrl);			
+			}
+			
+			//SMS전송서비스 호출
+			fn_sendSMS();
+			break;
+		default :
+			break;
+	}
+}
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : MMS 첨부파일 추가 버튼 클릭시 이벤트
+-----------------------------------------------------------------------------------------------*/
+function btn_fileUpload_onclick(obj:Button,  e:ClickEventInfo)
+{ 
+    //파일업로드 글로벌 함수 호출 
+	var objRtnDs = gfn_getFileInfo(true);
+	//파일업로드 데이터셋에 파일정보 추가 
+	if ( !gfn_isNull(objRtnDs) ) {	//Dataset사용시
+	
+		ds_upFile.clearData(); //파일 데이터셋 초기화 (파일한개만 저장함) 
+	
+		for(var i=0; i<objRtnDs.rowcount; i++){
+			if( objRtnDs.getColumn(i,"filesize") > 1048576 || objRtnDs.getColumn(i,"filetype") != "jpg" ){  //1Mbyte이하
+				gfn_message("A","DMS00165","E"); //첨부파일은 jpg형식의 파일만 지원됩니다.
+				return;
+			}
+			var nRow = ds_upFile.addRow();
+			ds_upFile.setColumn(nRow,"fullpath",objRtnDs.getColumn(i,"fullpath"));
+			ds_upFile.setColumn(nRow,"FILE_NM",objRtnDs.getColumn(i,"filename"));
+			ds_upFile.setColumn(nRow,"FILE_TYP_VAL",objRtnDs.getColumn(i,"filetype"));
+			ds_upFile.setColumn(nRow,"FILE_SIZE",objRtnDs.getColumn(i,"filesize"));
+		}
+	}
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : SMS전송버튼 클릭시 이벤트 
+-----------------------------------------------------------------------------------------------*/
+function btn_Send_onclick(obj:Button,  e:ClickEventInfo)
+{
+	grd_smsParam.updateToDataset();
+	edt_mmsFilePath.setFocus();
+	if ( fn_chkBeforeSave() ){
+		if(ds_upFile.rowcount == 0){
+			fn_sendSMS();
+		} else  {
+		
+			fn_fileUpload();
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 초기화버튼 클릭시 이벤트 
+-----------------------------------------------------------------------------------------------*/
+function btn_reset_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if(!gfn_message("C","DMS00161","Q")){ //초기화하시겠습니까?
+		return;
+	} 
+	
+	ds_smsSend.setColumn(0,"MSG_CTT","");	
+	ds_smsSend.setColumn(0,"ATTACH_FILE1","");
+	
+	ds_upFile.clearData();
+	ds_smsRetnTelNoLst.clearData();
+	
+	//발신자구분
+	cbo_chrgdeptcl.index=0; 
+	
+	//문자글자수 초기화
+	stc_msgCttLen.text = "0";
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : close
+-----------------------------------------------------------------------------------------------*/
+function btn_close_onclick(obj:Button,  e:ClickEventInfo)
+{
+	this.close();
+}
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 수신번호 추가버튼 클릭시 이벤트
+-----------------------------------------------------------------------------------------------*/
+function btn_smsParamAdd_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if(ds_smsRetnTelNoLst.rowcount < 10){
+		ds_smsRetnTelNoLst.addRow();		
+		grd_smsParam.setCellPos(1);
+		grd_smsParam.showEditor(true);
+	}	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 수신번호 삭제버튼 클릭시 이벤트
+-----------------------------------------------------------------------------------------------*/
+function btn_smsParamDel_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var nRow = ds_smsRetnTelNoLst.rowposition;
+	if(nRow >= 0 ){
+		ds_smsRetnTelNoLst.deleteRow(nRow);
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 발신번호 콤보값 변경시 이벤트
+-----------------------------------------------------------------------------------------------*/
+function cbo_chrgdeptcl_onitemchanged(obj:Combo, e:ItemChangeEventInfo)
+{
+	cbo_chrgdeptcl.datacolumn = "MGMT_ITEM_CD3";
+}
+
+function cbo_chrgdeptcl_ondropdown(obj:Combo, e:EventInfo)
+{
+	cbo_chrgdeptcl.datacolumn = "CM_CD_NM";
+}
+
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 문자내용 입력시  글자수 계산 
+-----------------------------------------------------------------------------------------------*/
+function txt_msg_ontextchanged(obj:TextArea,  e:TextChangedEventInfo)
+{
+	var str = obj.text;
+	
+	/*var l = 0;
+	for (var i=0; i<str.length; i++) l += (str.charCodeAt(i) > 128) ? 2 : 1; */
+	stc_msgCttLen.text = gfn_getLengthB2(str);
+}
+
+function txt_msg_cancharchange(obj:TextArea,  e:CanCharEventInfo)
+{
+	var str = obj.text;
+	if (gfn_getLengthB2(str)>=2000) return false;
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : SMS전송 전 유효성 검사
+-----------------------------------------------------------------------------------------------*/
+function fn_chkBeforeSave()
+{	
+	//필수값체크	
+	if (gfn_isNull(txt_msg.text)) {
+		gfn_message("A","DMS00023","E","","메세지 내용"); //{0}은/는 필수 입력값입니다.
+		txt_msg.setFocus();
+		return false;	
+	} else if(gfn_getLengthB2(txt_msg.text)>=2000){
+		gfn_message("A","DMS00096","E","",["메세지 내용","2000"]); //{0}은/는 {1}자 이상 초과 할수 없습니다.
+		txt_msg.setFocus();
+		return false;	
+	}
+		
+	 //수신번호목록 유효성검사
+	if(ds_smsRetnTelNoLst.rowcount == 0){
+		gfn_message("A","DMS00023","E","","수신번호"); //{0}은/는 필수 입력값입니다.
+		btn_smsParamAdd_onclick();
+		return false;
+	} else  {
+		var telNo = "";
+		for(var i=0,len= ds_smsRetnTelNoLst.rowcount; i<len; i++){
+			telNo = ds_smsRetnTelNoLst.getColumn(i,"RETN_TEL_NO");			
+			if(gfn_isNull(telNo)){
+				gfn_message("A","DMS00023","E","","수신번호"); //{0}은/는 필수 입력값입니다.
+				fn_setRetnTelNOFocus(i);
+				return false;
+			} else if(!gfn_checkPhone(telNo)){
+				gfn_message("A","DMS00080","E"); //전화번호 형식이 맞지 않습니다.
+				fn_setRetnTelNOFocus(i);
+				return false;
+			} else if(ds_smsRetnTelNoLst.getCaseCount("RETN_TEL_NO == '"+telNo+"'") > 1 ){
+				gfn_message("A","DMS00003","E"); //중복된 데이터가 존재합니다.
+				fn_setRetnTelNOFocus(i);
+				return false;
+			}
+		} //end of loop
+	} 
+	 
+	if(gfn_isNull(cbo_chrgdeptcl.value)){
+		gfn_message("A","DMS00023","E","","발신번호"); //{0}은/는 필수 입력값입니다.
+		
+		cbo_chrgdeptcl.setFocus();
+		cbo_chrgdeptcl.dropdown();
+		return false;
+	}
+	
+	return true;	
+}
+
+function fn_setRetnTelNOFocus(idx){
+	ds_smsRetnTelNoLst.rowposition = idx;
+	grd_smsParam.setCellPos(1);
+	grd_smsParam.showEditor(true);
+}]]></Script>
+  </Form>
+</FDL>

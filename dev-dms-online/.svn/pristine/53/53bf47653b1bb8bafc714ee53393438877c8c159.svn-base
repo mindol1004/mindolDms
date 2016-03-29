@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRAgnSellComMgmt">
+	<select id="SAgnSellComLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnSellComMgmt.SAgnSellComLstPaging 대리점판매수수료정산조회 */
+/* IO: 정동현,2015-08-17T09:27:06(정동현,2015-08-12T09:42:49) */
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.DEBT_DEALCO_CD ASC)  AS  ROWNO
+                ,A.DEBT_DEALCO_CD            		             /* 채권거래처코드 */
+                ,A.DEBT_ITM_AMT         		                 /* 채무항목금액 */
+                ,B.DEALCO_NM              		                 /* 채권거래처명 */
+                ,A.DEBT_XCL_YM					                 /* 채무정산년월 */
+           FROM  TB_XCL_DEBT A
+                ,TB_DEALCO B
+          WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+            AND  A.OP_CL_CD = 'NR'                     		     /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */  
+            AND  A.XCL_CL = 'AS'                       		     /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:사용료*/
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.DEBT_DEALCO_CD = #AGN_CD#                     /* 채권거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+                 B.DEALCO_NM = #AGN_NM#              	         /* 채권거래처명 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                 A.DEBT_XCL_YM = #XCL_YM#               	     /* 채무정산년월 */
+]]></isNotEmpty><![CDATA[
+         ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAgnSellComLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnSellComMgmt.SAgnSellComLstTotCnt 대리점판매수수료정산정보조회총건수 */
+/* IO: 정동현,2015-08-17T13:57:26(정동현,2015-08-06T17:30:56) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_XCL_DEBT A
+       ,TB_DEALCO B
+ WHERE  A.DEBT_DEALCO_CD = B.DEALCO_CD(+)
+   AND  A.OP_CL_CD = 'NR'                              /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */  
+   AND  A.XCL_CL = 'AS'                       		   /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:사용료*/
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.DEBT_DEALCO_CD = #AGN_CD#                    /* 채권거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+        B.DEALCO_NM = #AGN_NM#               		   /* 채권거래처명 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+        A.DEBT_XCL_YM = #XCL_YM#               		   /* 채무정산년월 */
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SAgnSellComDtlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnSellComMgmt.SAgnSellComDtlPaging 대리점판매수수료정산정보상세 */
+/* IO: 정동현,2015-08-19T17:06:43(정동현,2015-08-13T13:08:47) */
+SELECT  PA.*
+  FROM
+      (
+       SELECT  ROW_NUMBER() OVER (ORDER BY A.CNTRT_NO ASC) AS ROWNO
+              ,A.CNTRT_NO                                                                 /* 계약번호 */
+              ,B.SVC_MGMT_NO                                                              /* 서비스관리번호 */
+              ,D.DEALCO_NM                                                                /* 거래처명 */
+              ,(C.DEBT_ITM_AMT/COUNT(*) OVER (PARTITION BY B.AGN_CD ))  AS  DEBT_ITM_AMT  /* 수수료 */
+              ,C.DEBT_XCL_YM                                                              /* 정산년월 */
+              ,B.NEW_CNTRT_DT                                                             /* 계약일 */                         
+         FROM  TB_RENTAL_CNTRT A
+              ,TB_NR_CNTRT B
+              ,TB_XCL_DEBT C 
+              ,TB_DEALCO D
+        WHERE  A.CNTRT_NO = B.CNTRT_NO
+          AND  B.AGN_CD = C.DEBT_DEALCO_CD
+          AND  SUBSTR(B.NEW_CNTRT_DT,1, 6) = C.DEBT_XCL_YM
+          AND  C.DEBT_DEALCO_CD = D.DEALCO_CD(+)
+          AND  C.DEBT_XCL_YM = #XCL_YM#
+          AND  A.OP_CL_CD = 'NR'                                                          /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */
+          AND  C.XCL_CL = 'AS'                                                            /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:UKey사용료, KN:SKN_대리점_단말기정산, PE:단말기위약금, JD:손해배상금*/
+          AND  B.AGN_CD = #AGN_CD#
+       ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAgnSellComDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnSellComMgmt.SAgnSellComDtlTotCnt 대리점판매수수료정산정보상세총건수 */
+/* IO: 정동현,2015-08-19T17:06:12(정동현,2015-08-13T13:10:16) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_RENTAL_CNTRT A
+       ,TB_NR_CNTRT B
+       ,TB_XCL_DEBT C 
+       ,TB_DEALCO D
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.AGN_CD = C.DEBT_DEALCO_CD
+   AND  SUBSTR(B.NEW_CNTRT_DT,1, 6) = C.DEBT_XCL_YM
+   AND  C.DEBT_DEALCO_CD = D.DEALCO_CD(+)
+   AND  C.DEBT_XCL_YM = #XCL_YM#
+   AND  A.OP_CL_CD = 'NR'                                                /* 업무구분코드 */
+   AND  C.XCL_CL = 'AS'                                                  /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:UKey사용료, KN:SKN_대리점_단말기정산, PE:단말기위약금, JD:손해배상금*/
+   AND  B.AGN_CD = #AGN_CD#]]>
+	</select>
+</sqlMap>

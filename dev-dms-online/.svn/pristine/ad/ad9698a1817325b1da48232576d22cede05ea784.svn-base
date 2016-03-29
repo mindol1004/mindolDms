@@ -1,0 +1,300 @@
+package dms.ep.epssxbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]Skt수수료관리</li>
+ * <li>설  명 : <pre>[FU]Skt수수료관리</pre></li>
+ * <li>작성일 : 2015-10-05 10:36:10</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class FEPAgnCmmsMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPAgnCmmsMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]대리점수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_CMMS_LIST
+	 *		- field : XCL_STRD_YM [정산연월]
+	 *		- field : DEDC_TYP_CD [중고폰 공제유형구분]
+	 *		- field : INVE_TYP_CD [중고폰 재고유형구분]
+	 *		- field : CMMS_COUNT [수수료 건수]
+	 *		- field : XCL_AMT [수수료 금액]
+	 * </pre>
+	 */
+	public IDataSet fSAgnCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSSktCmmsDtlLst(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]선할인대리점수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산연월]
+	 *	- field : USER_ID [로그인ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIPreDcAgnCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIPreDcSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]계좌송금확정재고대리점수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산연월]
+	 *	- field : USER_ID [로그인ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIAccoRmtConfAgnCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIAccoRmtRpetJdgSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]계좌송금미착재고대리점수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산연월]
+	 *	- field : USER_ID [로그인ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIAccoRmtNonConffAgnCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIAccoRmtGnrlJdgSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]요금선납확정재고대리점수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산연월]
+	 *	- field : USER_ID [로그인ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIFeePpayConfAgnCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIFeePpayGnrlJdgSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]요금선납미착재고대리점수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산연월]
+	 *	- field : USER_ID [로그인ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIFeePpayNonConffAgnCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIFeePpayRpetJdgSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]선할인대리점수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_STRD_YM [필드1]
+	 *	- field : DEDC_TYP_CD [필드2]
+	 *	- field : INVE_TYP_CD [필드3]
+	 *	- field : EXCEL_FIRST [필드4]
+	 *	- field : EXCEL_LAST [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_DTL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [전체건수]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : DPSTR [성명]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : CNSL_AMT [상담금액]
+	 *		- field : EQP_ST [단말기상태등급]
+	 * </pre>
+	 */
+	public IDataSet fSPreDcAgnCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSPreDcSktCmmsLst(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]수수료정산삭제</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산연월]
+	 *	- field : USER_ID [로그인ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDTbEpCmmsXcl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dDTbEpCmmsXcl(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+  
+}

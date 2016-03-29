@@ -1,0 +1,163 @@
+package dms.pr.prsimbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [DU]임대폰출고회수관리</li>
+ * <li>설  명 : <pre>임대폰출고회수관리</pre></li>
+ * <li>작성일 : 2015-07-24 13:19:16</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class DPRReqpInveInfoSend extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DPRReqpInveInfoSend(){
+		super();
+	}
+
+	/**
+	 * <pre>임대폰재고조회총건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-24 13:20:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSReqpInveLstTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+       // 1.쿼리문 호출     
+  		IRecord record = dbSelectSingle("SReqpInveLstTotCnt", requestData, onlineCtx);
+  		// 2.결과값 셋팅     
+  		responseData.putFieldMap(record);
+
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰재고조회페이징</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-24 13:20:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSReqpInveLstPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		    
+ 		 // 1.쿼리문 호출
+ 		IRecordSet rsReturn = dbSelect("SReqpInveLstPaging", requestData, onlineCtx);
+ 		
+ 		// 2.결과값 셋팅
+ 		responseData.putRecordSet("RS_EQP_IN_LIST", rsReturn);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰출고단말기계약등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-24 13:19:16
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CNTRT_LIST
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : RENT_STA_DT [렌트시작일자]
+	 *		- field : RENT_END_SCHD_DT [렌트종료예정일자]
+	 *		- field : RENT_END_DT [렌트종료일자]
+	 *		- field : RENT_APRV_YN [렌트승인여부]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIReqpOutCntrtRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("IReqpOutCntrtRgst", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰출고단말기계약취소</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-07-24 13:19:16
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUReqpOutCntrtStat(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("UReqpOutCntrtStat", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+    /**
+	 *
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-08-21 14:41:51
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSReqpInveLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        IRecordSet rsReturn = dbSelect("SReqpInveLst", requestData, onlineCtx);
+        
+        responseData.putRecordSet("RS_EQP_IN_LIST2", rsReturn);
+    
+        return responseData;
+    }
+  
+}

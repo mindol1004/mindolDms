@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCPrnInfoInqHstMgmt">
+	<select id="SPrnInfoInqHstPasing" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCPrnInfoInqHstMgmt.SPrnInfoInqHstPasing 개인정보조회이력목록조회 */
+/* IO: admin,2015-08-24T13:51:50(정혜미,2014-09-19T13:17:51) */
+SELECT  * 
+  FROM (  
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.INQ_REQ_DTM DESC)   AS ROWNO
+               ,TO_CHAR(A.INQ_REQ_DTM, 'YYYY-MM-DD HH24:MI:SS') AS INQ_REQ_DTM  /* 조회요청일시 */
+               ,A.INQ_OBJ_CL_CD         /* 조회대상구분코드 */
+               ,A.INQ_OBJ_NO            /* 조회대상번호 */
+               ,A.PRN_INFO_INQ_ITEM_CD	 /* 개인정보조회항목 */
+               ,A.PRN_INFO_INQ_CTT      /* 개인정보조회내용 */
+               ,A.INQ_REQ_CHNL_CD       /* 조회요청채널코드 */
+               ,A.FRM_ID                /* 화면ID */
+               ,A.INQ_REQ_IDF_NO        /* 조회요청식별번호 */
+               ,A.IP_ADDR               /* IP주소 */
+               ,A.MAC_ADDR              /* MAC주소 */
+               ,A.GLB_ID                /* 글로벌ID */
+               ,A.FS_REG_USER_ID        /* 최초등록사용자 */
+               ,TO_CHAR(A.FS_REG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM    /* 최초등록일시 */
+               ,A.LS_CHG_USER_ID       /* 최종변경사용자 */
+               ,TO_CHAR(A.LS_CHG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS LS_CHG_DTM     /* 최종변경일시 */
+          FROM  TH_PRN_INFO_INQ_HST A
+        ]]><dynamic prepend="WHERE"><![CDATA[
+        ]]><isNotEqual prepend="AND" property="INQ_OBJ_CL_CD" compareValue="%"><![CDATA[
+                A.INQ_OBJ_CL_CD   = #INQ_OBJ_CL_CD#
+        ]]></isNotEqual><![CDATA[       
+        ]]><isNotEmpty prepend="AND" property="INQ_OBJ_NO"><![CDATA[
+                A.INQ_OBJ_NO LIKE '%'||#INQ_OBJ_NO#||'%'
+        ]]></isNotEmpty><![CDATA[       
+        ]]><isNotEmpty prepend="AND" property="INQ_REQ_IDF_NO"><![CDATA[
+                A.INQ_REQ_IDF_NO LIKE '%'||#INQ_REQ_IDF_NO#||'%'
+        ]]></isNotEmpty><![CDATA[   
+        ]]><isNotEmpty prepend="AND" property="INQ_REQ_STA_DTM"><![CDATA[
+               (A.INQ_REQ_DTM    >= TO_DATE(#INQ_REQ_STA_DTM#, 'YYYYMMDD')
+           AND  A.INQ_REQ_DTM    <= TO_DATE(#INQ_REQ_END_DTM#, 'YYYYMMDD') +1-(1/(24*60*60)) )
+        ]]></isNotEmpty><![CDATA[
+        ]]></dynamic><![CDATA[ 
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SPrnInfoInqHstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCPrnInfoInqHstMgmt.SPrnInfoInqHstTotCnt 개인정보조회이력전체건수조회 */
+/* IO: admin,2015-08-24T13:52:02(정혜미,2014-09-18T22:02:39) */
+SELECT
+        COUNT(1) AS TOTAL_CNT  /* 전체건수 */
+  FROM  TH_PRN_INFO_INQ_HST A  /* SC_개인정보조회이력 */
+]]><dynamic prepend="WHERE"><![CDATA[ 
+]]><isNotEqual prepend="AND" property="INQ_OBJ_CL_CD" compareValue="%"><![CDATA[
+        A.INQ_OBJ_CL_CD   = #INQ_OBJ_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="INQ_OBJ_NO"><![CDATA[
+        A.INQ_OBJ_NO LIKE '%'||#INQ_OBJ_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="INQ_REQ_IDF_NO"><![CDATA[
+        A.INQ_REQ_IDF_NO LIKE '%'||#INQ_REQ_IDF_NO#||'%'
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="INQ_REQ_STA_DTM"><![CDATA[
+       (A.INQ_REQ_DTM    >= TO_DATE(#INQ_REQ_STA_DTM#, 'YYYYMMDD') 
+   AND  A.INQ_REQ_DTM    <= TO_DATE(#INQ_REQ_END_DTM#, 'YYYYMMDD') +1-(1/(24*60*60))) 
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+</sqlMap>

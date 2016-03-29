@@ -1,0 +1,106 @@
+package dms.ep.epsrpbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.log.LogManager;
+
+import org.apache.commons.logging.Log;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [DU]단말기매입매출전표현황관리</li>
+ * <li>설  명 : <pre>단말기매입매출전표현황관리</pre></li>
+ * <li>작성일 : 2015-12-09 11:04:38</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class DEPEqpPrSNoMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DEPEqpPrSNoMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>단말기매입매출전표현황조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-12-09 11:05:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSEqpPrSNoListPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+		Log logger = LogManager.getFwkLog(); 
+		IDataSet responseData = new DataSet();
+		IRecordSet rsReturn = null;
+        // 1.쿼리문 호출
+//	    NO_GB
+		logger.debug("\n\n\n\n\n >>>>>>>>>>>>>>>>>>>>  NO_GB : "+requestData.getField("NO_GB")+"\n\n\n\n\n ");
+	    if("01".equals(requestData.getField("NO_GB") )){
+	    	rsReturn = dbSelect("SEqpPrSNoListMPaging", requestData, onlineCtx);
+	    }else if("02".equals(requestData.getField("NO_GB") )){
+	    	rsReturn = dbSelect("SEqpPrSNoListCPaging", requestData, onlineCtx);
+	    }else if("03".equals(requestData.getField("NO_GB") )){
+	    	rsReturn = dbSelect("SEqpPrSNoListAPPaging", requestData, onlineCtx);
+	    }else if("04".equals(requestData.getField("NO_GB") )){
+	    	rsReturn = dbSelect("SEqpPrSNoListARPaging", requestData, onlineCtx);
+	    }else{
+	    	rsReturn = dbSelect("SEqpPrSNoListPaging", requestData, onlineCtx);
+	    }
+        // 2.결과값 셋팅     
+        responseData.putRecordSet("RS_EQP_PRSNO_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기매입매출전표현황총건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-12-09 11:05:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSEqpPrSNoListToCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        // 1.쿼리문 호출     
+        IRecord record  =null;
+        
+//        record = dbSelectSingle("SEqpPrSNoListToCnt", requestData, onlineCtx);
+        if("01".equals(requestData.getField("NO_GB") )){
+        	record = dbSelectSingle("SEqpPrSNoListMToCnt", requestData, onlineCtx);
+	    }else if("02".equals(requestData.getField("NO_GB") )){
+	    	record = dbSelectSingle("SEqpPrSNoListCToCnt", requestData, onlineCtx);
+	    }else if("03".equals(requestData.getField("NO_GB") )){
+	    	record = dbSelectSingle("SEqpPrSNoListAPToCnt", requestData, onlineCtx);
+	    }else if("04".equals(requestData.getField("NO_GB") )){
+//	    	record = dbSelectSingle("SEqpPrSNoListAPToCnt", requestData, onlineCtx);
+	    	record = dbSelectSingle("SEqpPrSNoListARToCnt", requestData, onlineCtx);
+	    }else{
+	    	record = dbSelectSingle("SEqpPrSNoListToCnt", requestData, onlineCtx);
+	    }
+        // 2.결과값 셋팅     
+        responseData.putFieldMap(record);
+    
+        return responseData;
+    }
+  
+}

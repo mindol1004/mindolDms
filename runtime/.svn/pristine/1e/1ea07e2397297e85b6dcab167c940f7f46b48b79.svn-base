@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+    <bean id="nc.deferred.DeferredManager" class="nexcore.framework.deferred.manager.DeferredManager" init-method="init" destroy-method="destroy" depends-on="nc.jmx.mbeanserver">
+    	<description><![CDATA[디퍼드 엔진]]></description>    
+        <property name="startupDelay"              value="${nexcore.deferred.startupDelay}" />
+        <property name="heartbeatInterval"         value="${nexcore.deferred.heartbeatInterval}" />
+        <property name="heartbeatRetryCount"       value="${nexcore.deferred.heartbeatRetryCount}" />
+        <property name="wasInstanceManager"        ref="nc.core.IWasInstanceManager" />
+        <property name="deferredLogManager"        ref="nc.deferred.LogManager" />
+        <property name="sqlManager"                ref="nc.deferred.ISqlManager" />
+    	<property name="deferredProcessorList"     ref="nc.deferred.ProcessorList" />
+    	<property name="deferredReProcessorList"   ref="nc.deferred.ReProcessorList" />
+    </bean>
+
+    <bean id="nc.deferred.LogManager" class="nexcore.framework.deferred.log.DeferredLogManager">
+        <description><![CDATA[디퍼드 로그 관리]]></description>
+        <property name="integration"           value="${nexcore.deferred.logger.integration}" />
+    </bean>
+
+    <bean id="nc.deferred.CacheManager" class="nexcore.framework.deferred.cache.DeferredCacheManager" init-method="init" destroy-method="destroy">
+        <description><![CDATA[디퍼드 캐시 관리]]></description>
+        <property name="cacheManager"              ref="nc.core.ICacheManager" />
+        <property name="cacheName"                 value="${nexcore.deferred.cacheName}" />
+        <property name="deferredLogManager"        ref="nc.deferred.LogManager" />
+        <property name="sqlManager"                ref="nc.deferred.ISqlManager" />
+    </bean>
+    
+    <bean id="nc.deferred.ISqlManager" class="nexcore.framework.integration.db.internal.XmlSqlManager" init-method="init">
+        <description><![CDATA[디퍼드 SQL Manager]]></description>
+        <property name="configFile" value="${nexcore.deferred.sqlMapConfigFile}" />
+        <property name="userThreadManager" ref="nc.core.IUserThreadManager" />
+    </bean>
+    
+ </beans>

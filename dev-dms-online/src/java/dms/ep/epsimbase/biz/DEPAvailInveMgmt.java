@@ -1,0 +1,666 @@
+package dms.ep.epsimbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [DU]가용재고관리</li>
+ * <li>설  명 : <pre>가용재고관리</pre></li>
+ * <li>작성일 : 2015-08-24 09:18:32</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ *
+ * @author 김상오 (myneti99)
+ */
+public class DEPAvailInveMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DEPAvailInveMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>가용재고조회총건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-27 15:19:58
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSAvailInveListTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        // 1.쿼리문 호출     
+        IRecord record = dbSelectSingle("SAvailInveListTotCnt", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅     
+        responseData.putFieldMap(record);     
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>가용재고조회목록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-27 15:20:22
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSAvailInveListPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SAvailInveListPaging", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_AVAIL_INVE_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>입출고이력상세조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 13:05:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgInoutHstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {    
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SCdChgInoutHstLst", requestData, onlineCtx);
+            
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RS_DIS_INOUT_HST_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+        return responseData;
+    }
+
+    /**
+	 * <pre>구성품조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 13:05:44
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgProdCpntLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {    
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SCdChgProdCpntLst", requestData, onlineCtx);
+            
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RS_DIS_PROD_CPNT_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품코드변경이력목록건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-24 09:18:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgLogCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            // 1.쿼리문 호출
+            IRecord record = dbSelectSingle("SCdChgLogCnt", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putFieldMap(record);   
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재고목록건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-24 09:18:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgDisCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {       
+            // 1.쿼리문 호출
+            IRecord record = dbSelectSingle("SCdChgDisCnt", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putFieldMap(record);   
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재고금액목록건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-24 09:18:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgDisAmtCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            // 1.쿼리문 호출
+            IRecord record = dbSelectSingle("SCdChgDisAmtCnt", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putFieldMap(record);   
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재고이력목록건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-24 09:18:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgDisHstCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            // 1.쿼리문 호출
+            IRecord record = dbSelectSingle("SCdChgDisHstCnt", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putFieldMap(record);   
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>구성품목록건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 13:17:34
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgProdCpntCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            // 1.쿼리문 호출
+            IRecord record = dbSelectSingle("SCdChgProdCpntCnt", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putFieldMap(record);   
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품재고목록건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 13:20:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgProdDisCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            // 1.쿼리문 호출
+            IRecord record = dbSelectSingle("SCdChgProdDisCnt", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putFieldMap(record);   
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품입출고상세목록건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 13:21:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgProdInoutHstCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {       
+            // 1.쿼리문 호출
+            IRecord record = dbSelectSingle("SCdChgProdInoutHstCnt", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putFieldMap(record);   
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품단가목록건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 13:22:36
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCdChgProdUnitPrcCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {       
+            // 1.쿼리문 호출
+            IRecord record = dbSelectSingle("SCdChgProdUnitPrcCnt", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putFieldMap(record);   
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품코드변경이력수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:53:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgLogUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgLogUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품코드변경이력등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-24 09:18:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dICdChgLogReg(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("ICdChgLogReg", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>매입관리목록수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:55:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgPrchsMgmtUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgPrchsMgmtUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재고목록수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:55:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgDisUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgDisUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재고금액목록수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:56:24
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgDisAmtUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgDisAmtUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재고이력목록수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:56:58
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgDisHstUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgDisHstUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>입고상세수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:58:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgInDtlUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgInDtlUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>출고상세수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:58:29
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgOutDtlUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgOutDtlUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>입출고이력상세수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:58:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgInoutHstUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgInoutHstUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>구성품코드수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:59:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgProdCpntCdUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgProdCpntCdUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>구성품목록수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:59:32
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgProdCpntUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgProdCpntUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품재고목록수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 17:59:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgProdDisUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgProdDisUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품입출고상세목록수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 18:03:15
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgProdInoutHstUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgProdInoutHstUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품단가목록수정</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-03 18:03:43
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCdChgProdUnitPrcUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {       
+            dbInsert("UCdChgProdUnitPrcUpd", requestData, onlineCtx); 
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+  
+}

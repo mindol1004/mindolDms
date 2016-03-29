@@ -1,0 +1,311 @@
+package dms.nr.nrbxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]위약금정산정보조회</li>
+ * <li>설  명 : <pre>위약금정산정보조회PU</pre></li>
+ * <li>작성일 : 2015-07-27 17:30:12</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class PNRStlMnt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRStlMnt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-27 17:30:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : PEN_POLY_CL [위약금유형]
+	 *	- field : XCL_YY [년]
+	 *	- field : XCL_MTH [월]
+	 *	- field : YDATE [년+월]
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CAL_CHR_STL_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PEN_POLY_CL [위약금유형]
+	 *		- field : RENTAL_QTY [대수]
+	 *		- field : DMS_PEN_AMT [DMS등록]
+	 *		- field : UKEY_PEN_AMT [UKEY금액]
+	 *		- field : PEN_RECV_AMT [수납액]
+	 *		- field : DIV_PEN [차액]
+	 *		- field : PEN_POLY_NO [위약금정책번호]
+	 *		- field : PP_PEN_POLY_CL [정책번호유형]
+	 *		- field : UN_DIV_PEN [미납액]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : XCL_ITM_CD [정산항목코드]
+	 *		- field : SUM_DMS_PEN_AMT [DMS합계금액]
+	 *	- record : RS_CAL_CHR_STL_SYS_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : PEN_POLY_CL [위약금유형]
+	 *		- field : DMS_PEN_AMT [DMS금액]
+	 *		- field : UKEY_PEN_AMT [UKEY금액]
+	 *		- field : PEN_RECV_AMT [수납액]
+	 *		- field : DIV_PEN [차액]
+	 *		- field : UN_DIV_PEN [미납액]
+	 *		- field : RENTAL_CNTRT_STA_DT [계약시작일]
+	 *		- field : RENTAL_CNTRT_END_DT [계약종료일]
+	 *		- field : END_DT [실종료일]
+	 *		- field : XCL_SLIP_NO [전표번호]
+	 *		- field : XCL_ITM_CD [정산항목코드]
+	 *	- record : RS_SUM_LIST
+	 *		- field : M_CNT [건수]
+	 *		- field : M_PRC [금액]
+	 *	- record : RS_SUM_DTL_LIST
+	 *		- field : S_CNT [건수]
+	 *		- field : S_PRC [금액]
+	 *	- record : RS_CAL_CHR_STL_PSNL_CORP_LIST
+	 *		- field : DEALCO_BLICENS_NO [법인사용자번호]
+	 *		- field : NEW_CNTRTR_NM [고객명]
+	 *		- field : SLIP_TYPE [전표타입]
+	 *		- field : AMT [정산금액]
+	 *		- field : GUBUN [구분]
+	 *		- field : SELEC [개인,법인]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : YYYY [년도]
+	 *		- field : PEN_POLY_CL [위약금구분코드]
+	 * </pre>
+	 */
+	public IDataSet pCalChrStlMgmtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fCalChrStlMgmtLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-27 17:30:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : PEN_POLY_CL [위약금유형]
+	 *	- field : XCL_YY [년]
+	 *	- field : XCL_MTH [월]
+	 *	- field : YDATE [년+월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : 위약금정산정보상세
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PEN_POLY_CL [위약금유형]
+	 *		- field : RENTAL_QTY [대수]
+	 *		- field : DMS_PEN_AMT [DMS등록]
+	 *		- field : UKEY_PEN_AMT [UKEY금액]
+	 *		- field : PEN_RECV_AMT [수납액]
+	 *		- field : DIV_PEN [차액]
+	 *		- field : PEN_POLY_NO [위약금정책번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : RENTAL_CNTRT_STA_DT [계약시작일]
+	 *		- field : RENTAL_CNTRT_END_DT [계약종료일]
+	 *		- field : RENTAL_SER_NO [렌탈일련번호]
+	 *		- field : RTN_REG_DT [실종료일]
+	 *		- field : IN_DT [입고일]
+	 *		- field : YDATE [년+월]
+	 *		- field : UN_DIV_PEN [미납액]
+	 * </pre>
+	 */
+	public IDataSet pCalChrStlMgmtDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fCalChrStlMgmtDtlLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+    /**
+	 *
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-07-27 17:30:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [년+월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pCalChrStlMgmtReBatch(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fCalChrStlMgmtReBatch", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-07-27 17:30:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : NEW_CNTRTR_NM [법인명]
+	 *		- field : SLIP_TYPE [전표타입(위약금)]
+	 *		- field : AMT [정산금액]
+	 *		- field : GUBUN [구분]
+	 *		- field : SELEC [필드6]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : YYYYMM [년월]
+	 *		- field : PEN_POLY_CL [위약금구분코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveCalChrStlMgmtSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fSaveCalChrStlMgmtSlip", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>위약금정산전표삭제</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-07-27 17:30:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : NEW_CNTRTR_NM [고객명]
+	 *		- field : SLIP_TYPE [전표타입(위약금)]
+	 *		- field : AMT [정산금액]
+	 *		- field : GUBUN [구분]
+	 *		- field : SELEC [필드6]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : YYYYMM [년월]
+	 *		- field : YYYY [년]
+	 *		- field : PEN_POLY_CL [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveCalChrStlMgmtSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fSaveCalChrStlMgmtSlipDel", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-27 17:30:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [필드1]
+	 *	- field : PEN_POLY_CL [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pCalChrStlAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fCalChrStlAllExcel", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        return responseData; 
+	
+	}
+ 
+}

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCUpldFileInfo">
+	<insert id="IFileInfo" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCUpldFileInfo.IFileInfo 업로드파일정보등록 */
+/* IO: 박홍서,2015-07-08T12:07:05(admin,2014-08-06T18:28:49) */
+INSERT INTO TB_UPLD_FILE_INFO
+  (
+    UPLD_FILE_NO,
+    FILE_ID,
+    FILE_NM,
+    FILE_TYP_VAL,
+    FILE_SIZE,
+    FS_REG_USER_ID,
+    FS_REG_DTM,
+    LS_CHG_USER_ID,
+    LS_CHG_DTM
+  )
+  VALUES
+  (
+    #UPLD_FILE_NO#,
+    #FILE_ID#,
+    #FILE_NM#,
+    SUBSTR(#FILE_TYP_VAL#, 1, 50),
+    #FILE_SIZE#,
+    #USER_NO#,
+    SYSDATE,
+    #USER_NO#,
+    SYSDATE
+  )]]>
+	</insert>
+	<select id="SFileSeqNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCUpldFileInfo.SFileSeqNo 파일업로드용 채번 */
+/* IO: admin,2014-11-27T16:05:21(admin,2014-08-07T10:37:56) */
+SELECT SQ01_TB_UPLD_FILE_INFO.NEXTVAL AS "UPLD_FILE_NO"
+FROM DUAL]]>
+	</select>
+	<delete id="DFileInfo" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCUpldFileInfo.DFileInfo 업로드파일정보삭제 */
+/* IO: 박홍서,2015-07-08T12:07:25(admin,2014-08-07T17:24:19) */
+DELETE
+FROM TB_UPLD_FILE_INFO
+WHERE UPLD_FILE_NO = #UPLD_FILE_NO#
+]]><isNotEmpty prepend="AND" property="FILE_ID"><![CDATA[
+	FILE_ID = #FILE_ID#
+]]></isNotEmpty><![CDATA[]]>
+	</delete>
+	<select id="SFileInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCUpldFileInfo.SFileInfo 업로드파일정보조회 */
+/* IO: 박홍서,2015-07-08T15:07:32(박홍서,2015-07-08T13:12:08) */
+SELECT  UPLD_FILE_NO
+      , FILE_ID
+      , FILE_NM
+      , FILE_TYP_VAL
+      , FILE_SIZE
+      , FS_REG_USER_ID
+      , FS_REG_DTM
+      , LS_CHG_USER_ID
+      , LS_CHG_DTM
+  FROM  TB_UPLD_FILE_INFO
+ WHERE  UPLD_FILE_NO = #UPLD_FILE_NO#
+]]><isNotEmpty prepend="AND" property="FILE_ID"><![CDATA[
+        FILE_ID = #FILE_ID#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

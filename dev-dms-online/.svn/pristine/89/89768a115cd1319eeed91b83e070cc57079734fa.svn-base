@@ -1,0 +1,115 @@
+package dms.ep.epscsbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]재감정품질검사대상조회목록</li>
+ * <li>설  명 : <pre>재감정품질검사대상조회목록</pre></li>
+ * <li>작성일 : 2015-08-28 15:49:14</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class FEPRJdgQltyJdgMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPRJdgQltyJdgMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]재감정품질검사대상조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-28 15:49:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회검수시작일자]
+	 *	- field : IN_TO_DT [조회검수종료일자]
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : CNSL_MGMT_SER_NO [일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR [예금주(고객명)]
+	 *	- field : CNSL_MGMT_NO [접수관리번호]
+	 *	- field : BOX_NO [BOX_NO]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : QLTY_JDG_OBJ_LIST
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호(접수 관리 번호)]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : CNSL_MGMT_SER_NO [일련번호]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : AFFIL_ORG_ID [소속 조직 ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주(고객명)]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : EQP_ST [단말기 상태(등급)]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 상세]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : CHECK_USER_NM [검수자]
+	 *		- field : CHECKED [CHECKED]
+	 * </pre>
+	 */
+	public IDataSet fInqRJdgQltyJdgObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPRJdgQltyJdgMgmt dEPRJdgQltyJdgMgmt = (DEPRJdgQltyJdgMgmt) lookupDataUnit(DEPRJdgQltyJdgMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgObjListTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseData = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgObjListPaging(requestData, onlineCtx);
+
+            rsPagingList = responseData.getRecordSet("QLTY_JDG_OBJ_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+  
+}

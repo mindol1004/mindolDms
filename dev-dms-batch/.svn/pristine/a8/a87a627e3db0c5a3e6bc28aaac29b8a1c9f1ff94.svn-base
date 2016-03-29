@@ -1,0 +1,160 @@
+/**
+ * 
+ */
+package dms.utils.sapjco.domain.pr;
+
+import java.io.Serializable;
+
+import org.apache.commons.lang.StringUtils;
+
+import dms.constants.enums.sapjco.elem.SAP_BIZ_AREA;
+import dms.constants.enums.sapjco.elem.SAP_BP;
+import dms.constants.enums.sapjco.elem.SAP_DEAL_CO_CD;
+import dms.constants.enums.sapjco.elem.SAP_SLIP_KINDS;
+import dms.constants.enums.sapjco.elem.SAP_WBS_ELEM;
+import dms.utils.sapjco.domain.CommonSlipHeader;
+import fwk.constants.enums.sapjco.elem.SAP_PAY_COND;
+import fwk.constants.enums.sapjco.elem.SAP_PSTNG_KEY;
+import fwk.constants.enums.sapjco.elem.SAP_TAX_CD;
+import fwk.erfif.sapjco.domain.CommonSlipItem;
+
+
+
+/**
+ * 단말기 대금정산(ㅇ임대)
+ * @author greatjin
+ *
+ */
+public class AgencyAmtAPPRSlip implements Serializable{
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	CommonSlipHeader header    ;
+	CommonSlipItem[] items    = new CommonSlipItem[2] ;
+	
+	private String custCd; //Customer Code for init
+	private String taxAmt;
+	
+	private SAP_SLIP_KINDS slipKinds =SAP_SLIP_KINDS.AGENCY_AMT_AP_PR; 
+	private String dmsType = slipKinds.getDmsType();
+	private String functionName = slipKinds.getFuncName();
+	private String slipType = slipKinds.getSlipType();
+
+	
+	
+
+	
+	public AgencyAmtAPPRSlip(String zserial, String lginId, String slipDt, String custCd, String netAmt, String taxAmt,  String headerTxt, String itmTxt)
+	{
+		this.init(zserial, lginId,  slipDt, custCd, netAmt, taxAmt,  headerTxt, itmTxt);
+	}
+
+	
+	/**
+	 * 초기화
+	 * @param amt
+	 */
+	private void init(String zserial, String lginId, String slipDt, String custCd, String netAmt, String taxAmt, String headerTxt, String itmTxt)
+	{
+		header = new CommonSlipHeader();
+		header.setSerNo(zserial);
+		header.setDmsTyp(this.dmsType);
+		header.setSlipTyp(this.slipType);
+		header.setUserNo(lginId);
+		header.setTransCd("FBV1");
+		header.setHdrTxt(headerTxt);
+		
+		this.custCd   = custCd;
+		this.taxAmt   = taxAmt;
+		
+		if(StringUtils.isNotEmpty(slipDt)) header.setPstngDt(slipDt);
+		if(StringUtils.isNotEmpty(slipDt)) header.setEvdcDt(slipDt);
+		
+		int idx = 1; 
+		for(int i=0; i<items.length; i++)
+		{
+			items[i] = new CommonSlipItem();
+			items[i].setSerNo(zserial);
+			items[i].setDmsSeq(idx++ +"");
+			items[i].setBizArea(SAP_BIZ_AREA.DEV_HQ.getCode());
+			items[i].setBp(SAP_BP.SKCC_HQ.getCode());			
+			items[i].setDsignField(SAP_WBS_ELEM.ECO_R_BIZ.getCode());
+			items[i].setTaxCd(SAP_TAX_CD.INTAX10_TAXBILL.getCode());
+			items[i].setAmt(netAmt);
+			items[i].setTxt(itmTxt);	
+		}
+		
+		initDr(items[0],header);
+		initCr(items[1],header);
+	}
+	
+	/**
+	 * 차변 초기화
+	 * @param one
+	 */
+	private void initDr(CommonSlipItem one, CommonSlipHeader header)
+	{
+		one.setPstngKey(SAP_PSTNG_KEY.DR.getCode());
+		one.setDealCoCd(custCd);
+		one.setPayCond(SAP_PAY_COND.KRW_1ST.getCode());
+		long netAmt = Long.parseLong(one.getAmt());
+		long taxAmt = Long.parseLong(this.taxAmt);
+		one.setAmt(netAmt+taxAmt +"");
+		one.setTaxAmt(taxAmt +"");
+	}
+	
+	/**
+	 * 대변초기화
+	 * @param one
+	 */
+	private void initCr(CommonSlipItem one, CommonSlipHeader header)
+	{
+		one.setPstngKey(SAP_PSTNG_KEY.CR.getCode());
+		one.setDealCoCd(SAP_DEAL_CO_CD.UNCLT_KRW_DEV.getCode());
+	}
+	
+    public CommonSlipItem getDr()
+    {
+    	return this.items[0];
+    }
+	
+    public CommonSlipItem getCr()
+    {
+    	return this.items[1];
+    }
+    
+    
+
+	public CommonSlipHeader getHeader() {
+		return header;
+	}
+
+	public void setHeader(CommonSlipHeader header) {
+		this.header = header;
+	}
+
+	public CommonSlipItem[] getItems() {
+		return items;
+	}
+
+	public void setItems(CommonSlipItem[] items) {
+		this.items = items;
+	}
+
+	public String getCustCd() {
+		return custCd;
+	}
+
+	public void setCustCd(String custCd) {
+		this.custCd = custCd;
+	}
+
+	public String getFunctionName() {
+		return functionName;
+	}
+	
+	
+
+}

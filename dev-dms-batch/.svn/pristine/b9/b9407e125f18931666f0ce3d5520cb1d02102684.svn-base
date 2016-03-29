@@ -1,0 +1,707 @@
+package dms.nr;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import nexcore.framework.bat.IBatchContext;
+
+import org.apache.commons.logging.Log;
+
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.bat.base.AutoCommitRecordHandler;
+import nexcore.framework.bat.base.DBSession;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>서브 업무명 : DBR005</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-04 14:44:37</li>
+ * <li>작성자 : 진병수 (greatjin)</li>
+ * </ul>
+ */
+public class DBR005 extends AbsBatchComponent {
+    private Log log;
+    private int processCnt = 0;
+    private String taskNo = "";
+    //private int totCnt = 0;
+    private String procFileName = "";
+    private AutoCommitRecordHandler rh = null;
+    
+    
+    public DBR005() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+		log = getLog(context);
+		
+		processCnt = 0;
+		taskNo = "";
+		//totCnt = 0;
+		procFileName = "";
+		
+		IOnlineContext    onlineCtx  = makeOnlineContext(context);
+		IDataSet reqDS = new DataSet();
+		IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+		taskNo = resDS.getField("TASK_NO");
+		
+		reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "NR");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        IDataSet resDS2 = callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }	
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+        // 트랜잭션 시작
+    	txBegin();  
+    	dbStartSession();
+    	//dbBeginBatch();
+    	
+    	Map<String, String> paramMap = new HashMap<String, String>();
+    	paramMap.put("PROC_DT", context.getInParameter("PROC_DT"));    //처리일
+    	paramMap.put("OP_TYP_CD", context.getInParameter("OP_TYP_CD"));//계약상태
+    	
+    	dbSelect("SIFCntrt", paramMap, makeRecordHandler(context), context); //DB 조회    	
+    	
+		// 트랜잭션 커밋    	
+		//dbEndBatch();
+		dbEndSession();
+		txCommit(); 
+    }
+    
+    public AutoCommitRecordHandler makeRecordHandler(IBatchContext context) {
+        
+        rh = new AutoCommitRecordHandler(this, context,  dbNewSession(context, false)) {
+            @SuppressWarnings("unchecked")
+            @Override
+			public void handleRecord(IRecord row) {
+				context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+				context.getLogger().debug("########### : " + row);
+
+				IDataSet reqDs = new DataSet();
+				reqDs.putFieldMap(row);
+				reqDs.putField("PROCESS_CNT", processCnt);
+				
+				String OP_TYP_CD = reqDs.getField("OP_TYP_CD");
+                
+				if( "01".equals(OP_TYP_CD) ){ //가입
+				    subscribe(reqDs);
+				}else if( "02".equals(OP_TYP_CD)){ //02:해지
+				    termination(reqDs);
+				}else if( "03".equals(OP_TYP_CD) ){ //교품
+				    exchange(reqDs);
+				}else if( "04".equals(OP_TYP_CD) ){ //변경
+				    change(reqDs);
+				}else if( "05".equals(OP_TYP_CD) ){ //해지후 반남
+				    returnAfterTermination(reqDs);
+				}else if( "06".equals(OP_TYP_CD) ){ //반품해지,기변철회
+				    rcolTermination(reqDs);
+                }else if( "07".equals(OP_TYP_CD) ){ //렌탈계약종료(단독)
+                    reqDs.putField("OP_TYP_CD", "08");
+                    reqTermination(reqDs);
+                }
+				
+                dbUpdate("UIFCntrt", row, context);   //인터페이스테이블 처리상태 변경
+				processCnt++;
+			}
+		    /*가입*/
+			private void subscribe(IDataSet reqDs){
+                //필수 항목 체크
+                validate(reqDs, new String[]{  "SVC_MGMT_NO"     , "RENTAL_SER_NO"      , "SVC_NO"                 , "OP_PROC_DT"         , "RENTAL_POLY_NO"
+                                             , "AGN_CD"          , "EQP_SER_NO"         , "COLOR_CD"               , "CUST_TYP"           , "NEW_CNTRTR_NM"
+                                             , "NEW_CNTRTR_ZIPCD", "NEW_CNTRTR_INV_ADDR", "NEW_CNTRTR_INV_ADDR_DTL", "RENTAL_CNTRT_STA_DT", "RENTAL_CNTRT_END_DT"  
+                                             , "EQP_MDL_CD" });                
+                
+			    IOnlineContext    onlineCtx  = makeOnlineContext(context);
+                IDataSet polyDs = null;
+			    IRecord validRd = null;             
+                
+			    //기존계약존재유무 체크
+			    validRd = dbSelectSingle("SNRCntrtCnt", reqDs.getFieldMap(), context);
+                
+			    if( validRd.getInt("CNT")>0 ){
+			        throw new BizRuntimeException("해당계약은 이미 존재합니다 : " + reqDs.getField("SVC_MGMT_NO")); 
+			    }
+
+	            //기존자산 존재여부 체크              
+			    validRd = dbSelectSingle("SEqpAssetCnt", reqDs.getFieldMap(), context);
+                if( validRd.getInt("CNT")>0 ){
+                    throw new BizRuntimeException("해당 자산은 이미 존재합니다 : " + reqDs.getField("SVC_MGMT_NO"));
+                }                
+                
+                //거래처 존재 여부 체크
+                validRd = dbSelectSingle("SDealCoCnt", reqDs.getFieldMap(), context);
+                if( validRd.getInt("CNT") != 1 ){
+                    throw new BizRuntimeException("해당 대리점은  존재하지 않거나  : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+                //인터페이스데이타와 기존계약데이타 merge(기본값 세팅)
+                reqDs = mergeDataSet( reqDs, null );
+                
+                //손해배상금정책 조회(단말기 반납시점 정책을 적용하기로 변경)
+                /*
+                polyDs = callOnlineBizComponent("nr.NRSPLBase", "fInqCmpPolyLst", reqDs, onlineCtx);
+                if( polyDs.getRecordSet("RS_CMP_POLY_LIST") == null 
+                    || (polyDs.getRecordSet("RS_CMP_POLY_LIST") != null && polyDs.getRecordSet("RS_CMP_POLY_LIST").getRecordCount()!=1) ){
+                    throw new BizRuntimeException("손해배상금정책이 유효하지 않습니다 : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+                reqDs.putField("DCP_NO", polyDs.getRecordSet("RS_CMP_POLY_LIST").get(0, "DCP_NO"));
+                */
+                //위약금정책 조회
+                polyDs = callOnlineBizComponent("nr.NRSPLBase", "fInqPenPolyLst", reqDs, onlineCtx);    
+                if( polyDs.getRecordSet("RS_PEN_POLY_LIST") == null 
+                    || (polyDs.getRecordSet("RS_PEN_POLY_LIST")!= null && polyDs.getRecordSet("RS_PEN_POLY_LIST").getRecordCount()!=1) ){
+                    throw new BizRuntimeException("위약금정책이 유효하지 않습니다 : " + reqDs.getField("SVC_MGMT_NO"));
+                }                
+                reqDs.putField("PEN_POLY_NO", polyDs.getRecordSet("RS_PEN_POLY_LIST").get(0, "PEN_POLY_NO"));
+                
+                //렌탈정책 조회
+                polyDs = callOnlineBizComponent("nr.NRSPLBase", "fInqEqpPolyLst", reqDs, onlineCtx);    
+                if( polyDs.getRecordSet("RS_EQP_POLY_LIST") == null 
+                    || (polyDs.getRecordSet("RS_EQP_POLY_LIST")!= null && polyDs.getRecordSet("RS_EQP_POLY_LIST").getRecordCount()!=1) ){
+                    throw new BizRuntimeException("렌탈정책이 유효하지 않습니다 : " + reqDs.getField("SVC_MGMT_NO"));
+                }                
+                if( !reqDs.getField("RENTAL_POLY_NO").equals(polyDs.getRecordSet("RS_EQP_POLY_LIST").get(0, "RENTAL_POLY_NO")) ){
+                    throw new BizRuntimeException("렌탈정책이 유효하지 않습니다 : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+                
+                if( !reqDs.getField("EQP_MDL_CD").equals(polyDs.getRecordSet("RS_EQP_POLY_LIST").get(0, "EQP_MDL_CD")) ){
+                    throw new BizRuntimeException("해당계약건 단말기와 정책정보의 단말기가 다릅니다 : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+
+                reqDs.putField("RENTAL_POLY_NO", polyDs.getRecordSet("RS_EQP_POLY_LIST").get(0, "RENTAL_POLY_NO"));
+                reqDs.putField("OUT_PRC", polyDs.getRecordSet("RS_EQP_POLY_LIST").get(0, "OUT_PRC")); //출고가
+                reqDs.putField("CNTRT_PRD", polyDs.getRecordSet("RS_EQP_POLY_LIST").get(0, "CNTRT_PRD")); //계약기간
+                reqDs.putField("RENTAL_FEE", polyDs.getRecordSet("RS_EQP_POLY_LIST").get(0, "RENTAL_FEE")); //렌탈료
+                reqDs.putField("EXPT_DSPSL_PRC", polyDs.getRecordSet("RS_EQP_POLY_LIST").get(0, "EXPT_DSPSL_PRC")); //FPA 매각가
+                
+			    //계약마스터 등록
+			    String CNTRT_NO = (String) dbInsertAndReturnPK("IRentalCntrt", reqDs.getFieldMap(), context);
+			    reqDs.putField("CNTRT_NO", CNTRT_NO);
+			    
+			    //신규R계약 등록
+			    dbInsert("INRCntrt", reqDs.getFieldMap(), context);
+			    
+			    //계약이력 등록
+			    dbInsertAndReturnPK("INRCntrtHst", reqDs.getFieldMap(), context);
+			    
+			    //매입등록
+			    String PRCH_NO = (String)dbInsertAndReturnPK("IPrch", reqDs.getFieldMap(), context);
+			    reqDs.putField("PRCH_NO", PRCH_NO);
+			    			    
+	            //자산등록
+                String ASSET_NO = (String)dbInsertAndReturnPK("IEqpAsset", reqDs.getFieldMap(), context);
+                reqDs.putField("ASSET_NO", ASSET_NO);
+                
+			    //입고등록
+			    String EQP_IN_NO = (String)dbInsertAndReturnPK("IEqpIn", reqDs.getFieldMap(), context);
+			    reqDs.putField("EQP_IN_NO", EQP_IN_NO);
+			    
+			    //출고등록
+			    String EQP_OUT_NO = (String)dbInsertAndReturnPK("IEqpOut", reqDs.getFieldMap(), context);
+			    reqDs.putField("EQP_OUT_NO", EQP_OUT_NO);			    
+			    
+	            //자산변경(출고번호 등록)
+			    chkUpdate(dbUpdate("UEqpAssetOut", reqDs.getFieldMap(), context));
+                
+			    //단말계약등록
+			    dbInsert("IEqpCntrt", reqDs.getFieldMap(), context);
+	            			    
+			    //단말계약상세등록
+			    dbInsert("IEqpCntrtDtl", reqDs.getFieldMap(), context);		
+			    
+			    //UEKY 보증보험테이블 계약번호 업데이트
+			    dbUpdate("UInsuUkey", reqDs.getFieldMap(), context);
+			    
+			    //SGI 보증보험테이블 계약번호 업데이트
+			    dbUpdate("UInsuSgi", reqDs.getFieldMap(), context);
+			}
+			/*해지*/
+			private void termination(IDataSet reqDs){             
+                validate(reqDs, new String[]{  "OP_PROC_DT", "SVC_MGMT_NO", "RENTAL_POLY_NO", "COLOR_CD", "EQP_RTN_YN", "RENTAL_SER_NO"
+                                             , "AGN_CD"    , "EQP_MDL_CD" , "EQP_SER_NO"});
+                //현재 계약정보 조회
+                IRecord cntrtRd = null;
+                try{
+                    cntrtRd = dbSelectSingle("SRentalCntrt", reqDs.getFieldMap(), context);
+                }catch(Exception e){
+                    throw new BizRuntimeException("해지하기 위한 가입데정보가 없습니다. : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+                
+                if( "02".equals(cntrtRd.get("OP_TYP_CD")) || "05".equals(cntrtRd.get("OP_TYP_CD")) || "07".equals(cntrtRd.get("OP_TYP_CD"))
+                    || "06".equals(cntrtRd.get("OP_TYP_CD")) || "08".equals(cntrtRd.get("OP_TYP_CD")) ){
+                    throw new BizRuntimeException("해지된 계약건은 변경할수 없습니다.");
+                }
+                
+                //reqDs.putField("DCP_NO", cntrtRd.get("DCP_NO"));//손해배상금정책번호
+                reqDs.putField("PEN_POLY_NO", cntrtRd.get("PEN_POLY_NO"));//위약금정책번호
+                reqDs.putField("RENTAL_POLY_NO", cntrtRd.get("RENTAL_POLY_NO"));//레탈정책번호
+                reqDs.putField("CNTRT_NO", cntrtRd.get("CNTRT_NO"));//계약번호
+                reqDs.putField("UNRTN_AMT", cntrtRd.get("UNRTN_AMT"));//미반남금액
+                reqDs.putField("RENTAL_CNTRT_END_DT", cntrtRd.get("RENTAL_CNTRT_END_DT"));//렌탈계약종료일자
+                reqDs.putField("RENTAL_CNTRT_STA_DT", cntrtRd.get("RENTAL_CNTRT_STA_DT"));//렌탈계약시작일자
+                
+                
+                //인터페이스데이타와 기존계약데이타 merge
+                reqDs = mergeDataSet( reqDs, cntrtRd );
+                
+                //중도해지
+                if( reqDs.getIntField("OP_PROC_DT")<reqDs.getIntField("RENTAL_CNTRT_END_DT")){ //해지일이 계약종료일보다 작을 경우 중도해지로 본다.
+                    //가입14일내 반납해지한 경우(반품해지 로직으로 이동)    
+                    /*
+                    if(DateUtils.getBetweenDays(reqDs.getField("RENTAL_CNTRT_STA_DT"), reqDs.getField("OP_PROC_DT"), false) <= 14 ){    
+                        //자산상태 14일이내 반납으로 변경
+                        reqDs.putField("INVE_ST_CD", "80");
+                        chkUpdate(dbUpdate("UEqpAssetSt", reqDs.getFieldMap(), context));    
+                        reqDs.putField("PRCH_ST_CD", "02");
+                        //매입상태 매입취소로 변경, 금액 마이너스        
+                        chkUpdate(dbUpdate("UPrchSt", reqDs.getFieldMap(), context));
+                                            
+                    }else{
+                    */
+                    
+                    //미반남일경우 손해배상금 미반납 발생, 해지일 기준으로 처리(해지요청인터페이스에서 처리하기로 함)                                            
+                    if( "N".equals(reqDs.getField("EQP_RTN_YN")) ){
+                        Map<String, String> paramMap = new HashMap<String, String>();
+                        paramMap.put("OUT_PRC", cntrtRd.get("OUT_PRC"));
+                        paramMap.put("RENTAL_CNTRT_STA_DT", cntrtRd.get("RENTAL_CNTRT_STA_DT"));
+                        paramMap.put("BASE_DT", reqDs.getField("OP_PROC_DT"));
+                        String UNRTN_AMT = dbSelectSingle("SUnrtnAmt", paramMap, context).get("UNRTN_AMT");
+                        
+                        reqDs.putField("UNRTN_AMT", UNRTN_AMT);
+                        reqDs.putField("BASE_DT", cntrtRd.get("OP_PROC_DT"));
+                        //손해배상금 등록
+                        dbInsert("IRentalDcp", reqDs.getFieldMap(), context);
+                    }else{ 
+                        //중도해지일 경우  위약금 등록(손해배상금 미반납이 발생할 경우 중도해지 위약금은 면제)
+                        reqDs.putField("RENTAL_FEE", cntrtRd.get("RENTAL_FEE"));
+                        reqDs.putField("REM_RENTAL_FEE_RT",cntrtRd.get("REM_RENTAL_FEE_RT"));
+                        
+                        //중도해지 위약금 계산  
+                        IRecord rentalPenAmt = dbSelectSingle("SRentalPenAmt", reqDs.getFieldMap(), context);
+                        //중도해지 위약금 등록
+                        reqDs.putField("DMS_PEN_AMT", rentalPenAmt.get("DMS_PEN_AMT"));
+                        reqDs.putField("REM_RENTAL_FEE", rentalPenAmt.get("REM_RENTAL_FEE"));
+                        dbInsert("IRentalPen", reqDs.getFieldMap(), context);
+                        //회수대상등록
+                        dbInsertAndReturnPK("IClctObj", reqDs.getFieldMap(), context);
+                    }
+
+                    //}
+                    //중도해지시 렌탈료 수정 당월 일할계산, 익월부터 0원 처리
+                    chkUpdate(dbUpdate("UeqpCntrtDtl", reqDs.getFieldMap(), context));
+                    
+                    reqDs.putField("OP_TYP_CD", "07"); //중도해지 상태값 변경
+                //정상해지
+                }else{                    
+                    //단말기 반납시 반납지연 위약금 발생
+                    if( "Y".equals(reqDs.getField("EQP_RTN_YN")) ){                        
+                        //반납지연 대상여부 조회(렌탈종료일 기준)
+                        Map<String, String> paramMap = new HashMap<String, String>();
+                        paramMap.put("BASE_DT", reqDs.getField("RENTAL_CNTRT_END_DT"));
+                        IRecord prdRd = dbSelectSingle("SUnRtnPenPrd", paramMap, context);
+                        
+                        reqDs.putField("BASE_DT", reqDs.getField("RENTAL_CNTRT_END_DT"));           //기준일(렌탈종료일)
+                        reqDs.putField("RTN_DT", reqDs.getField("OP_PROC_DT"));                     //반납일(해지일)
+                        reqDs.putField("DAY_RENTAL_FEE_RT", cntrtRd.get("DAY_RENTAL_FEE_RT"));      //반납일(반납지연 위약금 일렌탈료 비율)
+                        reqDs.putField("RENTAL_FEE", cntrtRd.get("RENTAL_FEE"));//월렌탈료
+                                                
+                        if( reqDs.getIntField("RTN_DT") > prdRd.getInt("SCARL_STA_DT") && reqDs.getIntField("RTN_DT") <=prdRd.getInt("SCARL_END_DT") ){
+                            //반납지연 위약금 등록
+                            dbInsert("IRentalPenDelay", reqDs.getFieldMap(), context);   
+                        }                                            
+                    }
+                    
+                    //반납여부 Y:반납, N:미반납, S:반납예정
+                    //미반남일경우 손해배상금 미반납 발생, 해지일 기준으로 처리.
+                    if( "N".equals(reqDs.getField("EQP_RTN_YN")) ){
+                        Map<String, String> paramMap = new HashMap<String, String>();
+                        paramMap.put("OUT_PRC", cntrtRd.get("OUT_PRC"));
+                        paramMap.put("RENTAL_CNTRT_STA_DT", cntrtRd.get("RENTAL_CNTRT_STA_DT"));
+                        paramMap.put("BASE_DT", cntrtRd.get("RENTAL_CNTRT_END_DT"));
+                        String UNRTN_AMT = dbSelectSingle("SUnrtnAmt", paramMap, context).get("UNRTN_AMT");
+                        
+                        reqDs.putField("UNRTN_AMT", UNRTN_AMT);
+                        reqDs.putField("BASE_DT", cntrtRd.get("RENTAL_CNTRT_END_DT"));
+                        //손해배상금 등록
+                        dbInsert("IRentalDcp", reqDs.getFieldMap(), context);
+                    }else{
+                        //회수대상등록
+                        dbInsertAndReturnPK("IClctObj", reqDs.getFieldMap(), context);
+                    }  
+                    
+                    //헨탈종료예정일에 해지할경우 1일치 렌탈료 감면??????????????????????????? 확정 필요
+                    if( reqDs.getField("RENTAL_CNTRT_END_DT").equals(reqDs.getIntField("OP_PROC_DT")) ){
+                        chkUpdate(dbUpdate("UeqpCntrtDtl", reqDs.getFieldMap(), context));
+                    }
+                }
+                		                                   
+                //단말계약 헨트종료일 등록
+                chkUpdate(dbUpdate("UEqpCntrt", reqDs.getFieldMap(), context));
+                //계약변경
+                chkUpdate(dbUpdate("UNRCntrt", reqDs.getFieldMap(), context));
+                //반납구성품 등록
+                String CMPT_INFO = reqDs.getField("CMPT_INFO");
+                if( StringUtils.isNotEmpty(CMPT_INFO) ){
+                    Pattern p = Pattern.compile("(\\w{2})(\\w{1})");
+                    Matcher m = p.matcher(CMPT_INFO);
+                    while(m.find()){
+                        reqDs.putField("CMPT_CD", m.group(1));
+                        reqDs.putField("RTN_YN", m.group(2));
+                        dbInsert("IEqpCmptRtn", reqDs.getFieldMap(), context);  
+                    }                                      
+                }                
+                //계약이력등록
+                dbInsertAndReturnPK("INRCntrtHst", reqDs.getFieldMap(), context); 
+			}
+            /*렌탈계약종료(단독)*/
+            private void reqTermination(IDataSet reqDs){             
+                validate(reqDs, new String[]{  "OP_PROC_DT", "SVC_MGMT_NO", "RENTAL_POLY_NO", "COLOR_CD", "EQP_RTN_YN", "RENTAL_SER_NO"
+                                             , "AGN_CD"    , "EQP_MDL_CD" , "EQP_SER_NO"});
+                //현재 계약정보 조회
+                IRecord cntrtRd = null;
+                try{
+                    cntrtRd = dbSelectSingle("SRentalCntrt", reqDs.getFieldMap(), context);
+                }catch(Exception e){
+                    throw new BizRuntimeException("렌탈계약종료(단독)하기 위한 가입데정보가 없습니다. : " + reqDs.getField("SVC_MGMT_NO"));
+                }              
+                
+                if( "02".equals(cntrtRd.get("OP_TYP_CD")) || "05".equals(cntrtRd.get("OP_TYP_CD")) || "07".equals(cntrtRd.get("OP_TYP_CD"))
+                    || "06".equals(cntrtRd.get("OP_TYP_CD")) || "08".equals(cntrtRd.get("OP_TYP_CD")) ){
+                    throw new BizRuntimeException("해지된 계약건은 변경할수 없습니다.");
+                }
+                
+                //reqDs.putField("DCP_NO", cntrtRd.get("DCP_NO"));//손해배상금정책번호
+                reqDs.putField("PEN_POLY_NO", cntrtRd.get("PEN_POLY_NO"));//위약금정책번호
+                reqDs.putField("RENTAL_POLY_NO", cntrtRd.get("RENTAL_POLY_NO"));//레탈정책번호
+                reqDs.putField("CNTRT_NO", cntrtRd.get("CNTRT_NO"));//계약번호
+                reqDs.putField("UNRTN_AMT", cntrtRd.get("UNRTN_AMT"));//미반남금액
+                reqDs.putField("RENTAL_CNTRT_END_DT", cntrtRd.get("RENTAL_CNTRT_END_DT"));//렌탈계약종료일자
+                reqDs.putField("RENTAL_CNTRT_STA_DT", cntrtRd.get("RENTAL_CNTRT_STA_DT"));//렌탈계약시작일자
+                
+                
+                //인터페이스데이타와 기존계약데이타 merge
+                reqDs = mergeDataSet( reqDs, cntrtRd );
+                                                           
+                //단말계약 헨트종료일 등록
+                chkUpdate(dbUpdate("UEqpCntrt", reqDs.getFieldMap(), context));
+                //계약변경
+                chkUpdate(dbUpdate("UNRCntrt", reqDs.getFieldMap(), context));
+                //계약이력등록
+                dbInsertAndReturnPK("INRCntrtHst", reqDs.getFieldMap(), context); 
+            }			
+			/*교품*/
+			private void exchange(IDataSet reqDs){	
+			    //필수항목체크
+                validate(reqDs, new String[]{  "SVC_MGMT_NO" , "SVC_NO", "OP_PROC_DT"    , "EQP_MDL_CD"   , "EQP_SER_NO"
+                                             , "COLOR_CD", "AGN_CD", "RENTAL_POLY_NO", "RENTAL_SER_NO"});                
+                
+                reqDs.putField("EQP_CHG_YN", "Y");         //기기변경여부
+                
+                //현재 계약정보 조회
+                IRecord cntrtRd = null;
+                try{
+                    cntrtRd = dbSelectSingle("SRentalCntrt", reqDs.getFieldMap(), context);
+                }catch(Exception e){
+                    throw new BizRuntimeException("교품하기 위한 가입데정보가 없습니다. : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+                
+                //인터페이스데이타와 기존계약데이타 merge
+                reqDs = mergeDataSet( reqDs, cntrtRd );
+                
+                if( "02".equals(cntrtRd.get("OP_TYP_CD")) || "05".equals(cntrtRd.get("OP_TYP_CD")) || "07".equals(cntrtRd.get("OP_TYP_CD"))
+                    || "06".equals(cntrtRd.get("OP_TYP_CD")) || "08".equals(cntrtRd.get("OP_TYP_CD")) ){
+                    throw new BizRuntimeException("해지된 계약건은 변경할수 없습니다.");
+                }
+                //reqDs.putField("DCP_NO", cntrtRd.get("DCP_NO"));//손해배상금정책번호
+                reqDs.putField("PEN_POLY_NO", cntrtRd.get("PEN_POLY_NO"));//위약금정책번호
+                reqDs.putField("RENTAL_POLY_NO", cntrtRd.get("RENTAL_POLY_NO"));//레탈정책번호
+                reqDs.putField("CNTRT_NO", cntrtRd.get("CNTRT_NO"));//계약번호
+                
+                //단말자산 일련번호,최종교품일자 변경
+                chkUpdate(dbUpdate("UEqpAsset", reqDs.getFieldMap(), context)); 
+                //입고 일련번호 변경
+                chkUpdate(dbUpdate("UEqpIn", reqDs.getFieldMap(), context)); 
+                //출고 일련번호 변경
+                chkUpdate(dbUpdate("UEqpOut", reqDs.getFieldMap(), context)); 
+                //매입테이블 일련번호 변경
+                chkUpdate(dbUpdate("UPrch", reqDs.getFieldMap(), context)); 
+                //계약변경
+                chkUpdate(dbUpdate("UNRCntrt", reqDs.getFieldMap(), context));
+
+                //계약이력등록
+                dbInsertAndReturnPK("INRCntrtHst", reqDs.getFieldMap(), context);   
+			}
+			/*변경*/
+            private void change(IDataSet reqDs){         
+                validate(reqDs, new String[]{  "OP_PROC_DT", "SVC_NO", "SVC_MGMT_NO", "RENTAL_POLY_NO", "RENTAL_SER_NO"
+                                             , "EQP_MDL_CD" , "EQP_SER_NO"});
+                //현재 계약정보 조회
+                IRecord cntrtRd = null;
+                try{
+                    cntrtRd = dbSelectSingle("SRentalCntrt", reqDs.getFieldMap(), context);
+                }catch(Exception e){
+                    throw new BizRuntimeException("변경하기 위한 가입데정보가 없습니다. : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+
+                //인터페이스데이타와 기존계약데이타 merge
+                reqDs = mergeDataSet( reqDs, cntrtRd );
+                
+                if( "02".equals(cntrtRd.get("OP_TYP_CD")) || "05".equals(cntrtRd.get("OP_TYP_CD")) || "07".equals(cntrtRd.get("OP_TYP_CD"))
+                    || "06".equals(cntrtRd.get("OP_TYP_CD")) || "08".equals(cntrtRd.get("OP_TYP_CD")) ){
+                    throw new BizRuntimeException("해지된 계약건은 변경할수 없습니다.");
+                }
+                
+                //reqDs.putField("DCP_NO", cntrtRd.get("DCP_NO"));//손해배상금정책번호
+                reqDs.putField("PEN_POLY_NO", cntrtRd.get("PEN_POLY_NO"));//위약금정책번호
+                reqDs.putField("RENTAL_POLY_NO", cntrtRd.get("RENTAL_POLY_NO"));//레탈정책번호
+                reqDs.putField("CNTRT_NO", cntrtRd.get("CNTRT_NO"));//계약번호
+                //명의변경
+                if( !StringUtils.equalsIgnoreNull(reqDs.getField("NEW_CNTRTR_NM"), cntrtRd.get("NEW_CNTRTR_NM")) ){
+                    reqDs.putField("TTUL_CHG_YN", "Y");
+                }
+                //법정대리인변경
+                if( !StringUtils.equalsIgnoreNull(reqDs.getField("LEGAL_AGENT_NM"), cntrtRd.get("LEGAL_AGENT_NM")) ){
+                    reqDs.putField("LEGAL_AGENT_CHG_YN", "Y");
+                }
+                //단말기변경
+                if( !StringUtils.equalsIgnoreNull(reqDs.getField("EQP_SER_NO"), cntrtRd.get("EQP_SER_NO")) 
+                    || !StringUtils.equalsIgnoreNull(reqDs.getField("COLOR_CD"), cntrtRd.get("COLOR_CD")) ){
+                    reqDs.putField("EQP_CHG_YN", "Y");
+                    
+                    //단말자산 일련번호,최종교품일자 변경
+                    chkUpdate(dbUpdate("UEqpAsset", reqDs.getFieldMap(), context)); 
+                    //입고 일련번호 변경
+                    chkUpdate(dbUpdate("UEqpIn", reqDs.getFieldMap(), context)); 
+                    //출고 일련번호 변경
+                    chkUpdate(dbUpdate("UEqpOut", reqDs.getFieldMap(), context)); 
+                    //매입테이블 일련번호 변경
+                    chkUpdate(dbUpdate("UPrch", reqDs.getFieldMap(), context));                     
+                }
+                
+                //계약변경
+                chkUpdate(dbUpdate("UNRCntrt", reqDs.getFieldMap(), context));
+                //계약이력등록
+                dbInsertAndReturnPK("INRCntrtHst", reqDs.getFieldMap(), context);                 
+            }
+            /*해지후 반남*/
+            private void returnAfterTermination(IDataSet reqDs){                
+                validate(reqDs, new String[]{  "OP_PROC_DT"   , "COLOR_CD", "EQP_RTN_YN", "AGN_CD", "RENTAL_POLY_NO"
+                                             , "RENTAL_SER_NO" });                     
+                //현재 계약정보 조회
+                IRecord cntrtRd = null;
+                try{
+                    cntrtRd = dbSelectSingle("SRentalCntrt", reqDs.getFieldMap(), context);
+                }catch(Exception e){
+                    throw new BizRuntimeException("해지후반납을 위한 가입정보가 없습니다. : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+                //인터페이스데이타와 기존계약데이타 merge
+                reqDs = mergeDataSet( reqDs, cntrtRd );
+                
+                //reqDs.putField("DCP_NO", cntrtRd.get("DCP_NO"));//손해배상금정책번호
+                reqDs.putField("PEN_POLY_NO", cntrtRd.get("PEN_POLY_NO"));//위약금정책번호
+                reqDs.putField("RENTAL_POLY_NO", cntrtRd.get("RENTAL_POLY_NO"));//레탈정책번호
+                reqDs.putField("CNTRT_NO", cntrtRd.get("CNTRT_NO"));//계약번호
+                
+                if( !"Y".equals(reqDs.getField("EQP_RTN_YN")) ) {
+                    throw new BizRuntimeException("해지후 반남(반납여부가 Y가 아님) : " + reqDs.getField("SVC_MGMT_NO"));
+                }
+                //반납지연 대상여부 조회(해지일기준)
+                Map<String, String> paramMap = new HashMap<String, String>();
+                if( "07".equals(cntrtRd.get("OP_TYP_CD")) ){     //중도해지일 경우
+                    reqDs.putField("BASE_DT", cntrtRd.get("OP_PROC_DT"));    //기준일(해지일)
+                    paramMap.put("BASE_DT", cntrtRd.get("OP_PROC_DT"));
+                }else{                                           //정상해지일 경우
+                    reqDs.putField("BASE_DT", reqDs.getField("RENTAL_CNTRT_END_DT"));    //기준일(렌탈종료예정일)
+                    paramMap.put("BASE_DT", reqDs.getField("RENTAL_CNTRT_END_DT"));
+                }
+                
+                IRecord prdRd = dbSelectSingle("SUnRtnPenPrd", paramMap, context);               
+                
+                reqDs.putField("RTN_DT", reqDs.getField("OP_PROC_DT"));                 //반납일                
+                reqDs.putField("DAY_RENTAL_FEE_RT", cntrtRd.get("DAY_RENTAL_FEE_RT"));  //반납일(반납지연 위약금 일렌탈료 비율)
+                reqDs.putField("RENTAL_FEE", cntrtRd.get("RENTAL_FEE"));                //월렌탈료
+                
+                if( reqDs.getIntField("RTN_DT") > prdRd.getInt("SCARL_STA_DT") && reqDs.getIntField("RTN_DT") <=prdRd.getInt("SCARL_END_DT") ){
+                    //반납지연 위약금 등록
+                    dbInsert("IRentalPenDelay", reqDs.getFieldMap(), context);   
+                }
+                
+                //회수대상등록
+                if( !"N".equals(reqDs.getField("EQP_RTN_YN")) ){
+                    dbInsertAndReturnPK("IClctObj", reqDs.getFieldMap(), context);
+                }       
+                
+                //계약변경
+                chkUpdate(dbUpdate("UNRCntrt", reqDs.getFieldMap(), context));
+                //반납구성품 등록
+                String CMPT_INFO = reqDs.getField("CMPT_INFO");
+                if( StringUtils.isNotEmpty(CMPT_INFO) ){
+                    Pattern p = Pattern.compile("(\\w{2})(\\w{1})"); // 패턴설정. \d+ 는 정수 하나 이상()정규식
+                    Matcher m = p.matcher(CMPT_INFO);
+                    while(m.find()){
+                        reqDs.putField("CMPT_CD", m.group(1));
+                        reqDs.putField("RTN_YN", m.group(2));
+                        dbInsert("IEqpCmptRtn", reqDs.getFieldMap(), context);
+                    }                                                           
+                }                   
+                //계약이력등록
+                dbInsertAndReturnPK("INRCntrtHst", reqDs.getFieldMap(), context);                
+            }          
+            
+            /*반품해지,기변철회*/
+            private void rcolTermination(IDataSet reqDs){
+                
+                //현재 계약정보 조회
+                IRecord cntrtRd = null;
+                try{
+                    cntrtRd = dbSelectSingle("SRentalCntrt", reqDs.getFieldMap(), context);
+                }catch(Exception e){
+                    throw new BizRuntimeException("반품해지하기 위한 가입데정보가 없습니다. : " + reqDs.getField("SVC_MGMT_NO"));
+                }                
+                
+                if( "02".equals(cntrtRd.get("OP_TYP_CD")) || "05".equals(cntrtRd.get("OP_TYP_CD")) || "07".equals(cntrtRd.get("OP_TYP_CD"))
+                    || "06".equals(cntrtRd.get("OP_TYP_CD")) || "08".equals(cntrtRd.get("OP_TYP_CD")) ){
+                    throw new BizRuntimeException("해지된 계약건은 변경할수 없습니다.");
+                }
+                
+                //reqDs.putField("DCP_NO", cntrtRd.get("DCP_NO"));//손해배상금정책번호
+                reqDs.putField("PEN_POLY_NO", cntrtRd.get("PEN_POLY_NO"));//위약금정책번호
+                reqDs.putField("RENTAL_POLY_NO", cntrtRd.get("RENTAL_POLY_NO"));//레탈정책번호
+                reqDs.putField("CNTRT_NO", cntrtRd.get("CNTRT_NO"));//계약번호
+                reqDs.putField("UNRTN_AMT", cntrtRd.get("UNRTN_AMT"));//미반남금액
+                reqDs.putField("RENTAL_CNTRT_END_DT", cntrtRd.get("RENTAL_CNTRT_END_DT"));//렌탈계약종료일자
+                reqDs.putField("RENTAL_CNTRT_STA_DT", cntrtRd.get("RENTAL_CNTRT_STA_DT"));//렌탈계약종료일자
+                
+                
+                //인터페이스데이타와 기존계약데이타 merge
+                reqDs = mergeDataSet( reqDs, cntrtRd );
+                
+                reqDs.putField("INVE_ST_CD", "80");
+                chkUpdate(dbUpdate("UEqpAssetSt", reqDs.getFieldMap(), context));    
+                reqDs.putField("PRCH_ST_CD", "02");
+                //매입상태 매입취소로 변경, 금액 마이너스        
+                chkUpdate(dbUpdate("UPrchSt", reqDs.getFieldMap(), context));
+                //중도해지시 렌탈료 수정 당월 일할계산, 익월부터 0원 처리
+                chkUpdate(dbUpdate("UeqpCntrtDtl2", reqDs.getFieldMap(), context));
+                
+                //단말계약 헨트종료일 등록
+                chkUpdate(dbUpdate("UEqpCntrt", reqDs.getFieldMap(), context));
+                //계약변경
+                chkUpdate(dbUpdate("UNRCntrt", reqDs.getFieldMap(), context));
+                //계약이력등록
+                dbInsertAndReturnPK("INRCntrtHst", reqDs.getFieldMap(), context); 
+            }
+            
+            private void chkUpdate(int udpCnt){
+                if( udpCnt == 0){
+                    throw new BizRuntimeException("처리중 오류가 발생했습니다."); 
+                }
+            }
+			
+            private IDataSet mergeDataSet(IDataSet targetDs, IRecord newRd){
+                //인터페이스에서 받지않는 항목 기본값셋팅
+                targetDs.putField("OP_CL_CD", "NR");          //업무구분
+                targetDs.putField("TTUL_CHG_YN", "N");        //명의변경여부
+                targetDs.putField("EQP_CHG_YN", "N");         //기기변경여부
+                targetDs.putField("LEGAL_AGENT_CHG_YN", "N"); //법정대리인변경여부
+                targetDs.putField("UNRTN_AMT", "0");          //미반납손해배상금
+                                                
+                if( newRd==null) {
+                    return targetDs;
+                }
+                
+                Iterator<String> it = targetDs.getFieldKeys();
+                String key = null;
+                while( it.hasNext()){
+                    key = it.next();
+                    if( StringUtils.isEmpty(targetDs.getField(key)) ){                        
+                        if( newRd.containsKey( key ) && StringUtils.isNotEmpty( newRd.get(key)) ){
+                            targetDs.putField(key,  newRd.get(key) );
+                        }                        
+                    }
+                }
+                
+                return targetDs;
+            }
+            
+            private void validate(IDataSet ds, String[] item){
+                for(int i=0; i<item.length; ++i){
+                    if( StringUtils.isEmpty(ds.getField(item[i])) ){
+                        throw new BizRuntimeException(item[i] + " 는 필수 항목입니다 : " + ds.getField("SVC_MGMT_NO"));
+                    }
+                }
+            }
+		};
+
+		rh.setAddBatchMode(false);
+        rh.setCommitCount(1);
+        rh.setStopWhenException(false);
+
+        return rh;
+    }
+    
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+      
+       IOnlineContext onlineCtx = makeOnlineContext(context);
+        
+       IDataSet reqDS = new DataSet();
+       reqDS.putField("TASK_NO", taskNo);
+       reqDS.putField("PROC_CNT", rh.getCalledCount()-rh.getExceptionCount());
+       reqDS.putField("OP_FILE_NM", procFileName);
+       reqDS.putField("LS_CHG_USER_ID", "BAT");
+
+       if (rh.getExceptionCount() == 0) {
+           // execute() 정상인 경우
+           reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+       }else {
+           // execute() 에서 에러 발생할 경우
+           reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+       }
+       IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "dUBatTaskOpHst", reqDS, onlineCtx);
+
+       log = getLog(context);
+       if(log.isDebugEnabled()) {
+           log.debug("단말기평가정보등록 BATCH 호출 결과:");
+           log.debug(resDS);
+       }
+        
+    }
+
+}

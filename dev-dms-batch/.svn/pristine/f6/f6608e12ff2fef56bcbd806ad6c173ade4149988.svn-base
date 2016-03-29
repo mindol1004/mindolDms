@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.DBE007">
+	<select id="STfEqpJdgRslt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE007.STfEqpJdgRslt IF E4U단말기감정결과조회 */
+/* IO: 김상오,2016-01-04T17:26:39(이준우,2015-08-11T14:15:42) */
+SELECT  IF_PROC_DT                      /*IF처리일자*/ 
+         ,IF_FILE_NM                      /*IF파일명  */
+         ,IF_SEQ                          /*IF순번    */
+         ,EQP_MDL_CD                      /*단말기모델코드*/
+         ,EQP_SER_NO                      /*단말기일련번호*/
+         ,IMEI                            /*IMEI          */
+         ,BUYER_NM                        /*매입자명       */
+         ,BUYER_NM_ENPT                   /*매입자명암호화  */
+         ,ACPT_DT                         /*접수일자        */
+         ,PRCH_AMT                        /*매입금액        */
+         ,DPSTR_NM                         /*예금주명        */
+         ,DPSTR_NM_ENPT                    /*예금주명암호화  */
+         ,BANK_CD                         /*은행코드        */
+         ,ACCO_NO                         /*계좌번호        */
+         ,ACCO_NO_ENPT                    /*계좌번호암호화  */
+         ,TEL_NO                          /*전화번호        */
+         ,TEL_NO_ENPT                     /*전화번호암호화  */
+         ,MGMT_NO                         /*관리번호        */
+         ,CUST_GRP_NM                     /*고객그룹명       */
+         ,XCL_MODE                        /*정산방식         */
+         ,PROC_CL_CD                      /*처리구분코드   */
+         ,SUGG                            /*의견           */
+         ,DEALCO_GRP_CD                   /*거래처그룹코드 */
+         ,DEALCO_GRP_NM                   /*거래처그룹명   */
+         ,PROC_ST_CD                      /*처리상태코드   */
+    FROM  TF_EQP_JDG_RSLT
+   WHERE  PROC_ST_CD = '09'
+     AND  IF_PROC_DT = #PROC_DT#		/*전문송신일자  iv_op_dt*/
+ORDER BY  IF_SEQ]]>
+	</select>
+	<insert id="IConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE001.IConsultMgmt 상담관리정보등록 */
+/* IO: 이준우,2015-10-01T17:27:10(이준우,2015-07-29T10:19:57) */
+
+MERGE INTO  TB_EP_CST_CONSULT_MGMT A
+ USING DUAL
+         ON  (
+             CNSL_MGMT_NO = #CNSL_MGMT_NO#
+        
+             )
+       WHEN  MATCHED THEN 
+ UPDATE SET  EQP_MDL_CD          = #EQP_MDL_CD#                 
+            ,EQP_SER_NO          = #EQP_SER_NO#                    /*단말기 일련 번호     */
+            ,CNSL_DT             = #CNSL_DT#                       /*상담 일자            */
+            ,CNSL_DEALCO_CD      = '11050'                         /*상담 거래처 코드     */
+            ,ONING_DT            = ''                              /*개통 일자            */
+            ,EQP_ST				 = 'A'                             /*단말기 상태          */
+            ,EQP_COLOR_CD        = '99'                            /*단말기 색상 코드     */
+            ,LOSS_EQP_YN		 = 'N'                             /*분실 단말기 여부     */
+            ,RENTP_YN			 = 'N'                             /*임대폰 여부          */
+            ,USIM_EQPCHG_YN		 = 'N'                             /*USIM 기변 여부       */
+            ,OTHRCO_FORGN_EQP_YN = 'N'                             /*타사 해외 단말기 여부*/
+            ,SVC_NO				 = ''                              /*서비스 번호          */
+            ,SVC_MGMT_NO		 = ''                              /*서비스 관리 번호     */
+            ,IMEI				 = #IMEI#                              /*IMEI                 */
+            ,FEE_DEDC_YN		 = ''                              /*요금 공제 처리 여부  */
+            ,USE_PRD_DDCT_AMT	 = #PRCH_AMT#                      /*사용 기간 차감 금액  */
+            ,DPSTR				 = #DPSTR_NM#                      /*예금주               */
+            ,DPSTR_ENPT			 = #DPSTR_NM_ENPT#                 /*예금주 암호화        */
+            ,BANK_CD             = '0' || #BANK_CD#                       /*은행 코드            */
+            ,ACCO_NO             = #ACCO_NO#                       /*계좌 번호            */
+            ,ACCO_NO_ENPT        = #ACCO_NO_ENPT#                  /*계좌 번호 암호화     */
+            ,TEL_NO              = #TEL_NO#                        /*전화 번호            */
+            ,TEL_NO_ENPT         = #TEL_NO_ENPT#                   /*전화 번호 암호화     */
+            ,ZIPCD               = ''                              /*우편번호             */
+            ,ADDR                = ''                              /*주소                 */
+            ,ETC_ADDR            = ''                              /*기타 주소            */
+            ,SUGG                = #SUGG#                          /*의견                 */
+            ,XCL_MODE            = #XCL_MODE#                      /*정산 방식            */
+            ,UPDATE_COUNT        = NVL(#UPDATE_COUNT#, 0)+1       
+            ,FS_REG_USER_ID      = 'BAT'                          
+            ,FS_REG_DTM          = SYSDATE                        
+            ,LS_CHG_USER_ID      = 'BAT'                          
+            ,LS_CHG_DTM          = SYSDATE                        
+            ,MOV_YN              = 'Y'                             /*이동 여부            */
+            ,PRCH_CL             = 'C'                             /*매입 구분            */
+            ,IN_CONF_YN          = 'C'                             /*입고 확정 여부       */
+            ,SKN_CL              = 'N'                             /*SKN 구분             */
+            ,DEALCO_GRP_CD   =  #DEALCO_GRP_CD#                   /*거래처그룹코드 */
+            ,CUST_GRP        =  #DEALCO_GRP_NM#               /*거래처그룹명   */
+       WHEN  NOT MATCHED THEN           
+     INSERT (
+             CNSL_MGMT_NO           
+            ,EQP_MDL_CD             
+            ,EQP_SER_NO                                                 
+            ,CNSL_DT                                                 
+            ,CNSL_DEALCO_CD                                             
+            ,ONING_DT                                                
+            ,EQP_ST					                                  
+            ,EQP_COLOR_CD                                               
+            ,LOSS_EQP_YN			                                    
+            ,RENTP_YN				                                  
+            ,USIM_EQPCHG_YN			                                 
+            ,OTHRCO_FORGN_EQP_YN                                          
+            ,SVC_NO					                                  
+            ,SVC_MGMT_NO			                                    
+            ,IMEI					                             
+            ,FEE_DEDC_YN			                                     
+            ,USE_PRD_DDCT_AMT		                                     
+            ,DPSTR					                                
+            ,DPSTR_ENPT				                                   
+            ,BANK_CD                                                 
+            ,ACCO_NO                                                 
+            ,ACCO_NO_ENPT                                               
+            ,TEL_NO                                                  
+            ,TEL_NO_ENPT                                                
+            ,ZIPCD                                                   
+            ,ADDR                                                  
+            ,ETC_ADDR                                                
+            ,SUGG                                                  
+            ,XCL_MODE                                                
+            ,DEL_YN                                              
+            ,UPDATE_COUNT                                        
+            ,FS_REG_USER_ID                                      
+            ,FS_REG_DTM                                          
+            ,LS_CHG_USER_ID                                      
+            ,LS_CHG_DTM                                    
+            ,MOV_YN                                                    
+            ,PRCH_CL                                                     
+            ,IN_CONF_YN                                                
+            ,SKN_CL  
+            ,DEALCO_GRP_CD                  
+            ,CUST_GRP                                                             
+             )                            
+     VALUES                         
+             (                            
+             #CNSL_MGMT_NO#   
+            ,#EQP_MDL_CD#     
+            ,#EQP_SER_NO#                                        /*단말기 일련 번호     */             
+            ,#CNSL_DT#                                           /*상담 일자            */          
+            ,'11050'                                             /*상담 거래처 코드     */             
+            ,''                                                  /*개통 일자            */          
+            ,'A'                                                 /*단말기 상태          */           
+            ,'99'                                                /*단말기 색상 코드     */             
+            ,'N'                                                 /*분실 단말기 여부     */             
+            ,'N'                                                 /*임대폰 여부          */           
+            ,'N'                                                 /*USIM 기변 여부       */          
+            ,'N'                                                 /*타사 해외 단말기 여부*/               
+            ,''                                                  /*서비스 번호          */           
+            ,''                                                  /*서비스 관리 번호     */             
+            ,#IMEI#                                                  /*IMEI                 */      
+            ,''                                                  /*요금 공제 처리 여부  */              
+            ,#PRCH_AMT#                                          /*사용 기간 차감 금액  */              
+            ,#DPSTR_NM#                                          /*예금주               */         
+            ,#DPSTR_NM_ENPT#                                     /*예금주 암호화        */            
+            ,'0' || #BANK_CD#                                           /*은행 코드            */          
+            ,#ACCO_NO#                                           /*계좌 번호            */          
+            ,#ACCO_NO_ENPT#                                      /*계좌 번호 암호화     */             
+            ,#TEL_NO#                                            /*전화 번호            */          
+            ,#TEL_NO_ENPT#                                       /*전화 번호 암호화     */             
+            ,''                                                  /*우편번호             */          
+            ,''                                                  /*주소                 */        
+            ,''                                                  /*기타 주소            */          
+            ,#SUGG#                                              /*의견                 */        
+            ,#XCL_MODE#                                          /*정산 방식            */          
+            ,'N'                                                                                
+            ,NVL(#UPDATE_COUNT#, 0)+1                                                           
+            ,'BAT'                                                                              
+            ,SYSDATE                                                                            
+            ,'BAT'                                                                              
+            ,SYSDATE                                                                            
+            ,'Y'                                                 /*이동 여부            */          
+            ,'C'                                                 /*매입 구분            */          
+            ,'C'                                                 /*입고 확정 여부       */            
+            ,'N'                                                 /*SKN 구분             */
+            ,#DEALCO_GRP_CD#                   /*거래처그룹코드 */
+            ,  #DEALCO_GRP_NM#               /*고객 그룹명   */        
+             )]]>
+	</insert>
+	<insert id="IConsultDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE002.IConsultDtl 상담관리상세등록 */
+/* IO: 이준우,2015-10-02T09:28:09(이준우,2015-07-29T10:19:57) */
+INSERT INTO  TB_EP_CST_CONSULT_DTL (
+             CNSL_MGMT_NO                  
+            ,CNSL_SER_NO                   
+            ,EQP_MDL_CD                    
+            ,CMPT_PROD_CD                  
+            ,DTL_CL                        
+            ,CL_CD                         
+            ,QTY                           
+            ,NORM_QTY                      
+            ,HLD_QTY                       
+            ,DDCT_AMT                      
+            ,DEL_YN                                        
+            ,UPDATE_COUNT                  
+            ,FS_REG_USER_ID                
+            ,FS_REG_DTM                    
+            ,LS_CHG_USER_ID                
+            ,LS_CHG_DTM                    
+            ,SKN_SMPL_QTY                  
+             )
+     VALUES  (
+             #CNSL_MGMT_NO#                                                            /*상담 관리 번호           */
+            ,#CNSL_SER_NO#                                                             /*상담 일련 번호           */
+            ,#EQP_MDL_CD#                                                              /*단말기 모델 코드         */
+            ,#BATR_CD#                                                                 /*구성품 상품 코드         */
+            ,#OUTS_MCN_CL#                                                             /*상세 구분                */
+            ,'1'                                                                       /*구분 코드                */
+            ,#QTY#                                                                     /*수량                     */
+            ,#NRL_QTY#                                                                 /*정상 수량                */
+            ,#HLD_QTY#                                                                 /*보유 수량                */
+            ,(CASE WHEN TO_NUMBER(#HLD_QTY#) >= 1 THEN 0 ELSE TO_NUMBER(#PRICE#) END)  /*차감 금액                */
+            ,'N'                                                                       /*삭제 여부                */
+            ,1                                                                         /*UPDATE COUNT             */
+            ,'BAT'                                                                     /*최초 등록 사용자 ID      */
+            ,SYSDATE                                                                   /*최초 등록 일시           */
+            ,'BAT'                                                                     /*최종 변경 사용자 ID      */
+            ,SYSDATE                                                                   /*최종 변경 일시           */
+            ,''                                                                        /*SKN 샘플 수량            */
+             )]]>
+	</insert>
+	<update id="UTfEqpJdgRslt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE007.UTfEqpJdgRslt IF_단말기감정결과수정 */
+/* IO: 이준우,2015-10-26T16:36:22(이준우,2015-09-30T13:24:28) */
+UPDATE  TF_EQP_JDG_RSLT
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) Y,N*/
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_PROC_DT   = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ    = #IF_SEQ#]]>
+	</update>
+	<select id="SInqEqpProdDtlList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE007.SInqEqpProdDtlList 입고대상상품상세리스트 */
+/* IO: 이준우,2015-11-18T16:12:34(김상오,2015-08-24T17:23:39) */
+SELECT  '' CNSL_MGMT_NO
+       ,'' PRCH_MGMT_NO
+       ,ROWNUM AS CNSL_SER_NO
+       ,A.OUTS_MCN_CL                 /*주변 기기 구분   */
+       ,'1' BYGRD                     /*등급별           */
+       ,A.EQP_MDL_CD                  
+       ,A.BATR_CD                     /*배터리 코드    */
+       ,NVL(A.QTY, 0) QTY             /*수량           */
+       ,0 NRL_QTY                     /*정상 수량                */ 
+       ,0 HLD_QTY                     /*보유 수량                */ 
+       ,NVL(A.UPRC, 0) UPRC           /*단가     */
+  FROM  TB_EP_BAS_PROD_DTL A
+       ,TB_EQP_MDL B
+ WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+   AND  A.BYGRD = '1'
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+   AND  A.FRDT <= TO_CHAR(SYSDATE,'YYYYMMDD')
+   AND  A.TODT >= TO_CHAR(SYSDATE,'YYYYMMDD')]]>
+	</select>
+	<delete id="DConsultDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE002.DConsultDtl 상담관리상세삭제 */
+/* IO: 이준우,2015-09-30T19:26:09(이준우,2015-09-30T19:26:09) */
+DELETE  FROM TB_EP_CST_CONSULT_DTL
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</delete>
+</sqlMap>

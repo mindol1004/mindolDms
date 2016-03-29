@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 코어 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <bean id="nc.core.ICryptoManager"
+        class="nexcore.framework.core.crypt.internal.CryptoManager"
+        init-method="init">
+        <description>
+            <![CDATA[Cipher 암호화 컴포넌트]]>
+        </description>
+        <property name="keySaver">
+            <bean class="nexcore.framework.core.crypt.internal.FileKeySaver">
+                <property name="keyFile" value="EarContent/SecreteKey.ser" />
+            </bean>
+        </property>
+        <property name="keyAlgorithm"   value="AES" />
+        <property name="transformation" value="AES" />
+        <property name="encoding"       value="UTF-8" />
+    </bean>
+
+    <bean id="nc.core.ICryptoManager_md5"
+        class="nexcore.framework.core.crypt.internal.Md5CryptoManager">
+        <description>
+            <![CDATA[MD5 암호화 컴포넌트]]>
+        </description>
+        <property name="encoding" value="UTF-8" />
+    </bean>
+
+    <bean id="nc.core.ICryptoFactoryManager"
+        class="nexcore.framework.core.crypt.internal.CryptoFactoryManager">
+        <description>
+            <![CDATA[암호화 컴포넌트 접근 포인트]]>
+        </description>
+        <property name="cryptos">
+            <map>
+                <entry key="cipher" value-ref="nc.core.ICryptoManager" />
+                <entry key="md5"    value-ref="nc.core.ICryptoManager_md5" />
+            </map>
+        </property>
+    </bean>
+    
+</beans>
+            

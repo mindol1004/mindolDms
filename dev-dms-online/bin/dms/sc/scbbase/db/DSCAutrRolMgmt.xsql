@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCAutrRolMgmt">
+	<select id="SAutrRolLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAutrRolMgmt.SAutrRolLstPaging 권한역할목록조회 */
+/* IO: 김석영,2014-10-02T21:25:59(심상준,2014-07-15T17:33:23) */                                                                                                                            
+SELECT  
+        *
+  FROM (                                                                                                                                                                                    
+        SELECT                                                                                                                                                                              
+                ROW_NUMBER() OVER (ORDER BY AUTR_ROL_ID ASC) AS ROWNO   /* ROWNUM */                                                                                                        
+               ,AUTR_ROL_ID                                             /* 권한역할ID */                                                                                                    
+               ,AUTR_ROL_NM                                             /* 권한역할명 */                                                                                                    
+               ,DECODE(USE_YN, 'Y', '1', 'N', '0') AS USE_YN            /* 사용여부 */                                                                                                      
+               ,FS_REG_USER_ID                                          /* 최초등록사용자ID */                                                                                              
+               ,TO_CHAR(FS_REG_DTM, 'YYYYMMDDHH24MISS') AS FS_REG_DTM   /* 최초등록일시 */                                                                                                  
+               ,LS_CHG_USER_ID                                          /* 최종병경사용자ID */                                                                                              
+               ,TO_CHAR(LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM   /* 최종병경일시 */                                                                                                  
+          FROM  TB_AUTR_ROL                                              /* SC_권한역할 */                                                                                                  
+]]><dynamic prepend="WHERE"><![CDATA[                                                                                                                                                       
+]]><isNotEmpty property="AUTR_ROL_ID" prepend="AND"><![CDATA[                                                                                                                               
+                AUTR_ROL_ID LIKE '%'||#AUTR_ROL_ID#||'%'                                                                                                                                    
+]]></isNotEmpty><![CDATA[                                                                                                                                                                   
+]]><isNotEmpty property="AUTR_ROL_NM" prepend="AND"><![CDATA[                                                                                                                               
+                AUTR_ROL_NM LIKE '%'||#AUTR_ROL_NM#||'%'                                                                                                                                    
+]]></isNotEmpty><![CDATA[                                                                                                                                                                   
+]]></dynamic><![CDATA[                                                                                                                                                                      
+        ) PA                                                                                                                                                                                
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IAutrRol" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAutrRolMgmt.IAutrRol 권한역할등록 */                                                        
+/* IO: 김석영,2014-09-24T11:13:31(심상준,2014-07-16T13:02:24) */                                                                                                                            
+INSERT                                                                                                                                                                                      
+  INTO  TB_AUTR_ROL        /* SC_권한역할 */                                                                                                                                                
+       (                                                                                                                                                                                    
+        AUTR_ROL_ID        /* 권한역할ID*/                                                                                                                                                  
+       ,AUTR_ROL_NM        /* 권한역할명 */                                                                                                                                                 
+       ,USE_YN             /* 사용여부 */                                                                                                                                                   
+       ,FS_REG_USER_ID     /* 최초등록사용자ID*/                                                                                                                                            
+       ,FS_REG_DTM         /* 최초등록일시 */                                                                                                                                               
+       ,LS_CHG_USER_ID     /* 최종변경사용자ID */                                                                                                                                           
+       ,LS_CHG_DTM         /* 최종변경일시 */                                                                                                                                               
+        )                                                                                                                                                                                   
+VALUES                                                                                                                                                                                      
+       (                                                                                                                                                                                    
+        #AUTR_ROL_ID#      /* 권한역할ID*/                                                                                                                                                  
+       ,#AUTR_ROL_NM#      /* 권한역할명 */                                                                                                                                                 
+       ,DECODE(#USE_YN#,'1','Y','0','N',NULL,'N')  /* 사용여부 */                                                                                                                           
+       ,#USER_NO#          /* 최초등록사용자ID*/                                                                                                                                            
+       ,SYSDATE            /* 최초등록일시 */                                                                                                                                               
+       ,#USER_NO#          /* 최종변경사용자ID */                                                                                                                                           
+       ,SYSDATE            /* 최종변경일시 */                                                                                                                                               
+        )]]>
+	</insert>
+	<update id="UAutrRol" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAutrRolMgmt.UAutrRol 권한역할수정 */                                                        
+/* IO: 김석영,2014-09-24T11:14:26(심상준,2014-07-16T13:08:37) */                                                                                                                            
+UPDATE                                                                                                                                                                                      
+        TB_AUTR_ROL                                /* SC_권한역할 */                                                                                                                        
+   SET  AUTR_ROL_NM = #AUTR_ROL_NM#                /* 권한역할명 */                                                                                                                         
+       ,USE_YN = DECODE(#USE_YN#,'1','Y','0','N')  /* 사용여부 */                                                                                                                           
+       ,LS_CHG_USER_ID = #USER_NO#                 /* 최종변경사용자ID*/                                                                                                                    
+       ,LS_CHG_DTM = SYSDATE                       /* 최종변경일시 */                                                                                                                       
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</update>
+	<delete id="DAutrRol" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAutrRolMgmt.DAutrRol 권한역할삭제 */                                                        
+/* IO: 김석영,2014-09-24T11:14:47(심상준,2014-08-05T09:16:13) */                                                                                                                            
+DELETE                                                                                                                                                                                      
+  FROM  TB_AUTR_ROL                                                                                                                                                                         
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID# /* 권한역할ID */]]>
+	</delete>
+	<select id="SAutrRolTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAutrRolMgmt.SAutrRolTotCnt 권한역할건수조회 */      
+/* IO: 김석영,2014-10-02T21:28:00(심상준,2014-08-19T12:53:37) */                                                                                                                            
+SELECT                                                                                                                                                                                      
+        COUNT(1) AS TOTAL_CNT  /* 전체건수 */                                                                                                                                               
+  FROM  TB_AUTR_ROL            /* SC_권한역할 */                                                                                                                                            
+]]><dynamic prepend="WHERE"><![CDATA[                                                                                                                                                       
+]]><isNotEmpty property="AUTR_ROL_ID" prepend="AND"><![CDATA[                                                                                                                               
+        AUTR_ROL_ID LIKE '%'||#AUTR_ROL_ID#||'%'                                                                                                                                            
+]]></isNotEmpty><![CDATA[                                                                                                                                                                   
+]]><isNotEmpty property="AUTR_ROL_NM" prepend="AND"><![CDATA[                                                                                                                               
+        AUTR_ROL_NM LIKE '%'||#AUTR_ROL_NM#||'%'                                                                                                                                            
+]]></isNotEmpty><![CDATA[                                                                                                                                                                   
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SAutrRolValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAutrRolMgmt.SAutrRolValidate 권한역할사전체크 */  
+/* IO: 김석영,2014-09-24T11:03:36(심상준,2014-08-19T17:42:01) */                                                                                                                            
+SELECT                                                                                                                                                                                      
+        COUNT(1) AS ROW_CNT  /* 카운트 */                                                                                                                                                   
+  FROM  TB_AUTR_ROL          /* 권한역할 */                                                                                                                                                 
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</select>
+	<select id="SAutrRolValidateUserAutr" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAutrRolMgmt.SAutrRolValidateUserAutr 권한역할사전체크(사용자권한역할) */
+/* IO: 심상준,2014-10-15T11:01:15(심상준,2014-10-15T10:55:36) */
+SELECT  
+        COUNT(1) AS ROW_CNT   /* 사전체크 카운트 */
+  FROM  TB_USER_AUTR_ROL        /*SC_사용자권한역할 */
+ WHERE  AUTR_ROL_ID = #AUTR_ROL_ID#]]>
+	</select>
+</sqlMap>

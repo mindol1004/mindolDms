@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpMdlPriceMgmt">
+	<select id="SfInqEqpMdlPriceLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMdlPriceMgmt.SfInqEqpMdlPriceLstTotCnt 단말기별단가조회총건수 */
+/* IO: 박민정,2015-08-20T15:08:17(박민정,2015-08-20T14:31:19) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  (SELECT EQP_MDL_CD
+              ,SEQ
+              ,DECODE(GRADE,'N',UPRC,0) AS N_GR_PRCE
+              ,DECODE(GRADE,'A',UPRC,0) AS A_GR_PRCE 
+              ,DECODE(GRADE,'B',UPRC,0) AS B_GR_PRCE 
+              ,DECODE(GRADE,'C',UPRC,0) AS C_GR_PRCE 
+              ,DECODE(GRADE,'D',UPRC,0) AS D_GR_PRCE 
+              ,DECODE(GRADE,'E',UPRC,0) AS E_GR_PRCE
+              ,UPRC    /* 단가*/
+              ,FRDT
+              ,TODT  
+              ,PRCLST_MGMT_NO	/*가격표 관리 번호*/
+              ,STRD_INCEN	/*기준 인센티브*/
+              ,RMK   /*비고*/
+              ,UPDATE_COUNT	  /*UPDATE COUNT*/              
+           FROM TB_EP_BAS_PROD_FIX_PRICE 
+          WHERE DEL_YN = 'N'
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+            AND  FRDT <= #APLY_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+            AND  TODT >= #APLY_DT#  
+]]></isNotEmpty><![CDATA[
+              ) A   /*상품고정가격*/
+             , TB_EQP_MDL B  /*단말기모델*/
+WHERE   A.EQP_MDL_CD = B.EQP_MDL_CD
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SfInqEqpMdlPriceLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMdlPriceMgmt.SfInqEqpMdlPriceLstPaging 단말기별단가조회목록 */
+/* IO: 박민정,2015-08-20T15:38:35(박민정,2015-08-20T14:32:06) */
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD ASC) AS ROWNO
+                ,A.EQP_MDL_CD	                  /*단말기 모델코드*/
+                ,B.EQP_MDL_NM                     /*단말기 모델명*/
+                ,A.SEQ	                          /*순번*/
+                ,SUM(A.N_GR_PRCE) AS N_GR_PRCE
+                ,SUM(A.A_GR_PRCE) AS A_GR_PRCE
+                ,SUM(A.B_GR_PRCE) AS B_GR_PRCE 
+                ,SUM(A.C_GR_PRCE) AS C_GR_PRCE 
+                ,SUM(A.D_GR_PRCE) AS D_GR_PRCE 
+                ,SUM(A.E_GR_PRCE) AS E_GR_PRCE
+                ,A.UPRC                           /*단가*/
+                ,MAX(A.FRDT) AS FRDT	          /*시작일*/
+                ,MAX(A.TODT) AS TODT              /*종료일*/
+                ,A.PRCLST_MGMT_NO	              /*가격표 관리 번호*/
+                ,A.STRD_INCEN	                  /*기준 인센티브*/
+                ,A.RMK                            /*비고*/
+                ,A.UPDATE_COUNT	                  /*UPDATE COUNT*/
+           FROM  (SELECT EQP_MDL_CD
+                        ,SEQ
+                        ,DECODE(GRADE,'N',UPRC,0) AS N_GR_PRCE
+                        ,DECODE(GRADE,'A',UPRC,0) AS A_GR_PRCE 
+                        ,DECODE(GRADE,'B',UPRC,0) AS B_GR_PRCE 
+                        ,DECODE(GRADE,'C',UPRC,0) AS C_GR_PRCE 
+                        ,DECODE(GRADE,'D',UPRC,0) AS D_GR_PRCE 
+                        ,DECODE(GRADE,'E',UPRC,0) AS E_GR_PRCE
+                        ,UPRC              
+                        ,FRDT
+                        ,TODT  
+                        ,PRCLST_MGMT_NO	  
+                        ,STRD_INCEN	
+                        ,RMK   
+                        ,UPDATE_COUNT	                
+                   FROM TB_EP_BAS_PROD_FIX_PRICE 
+                  WHERE DEL_YN = 'N'
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+                    AND FRDT <= #APLY_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+                    AND TODT >= #APLY_DT#  
+]]></isNotEmpty><![CDATA[
+                 )A   /*상품고정가격*/
+                ,TB_EQP_MDL B  /*단말기모델*/
+          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+         GROUP BY A.EQP_MDL_CD
+                 ,B.EQP_MDL_NM
+                 ,A.SEQ
+                 ,A.UPRC 
+                 ,A.PRCLST_MGMT_NO 
+                 ,A.STRD_INCEN
+                 ,A.RMK 
+                 ,A.UPDATE_COUNT )PA
+WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

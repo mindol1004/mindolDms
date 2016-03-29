@@ -1,0 +1,973 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="InveXclExcelRgstP" classname="popup_sample1" inheritanceid="" position="absolute 0 0 800 500" titletext="재고관리엑셀입력" class="frm_bg_popup" onload="Form_onload" visible="true">
+    <Layouts>
+      <Layout>
+        <Static id="Static00" text="h14" class="tip_guide" visible="false" position2="absolute l:22 w:98 t:39 h:14" positiontype="position2"/>
+        <UserGrid id="grd_main" class="grd_subGrid" taborder="4" binddataset="ds_upLoadXlsList" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" hideendline="col" position="absolute 22 72 776 445" anchor="all" _number="fase" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true" autofittype="none">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="40"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="100"/>
+                <Column size="67"/>
+                <Column size="70"/>
+                <Column size="100"/>
+                <Column size="96"/>
+                <Column size="76"/>
+                <Column size="40"/>
+                <Column size="76"/>
+                <Column size="75"/>
+                <Column size="200"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="처리일자"/>
+                <Cell col="2" text="재고구분"/>
+                <Cell col="3" text="관리번호"/>
+                <Cell col="4" text="접수일자"/>
+                <Cell col="5" text="반영일자"/>
+                <Cell col="6" text="모델코드"/>
+                <Cell col="7" text="모델명"/>
+                <Cell col="8" text="일련번호"/>
+                <Cell col="9" text="등급"/>
+                <Cell col="10" text="매입가"/>
+                <Cell col="11" text="AP유형"/>
+                <Cell col="12" text="ERROR"/>
+              </Band>
+              <Band id="body">
+                <Cell style="align:right;" text="bind:ROWNO"/>
+                <Cell col="1" displaytype="date" style="align:center;" text="bind:XCL_STRD_DT" calendardisplaynulltype="none"/>
+                <Cell col="2" displaytype="text" style="align:left;" text="bind:INVE_CL_NM"/>
+                <Cell col="3" displaytype="text" style="align:left;" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="4" displaytype="date" style="align:center;" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="5" displaytype="date" style="align:center;" text="bind:CLCT_DT" calendardisplaynulltype="none"/>
+                <Cell col="6" displaytype="text" style="align:left;" text="bind:EQP_MDL_CD"/>
+                <Cell col="7" displaytype="text" style="align:left;" text="bind:EQP_MDL_NM"/>
+                <Cell col="8" displaytype="text" style="align:left;" text="bind:EQP_SER_NO"/>
+                <Cell col="9" displaytype="text" style="align:center;" text="bind:EQP_ST"/>
+                <Cell col="10" displaytype="number" style="align:right;" text="bind:XCL_AMT"/>
+                <Cell col="11" displaytype="text" style="align:left;" text="bind:DEDC_TYP_NM"/>
+                <Cell col="12" style="align:left;color:red;" text="bind:ERROR"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Button id="btn_errCheck" taborder="2" text="오류검증" onclick="btn_errCheck_onclick" class="btn_common" position="absolute 656 49 725 69" anchor="top right" tabstop="false"/>
+        <Button id="btn_addFileOne" taborder="1" text="파일추가" onclick="btn_addFileOne_onclick" class="btn_common" position="absolute 586 49 655 69" anchor="top right" tabstop="false"/>
+        <Button id="btn_delete" taborder="3" text="삭제" onclick="btn_delete_onclick" class="btn_common_delTxt" position="absolute 726 49 776 69" anchor="top right" tabstop="false"/>
+        <Static id="Static01" text="w&#13;&#10;&#13;&#10;15" class="tip_guide" visible="false" position="absolute 776 26 791 426"/>
+        <Static id="Static03" text="w&#13;&#10;&#13;&#10;15" class="tip_guide" visible="false" position2="absolute l:7 w:15 t:10 h:400" positiontype="position2"/>
+        <Static id="Static07" text="h10" class="tip_guide" visible="false" position2="absolute l:364 w:74 t:445 h:10" positiontype="position2"/>
+        <Static id="Static06" text="h15" class="tip_guide" visible="false" position2="absolute l:376 w:42 t:475 h:15" positiontype="position2"/>
+        <Static id="Static20" text="w&#13;&#10;&#13;5" class="tip_guide" visible="false" position2="absolute l:396 w:5 t:454 h:18" positiontype="position2"/>
+        <Static id="Static14" text="h8" class="tip_guide" visible="false" position2="absolute l:28 w:42 t:64 h:8" positiontype="position2"/>
+        <Static id="Static05" text="h10" class="tip_guide" visible="false" position2="absolute l:37 w:42 t:6 h:10" positiontype="position2"/>
+        <Static id="Static04" text="h33" class="tip_guide" visible="false" position2="absolute l:392 w:34 t:39 h:33" positiontype="position2"/>
+        <Button id="btn_close" taborder="7" onclick="button_onclick" class="popUp_close" position="absolute 758 13 776 31"/>
+        <Div id="Div01" taborder="8" text="재고정산관리엑셀입력" class="popUp_title_bg" transparenthittest="true" position="absolute 21 12 775 40"/>
+        <Div id="Div00" taborder="9" text="Div00" position="absolute 330 455 472 475">
+          <Layouts>
+            <Layout>
+              <Button id="btn_cancel" taborder="5" text="취소" onclick="button_onclick" class="btn_popup_cancel" position="absolute 71 0 126 20"/>
+              <Button id="btn_excelSave" taborder="6" text="저장" onclick="button_onclick" class="btn_popup_save" enable="false" position="absolute 11 0 66 20"/>
+            </Layout>
+          </Layouts>
+        </Div>
+        <Button id="btn_excel" taborder="10" tabstop="false" text="엑셀양식" onclick="btn_excel_onclick" class="btn_common" position="absolute 516 49 585 69" anchor="top right"/>
+        <UserGrid id="grd_mainExcel" class="grd_subGrid" taborder="11" binddataset="ds_upLoadXlsList" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" hideendline="col" position="absolute 822 72 1247 184" anchor="all" _number="fase" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true" visible="false" autofittype="none">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="40"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="100"/>
+                <Column size="67"/>
+                <Column size="70"/>
+                <Column size="100"/>
+                <Column size="96"/>
+                <Column size="76"/>
+                <Column size="40"/>
+                <Column size="76"/>
+                <Column size="75"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="처리일자"/>
+                <Cell col="2" text="재고구분"/>
+                <Cell col="3" text="관리번호"/>
+                <Cell col="4" text="접수일자"/>
+                <Cell col="5" text="반영일자"/>
+                <Cell col="6" text="모델코드"/>
+                <Cell col="7" text="모델명"/>
+                <Cell col="8" text="일련번호"/>
+                <Cell col="9" text="등급"/>
+                <Cell col="10" text="매입가"/>
+                <Cell col="11" text="AP유형"/>
+              </Band>
+              <Band id="body">
+                <Cell style="align:right;" text="bind:ROWNO"/>
+                <Cell col="1" displaytype="date" style="align:center;" text="bind:XCL_STRD_DT" calendardisplaynulltype="none"/>
+                <Cell col="2" displaytype="text" style="align:left;" text="bind:INVE_CL_NM"/>
+                <Cell col="3" displaytype="text" style="align:left;" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="4" displaytype="date" style="align:center;" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="5" displaytype="date" style="align:center;" text="bind:CLCT_DT" calendardisplaynulltype="none"/>
+                <Cell col="6" displaytype="text" style="align:left;" text="bind:EQP_MDL_CD"/>
+                <Cell col="7" displaytype="text" style="align:left;" text="bind:EQP_MDL_NM"/>
+                <Cell col="8" displaytype="text" style="align:left;" text="bind:EQP_SER_NO"/>
+                <Cell col="9" displaytype="text" style="align:center;" text="bind:EQP_ST"/>
+                <Cell col="10" displaytype="number" style="align:right;" text="bind:XCL_AMT"/>
+                <Cell col="11" displaytype="text" style="align:left;" text="bind:DEDC_TYP_NM"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <UserGrid id="grd_arriv" class="grd_subGrid" taborder="12" binddataset="ds_upLoadXlsListArriv" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" hideendline="col" position="absolute 88 112 842 485" anchor="all" _number="fase" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true" visible="false" autofittype="none">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="40"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="100"/>
+                <Column size="67"/>
+                <Column size="70"/>
+                <Column size="100"/>
+                <Column size="96"/>
+                <Column size="76"/>
+                <Column size="40"/>
+                <Column size="76"/>
+                <Column size="76"/>
+                <Column size="75"/>
+                <Column size="200"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="처리일자"/>
+                <Cell col="2" text="재고구분"/>
+                <Cell col="3" text="현장여부"/>
+                <Cell col="4" text="관리번호"/>
+                <Cell col="5" text="접수일자"/>
+                <Cell col="6" text="반영일자"/>
+                <Cell col="7" text="모델코드"/>
+                <Cell col="8" text="모델명"/>
+                <Cell col="9" text="일련번호"/>
+                <Cell col="10" text="등급"/>
+                <Cell col="11" text="매입가"/>
+                <Cell col="12" text="평가손실금액"/>
+                <Cell col="13" text="AP유형"/>
+                <Cell col="14" text="ERROR"/>
+              </Band>
+              <Band id="body">
+                <Cell style="align:right;" text="bind:ROWNO"/>
+                <Cell col="1" displaytype="date" style="align:center;" text="bind:XCL_STRD_DT" calendardisplaynulltype="none"/>
+                <Cell col="2" displaytype="text" style="align:left;" text="bind:INVE_CL_NM"/>
+                <Cell col="3" displaytype="text" style="align:left;" text="bind:SKN_CL" combodataset="ds_sknCl" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="4" displaytype="text" style="align:left;" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="5" displaytype="date" style="align:center;" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="6" displaytype="date" style="align:center;" text="bind:CLCT_DT" calendardisplaynulltype="none"/>
+                <Cell col="7" displaytype="text" style="align:left;" text="bind:EQP_MDL_CD"/>
+                <Cell col="8" displaytype="text" style="align:left;" text="bind:EQP_MDL_NM"/>
+                <Cell col="9" displaytype="text" style="align:left;" text="bind:EQP_SER_NO"/>
+                <Cell col="10" displaytype="text" style="align:center;" text="bind:EQP_ST"/>
+                <Cell col="11" displaytype="number" style="align:right;" text="bind:XCL_AMT"/>
+                <Cell col="12" displaytype="number" style="align:right;" text="bind:ASMT_DMG_AMT"/>
+                <Cell col="13" displaytype="text" style="align:left;" text="bind:DEDC_TYP_NM"/>
+                <Cell col="14" style="align:left;color:red;" text="bind:ERROR"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <UserGrid id="grd_arrivExcel" class="grd_subGrid" taborder="13" binddataset="ds_upLoadXlsListArriv" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" hideendline="col" visible="false" position="absolute 822 208 1247 320" anchor="all" _number="fase" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true" autofittype="none">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="40"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="100"/>
+                <Column size="67"/>
+                <Column size="70"/>
+                <Column size="100"/>
+                <Column size="96"/>
+                <Column size="76"/>
+                <Column size="40"/>
+                <Column size="76"/>
+                <Column size="76"/>
+                <Column size="75"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="처리일자"/>
+                <Cell col="2" text="재고구분"/>
+                <Cell col="3" text="현장여부"/>
+                <Cell col="4" text="관리번호"/>
+                <Cell col="5" text="접수일자"/>
+                <Cell col="6" text="반영일자"/>
+                <Cell col="7" text="모델코드"/>
+                <Cell col="8" text="모델명"/>
+                <Cell col="9" text="일련번호"/>
+                <Cell col="10" text="등급"/>
+                <Cell col="11" text="매입가"/>
+                <Cell col="12" text="평가손실금액"/>
+                <Cell col="13" text="AP유형"/>
+              </Band>
+              <Band id="body">
+                <Cell style="align:right;" text="bind:ROWNO"/>
+                <Cell col="1" displaytype="date" style="align:center;" text="bind:XCL_STRD_DT" calendardisplaynulltype="none"/>
+                <Cell col="2" displaytype="text" style="align:left;" text="bind:INVE_CL_NM"/>
+                <Cell col="3" displaytype="text" style="align:left;" text="bind:SKN_CL" combodataset="ds_sknCl" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="4" displaytype="text" style="align:left;" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="5" displaytype="date" style="align:center;" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="6" displaytype="date" style="align:center;" text="bind:CLCT_DT" calendardisplaynulltype="none"/>
+                <Cell col="7" displaytype="text" style="align:left;" text="bind:EQP_MDL_CD"/>
+                <Cell col="8" displaytype="text" style="align:left;" text="bind:EQP_MDL_NM"/>
+                <Cell col="9" displaytype="text" style="align:left;" text="bind:EQP_SER_NO"/>
+                <Cell col="10" displaytype="text" style="align:center;" text="bind:EQP_ST"/>
+                <Cell col="11" displaytype="number" style="align:right;" text="bind:XCL_AMT"/>
+                <Cell col="12" displaytype="number" style="align:right;" text="bind:ASMT_DMG_AMT"/>
+                <Cell col="13" displaytype="text" style="align:left;" text="bind:DEDC_TYP_NM"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <UserGrid id="grd_mainTmp" class="grd_subGrid" taborder="14" binddataset="ds_upLoadXlsListTmp" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" hideendline="col" position="absolute 1275 71 1704 181" anchor="all" _number="fase" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="40"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="100"/>
+                <Column size="67"/>
+                <Column size="70"/>
+                <Column size="100"/>
+                <Column size="96"/>
+                <Column size="76"/>
+                <Column size="40"/>
+                <Column size="76"/>
+                <Column size="75"/>
+                <Column size="200"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="처리일자"/>
+                <Cell col="2" text="재고구분"/>
+                <Cell col="3" text="관리번호"/>
+                <Cell col="4" text="접수일자"/>
+                <Cell col="5" text="반영일자"/>
+                <Cell col="6" text="모델코드"/>
+                <Cell col="7" text="모델명"/>
+                <Cell col="8" text="일련번호"/>
+                <Cell col="9" text="등급"/>
+                <Cell col="10" text="매입가"/>
+                <Cell col="11" text="AP유형"/>
+                <Cell col="12" text="ERROR"/>
+              </Band>
+              <Band id="body">
+                <Cell style="align:right;" text="bind:ROWNO"/>
+                <Cell col="1" displaytype="date" style="align:center;" text="bind:XCL_STRD_DT" calendardisplaynulltype="none"/>
+                <Cell col="2" displaytype="text" style="align:left;" text="bind:INVE_CL_NM"/>
+                <Cell col="3" displaytype="text" style="align:left;" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="4" displaytype="date" style="align:center;" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="5" displaytype="date" style="align:center;" text="bind:CLCT_DT" calendardisplaynulltype="none"/>
+                <Cell col="6" displaytype="text" style="align:left;" text="bind:EQP_MDL_CD"/>
+                <Cell col="7" displaytype="text" style="align:left;" text="bind:EQP_MDL_NM"/>
+                <Cell col="8" displaytype="text" style="align:left;" text="bind:EQP_SER_NO"/>
+                <Cell col="9" displaytype="text" style="align:center;" text="bind:EQP_ST"/>
+                <Cell col="10" displaytype="number" style="align:right;" text="bind:XCL_AMT"/>
+                <Cell col="11" displaytype="text" style="align:left;" text="bind:DEDC_TYP_NM"/>
+                <Cell col="12" style="align:left;color:red;" text="bind:ERROR"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <UserGrid id="grd_arrivTmp" class="grd_subGrid" taborder="15" binddataset="ds_upLoadXlsListArrivTmp" autoenter="select" useinputpanel="false" cellsizingtype="col" cellmovingtype="col" autofittype="col" hideendline="col" visible="false" position="absolute 1275 208 1704 345" anchor="all" _number="fase" _status="false" _check="false" _checkColumnName="_checkcol" _checkedallevent="false" _nodataimage="true" _sort="true" _tooltip="true">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="40"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="67"/>
+                <Column size="100"/>
+                <Column size="67"/>
+                <Column size="70"/>
+                <Column size="100"/>
+                <Column size="96"/>
+                <Column size="76"/>
+                <Column size="40"/>
+                <Column size="76"/>
+                <Column size="76"/>
+                <Column size="75"/>
+                <Column size="200"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="No"/>
+                <Cell col="1" text="처리일자"/>
+                <Cell col="2" text="재고구분"/>
+                <Cell col="3" text="현장여부"/>
+                <Cell col="4" text="관리번호"/>
+                <Cell col="5" text="접수일자"/>
+                <Cell col="6" text="반영일자"/>
+                <Cell col="7" text="모델코드"/>
+                <Cell col="8" text="모델명"/>
+                <Cell col="9" text="일련번호"/>
+                <Cell col="10" text="등급"/>
+                <Cell col="11" text="매입가"/>
+                <Cell col="12" text="평가손실금액"/>
+                <Cell col="13" text="AP유형"/>
+                <Cell col="14" text="ERROR"/>
+              </Band>
+              <Band id="body">
+                <Cell style="align:right;" text="bind:ROWNO"/>
+                <Cell col="1" displaytype="date" style="align:center;" text="bind:XCL_STRD_DT" calendardisplaynulltype="none"/>
+                <Cell col="2" displaytype="text" style="align:left;" text="bind:INVE_CL_NM"/>
+                <Cell col="3" displaytype="text" style="align:left;" text="bind:SKN_CL" combodataset="ds_sknCl" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="4" displaytype="text" style="align:left;" text="bind:CNSL_MGMT_NO"/>
+                <Cell col="5" displaytype="date" style="align:center;" text="bind:CNSL_DT" calendardisplaynulltype="none"/>
+                <Cell col="6" displaytype="date" style="align:center;" text="bind:CLCT_DT" calendardisplaynulltype="none"/>
+                <Cell col="7" displaytype="text" style="align:left;" text="bind:EQP_MDL_CD"/>
+                <Cell col="8" displaytype="text" style="align:left;" text="bind:EQP_MDL_NM"/>
+                <Cell col="9" displaytype="text" style="align:left;" text="bind:EQP_SER_NO"/>
+                <Cell col="10" displaytype="text" style="align:center;" text="bind:EQP_ST"/>
+                <Cell col="11" displaytype="number" style="align:right;" text="bind:XCL_AMT"/>
+                <Cell col="12" displaytype="number" style="align:right;" text="bind:ASMT_DMG_AMT"/>
+                <Cell col="13" displaytype="text" style="align:left;" text="bind:DEDC_TYP_NM"/>
+                <Cell col="14" style="align:left;color:red;" text="bind:ERROR"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_upLoadXlsList" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ROWNO" type="STRING" size="256"/>
+          <Column id="XCL_STRD_DT" type="STRING" size="256"/>
+          <Column id="INVE_CL_NM" type="STRING" size="256"/>
+          <Column id="CNSL_MGMT_NO" type="STRING" size="256"/>
+          <Column id="CNSL_DT" type="STRING" size="256"/>
+          <Column id="CLCT_DT" type="STRING" size="256"/>
+          <Column id="EQP_MDL_CD" type="STRING" size="256"/>
+          <Column id="EQP_MDL_NM" type="STRING" size="256"/>
+          <Column id="EQP_SER_NO" type="STRING" size="256"/>
+          <Column id="EQP_ST" type="STRING" size="256"/>
+          <Column id="XCL_AMT" type="STRING" size="256"/>
+          <Column id="DEDC_TYP_NM" type="STRING" size="256"/>
+          <Column id="ERROR" type="STRING" size="256"/>
+          <Column id="TMP_NUM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_upLoadXlsListArriv" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ROWNO" type="STRING" size="256"/>
+          <Column id="XCL_STRD_DT" type="STRING" size="256"/>
+          <Column id="INVE_CL_NM" type="STRING" size="256"/>
+          <Column id="SKN_CL" type="STRING" size="256"/>
+          <Column id="CNSL_MGMT_NO" type="STRING" size="256"/>
+          <Column id="CNSL_DT" type="STRING" size="256"/>
+          <Column id="CLCT_DT" type="STRING" size="256"/>
+          <Column id="EQP_MDL_CD" type="STRING" size="256"/>
+          <Column id="EQP_MDL_NM" type="STRING" size="256"/>
+          <Column id="EQP_SER_NO" type="STRING" size="256"/>
+          <Column id="EQP_ST" type="STRING" size="256"/>
+          <Column id="XCL_AMT" type="STRING" size="256"/>
+          <Column id="ASMT_DMG_AMT" type="STRING" size="256"/>
+          <Column id="DEDC_TYP_NM" type="STRING" size="256"/>
+          <Column id="ERROR" type="STRING" size="256"/>
+          <Column id="TMP_NUM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_sknCl" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="CM_CD_ID">Y</Col>
+            <Col id="CM_CD_NM">현장</Col>
+          </Row>
+          <Row>
+            <Col id="CM_CD_ID">N</Col>
+            <Col id="CM_CD_NM">비현장</Col>
+          </Row>
+          <Row>
+            <Col id="CM_CD_NM">비현장</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_upLoadXlsListTmp" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false"/>
+    </Objects>
+    <Bind/>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : InveXclExcelRgstP.xfdl
+ * 03. 화면 설명 : 재고관리엑셀입력
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 양재석
+ * 06. 작성일 : 2015.10.19
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.10.19    양재석    최초 작성
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+ var fvInveXclNo;
+ var fvInveTypeCd = "";
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitPop(obj, e, "FEP048P");
+
+	fvInveXclNo = argParam01;
+	fvInveTypeCd = argParam02;
+	
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{		  	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+	page = 1;
+	page_size = 999999999;
+
+	if(fvInveTypeCd == "10"){ //확정재고
+		grd_main.visible = false;
+		grd_arriv.position.left = 22;
+		grd_arriv.position.top = 72;
+		grd_arriv.position.right = 776;
+		grd_arriv.position.bottom = 445;
+		grd_arriv.autofittype = "none";
+		grd_arriv.visible = true;
+		gfn_initGrid(grd_arriv, true, true, true, "row", null);
+	}
+	else{
+		gfn_initGrid(grd_main, true, true, true, "row", null);
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+	//자동조회시 파라메타 전달예제
+	//page = 1;
+	//page_size = 30;
+}
+
+
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 정산저장
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_xclSave()
+{
+	if(ds_upLoadXlsList.rowcount <= 0){
+		return;
+	}
+	
+	var sSvcID		 = "xclSave";
+	var sTrID		 = "PEPInveXclMgmt_pUEpEqpInveXclDtlRgst";
+	var sOutputDs	 = "";
+	var sPtrn		 = "C";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "INVE_XCL_DTL_LIST=ds_upLoadXlsList";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+
+	switch(sSvcID) {
+		case "xclSave" : 	
+			if ( iErrorCode == 0 ) {
+				this.close("ok");
+			} 
+			break;
+			
+		case "errChk" : 	
+			if ( iErrorCode == 0 ) {
+			} 
+			break;
+		default :
+			break;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 버튼 Event
+-----------------------------------------------------------------------------------------------*/
+function button_onclick(obj:Button,  e:ClickEventInfo)
+{
+	switch(obj.name) 
+	{	
+		case "btn_excelSave" :	//확인
+			ds_upLoadXlsList.addColumn("INVE_XCL_NO","String");
+			for(i = 0; i < ds_upLoadXlsList.rowcount; i++){
+				ds_upLoadXlsList.setColumn(i,"INVE_XCL_NO",fvInveXclNo);
+			}
+			fn_xclSave();
+			break;
+		case "btn_cancel" : 	//취소
+			close("cancel");
+			break;
+			
+		case "btn_close" : 		//버튼X
+			close("cancel");
+			break;	
+	}
+}
+
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 오류검증- 이벤트
+----------------------------------------------------------------------------------------------*/
+function btn_errCheck_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if(fvInveTypeCd == "10"){ //확정재고
+		fnArrivErrChk();
+	}else{
+		fnNotArrivErrChk();
+	}
+}
+/*----------------------------------------------------------------------------------------------
+ * 엑셀업로드- 이벤트
+----------------------------------------------------------------------------------------------*/
+function btn_addFileOne_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var nDsObj = ds_upLoadXlsList;
+	if(fvInveTypeCd == "10"){ //확정재고
+		nDsObj = ds_upLoadXlsListArriv;
+		ds_upLoadXlsList.clearData();
+	}
+	if(nDsObj.rowcount > 0){
+		if(!confirm("이미 업로드한 파일이 있습니다. 무시하고 계속 하시겠습니까?")){
+			return;
+		}
+	}
+	nDsObj.clearData();
+	Div00.btn_excelSave.enable = false;
+	var excelNm = gfn_importExcel(nDsObj,0,5);
+	if(excelNm != null && excelNm == false){
+		btn_errCheck_onclick();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 엑셀 Export- 이벤트
+----------------------------------------------------------------------------------------------*/
+function btn_excel_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if(fvInveTypeCd == "10"){ //확정재고
+		gfn_baseExcelExpert(grd_arrivExcel,"재고정산관리엑셀입력양식", "재고정산관리엑셀입력양식");
+	}else{
+		gfn_baseExcelExpert(grd_mainExcel,"재고정산관리엑셀입력양식", "재고정산관리엑셀입력양식");
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 필터- 이벤트
+----------------------------------------------------------------------------------------------*/
+function btn_filter_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if(fvInveTypeCd == "10"){ //확정재고
+		gfn_toggleGridFilter(grd_arriv);
+	}else{
+		gfn_toggleGridFilter(grd_main);
+	}
+}
+
+/*
+삭제버튼
+*/
+function btn_delete_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if(fvInveTypeCd == "10"){ //확정재고
+		if(grd_arriv.currentrow < 0){
+			return;
+		}
+		ds_upLoadXlsListArriv.deleteRow(grd_arriv.currentrow);
+		if(ds_upLoadXlsListArriv.rowcount <= 0){
+			Div00.btn_excelSave.enable = false;
+		}
+	}else{
+		if(grd_main.currentrow < 0){
+			return;
+		}
+		ds_upLoadXlsList.deleteRow(grd_main.currentrow);
+		if(ds_upLoadXlsList.rowcount <= 0){
+			Div00.btn_excelSave.enable = false;
+		}
+	}
+}
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메세지 추가
+-----------------------------------------------------------------------------------------------*/
+function fn_msgAdd(orgMsg,strAddMsg)
+{
+	if(strAddMsg == null || strAddMsg == ""){
+		return orgMsg;
+	}
+	if(orgMsg != null && orgMsg != ""){
+		orgMsg = orgMsg + "," + strAddMsg;
+	}
+	else{
+		orgMsg = strAddMsg;
+	}
+	return orgMsg;
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 길이 체크
+-----------------------------------------------------------------------------------------------*/
+function fn_chkLength(chkData,chkLength)
+{
+	if(chkData == null || chkData == "" || chkData.length <= chkLength){
+		return true;
+	}
+	return false;
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 일자문자형식변경
+-----------------------------------------------------------------------------------------------*/
+function fn_replaceDate(chkData)
+{
+	chkData = chkData.replace("-","");
+	chkData = chkData.substring(0,8);
+	return chkData;
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 미착재고입력오류체크
+-----------------------------------------------------------------------------------------------*/
+function fnNotArrivErrChk()
+{
+	var bCf = true;
+	var chkEq = false;
+	if(ds_upLoadXlsList.getRowCount() == 0){
+		gfn_message("A","업로드 문서에 처리 할 데이터가 없습니다.\n업로드 문서를 확인하시기 바랍니다.","E","","");
+		return;
+	}	
+	//NULL체크
+	var strErrMsg = "";
+	for(var i = 0 ; i < ds_upLoadXlsList.rowcount ; i++) {
+		ds_upLoadXlsList.setColumn(i, "ERROR", "");
+		strErrMsg = "";
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"XCL_STRD_DT"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"처리일자공백");
+		}else{
+			ds_upLoadXlsList.setColumn(i,"XCL_STRD_DT",fn_replaceDate(ds_upLoadXlsList.getColumn(i,"XCL_STRD_DT")));
+		}
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"INVE_CL_NM"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"재고구분공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"CNSL_MGMT_NO"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"관리번호공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"CNSL_DT"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"접수일자공백");
+		}else{
+			ds_upLoadXlsList.setColumn(i,"CNSL_DT",fn_replaceDate(ds_upLoadXlsList.getColumn(i,"CNSL_DT")));
+		}
+		/*
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"CLCT_DT"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"반영일자공백");
+		}else{
+			ds_upLoadXlsList.setColumn(i,"CLCT_DT",fn_replaceDate(ds_upLoadXlsList.getColumn(i,"CLCT_DT")));
+		}
+		*/
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"EQP_MDL_CD"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"모델코드공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"EQP_MDL_NM"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"모델명공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"EQP_SER_NO"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"일련번호공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"EQP_ST"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"등급공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"XCL_AMT"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"매입가공백");
+		}else{
+			var strSclAmt = ds_upLoadXlsList.getColumn(i,"XCL_AMT");
+			strSclAmt = strSclAmt.replace(",","");
+			ds_upLoadXlsList.setColumn(i,"XCL_AMT",strSclAmt);
+		}
+		if (  gfn_isNull(ds_upLoadXlsList.getColumn(i,"DEDC_TYP_NM"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"AP유형공백");
+		}
+		if(strErrMsg != ""){
+			ds_upLoadXlsList.setColumn(i, "ERROR", strErrMsg + " 오류");
+			bCf = false;
+		}
+	}
+	//동일값체크
+	//TMP_NUM
+	var tmpNum = -1;
+	ds_upLoadXlsListTmp.copyData(opener.ds_excel);
+	ds_upLoadXlsListTmp.addColumn("TMP_NUM","String");
+	for(var i = 0; i < ds_upLoadXlsListTmp.rowcount; i++){
+		ds_upLoadXlsListTmp.setColumn(i,"TMP_NUM",i);
+	}
+	for(var i = 0; i < ds_upLoadXlsList.rowcount; i++){
+		strErrMsg = ds_upLoadXlsList.getColumn(i, "ERROR");
+		strOldErrMsg = strErrMsg;
+		for(var j = 0; j < ds_upLoadXlsListTmp.rowcount; j++){
+			if(ds_upLoadXlsList.getColumn(i,"CNSL_MGMT_NO") == ds_upLoadXlsListTmp.getColumn(j,"CNSL_MGMT_NO")){
+				tmpNum = ds_upLoadXlsListTmp.getColumn(j,"TMP_NUM");
+				//trace("tmpNum : ["+tmpNum+"]");
+				for(var k = 1; k < 12; k++){
+					//if(k == 5) continue; //반영일자 미체크
+					if(k == 4 || k == 5 || k == 7 || k == 9) continue; //미체크
+					chkTxt = grd_main.getCellText(i,k).toString();
+					chkTarTxt = opener.grd_notArrivExcel.getCellText(tmpNum,k).toString();
+					//trace("["+chkTxt+"],["+chkTarTxt+"]");
+					if(chkTxt != chkTarTxt){
+						var strHeadNm = grd_main.getCellProperty("head",k,"text");
+						strErrMsg = fn_msgAdd(strErrMsg,strHeadNm);
+						//trace(k+" ===> ["+chkTxt+"],["+chkTarTxt+"]"+strHeadNm+","+strErrMsg);
+					}
+				}
+				ds_upLoadXlsListTmp.deleteRow(j);
+				break;
+			}else if(j == (ds_upLoadXlsListTmp.rowcount - 1)){
+				strErrMsg = fn_msgAdd(strErrMsg,"관리번호");
+			}
+		}
+		if(strOldErrMsg != strErrMsg){
+			strErrMsg = fn_msgAdd(strErrMsg," 비동일오류");
+			ds_upLoadXlsList.setColumn(i, "ERROR", strErrMsg);
+			bCf = false;
+		}
+	}
+
+	if(bCf && ds_upLoadXlsList.rowcount > 0){	//정상
+		gfn_message("A","DMS00070");
+		Div00.btn_excelSave.enable = true;
+	}else{
+		gfn_message("A","DMS00067","E","","");
+		return;
+	}
+
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 확정재고입력오류체크
+-----------------------------------------------------------------------------------------------*/
+function fnArrivErrChk()
+{
+	var bCf = true;
+	if(ds_upLoadXlsListArriv.getRowCount() == 0){
+		gfn_message("A","업로드 문서에 처리 할 데이터가 없습니다.\n업로드 문서를 확인하시기 바랍니다.","E","","");
+		return;
+	}	
+	//NULL체크
+	var strErrMsg = "";
+	for(var i = 0 ; i < ds_upLoadXlsListArriv.rowcount ; i++) {
+		ds_upLoadXlsListArriv.setColumn(i, "ERROR", "");
+		strErrMsg = "";
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"XCL_STRD_DT"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"처리일자공백");
+		}else{
+			ds_upLoadXlsListArriv.setColumn(i,"XCL_STRD_DT",fn_replaceDate(ds_upLoadXlsListArriv.getColumn(i,"XCL_STRD_DT")));
+		}
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"INVE_CL_NM"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"재고구분공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"CNSL_MGMT_NO"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"관리번호공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"CNSL_DT"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"접수일자공백");
+		}else{
+			ds_upLoadXlsListArriv.setColumn(i,"CNSL_DT",fn_replaceDate(ds_upLoadXlsListArriv.getColumn(i,"CNSL_DT")));
+		}
+		/*
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"CLCT_DT"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"반영일자공백");
+		}else{
+			ds_upLoadXlsListArriv.setColumn(i,"CLCT_DT",fn_replaceDate(ds_upLoadXlsListArriv.getColumn(i,"CLCT_DT")));
+		}
+		*/
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"EQP_MDL_CD"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"모델코드공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"EQP_MDL_NM"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"모델명공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"EQP_SER_NO"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"일련번호공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"EQP_ST"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"등급공백");
+		}
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"XCL_AMT"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"매입가공백");
+		}else{
+			var strSclAmt = ds_upLoadXlsListArriv.getColumn(i,"XCL_AMT");
+			strSclAmt = strSclAmt.replace(",","");
+			ds_upLoadXlsListArriv.setColumn(i,"XCL_AMT",strSclAmt);
+		}
+		if (  gfn_isNull(ds_upLoadXlsListArriv.getColumn(i,"DEDC_TYP_NM"))  ){
+			strErrMsg = fn_msgAdd(strErrMsg,"AP유형공백");
+		}
+		if(strErrMsg != ""){
+			ds_upLoadXlsListArriv.setColumn(i, "ERROR", strErrMsg + " 오류");
+			bCf = false;
+		}
+	}
+
+	//동일값체크
+	var tmpNum = -1;
+	ds_upLoadXlsListTmp.copyData(opener.ds_excel);
+	ds_upLoadXlsListTmp.addColumn("TMP_NUM","String");
+	for(var i = 0; i < ds_upLoadXlsListTmp.rowcount; i++){
+		ds_upLoadXlsListTmp.setColumn(i,"TMP_NUM",i);
+	}
+	for(var i = 0; i < ds_upLoadXlsListArriv.rowcount; i++){
+		strErrMsg = ds_upLoadXlsListArriv.getColumn(i, "ERROR");
+		strOldErrMsg = strErrMsg;
+		for(var j = 0; j < ds_upLoadXlsListTmp.rowcount; j++){
+			if(ds_upLoadXlsListArriv.getColumn(i,"CNSL_MGMT_NO") == ds_upLoadXlsListTmp.getColumn(j,"CNSL_MGMT_NO")){
+				tmpNum = ds_upLoadXlsListTmp.getColumn(j,"TMP_NUM");
+				//trace("tmpNum : ["+tmpNum+"]");
+				for(var k = 1; k < 14; k++){
+					//if(k == 6) continue; //반영일자 미체크
+					if(k == 5 || k == 6 || k == 8 || k == 10) continue; //미체크
+					chkTxt = grd_arriv.getCellText(i,k).toString();
+					chkTarTxt = opener.grd_arrivExcel.getCellText(tmpNum,k).toString();
+					//trace("["+chkTxt+"],["+chkTarTxt+"]");
+					if(chkTxt != chkTarTxt){
+						var strHeadNm = grd_arriv.getCellProperty("head",k,"text");
+						strErrMsg = fn_msgAdd(strErrMsg,strHeadNm);
+						//trace(k+" ===> ["+chkTxt+"],["+chkTarTxt+"]"+strHeadNm+","+strErrMsg);
+					}
+				}
+				ds_upLoadXlsListTmp.deleteRow(j);
+				break;
+			}else if(j == (ds_upLoadXlsListTmp.rowcount - 1)){
+				strErrMsg = fn_msgAdd(strErrMsg,"관리번호");
+			}
+		}
+		if(strOldErrMsg != strErrMsg){
+			strErrMsg = fn_msgAdd(strErrMsg," 비동일오류");
+			ds_upLoadXlsListArriv.setColumn(i, "ERROR", strErrMsg);
+			bCf = false;
+		}
+	}
+	if(bCf && ds_upLoadXlsListArriv.rowcount > 0){	//정상
+		ds_upLoadXlsList.clearData();
+		for(var i = 0; i < ds_upLoadXlsListArriv.rowcount; i++){
+			var nRow = ds_upLoadXlsList.addRow();
+			for(var j = 0; j < ds_upLoadXlsList.getColCount(); j++){
+				for(var k = 0; k < ds_upLoadXlsListArriv.getColCount(); k++){
+					if(ds_upLoadXlsList.getColID(j) == ds_upLoadXlsListArriv.getColID(k)){
+						ds_upLoadXlsList.setColumn(nRow,ds_upLoadXlsList.getColID(j),ds_upLoadXlsListArriv.getColumn(i,ds_upLoadXlsListArriv.getColID(k)));
+						break;
+					}
+				}
+			}
+		}
+		gfn_message("A","DMS00070");
+		Div00.btn_excelSave.enable = true;
+	}else{
+		gfn_message("A","DMS00067","E","","");
+		return;
+	}
+
+}
+]]></Script>
+  </Form>
+</FDL>

@@ -1,0 +1,598 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="EqpDpspslMgmtM" classname="ProgramReg" inheritanceid="" position="absolute 0 0 1038 528" titletext="단말기매각관리" style="font:arial,11;" onload="Form_onload">
+    <Layouts>
+      <Layout>
+        <Static id="Static06" text="w&#13;&#10;20" class="tip_guide" visible="false" position2="absolute l:1018 w:20 t:11 h:274" positiontype="position2"/>
+        <Div id="div_search" anchor="left top right" taborder="0" class="bg_search" position="absolute 0 0 1018 41">
+          <Layouts>
+            <Layout>
+              <Static id="stc_msgExpBack" text="회수일자" class="sta_WFDA_detail_Label_P" position="absolute 15 9 95 29" anchor="default"/>
+              <Static id="Static03" text="w&#13;30" class="tip_guide" visible="false" position2="absolute l:287 w:30 t:0 h:52" positiontype="position2"/>
+              <Static id="Static09" text="w&#13;&#10;&#13;10" class="tip_guide" visible="false" position2="absolute l:346 w:10 t:2 h:30" positiontype="position2"/>
+              <Static id="Static00" text="w&#13;30" class="tip_guide" visible="false" position2="absolute l:609 w:30 t:0 h:42" positiontype="position2"/>
+              <Static id="Static08" text="w&#13;&#10;&#13;10" onclick="div_search_Static08_onclick" class="tip_guide" visible="false" position2="absolute l:72 w:10 t:0 h:42" positiontype="position2"/>
+              <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:0 w:15 t:0 h:42" positiontype="position2"/>
+              <CommCalendarPred id="ccp_inClctDt" titletext="From_To달력" taborder="0" text="CommCalendarPred00" scrollbars="none" position="absolute 82 9 287 29" style="background:transparent; " anchor="default"/>
+              <Static id="Static02" text="w&#13;&#10;&#13;10" class="tip_guide" visible="false" position2="absolute l:692 w:10 t:0 h:30" positiontype="position2"/>
+              <Static id="stc_msgNm01" text="일련번호" class="sta_WFSA_Label" position="absolute 639 9 698 29" anchor="default"/>
+              <Edit id="edt_eqpSerNum" taborder="5" onkeydown="div_Search_cond_onkeydown" position="absolute 702 9 788 29" maxlength="30" imemode="none" inputtype="numberandenglish" anchor="default"/>
+              <Static id="stc_msgNm03" text="모델" class="sta_WFSA_Label" position="absolute 317 9 371 29" onclick="div_search_stc_msgNm03_onclick" anchor="default"/>
+              <Edit id="edt_eqpMdlCd" taborder="1" inputtype="numberandenglish" maxlength="10" onkeydown="div_search_edt_eqpMdlCd_onkeydown" class="Code" position="absolute 356 9 429 29" tooltiptext="모델코드" vaildate="title:모델코드,maxlength:10" anchor="default"/>
+              <Edit id="edt_eqpMdlNm" taborder="2" maxlength="100" onkeydown="div_search_edt_eqpMdlCd_onkeydown" position="absolute 430 9 567 29" tooltiptext="모델명" validate="title:모델명,maxlengthB:100" anchor="default"/>
+              <Button id="btn_searchMdl" taborder="3" onclick="div_search_btn_searchMdl_onclick" class="btn_WFSA_search" position="absolute 568 9 588 29" tooltiptype="hover" tooltiptext="모델검색" userdata="GRP1:INQ_AUTR_YN" anchor="default"/>
+              <Button id="btn_resetMdl" taborder="4" onclick="div_search_btn_resetMdl_onclick" class="btn_WFSA_reset" position="absolute 589 9 609 29" tooltiptext="초기화" anchor="default"/>
+            </Layout>
+          </Layouts>
+          <InitValue/>
+        </Div>
+        <UserGrid id="grd_main" taborder="6" binddataset="ds_main" autoenter="select" autofittype="col" position="absolute 0 74 1018 488" anchor="all" _required="" _requiredimage="false" hideendline="col" enable="true" readonly="true" oncelldblclick="grd_inlist_oncelldblclick">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="86"/>
+                <Column size="90"/>
+                <Column size="76"/>
+                <Column size="83"/>
+                <Column size="83"/>
+                <Column size="82"/>
+                <Column size="63"/>
+                <Column size="77"/>
+                <Column size="69"/>
+                <Column size="86"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="회수일자"/>
+                <Cell col="1" text="모델"/>
+                <Cell col="2" text="색상"/>
+                <Cell col="3" text="일련번호"/>
+                <Cell col="4" displaytype="normal" text="회계잔존가"/>
+                <Cell col="5" text="매각사유"/>
+                <Cell col="6" text="경과기간"/>
+                <Cell col="7" text="계약종료일자"/>
+                <Cell col="8" text="매각일자"/>
+                <Cell col="9" text="확정여부"/>
+              </Band>
+              <Band id="body">
+                <Cell displaytype="date" style="align:center;" text="bind:EQP_IN_DT" calendardisplaynulltype="none"/>
+                <Cell col="1" displaytype="text" edittype="none" style="align:left middle;" text="bind:EQP_MDL_NM"/>
+                <Cell col="2" displaytype="combo" edittype="none" style="align:left;" text="bind:EQP_COLOR_CD" combodataset="ds_DMS100" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="3" displaytype="text" edittype="none" style="align:left middle;" text="bind:EQP_SER_NO"/>
+                <Cell col="4" displaytype="text" edittype="none" style="align:left middle;" text="bind:FISCL_REMPRC"/>
+                <Cell col="5" displaytype="combo" edittype="none" style="align:left;" text="bind:EQP_JDG_RSLT_CD" combodataset="ds_DMS121" combocodecol="CM_CD_ID" combodatacol="CM_CD_NM"/>
+                <Cell col="6" displaytype="number" style="align:center;" text="bind:EXP_DT"/>
+                <Cell col="7" displaytype="date" style="align:center;" text="bind:RENT_END_DT" calendardisplaynulltype="none"/>
+                <Cell col="8" displaytype="date" style="align:center;" text="bind:EQP_OUT_DT" calendardisplaynulltype="none"/>
+                <Cell col="9" displaytype="text" style="align:center;" text="bind:CONF_YN"/>
+              </Band>
+            </Format>
+          </Formats>
+        </UserGrid>
+        <Static id="stc_subTitle" text="조회결과" class="sub_title" position="absolute 0 51 299 71" anchor="left top" onclick="stc_subTitle01_onclick"/>
+        <Static id="Static00" text="h10" class="tip_guide" visible="false" position2="absolute l:104 w:42 t:0 h:10" positiontype="position2"/>
+        <Button id="btn_search" taborder="7" text="조회" onclick="btn_search_onclick" class="btn_WFSA_Search_M" position="absolute 959 14 1017 41" anchor="top right" style="align:center middle;"/>
+        <Static id="Static14" text="h10" class="tip_guide" visible="false" position2="absolute l:104 w:42 t:30 h:10" positiontype="position2"/>
+        <Static id="Static01" text="h3" class="tip_guide" visible="false" position2="absolute l:953 w:42 t:71 h:3" positiontype="position2"/>
+        <Static id="Static11" text="h10" class="tip_guide" visible="false" position2="absolute l:953 w:42 t:41 h:10" positiontype="position2"/>
+        <Static id="Static02" text="h14" class="tip_guide" visible="false" position2="absolute l:4 w:42 t:41 h:14" positiontype="position2"/>
+        <Static id="Static04" text="h8" class="tip_guide" visible="false" position2="absolute l:4 w:42 t:66 h:8" positiontype="position2"/>
+        <Static id="Static13" text="h33" class="tip_guide" visible="false" position2="absolute l:309 w:42 t:41 h:33" positiontype="position2"/>
+        <Button id="btn_excel" taborder="5" onclick="btn_excel_onclick" class="btn_common_excel" position="absolute 996 51 1018 71" anchor="top right" tooltiptext="액셀출력" userautr="sample0021:EXL_AUTR_YN"/>
+        <CommGridPage id="cgp_main" position2="absolute l:34.87% w:294 b:10 h:20" positiontype="position2" titletext="Grid Page" taborder="8" dragscrolltype="none"/>
+        <Static id="Static09" text="h10" class="tip_guide" visible="false" position2="absolute l:384 w:42 t:518 h:10" positiontype="position2"/>
+        <Static id="Static10" text="h10" class="tip_guide" visible="false" position2="absolute l:384 w:42 t:488 h:10" positiontype="position2"/>
+        <Static id="Static03" text="w&#13;362" class="tip_guide" visible="false" position2="absolute l:0 w:362 t:491 h:32" positiontype="position2"/>
+        <Static id="Static05" text="w&#13;&#10;362" class="tip_guide" visible="false" position2="absolute l:656 w:362 t:491 h:32" positiontype="position2"/>
+        <CommGridPageCnt id="cgp_mainCnt" anchor="right bottom" titletext="Grid Page Count" taborder="9" position="absolute 918 498 1018 518" style="background:transparent; "/>
+        <Button id="btn_filter" taborder="4" onclick="btn_filter_onclick" class="btn_common_filter" position="absolute 973 51 995 71" anchor="top right" tooltiptext="필터" userdata=""/>
+        <Button id="btn_dpspslAccept" taborder="1" text="매각확정" class="btn_common" position="absolute 903 51 972 71" onclick="btn_dpspslAccept_onclick" anchor="top right"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_search" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CLCT_FR_DT" type="STRING" size="256"/>
+          <Column id="CLCT_TO_DT" type="STRING" size="256"/>
+          <Column id="EQP_SER_NO" type="STRING" size="256"/>
+          <Column id="EQP_MDL_CD" type="STRING" size="256"/>
+          <Column id="EQP_MDL_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_main" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ROWNO" type="STRING" size="256"/>
+          <Column id="EQP_IN_DT" type="STRING" size="256"/>
+          <Column id="EQP_MDL_CD" type="STRING" size="256"/>
+          <Column id="EQP_MDL_NM" type="STRING" size="256"/>
+          <Column id="EQP_SER_NO" type="STRING" size="256"/>
+          <Column id="EQP_COLOR_CD" type="STRING" size="256"/>
+          <Column id="ASSET_NO" type="STRING" size="256"/>
+          <Column id="FISCL_REMPRC" type="STRING" size="256"/>
+          <Column id="EQP_JDG_RSLT_CD" type="STRING" size="256"/>
+          <Column id="EQP_OUT_DT" type="STRING" size="256"/>
+          <Column id="CONF_YN" type="STRING" size="256"/>
+          <Column id="EXP_DT" type="STRING" size="256"/>
+          <Column id="RENT_END_DT" type="STRING" size="256"/>
+          <Column id="CNTRT_NO" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_DMS108" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_GRP_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CHG_DTM" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_DESC" type="STRING" size="256"/>
+          <Column id="CM_CD_SORT_ORD" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="SUP_CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="SUP_CM_CD_ID" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD1" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD2" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD3" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD4" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD5" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD6" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD7" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD8" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD9" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD10" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_DMS100" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_GRP_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CHG_DTM" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_DESC" type="STRING" size="256"/>
+          <Column id="CM_CD_SORT_ORD" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="SUP_CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="SUP_CM_CD_ID" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD1" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD2" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD3" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD4" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD5" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD6" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD7" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD8" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD9" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD10" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_DMS121" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="CM_GRP_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_ID" type="STRING" size="256"/>
+          <Column id="CHG_DTM" type="STRING" size="256"/>
+          <Column id="CM_CD_NM" type="STRING" size="256"/>
+          <Column id="CM_CD_DESC" type="STRING" size="256"/>
+          <Column id="CM_CD_SORT_ORD" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="SUP_CM_GRP_CD_ID" type="STRING" size="256"/>
+          <Column id="SUP_CM_CD_ID" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD1" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD2" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD3" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD4" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD5" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD6" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD7" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD8" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD9" type="STRING" size="256"/>
+          <Column id="MGMT_ITEM_CD10" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_save" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="ROWNO" type="STRING" size="256"/>
+          <Column id="EQP_IN_DT" type="STRING" size="256"/>
+          <Column id="EQP_MDL_CD" type="STRING" size="256"/>
+          <Column id="EQP_MDL_NM" type="STRING" size="256"/>
+          <Column id="EQP_SER_NO" type="STRING" size="256"/>
+          <Column id="EQP_COLOR_CD" type="STRING" size="256"/>
+          <Column id="ASSET_NO" type="STRING" size="256"/>
+          <Column id="FISCL_REMPRC" type="STRING" size="256"/>
+          <Column id="EQP_JDG_RSLT_CD" type="STRING" size="256"/>
+          <Column id="EQP_OUT_DT" type="STRING" size="256"/>
+          <Column id="CONF_YN" type="STRING" size="256"/>
+          <Column id="EXP_DT" type="STRING" size="256"/>
+          <Column id="CNTRT_NO" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="div_search.edt_eqpSerNum" propid="value" datasetid="ds_search" columnid="EQP_SER_NO"/>
+      <BindItem id="item2" compid="div_search.edt_eqpMdlCd" propid="value" datasetid="ds_search" columnid="EQP_MDL_CD"/>
+      <BindItem id="item3" compid="div_search.edt_eqpMdlNm" propid="value" datasetid="ds_search" columnid="EQP_MDL_NM"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 임대R
+ * 02. 화면 : EqpDpspslMgmtM.xfdl
+ * 03. 화면 설명 : 단말기매각관리
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 양재석
+ * 06. 작성일 : 2015.09.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.09.01    양재석    최초 작성
+ *     20xx.xx.xx               최종 수정
+ ************************************************************************************************
+ */
+ 
+ /*----------------------------------------------------------------------------------------------
+ * 주의사항   : Page설정 Dataset(예:ds_param)에서 한개의 Row를 추가(필수)
+                  page             - Current Page
+                  page_size        - 한번에 가져오는 Row수
+                                     반드시 100개 이상으로 할것(스크롤이벤트발생시 필요함)
+                  total_record_cnt - 전체 Row수
+-----------------------------------------------------------------------------------------------*/
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+ 
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "FPR024M");
+
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form 종료전 Check 함수(공통)
+-----------------------------------------------------------------------------------------------*/
+function Form_checkBeforeClose()
+{
+	///변경된 Dataset검증
+	if ( gfn_formBeforeOnClose(this, "ds_main") ) {
+			return true;
+	} else {
+		return false;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+	var strCode =  "DMS100=ds_DMS100=N"; //색상
+ 		strCode += ",DMS108=ds_DMS108=A"; //재고상태
+ 		strCode += ",DMS121=ds_DMS121=N"; //단말기감정결과코드
+						
+	gfn_getCodeDs( this
+				  , strCode
+				  ,"fn_afterCodeCallBack");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{
+	ds_DMS108.filter("MGMT_ITEM_CD2=='Y' || CM_CD_ID == '%'");
+	ds_DMS121.filter("MGMT_ITEM_CD2=='Y'");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+	//그리드 페이징 초기화
+	cgp_main.setPageInit("fn_selectPageExec", false);
+	cgp_mainCnt.setPageNoCnt(0, 0, 0);	//PageNo Count
+	
+	page = 1;
+	page_size = 50;
+	
+	// 그리드 초기화 
+	//gfn_initGrid(objGrid:UserGrid, bReadonly, bSortable, bTooltip, sSelectType, innerDs, sPage, sPageSize, sTotCnt);
+	gfn_initGrid(grd_main, true, true, true, "row", null);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 페이지 Click시 페이지조회
+ * param   : iTotalRowCount - 전체 Row수
+ * param   : iUnitSelRowNo  - 페이지당 Row수
+ * param   : iCurrPage      - 현재 페이지
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_selectPageExec(iTotalRowCount, iUnitSelRowNo, iCurrPage)
+{
+	//trace("페이징처리::total row="+iTotalRowCount+"::unit row="+iUnitSelRowNo+"::current page="+iCurrPage);
+	//페이징처리
+	page = iCurrPage;
+	fn_searchMain();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+	div_search.ccp_inClctDt.setData(gfn_getFirstDate(gfn_today()),gfn_getLastDate(gfn_today()),true);
+	//div_search.ccp_acceptDt.setData(gfn_getFirstDate(gfn_today()),gfn_getLastDate(gfn_today()),true);
+	div_search.ccp_inClctDt.setFocus();
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchMain()
+{
+	ds_main.clearData();		//데이타셋 clear
+	//trace("\n=======================\n"+ds_search.saveXML());
+	
+	var sSvcID		 = "searchMain";
+	var sTrID		 = "PPREqpDpspslMgmt_pInqDpspslObjEqpList";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_search";
+	var sOutputDs	 = "ds_main=RS_DPSPSL_EQP_LIST";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인저장
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_saveMain() {
+    var sSvcID		 = "saveMain";
+	var sTrID		 = "PPREqpDpspslMgmt_pDpspslObjEqpReg";
+	var sPtrn		 = "U";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RQ_DPSPSL_EQP_LIST=ds_save";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc); 
+
+} 
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+ 	//trace("sSvcID ==>> "+sSvcID+" : iErrorCode ==>> "+iErrorCode+" : sErrorMsg ==>> "+sErrorMsg);
+ 	//trace("ncMsgId ==>> "+ncMsgId+" : ncMsg ==>> "+ncMsg);
+	switch(sSvcID) {
+		case "searchMain" : 
+			if ( iErrorCode == 0 ) {
+				cgp_main.setPageNo(page_size, total_record_cnt, page);	//PageNo
+				cgp_mainCnt.setPageNoCnt(page_size, total_record_cnt, page);	//PageNo Count
+				gfn_setGridTitleCountPaging(stc_subTitle, total_record_cnt);
+			}
+			break;
+			
+		case "saveMain" : 
+			if ( iErrorCode == 0 ) {
+				gfn_message("A","DMS00000","I"); //정상 처리되었습니다.
+			} else {
+				gfn_message("A",ncMsg);
+			}
+			fn_searchMain();
+			break;
+		default :
+			break;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : search
+-----------------------------------------------------------------------------------------------*/
+function btn_search_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var arrTerm = div_search.ccp_inClctDt.getData();
+	ds_search.setColumn(0,"CLCT_FR_DT",arrTerm[0]);
+	ds_search.setColumn(0,"CLCT_TO_DT",arrTerm[1]);
+	
+	if(gfn_isNull(arrTerm[0]) || gfn_isNull(arrTerm[1])){
+		gfn_message("A","DMS00002","E","","회수일자");  //필수입력항목 {0}이/가 누락되었습니다.
+		return false;
+	}
+	
+	// 입력 항목 Validate Check
+	if (!gfn_getValidateCompList(div_search)) {	
+		return false;
+	}
+	
+	//조회함수 호출 
+	fn_searchMain();
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid filter
+-----------------------------------------------------------------------------------------------*/
+function btn_filter_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gfn_toggleGridFilter(grd_main);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid excel
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if (ds_main.rowcount == 0){
+		gfn_message("A","DMS00021","I"); //조회된 정보가 없습니다.
+	} else {
+		gfn_baseExcelExpert(grd_main,"단말기매각관리목록","단말기매각관리목록");
+	}
+}
+
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 조회조건에서 엔터키가 눌러졌을때 조회
+-----------------------------------------------------------------------------------------------*/
+function div_Search_cond_onkeydown(obj:Edit, e:KeyEventInfo)
+{
+	if (e.keycode == 13) {
+		btn_search_onclick();
+	}	
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 교품확정버튼클릭
+-----------------------------------------------------------------------------------------------*/
+function btn_dpspslAccept_onclick(obj:Button,  e:ClickEventInfo)
+{
+	if(ds_main.rowposition < 0){
+		return;
+	}
+	if(ds_main.getColumn(ds_main.rowposition,"CONF_YN") != "N"){
+		return;
+	}
+	if(ds_main.getColumn(ds_main.rowposition,"EQP_JDG_RSLT_CD") == "20" && ds_main.getColumn(ds_main.rowposition,"EXP_DT") <= 14){
+		gfn_message("A","불량 단말기는 회수일자로부터 14일 경과후 매각 처리가 가능 합니다.","I");
+		return;
+	}
+	var bResult = gfn_message("C","선택 단말기를 매각 처리 하시겠습니까?");
+	if ( !bResult ) {
+		return;
+	}
+	ds_save.clearData();
+	ds_save.addRow();
+	ds_save.copyRow(0,ds_main,ds_main.rowposition);
+	ds_save.setColumn(0,"EQP_OUT_DT",gfn_today());
+	ds_save.setColumn(0,"EQP_IN_DT",gfn_today());
+	fn_saveMain();
+}
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 저장전 유효성 검사
+ * param   : 
+ * return  : true/false
+-----------------------------------------------------------------------------------------------*/
+function fn_chkBeforeSave()	
+{	
+	//필수항목 Check
+	if ( !grd_msglist.ufn_isRequiredColumn() ) return false;
+
+	if(!gfn_isUpdated(ds_main))//저장할 테이타셋 ds_Save
+	{
+		gfn_message("A","변경된 정보가 없습니다.","I");	//???? : 변경된 정보가 없습니다.
+		return false;
+	}	
+	return true;
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 모델 엔터키 검색
+-----------------------------------------------------------------------------------------------*/
+function div_search_edt_eqpMdlCd_onkeydown(obj:Edit, e:KeyEventInfo)
+{
+	if (e.keycode == KEYCODE_ENTER) {
+		div_search_btn_searchMdl_onclick();
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 모델조회버튼
+-----------------------------------------------------------------------------------------------*/
+function div_search_btn_searchMdl_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var sParam01 = div_search.edt_eqpMdlCd.value;
+	var sParam02 = div_search.edt_eqpMdlNm.value;
+	var sParam03 = "";
+	var sParam04 = "";
+	if ( e == null ) {
+		sParam03 = "key";
+	} else {
+		sParam03 = "button";
+	}
+	
+	var arrArgs = {argAutoSelect:true, argCallProgram:"InBrwsM", argParam01:sParam01, argParam02:sParam02, argParam03:sParam03, argParam04:sParam04};
+	var sRtnVal = gfn_dialog("FBI008P", arrArgs);
+
+	//팝업에서 입력받은 값 리턴
+	if ( gfn_isNull(sRtnVal) || sRtnVal == "cancel" ) {
+		//취소시 값 제거
+		div_search.edt_eqpMdlCd.value = "";
+		div_search.edt_eqpMdlNm.value = "";
+	} else {	//Object이용시
+		div_search.edt_eqpMdlCd.value = sRtnVal["supEqpMdlCd"];
+		div_search.edt_eqpMdlNm.value = sRtnVal["supEqpMdlNm"];
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 모델조회버튼리셋
+-----------------------------------------------------------------------------------------------*/
+function div_search_btn_resetMdl_onclick(obj:Button,  e:ClickEventInfo)
+{
+	div_search.edt_eqpMdlCd.value = "";
+	div_search.edt_eqpMdlNm.value = "";
+}
+
+]]></Script>
+  </Form>
+</FDL>

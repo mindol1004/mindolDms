@@ -1,0 +1,129 @@
+package dms.bi.bibbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/기준정보</li>
+ * <li>단위업무명: [DU]거래처관리</li>
+ * <li>설  명 : <pre>거래처관리</pre></li>
+ * <li>작성일 : 2015-07-03 08:34:52</li>
+ * <li>작성자 : 이영진 (newnofixing)</li>
+ * </ul>
+ *
+ * @author 이영진 (newnofixing)
+ */
+public class DBIDealCoMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DBIDealCoMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>거래처총건수</pre>
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-07-03 08:35:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSDealCoTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		// 1.쿼리문 호출	    
+		IRecord record = dbSelectSingle("SDealCoTotCnt", requestData, onlineCtx);
+		// 2.결과값 셋팅	    
+		responseData.putFieldMap(record);
+		return responseData;
+	}
+
+	/**
+	 * <pre>거래처조회</pre>
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-07-03 08:36:57
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSDealCoPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		// 1.쿼리문 호출
+		IRecordSet rsReturn = dbSelect("SDealCoPaging", requestData, onlineCtx);
+		// 2.결과값 셋팅
+		responseData.putRecordSet("RS_DEAL_CO_LIST", rsReturn);
+		return responseData;
+	}
+
+	/**
+	 * <pre>거래처저장</pre>
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-07-03 08:37:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIDealCo(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		// 1.쿼리문 호출
+		dbInsert("IDealCo", requestData, onlineCtx);
+		return responseData;
+	}
+
+	/**
+	 * <pre>거래처삭제</pre>
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-07-03 08:34:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDDealCo(IDataSet requestData, IOnlineContext onlineCtx) {
+		DataSet responseData = new DataSet();
+		// 1.쿼리문 호출
+		dbInsert("DDealCo", requestData, onlineCtx);
+		return responseData;
+	}
+
+    /**
+	 * <pre>거래처이력생성</pre>
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-07-08 17:53:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIDealCoHist(IDataSet requestData, IOnlineContext onlineCtx) {
+	    DataSet responseData = new DataSet();
+        // 1.쿼리문 호출
+        dbInsert("IDealCoHist", requestData, onlineCtx);
+        return responseData;
+    }
+  
+}

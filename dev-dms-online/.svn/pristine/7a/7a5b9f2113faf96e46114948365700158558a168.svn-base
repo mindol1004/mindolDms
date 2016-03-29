@@ -1,0 +1,451 @@
+package dms.sc.scbbase.biz;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.logging.Log;
+
+import fwk.code.internal.HpcCode;
+import fwk.utils.HpcUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: FSCLginOp</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2014-07-30 10:22:48</li>
+ * <li>작성자 : 김석영 (kimsukyoung)</li>
+ * </ul>
+ *
+ * @author 김석영 (kimsukyoung)
+ */
+public class FSCLginOp extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+	//TODO 공통상수선언유틸로 이동.
+	private static final String	USER_CL_CD_SV		= "11";	// SV
+	private static final String	USER_CL_CD_TM		= "12";	// 팀장
+	private static final String	USER_CL_CD_STAFF	= "13";	// SPC임직원
+	private static final String	SV_BASE_AUTR		= "AU111";	// SV기본권한  2015.03.12 SV기본권한ID 변경.
+	private static final int	PWD_ERR_CNT			= 3;	// 비밀번호 오류횟수
+	private static final int	PWD_CHG_CYCL		= 6;	// 비밀번호 변경주기(월)
+	private static final String	USER_ST_CD_INIT		= "00";	// 사용자 초기화 상태
+	private static final String	USER_ST_CD_NML		= "10";	// 사용자 정상 상태
+
+	/**
+	 * Default Constructor
+	 */
+	public FSCLginOp() {
+		super();
+	}
+
+	/**
+	 * 일반로그인
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fLgin(IDataSet requestData, IOnlineContext onlineCtx) {
+		//데이터셋 설정
+		IDataSet reqData = (IDataSet) requestData.clone();
+		IDataSet responseData = new DataSet();
+		//변수 설정
+		String linkSystem = requestData.getField("LINK_SYSTEM"); //접속경로
+		String domainCd = requestData.getField("DOMAIN_CD");  //접속도메인 
+		String userPwd = requestData.getField("USER_PWD");    //로그인 비밀번호
+
+		try {
+
+			/**************************************************************************
+			* VOC, NO 접속 사용자의 로그인 처리  
+			* 
+			* 1. TB_USER 사용자정보 조회 
+			* 2. 접속경로(linkSystem)에 따라 분기처리
+			*    1) VOC인 경우
+			*    2) NO 인 경우
+			*    3) 그이외
+			* 3. 정상 로그인 처리 
+			*    1) pm return용 사용자정보 조회   
+			*    2) 최종로그인일시 업데이트 및 
+			*       접속경로가 'NO'인 경우 비밀번호오류횟수 0으로 초기화 UPDATE   
+			****************************************************************************/
+			//1. dm호출 (TB_USER 테이블에서 사용자정보조회) 
+			DSCLginOp dSCLginOp = (DSCLginOp) lookupDataUnit(DSCLginOp.class);
+			IDataSet userDs = dSCLginOp.dSUserById(reqData, onlineCtx);
+			IRecordSet userRs = userDs.getRecordSet("RS_USER");
+
+			//1.1 로그인ID가 사용자테이블에 존재하는지 확인
+			if ( userRs.getRecordCount() < 1 ) {
+				throw new BizRuntimeException("DMS00010");   // 사용자정보를 확인해주세요.
+			}
+
+			reqData.putField("USER_NO", userRs.get(0, "USER_NO")); //패스워드오류시 오류횟수증가 조건용도, return용 사용자조회용도
+			HpcCode cmCd = HpcUtils.getCode("DMS002", userRs.get(0, "USER_CL_CD")); //사용자구분코드의 GW사용여부, 기본접근시스템
+
+			//2. LINK_SYSTEM 값에 따른 분기처리 (NO / VOC)			
+			/************************************************************************************************
+			* 2.1 linkSystem이 "VOC"인 사용자의 로그인 처리  
+			* 
+			*  1) 기본접근시스템 설정값과 "linkSystem" 이 일치하지 않은 경우 로그인 실패
+			*  VOC인 경우 패스워드 일치 여부 처리 skip
+			***************************************************************************************************/
+			// VOC 사용자는 비밀번호 관련 Check SKIP, 일반사용자만 Check.  2014-10-23 이유미 
+			if ( StringUtils.equals(linkSystem, "VOC") ) {
+				//2.1 접속경로가 VOC인 경우 
+				//2.1.1 기본접근시스템 설정값과 "접속경로 linkSystem" 일치여부 확인		
+				if ( !StringUtils.equalsIgnoreNull(linkSystem, cmCd.getMgmtItemCd3()) ) {
+					throw new BizRuntimeException("DMS00015");   // 접근할 수 없는 경로로 로그인하셨습니다.
+				}
+
+			} else if ( StringUtils.equals(linkSystem, "NO") ) {
+				/************************************************************************************************
+				* 2.2 linkSystem이 "NO"인 사용자의 로그인 처리  
+				* 
+				* 1) DMS002의 사용자구분코드별 
+				*     기본접근시스템 설정값과 "domainCd" 가 일치하지 않은 경우 로그인 실패 
+				* 2) 초기화 사용자인 경우 비밀번호 변경 안내 return
+				* 3) 사용자상태코드가  '정상'이 아닌 경우 로그인 실패 
+				* 4) 최종비밀번호변경일자를 확인하여 비밀번호 변경주기에 따른 1회 변경 안내 return 
+				* 5) 비밀번호 오류횟수 초과시 로그인 실패 
+				* 6) GW사용자 동기화 로직 분기처리 (GW사용여부와 비밀번호오류여부의 복합판단)
+				***************************************************************************************************/
+				//2.2 접속경로가 NO인 경우 처리 	
+
+				//2.2.1 기본접근시스템 설정값과 "접속도메인 domainCd" 일치여부 확인
+				/*
+				if ( !StringUtils.equalsIgnoreNull(domainCd, cmCd.getMgmtItemCd3()) ) {
+					throw new BizRuntimeException("DMS00015");   // 접근할 수 없는 경로로 로그인하셨습니다.
+				}*/
+
+				//2.2.2 초기화 사용자(상태코드 '00') 비밀번호 변경 실행 2014-10-10 by 이유미 
+				if ( userRs.get(0, "USER_ST_CD").equals(USER_ST_CD_INIT) ) {
+					throw new BizRuntimeException("DMS00011");   // 비밀번호 변경 후 로그인하세요.
+				}
+				//2.2.3 사용자 상태 '정상' 아니면 오류 Return 2014-11-28 by 이유미 
+				if ( !userRs.get(0, "USER_ST_CD").equals(USER_ST_CD_NML) ) {
+					throw new BizRuntimeException("DMS00012");   // 사용자 상태가 정상이 아닙니다. 운영팀에 문의하세요.
+				}
+
+				//2.2.4 최종비밀번호변경일자 확인 (비밀번호 주기에 의해 1회 변경 Check 2014-11-19 by 이유미 )
+				// 최종비밀번호변경일자 NULL check 추가 2014-11-25 by 이유미
+				String lsPwdChgDt = userRs.get(0, "LS_PWD_CHG_DT");
+				if ( StringUtils.isEmpty(lsPwdChgDt) || (DateUtils.getBetweenMonths(lsPwdChgDt, DateUtils.getCurrentDate("yyyyMMdd")) >= PWD_CHG_CYCL) ) {
+					throw new BizRuntimeException("DMS00013");   // 비밀번호 사용기간이 만료되었습니다. 비밀번호 변경 후 로그인하세요.
+				}
+
+				//2.2.5 비밀번호 오류횟수 확인(properties...) => FM에서 상수로 관리 : 2014-11-19
+				if ( Integer.parseInt(userRs.get(0, "PWD_ERR_CNT")) >= PWD_ERR_CNT ) {
+					throw new BizRuntimeException("DMS00014");    // 비밀번호 오류횟수 초과입니다.
+				}
+
+				//2.2.6 GW사용여부와 비밀번호오류여부를 판단하여 GW시스템 사용자 동기화 로직 분기처리    
+				//입력한 비밀번호값 암호화 및 비밀번호오류여부 값 설정
+				String userPwdEnpt = new String("");
+				userPwdEnpt = HpcUtils.encryptTextBySHA256(userPwd);
+				Boolean bPwdCorrect = userPwdEnpt.equals(userRs.get(0, "PWD"));
+				
+				if (!bPwdCorrect ) {
+					// 비밀번호도 다른 경우
+					//fm호출 (비밀번호 오류횟수 증가 )
+					callSharedBizComponentByRequiresNew("sc.SCSBase", "fUpdPwdErrCnt", reqData, onlineCtx);
+					throw new BizRuntimeException("DMS00010");   // 사용자정보를 확인해주세요.
+				}
+			}
+
+			/*************************************************************************
+			* 3. 정상 로그인 처리 
+			* 
+			* 1) pm return용 사용자정보 조회   
+			* 2) 최종로그인일시 업데이트 및 
+			*    접속경로가 'NO'인 경우 비밀번호오류횟수 0으로 초기화 UPDATE   
+			***************************************************************************/
+			//정상 로그인 처리 
+			//3.1 dm호출 (TB_USER 사용자정보 조회) 
+			responseData = dSCLginOp.dSPwd(reqData, onlineCtx);
+			//3.2 dm호출 (최종로그인일시 업데이트 및  접속경로가 'NO'인 경우 비밀번호오류횟수 0으로 초기화 UPDATE) 
+			dSCLginOp.dULginHst(reqData, onlineCtx);
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 권한목록조회
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqAutrLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		DSCLginOp dSCLginOp = (DSCLginOp) lookupDataUnit(DSCLginOp.class);
+		responseData = dSCLginOp.dSAutrLst(requestData, onlineCtx);
+		return responseData;
+	}
+
+	/**
+	 * SSO로그인
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSsoLgin(IDataSet requestData, IOnlineContext onlineCtx) {
+
+		//레코드셋초기화 
+		IDataSet responseData = new DataSet();
+		IDataSet reqData = (IDataSet) requestData.clone();
+		
+		String domainCd = requestData.getField("DOMAIN_CD");  //접속도메인 
+		
+		IDataSet gwUserInfoDs = null;   //GW사용자정보
+		IDataSet userInfoDs = null;   //사용자정보
+		IRecordSet afUserRs = null;	 //return용 사용자정보 
+		
+		try {
+			/*****************************************************************************
+			* GW 접속 사용자의 로그인 처리  
+			* 
+			* 1. GW시스템 사용자정보 조회- V_LEGACY_USER 테이블
+			* 2. TB_USER 사용자정보 조회 
+			******************************************************************************/
+			
+			//1. dm 호출 (GW시스템 사용자정보 조회) 
+			gwUserInfoDs = callSharedBizComponentByRequiresNew("bsim.BSIMSBase", "fInqUserInfoById", reqData, onlineCtx);
+			if ( gwUserInfoDs.getFieldCount() < 1 ) {
+				throw new BizRuntimeException("HPC00703");	// 그룹웨어의 사용자정보와 일치하지 않습니다. 운영팀에 문의하세요.
+			}
+			
+			//2. DU lookup 
+			DSCLginOp dSCLginOp = (DSCLginOp) lookupDataUnit(DSCLginOp.class);
+			//3. dm 호출 (사용자정보 조회- TB_USER 테이블) 
+			userInfoDs = dSCLginOp.dSUserById(reqData, onlineCtx);
+			IRecordSet bfUserRs = userInfoDs.getRecordSet("RS_USER");
+
+			/*************************************************************************************************
+			*  GW시스템 사용자정보와 동기화하는 작업
+			*  GW사용자 로그인ID로 TB_USER에서 조회하여 데이터가 존재하는지 확인한다.
+			*  
+			*  1. TB_USER에 사용자정보가 없는 경우
+			*     GW시스템의 사용자 정보를 TB_USER에 INSERT한다.  
+			*  2. TB_USER에 사용자정보가 있는 경우 
+			*     GW시스템의 사용자 정보와 비교하여 TB_USER를 UPDATE한다.
+			*  3. 1,2번 처리후 사용자정보를 재조회한다.  (return용)
+			***************************************************************************************************/
+			//4. 사용자정보조회 결과에 따라 분기처리 
+			if ( bfUserRs.getRecordCount() < 1 ) {
+				//TB_USER 에 사용자 정보가 존재하지 않는 경우
+
+				//4.1 dm호출 (TB_USER 신규 사용자 번호 채번)
+				IDataSet userNoDs = dSCLginOp.dSUserNo(reqData, onlineCtx);
+				reqData.putField("USER_NO", userNoDs.getField("USER_NO"));   // 신규 사용자번호
+
+				//4.2 GW사용자정보를 신규 사용자입력용 파라미터로 설정
+				reqData.putField("USER_NM", gwUserInfoDs.getField("NameKOR"));	                             // 사용자명 
+				//사용자명암호화 (사용자명 암호화 관리안함 : 2015-01-06 by leeym)
+				//reqData.putField("USER_NM_ENPT"  , HpcUtils.encodeByAES(gwUserInfoDs.getField("NameKOR")));					
+				reqData.putField("USER_CL_CD", _getUserClCd(gwUserInfoDs));	    	                               // 사용자구분코드
+				reqData.putField("LGIN_ID", gwUserInfoDs.getField("LoginID"));                                  // 로그인ID				
+				reqData.putField("HP_NO", HpcUtils.maskingTelNo(gwUserInfoDs.getField("Mobile")));      // 휴대전화번호
+				reqData.putField("HP_NO_ENPT", HpcUtils.encodeByAES(gwUserInfoDs.getField("Mobile")));      // 휴대전화번호암호화
+				reqData.putField("GRPC_JOBR_CD", StringUtils.nvlEmpty(gwUserInfoDs.getField("TitCode"), " "));	// 직급코드(직위)
+				reqData.putField("GRPC_JTIL_CD", StringUtils.nvlEmpty(gwUserInfoDs.getField("DutCode"), " "));	// 직책코드
+				reqData.putField("GRPC_CO_CD", StringUtils.nvlEmpty(gwUserInfoDs.getField("CompanyCode"), " "));    // 회사코드
+				reqData.putField("GRPC_DEPT_CD", StringUtils.nvlEmpty(gwUserInfoDs.getField("DeptCode"), " "));           // 조직코드(부서)
+				reqData.putField("EMP_NO", gwUserInfoDs.getField("UserCode"));													  // 사번
+				reqData.putField("PWD", HpcUtils.encryptTextBySHA256(gwUserInfoDs.getField("LoginID")+"1234"));         // 비밀번호
+				reqData.putField("DEALCO_CD", " ");								//대리점코드
+				reqData.putField("USER_ST_CD", USER_ST_CD_NML); 			// 사용자상태코드(10:정상, 20:정지, 90:해지)
+				reqData.putField("PWD_ERR_CNT", "0");							// 비밀번호오류횟수				
+				reqData.putField("LS_LGIN_DTM", "");						    // 최종로그인일시
+				//reqData.putField("LS_PWD_CHG_DT"   , ""); // 최종비밀번호변경일자 - Query에서 등록으로 수정 2014-11-25 leeym
+
+				//4.3 dm호출 (TB_USER 신규 사용자 INSERT) 			
+				dSCLginOp.dIUser(reqData, onlineCtx);
+
+
+			} else {
+				//TB_USER 에 사용자 정보가 존재하는 경우 
+				
+				//4.1 접근경로별 접근가능여부 확인
+				HpcCode cmCd = HpcUtils.getCode("DMS002", bfUserRs.get(0, "USER_CL_CD")); //사용자구분코드의 GW사용여부, 기본접근시스템
+				
+				//4.1.1 기본접근시스템 설정값과 "접속도메인 domainCd" 일치여부 확인		
+				if ( !StringUtils.equalsIgnoreNull(domainCd, cmCd.getMgmtItemCd3()) ) {
+					throw new BizRuntimeException("DMS00015");   // 접근할 수 없는 경로로 로그인하셨습니다.
+				}
+				
+				//4.2 GW사용자 상세정보 동기화							
+				_updateGWUserInfo(onlineCtx, dSCLginOp, bfUserRs, gwUserInfoDs);
+			}
+			
+			//4.4 dm호출 (사용자 신규입력 후 TB_USER 사용자 정보를 재조회함) 			
+			IDataSet aftrerUserInfoDs = dSCLginOp.dSUserByUserNo(reqData, onlineCtx);
+			afUserRs = aftrerUserInfoDs.getRecordSet("RS_USER");
+			
+			/*************************************************************************
+			*  사용자정보 동기화 후 처리사항
+			*  1. 사용자권한역할 재부여 
+			*  	    1) SV권한있는지 조회 
+			*	    2) 사용자구분코드가 SV팀장,SV인 경우에 SV권한이 없으면 권한을 부여한다.
+			*		3) 그외의 사용자인 경우 SV권한이 있으면 그 권한을 삭제처리한다.
+			*  2. GW사용자의 접근가능 가맹점리스트를 조회한다. (return용)  
+			*  3. 최종로그인일시 업데이트 및 비밀번호오류횟수 초기화 처리
+			**************************************************************************/
+			//5. 사용자권한역할
+			reqData.putField("AUTR_ROL_ID", SV_BASE_AUTR); //입력파라미터 설정 (SV기본권한)
+			//5.1 dm호출 (SV기본권한이 존재하는지 확인함)
+			IDataSet userAutrRolDs = dSCLginOp.dSUserAutrRol(reqData, onlineCtx);
+			IRecordSet userAutrRolRs = userAutrRolDs.getRecordSet("RS_AUTR");
+
+			//5.2 사용자권한역할 등록 분기처리 
+			if ( afUserRs.get(0, "USER_CL_CD").equals(USER_CL_CD_SV) || afUserRs.get(0, "USER_CL_CD").equals(USER_CL_CD_TM) ) {
+				//SV인 경우
+				if ( userAutrRolRs.getRecordCount() < 1 ) {
+					//5.2.1 dm호출 (SV권한이 없는 경우 신규 등록)
+					userAutrRolDs = dSCLginOp.dIUserAutrRol(reqData, onlineCtx);
+					//5.2.2 dm호출 (사용자권한역할 재조회)
+					userAutrRolDs = dSCLginOp.dSUserAutrRol(reqData, onlineCtx);
+					userAutrRolRs = userAutrRolDs.getRecordSet("RS_AUTR");
+					IDataSet userAutrRolHisDs = new DataSet();
+					userAutrRolHisDs.putFieldMap(userAutrRolRs.getRecordMap(0));
+					//5.2.3 dm호출 (사용자권한역할 이력남김)
+					dSCLginOp.dIUserAutrRolHis(userAutrRolHisDs, onlineCtx);
+				}
+
+			} else {
+				// SV가 아닌경우
+				if ( userAutrRolRs.getRecordCount() > 0 ) {
+					//SV가 아닌데 SV권한이 있는 경우 해당권한을 삭제함 
+
+					//5.2.1 dm호출 (삭제대상 사용자권한역할 이력 남김) 
+					dSCLginOp.dIUserAutrRolHis(reqData, onlineCtx);
+					//5.2.2 dm호출 (SV 사용자권한역할삭제)
+					userAutrRolDs = dSCLginOp.dDUserAutrRol(reqData, onlineCtx);
+				}
+			}
+
+			//6. dm호출 (최종로그인일시 업데이트 및 비밀번호오류횟수 초기화 처리) 
+			responseData = dSCLginOp.dULginHst(reqData, onlineCtx);
+
+			//7. return용 레코드셋 설정 (사용자정보, 접근가능 가맹점 목록)
+			responseData.putRecordSet("RS_USER", afUserRs);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 
+	 * 사용자구분코드취득
+	 *  
+	 * @param gwUserInfoDs
+	 * @return String
+	 */
+	private String _getUserClCd(IDataSet gwUserInfoDs) {
+		String userClCd = "";
+
+		List<HpcCode> cmCdLst = HpcUtils.getCodes("SCC004");	// SV부서코드
+
+		for ( int i = 0 ; i < cmCdLst.size() ; i++ ) {
+			HpcCode cmCd = cmCdLst.get(i);
+			String gwSvDeptCd = cmCd.getMgmtItemCd1();
+			String gwTeamMaCd = cmCd.getMgmtItemCd2();
+
+			if ( (gwUserInfoDs.getField("DeptCode").equals(gwSvDeptCd) && gwUserInfoDs.getField("DutCode").equals(gwTeamMaCd)) ) {
+				// 팀장
+				userClCd = USER_CL_CD_TM;
+				break;
+			} else if ( gwUserInfoDs.getField("DeptCode").equals(gwSvDeptCd) ) {
+				// SV
+				userClCd = USER_CL_CD_SV;
+				break;
+			} else {
+				// SPC임직원
+				userClCd = USER_CL_CD_STAFF;
+			}
+		}
+		return userClCd;
+	}
+
+	/**
+	 * 
+	 * GW사용자정보 동기화 
+	 *  
+	 * @param gwUserInfoDs
+	 * @return String
+	 */
+	private void _updateGWUserInfo(IOnlineContext onlineCtx, DSCLginOp dSCLginOp, IRecordSet bfUserRs, IDataSet gwUserInfoDs) {
+		IDataSet reqData = new DataSet();
+		//GW사용자정보 없을경우 사용자상태 정지로 변경
+		if (StringUtils.isEmpty(gwUserInfoDs.getField("LoginID"))){
+			reqData.putField("USER_ST_CD","90");
+		} else if ( !StringUtils.equals(bfUserRs.get(0, "USER_NM"), gwUserInfoDs.getField("NameKOR"))
+			|| !StringUtils.equals(bfUserRs.get(0, "USER_CL_CD"), _getUserClCd(gwUserInfoDs))
+			|| !StringUtils.equals(bfUserRs.get(0, "HP_NO_ENPT"), HpcUtils.encodeByAES(gwUserInfoDs.getField("Mobile")))
+			|| !StringUtils.equals(bfUserRs.get(0, "GRPC_JOBR_CD"), gwUserInfoDs.getField("TitCode"))
+			|| !StringUtils.equals(bfUserRs.get(0, "GRPC_JTIL_CD"), gwUserInfoDs.getField("DutCode"))
+			|| !StringUtils.equals(bfUserRs.get(0, "GRPC_CO_CD"), gwUserInfoDs.getField("CompanyCode"))
+			|| !StringUtils.equals(bfUserRs.get(0, "GRPC_DEPT_CD"), gwUserInfoDs.getField("DeptCode"))
+			|| !StringUtils.equals(bfUserRs.get(0, "EMP_NO"), gwUserInfoDs.getField("UserCode")) ) {
+			//그룹웨어(V_LEGACY_USER) 정보와 사용자(TB_USER) 정보가 다른 경우 
+
+			//TB_USER 사용자정보 수정대상 값 설정
+			reqData.putField("USER_NO", bfUserRs.get(0, "USER_NO"));
+			reqData.putField("USER_NM", gwUserInfoDs.getField("NameKOR"));         // 사용자명
+			//사용자명 암호화 관리안함 : 2015-01-06 by leeym
+			//reqData.putField("USER_NM_ENPT"    , HpcUtils.encodeByAES(gwUserInfoDs.getField("NAMEKOR")));  // 사용자명암호화
+
+			//사용자구분코드 (브랜드관리자나 VOC사용자인 경우 GW시스템의 정보로 변경하지 않고, TB_USER 정보 그대로 사용함)
+			/*
+			if ( !bfUserRs.get(0, "USER_CL_CD").equals(cdBrndMa) && !userClCd.startsWith("3") ) {
+				reqData.putField("USER_CL_CD", _getUserClCd(gwUserInfoDs));
+			} else {
+				reqData.putField("USER_CL_CD", userClCd);
+			}
+			*/
+			reqData.putField("HP_NO", HpcUtils.maskingTelNo(gwUserInfoDs.getField("Mobile")));
+			reqData.putField("HP_NO_ENPT", HpcUtils.encodeByAES(gwUserInfoDs.getField("Mobile")));
+			reqData.putField("GRPC_JOBR_CD", StringUtils.nvlEmpty(gwUserInfoDs.getField("TitCode"), " "));
+			reqData.putField("GRPC_JTIL_CD", StringUtils.nvlEmpty(gwUserInfoDs.getField("DutCode"), " "));
+			reqData.putField("GRPC_CO_CD", StringUtils.nvlEmpty(gwUserInfoDs.getField("CompanyCode"), " "));
+			reqData.putField("GRPC_DEPT_CD", StringUtils.nvlEmpty(gwUserInfoDs.getField("DeptCode"), " "));
+			reqData.putField("EMP_NO", gwUserInfoDs.getField("UserCode"));
+		}
+		//dm lookup & dm 호출 (사용자정보 수정전 기존사용자정보를 사용자변경이력에 등록함)
+		DSCUserHisMgmt dSCUserHisMgmt = (DSCUserHisMgmt) lookupDataUnit(DSCUserHisMgmt.class);
+		IDataSet bfUserDs = new DataSet();
+		bfUserDs.putFieldMap(bfUserRs.getRecordMap(0));
+		dSCUserHisMgmt.dIUserHisReg(bfUserDs, onlineCtx);
+
+		//dm호출 (사용자정보 UPDATE)
+		dSCLginOp.dUGwUserInfo(reqData, onlineCtx);
+
+		//dm호출 (사용자정보 수정후 업데이트된 정보를 재조회함)
+		//afUserRs = dSCLginOp.dSUserById(reqData, onlineCtx).getRecordSet("RS_USER");
+	}
+}

@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.XCP003">
+	<select id="SXclAssetOut" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.XCP003.SXclAssetOut 임대단말제각리스트 */
+/* IO: 김상오,2015-10-27T09:24:36(김상오,2015-10-16T16:04:22) */
+SELECT ASSET_DISPO_STRD_YM AS ASSET_DISPO_STRD_YM
+       ,OP_CL_CD  /*자산처분부서코드*/
+       ,DSPSL_DIS_CL   /*DMS154: AD-제각 */
+       ,(SELECT CM_CD_NM   FROM TB_CM_CD A ,TB_CM_GRP_CD B    WHERE  A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS154'    AND A.CM_CD_ID = DSPSL_DIS_CL )  AS DSPSL_DIS_CL_NM
+       ,A.EQP_PRCH_AMT AS ASSET_DISPO_ACNTB_AMT /*자산처분장부금액*/
+       ,A.FISCL_REMPRC    AS ASSET_DISPO_REM_AMT /*자산처분잔여금액*/
+       ,FISCL_DEPR_SUM_AMT AS DISPO_AMT /*처분금액*/
+       ,(EQP_PRCH_AMT-(FISCL_REMPRC+FISCL_DEPR_SUM_AMT)) AS DISPO_PRFITLS_AMT /*구입금액  - (잔존가+감가상각누계액) = 처분손익금액*/
+       ,A.EQP_LOSS_DT  AS ASSET_DISPO_SLIP_DT
+       ,DECODE(A.FS_REG_USER_ID , 'BAT', A.FS_REG_USER_ID , B.USER_NM) AS XCL_CRTR_NM
+       ,C.ASSET_SLIP_NO  AS ASSET_DISPO_SLIP_NO 
+       ,NVL(C.ASSET_SLIP_ST, '00') AS  SLIP_ST_CD
+       ,A.ASSET_NO
+  FROM (SELECT SUBSTR(A.EQP_LOSS_DT, 0,6) AS ASSET_DISPO_STRD_YM 
+               ,A.OP_CL_CD AS OP_CL_CD  /*자산처분부서코드*/
+               ,'AD' AS DSPSL_DIS_CL   /*DMS154: AD-제각 */
+               ,A.EQP_PRCH_AMT  /* 회계장부금액 */
+               ,A.FISCL_REMPRC     /* 회계잔존가 */
+               ,A.FISCL_DEPR_SUM_AMT  /* 회계감가상각누계금액 */
+               ,A.ASSET_NO  /* 자산번호 */
+               ,A.EQP_LOSS_DT  /*분실일자*/
+               ,A.FS_REG_USER_ID
+          FROM TB_EQP_ASSET A
+         WHERE A.OP_CL_CD = 'PR'
+           AND A.EQP_LOSS_DT LIKE #IN_DT#||'%' /* 분실일자*/
+           AND A.INVE_ST_CD = '70' /* 재고상태코드 70 분실  */
+           AND A.DEL_YN = 'N'
+       )A
+       ,TB_USER B
+       ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY') AS YYYY ,FS_REG_USER_ID
+                   FROM  TB_ASSET_SLIP
+                  WHERE  (ASSET_NO, ASSET_SLIP_SEQ) IN  ( SELECT ASSET_NO, MAX(ASSET_SLIP_SEQ)
+                                                            FROM TB_ASSET_SLIP
+                                                           WHERE ASSET_SLIP_CL_CD = 'AD'
+                                                          GROUP BY ASSET_NO)) C
+ WHERE C.FS_REG_USER_ID = B.USER_NO(+)
+   AND  A.ASSET_NO = C.ASSET_NO(+)]]>
+	</select>
+	<select id="SXclAssetOutGrp" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.XCP003.SXclAssetOutGrp 임대단말제각그룹 */
+/* IO: 김상오,2015-10-22T17:02:55(김상오,2015-10-22T13:51:30) */
+SELECT A.ASSET_DISPO_STRD_YM 
+       ,A.OP_CL_CD 
+       ,A.DSPSL_DIS_CL
+       ,SUM(A.ASSET_DISPO_ACNTB_AMT) AS ASSET_DISPO_ACNTB_AMT       /*자산처분장부금액*/
+       ,SUM(A.ASSET_DISPO_REM_AMT  ) AS ASSET_DISPO_REM_AMT         /*자산처분잔여금액*/
+       ,SUM(A.DISPO_AMT            ) AS DISPO_AMT                   /*처분금액        */
+       ,SUM(A.DISPO_PRFITLS_AMT    ) AS DISPO_PRFITLS_AMT           /*처분손익금액    */
+       ,SUM(ASSET_DISPO_SLIP_NO  ) AS ASSET_DISPO_SLIP_NO         /*자산처분전표번호*/
+       ,'' AS ASSET_DISPO_SLIP_DT         /*자산처분전표일자*/
+  FROM (SELECT ASSET_DISPO_STRD_YM AS ASSET_DISPO_STRD_YM
+               ,OP_CL_CD  /*자산처분부서코드*/
+               ,DSPSL_DIS_CL   /*DMS154: AD-제각 */
+               ,(SELECT CM_CD_NM   FROM TB_CM_CD A ,TB_CM_GRP_CD B    WHERE  A.CM_GRP_CD_ID   = B.CM_GRP_CD_ID    AND A.CM_GRP_CD_ID = 'DMS154'    AND A.CM_CD_ID = DSPSL_DIS_CL )  AS DSPSL_DIS_CL_NM
+               ,A.EQP_PRCH_AMT AS ASSET_DISPO_ACNTB_AMT /*자산처분장부금액*/
+               ,A.FISCL_REMPRC    AS ASSET_DISPO_REM_AMT /*자산처분잔여금액*/
+               ,FISCL_DEPR_SUM_AMT AS DISPO_AMT /*처분금액*/
+               ,(EQP_PRCH_AMT-(FISCL_REMPRC+FISCL_DEPR_SUM_AMT)) AS DISPO_PRFITLS_AMT /*구입금액  - (잔존가+감가상각누계액) = 처분손익금액*/
+               ,A.EQP_LOSS_DT  AS ASSET_DISPO_SLIP_DT
+               ,DECODE(A.FS_REG_USER_ID , 'BAT', A.FS_REG_USER_ID , B.USER_NM) AS XCL_CRTR_NM
+               ,C.ASSET_SLIP_NO  AS ASSET_DISPO_SLIP_NO 
+               ,NVL(C.ASSET_SLIP_ST, '00') AS  SLIP_ST_CD
+          FROM (SELECT SUBSTR(A.EQP_LOSS_DT, 0,6) AS ASSET_DISPO_STRD_YM 
+                       ,A.OP_CL_CD AS OP_CL_CD  /*자산처분부서코드*/
+                       ,'AD' AS DSPSL_DIS_CL   /*DMS154: AD-제각 */
+                       ,A.EQP_PRCH_AMT  /* 회계장부금액 */
+                       ,A.FISCL_REMPRC     /* 회계잔존가 */
+                       ,A.FISCL_DEPR_SUM_AMT  /* 회계감가상각누계금액 */
+                       ,A.ASSET_NO  /* 자산번호 */
+                       ,A.EQP_LOSS_DT  /*분실일자*/
+                       ,A.FS_REG_USER_ID
+                  FROM TB_EQP_ASSET A
+                 WHERE A.OP_CL_CD = 'PR'
+                   AND A.EQP_LOSS_DT LIKE #IN_DT#||'%' /* 분실일자*/
+                   AND A.INVE_ST_CD = '70' /* 재고상태코드 70 분실  */
+                   AND A.DEL_YN = 'N'
+                   AND A.DEL_YN = 'N'
+               )A
+               ,TB_USER B
+               ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY') AS YYYY ,FS_REG_USER_ID
+                           FROM  TB_ASSET_SLIP
+                          WHERE  (ASSET_NO, ASSET_SLIP_SEQ) IN  ( SELECT ASSET_NO, MAX(ASSET_SLIP_SEQ)
+                                                                    FROM TB_ASSET_SLIP
+                                                                   WHERE ASSET_SLIP_CL_CD = 'AD'
+                                                                  GROUP BY ASSET_NO)) C
+         WHERE C.FS_REG_USER_ID = B.USER_NO(+)
+           AND A.ASSET_NO = C.ASSET_NO(+)
+) A
+GROUP BY A.ASSET_DISPO_STRD_YM , A.OP_CL_CD , A.DSPSL_DIS_CL]]>
+	</select>
+	<insert id="IXclAssetOut" parameterClass="map" ><![CDATA[/* Biz: dms.pr.XCP003.IXclAssetOut 임대단말제각등록 */
+/* IO: 김상오,2015-10-16T11:26:08(김상오,2015-10-16T11:08:54) */
+INSERT INTO TB_CLS_ASSET_DISPO 
+( 
+  ASSET_DISPO_STRD_YM
+  ,OP_CL_CD
+  ,DSPSL_DIS_CL
+  ,ASSET_DISPO_ACNTB_AMT
+  ,ASSET_DISPO_REM_AMT
+  ,DISPO_AMT
+  ,DISPO_PRFITLS_AMT
+  ,ASSET_DISPO_SLIP_NO
+  ,ASSET_DISPO_SLIP_DT
+  ,FS_REG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_USER_ID
+  ,LS_CHG_DTM
+)
+VALUE
+( 
+  #ASSET_DISPO_STRD_YM#
+  ,#OP_CL_CD#
+  ,#DSPSL_DIS_CL#
+  ,#ASSET_DISPO_ACNTB_AMT#
+  ,#ASSET_DISPO_REM_AMT#
+  ,#DISPO_AMT#
+  ,#DISPO_PRFITLS_AMT#
+  ,#ASSET_DISPO_SLIP_NO#
+  ,#ASSET_DISPO_SLIP_DT#
+  ,#USER_NO#
+  ,SYSDATE
+  ,#USER_NO#
+  ,SYSDATE
+)]]>
+	</insert>
+	<update id="UXclAssetOutGrp" parameterClass="map" ><![CDATA[/* Biz: dms.pr.XCP003.UXclAssetOutGrp 임대단말제각그룹등록수정 */
+/* IO: 김상오,2015-10-22T15:59:14(김상오,2015-10-16T13:52:01) */
+MERGE INTO  TB_CLS_ASSET_DISPO USING  DUAL
+        ON (ASSET_DISPO_STRD_YM  = #ASSET_DISPO_STRD_YM#
+       AND  OP_CL_CD  = #OP_CL_CD#
+       AND  DSPSL_DIS_CL         = #DSPSL_DIS_CL#
+           )
+WHEN  MATCHED THEN
+       UPDATE SET  
+            ASSET_DISPO_ACNTB_AMT = #ASSET_DISPO_ACNTB_AMT#
+           ,ASSET_DISPO_REM_AMT   = #ASSET_DISPO_REM_AMT#
+           ,DISPO_AMT             = #DISPO_AMT#            
+           ,DISPO_PRFITLS_AMT     = #DISPO_PRFITLS_AMT#    
+           ,ASSET_DISPO_SLIP_NO   = #ASSET_DISPO_SLIP_NO#  
+           ,ASSET_DISPO_SLIP_DT   = #ASSET_DISPO_SLIP_DT#  
+           ,LS_CHG_USER_ID    	= NVL(#USER_NO#,'BAT')
+           ,LS_CHG_DTM       	= SYSDATE
+           ,ASSET_DISPO_DEPT_CD     = #ASSET_DISPO_DEPT_CD#
+WHEN  NOT MATCHED THEN
+    INSERT(
+            ASSET_DISPO_STRD_YM
+           ,OP_CL_CD
+           ,DSPSL_DIS_CL
+           ,ASSET_DISPO_ACNTB_AMT
+           ,ASSET_DISPO_REM_AMT
+           ,DISPO_AMT
+           ,DISPO_PRFITLS_AMT
+           ,ASSET_DISPO_SLIP_NO
+           ,ASSET_DISPO_SLIP_DT
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+           ,ASSET_DISPO_DEPT_CD
+         )
+  VALUES (
+              #ASSET_DISPO_STRD_YM#
+              ,#OP_CL_CD#
+              ,#DSPSL_DIS_CL#
+              ,#ASSET_DISPO_ACNTB_AMT#
+              ,#ASSET_DISPO_REM_AMT#
+              ,#DISPO_AMT#
+              ,#DISPO_PRFITLS_AMT#
+              ,#ASSET_DISPO_SLIP_NO#
+              ,#ASSET_DISPO_SLIP_DT#
+              ,NVL(#USER_NO#,'BAT')
+              ,SYSDATE
+              ,NVL(#USER_NO#,'BAT')
+              ,SYSDATE
+              ,#ASSET_DISPO_DEPT_CD#
+         )]]>
+	</update>
+	<update id="UXclAssetOut" parameterClass="map" ><![CDATA[/* Biz: dms.pr.XCP003.UXclAssetOut 임대단말제각등록수정 */
+/* IO: 김상오,2015-10-22T15:59:30(김상오,2015-10-16T13:52:01) */
+MERGE INTO  TB_CLS_ASSET_DISPO_DTL USING  DUAL
+        ON (ASSET_DISPO_STRD_YM  = #ASSET_DISPO_STRD_YM#
+       AND  OP_CL_CD  = #OP_CL_CD#
+       AND  DSPSL_DIS_CL         = #DSPSL_DIS_CL#
+       AND ASSET_NO = #ASSET_NO#
+           )
+WHEN  MATCHED THEN
+       UPDATE SET  
+            ASSET_DISPO_ACNTB_AMT = #ASSET_DISPO_ACNTB_AMT#
+           ,ASSET_DISPO_REM_AMT   = #ASSET_DISPO_REM_AMT#  
+           ,DISPO_AMT             = #DISPO_AMT#            
+           ,DISPO_PRFITLS_AMT     = #DISPO_PRFITLS_AMT#    
+           ,LS_CHG_USER_ID    	= NVL(#USER_NO#,'BAT')
+           ,LS_CHG_DTM       	= SYSDATE
+           ,ASSET_DISPO_DEPT_CD = #ASSET_DISPO_DEPT_CD#
+WHEN  NOT MATCHED THEN
+    INSERT(
+            ASSET_DISPO_STRD_YM
+           ,OP_CL_CD
+           ,DSPSL_DIS_CL
+           ,ASSET_NO           
+           ,ASSET_DISPO_ACNTB_AMT
+           ,ASSET_DISPO_REM_AMT
+           ,DISPO_AMT
+           ,DISPO_PRFITLS_AMT
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+           ,ASSET_DISPO_DEPT_CD
+
+         )
+  VALUES (
+              #ASSET_DISPO_STRD_YM#
+              ,#OP_CL_CD#
+              ,#DSPSL_DIS_CL#
+              ,#ASSET_NO#              
+              ,#ASSET_DISPO_ACNTB_AMT#
+              ,#ASSET_DISPO_REM_AMT#
+              ,#DISPO_AMT#
+              ,#DISPO_PRFITLS_AMT#
+              ,NVL(#USER_NO#,'BAT')
+              ,SYSDATE
+              ,NVL(#USER_NO#,'BAT')
+              ,SYSDATE
+              ,#ASSET_DISPO_DEPT_CD#
+         )]]>
+	</update>
+</sqlMap>

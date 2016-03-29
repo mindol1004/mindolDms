@@ -1,0 +1,158 @@
+package dms.nr.nrsplbase.biz;
+
+import org.apache.commons.lang.StringUtils;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]단말기준정보관리</li>
+ * <li>설  명 : <pre>단말기준정보관리FU</pre></li>
+ * <li>작성일 : 2015-07-09 16:59:20</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FNREqpStdMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNREqpStdMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>단말기준정보조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-07-09 17:07:36
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqEqpStdLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet usrListRs = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DNREqpStdMgmt dNREqpStdMgmt = (DNREqpStdMgmt) lookupDataUnit(DNREqpStdMgmt.class);
+			
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dNREqpStdMgmt.dSEqpStdTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+			// 3. LISTDM호출
+			responseData = dNREqpStdMgmt.dSEqpStdLstPaging(reqDs, onlineCtx);
+			usrListRs = responseData.getRecordSet("RS_EQP_STD_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(usrListRs, reqDs, intTotalCnt);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기준정보저장</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-07-09 17:20:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegEqpStd(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	    	
+	    	// 1. DU lookup
+	    	DNREqpStdMgmt dNREqpStdMgmt = (DNREqpStdMgmt) lookupDataUnit(DNREqpStdMgmt.class);
+	    	
+	    	IRecordSet rsMain = requestData.getRecordSet("RS_EQP_STD_LIST");
+			
+			IRecord record = null;
+			for ( int i = 0 ; i < rsMain.getRecordCount() ; i++ ) {
+				record = rsMain.getRecord(i);
+				requestData.putFieldMap(record);
+		    	
+		    	// 필수값 체크
+				/*
+		    	if ( StringUtils.isEmpty(requestData.getField("OP_CL_CD")) ) {
+					throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("OP_CL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+				}else if ( StringUtils.isEmpty(requestData.getField("EQP_MDL_CD")) ) {
+					throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("EQP_MDL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+				}else if ( StringUtils.isEmpty(requestData.getField("CAPA_CD")) ) {
+					throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("CAPA_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+				}else if ( StringUtils.isEmpty(requestData.getField("COLOR_CD")) ) {
+					throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("COLOR_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+				}*/
+				// 2. Validation DM호출
+				IDataSet valDS = dNREqpStdMgmt.dSEqpStdListChk(requestData, onlineCtx);
+				if ( Integer.parseInt(valDS.getField("ROW_CNT")) > 0 ) {
+					throw new BizRuntimeException("DMS00003"); //중복입력 된 데이터가 존재합니다.
+				}
+		    	
+				// 3. 업무 DM호출
+				responseData = dNREqpStdMgmt.dIEqpStd(requestData, onlineCtx);
+			}
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기준정보수정</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-07-09 17:21:09
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdEqpStd(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	    	// 필수값 체크
+	    	
+			// 1. DU lookup
+	    	DNREqpStdMgmt dNREqpStdMgmt = (DNREqpStdMgmt) lookupDataUnit(DNREqpStdMgmt.class);
+			// 3. 업무 DM호출
+			responseData = dNREqpStdMgmt.dUEqpStd(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	
+	    return responseData;
+	}
+  
+}

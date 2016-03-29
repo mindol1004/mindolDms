@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCAlrtSvcHstMgmt">
+	<select id="SAlrtSvcHstPasing" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcHstMgmt.SAlrtSvcHstPasing 알림서비스이력조회 */
+/* IO: 이유미,2014-11-13T16:35:57(정혜미,2014-09-22T20:14:59) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.ALRT_SND_REQ_DTM DESC) AS ROWNO
+               ,TO_CHAR(A.ALRT_SND_REQ_DTM, 'YYYY-MM-DD HH24:MI:SS') AS ALRT_SND_REQ_DTM   /* 알림발송요청일시 */ 
+	           ,A.ALRT_SVC_NO               /* 알림서비스번호 */
+	           ,A.ALRT_SND_REQ_CHNL_CD      /* 알림발송요청채널코드 */
+	           ,A.ALRT_CHNL_CL_CD           /* 알림발송채널 */ 
+	           ,A.REVR_CL_CD                /* 수신자구분 */
+	           ,A.REVR_NO                   /* 수신자번호 */
+	           ,A.RETN_TEL_NO               /* 수신전화번호 */ 
+	           ,A.RETN_EML_ADDR             /* 수신이메일주소 */ 
+	           ,A.ALRT_MSG_CTT              /* 알림메시지내용 */
+	           ,B.TRAN_RSLT                 /* 전송결과 */
+	           ,A.FS_REG_USER_ID            /* 최초등록사용자 */
+	           ,TO_CHAR(A.FS_REG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM   /* 최초등록일시 */ 
+	           ,A.LS_CHG_USER_ID            /* 최종변경사용자 */
+	           ,TO_CHAR(A.LS_CHG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS LS_CHG_DTM   /* 최종변경일시 */ 
+          FROM  TB_ALRT_SND_ITM A,EM_LOG_$ALRT_SND_REQ_DTM$ B 
+         WHERE  A.ALRT_SND_REQ_NO = B.TRAN_PR(+)
+           AND  A.ALRT_SND_REQ_DTM >= TO_DATE($ALRT_SND_REQ_DTM$, 'YYYYMM')
+           AND  A.ALRT_SND_REQ_DTM <= TO_DATE($ALRT_SND_REQ_DTM$, 'YYYYMM')+$LAST_DAY$
+        ]]><isNotEmpty prepend="AND" property="ALRT_SVC_NO"><![CDATA[
+                A.ALRT_SVC_NO LIKE '%'||#ALRT_SVC_NO#||'%'
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEqual prepend="AND" property="REVR_CL_CD" compareValue="%"><![CDATA[
+                A.REVR_CL_CD    = #REVR_CL_CD#
+        ]]></isNotEqual><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="REVR_NO"><![CDATA[
+                A.REVR_NO LIKE '%'||#REVR_NO#||'%'
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="RETN_TEL_NO"><![CDATA[
+                A.RETN_TEL_NO_ENPT   = #RETN_TEL_NO_ENPT#
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="RETN_EML_ADDR"><![CDATA[
+                A.RETN_EML_ADDR_ENPT LIKE '%'||#RETN_EML_ADDR_ENPT#||'%'
+        ]]></isNotEmpty><![CDATA[
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAlrtSvcHstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcHstMgmt.SAlrtSvcHstTotCnt 알림서비스이력전체건수조회 */
+/* IO: 이유미,2014-11-13T16:36:35(정혜미,2014-09-22T18:07:39) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT  /* 전체건수 */
+  FROM  TB_ALRT_SND_ITM A,EM_LOG_$ALRT_SND_REQ_DTM$ B /* SC_알림발송내역 */
+ WHERE  A.ALRT_SND_REQ_NO = B.TRAN_PR(+)
+   AND  A.ALRT_SND_REQ_DTM >= TO_DATE($ALRT_SND_REQ_DTM$, 'YYYYMM')
+   AND  A.ALRT_SND_REQ_DTM <= TO_DATE($ALRT_SND_REQ_DTM$, 'YYYYMM')+$LAST_DAY$
+]]><isNotEmpty prepend="AND" property="ALRT_SVC_NO"><![CDATA[
+        A.ALRT_SVC_NO LIKE '%'||#ALRT_SVC_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="REVR_CL_CD" compareValue="%"><![CDATA[
+        A.REVR_CL_CD    = #REVR_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="REVR_NO"><![CDATA[
+        A.REVR_NO LIKE '%'||#REVR_NO#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RETN_TEL_NO"><![CDATA[
+        A.RETN_TEL_NO_ENPT   = #RETN_TEL_NO_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RETN_EML_ADDR"><![CDATA[
+        A.RETN_EML_ADDR_ENPT LIKE '%'||#RETN_EML_ADDR_ENPT#||'%'
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,250 @@
+package dms.nr.nrseabase.biz;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordSet;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [DU]단말기감정내역등록</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-12 20:54:01</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class DNREqpJdgDTlInfoRgst extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DNREqpJdgDTlInfoRgst(){
+		super();
+	}
+
+	/**
+	 *단말기 감정내역등록
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-12 20:54:34
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUReqpJdgRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	/*
+	  IRecordSet ir = requestData.getRecordSet("RS_REQP_JDG_LIST");
+	
+	for(int i = 0; i<ir.getRecordCount(); i++){
+		
+		IRecord is = ir.getRecord(i);
+		is.get(0,"ASSET_NO");
+	}
+	ARR
+	*/
+	    // 1.쿼리문 호출
+        dbUpdate("UReqpJdgRgst", requestData, onlineCtx);
+        
+       
+	
+	    return responseData;
+	}
+
+	/**
+	 *단말기 감정내역상세등록
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-12 20:54:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUReqpJdgRgstDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+        dbUpdate("UReqpJdgRgstDtl", requestData, onlineCtx);
+	
+	    return responseData;
+	}
+
+	/**
+	 *단말기 감정내역등록조회
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-12 20:55:17
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSReqpJdgDtlRgstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+	    // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SReqpJdgDtlRgstLst", requestData, onlineCtx);        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_REQP_JDG_LIST", rsReturn);
+     
+	        String rTnRegDt =  rsReturn.get(0, "RTN_REG_DT");
+	        Map param = new HashMap();
+	        param.put("RTN_REG_DT", rTnRegDt);
+	        IRecordSet rs = dbSelect("SReqpJdgDtlHolyDt", param, onlineCtx);
+	    
+	        responseData.putRecordSet("RS_REQP_JDG_HOLY_DT", rs);
+
+        
+        /*
+        IDataSet ds = new DataSet();
+        IRecordSet rs =  new RecordSet("RS_REQP_JDG_HOLY_DT");
+        rs.setRecord(0, rd);
+        ds.putRecordSet("RS_REQP_JDG_HOLY_DT", rs);
+        */
+        //responseData.putRecordSet("RS_REQP_JDG_HOLY_DT", rd);
+        /*
+        for(int i=0; i < rsReturn.getRecordCount(); i++){
+	    	userRs =  rsReturn.getRecord(i);
+	    	//userRs.put("USER_NO", requestData.getField("USER_NO"));
+	    	
+	    	IRecordSet rsReturn2 = dbSelect("SReqpJdgDtlHolyYn", userRs, onlineCtx);
+	    	
+	    }
+        */
+        //responseData.putRecordSet("RS_REQP_JDG_HOLY_YN", rsReturn2);
+        
+        // 1.쿼리문 호출
+        //IRecordSet rsReturn2 = dbSelect("SReqpJdgDtlHolyYn", responseData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        
+        
+        // 1.쿼리문 호출
+        //IRecordSet rsReturn3 = dbSelect("SReqpJdgDtlHolyDt", responseData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        //responseData.putRecordSet("RS_REQP_JDG_HOLY_DT", rsReturn3);
+        
+        
+        
+	    return responseData;
+	}
+
+	/**
+	 *단말기 감정내역등록구성품조회
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-12 21:02:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSReqpJdgDtlRgstCLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SReqpJdgDtlRgstCLst", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_REQP_JDG_CLIST", rsReturn);
+	
+	    return responseData;
+	}
+
+	/**
+	 *자산 재고상태업데이트(감정코드->40(감정완료)로 업데이트)
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-19 14:46:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUEqpAssetRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+        dbUpdate("UEqpAssetRgst",requestData,onlineCtx);
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-09-09 17:02:45
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIRentalDcp(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+	    // 1.쿼리문 호출
+        dbInsert("IRentalDcp",requestData,onlineCtx); 
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-09-22 15:34:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSReqpJdgDtlRgstLst2(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SReqpJdgDtlRgstLst2", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_REQP_JDG_LIST2", rsReturn);
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-09-23 15:07:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUCntrtDcp(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+        dbUpdate("UCntrtDcp",requestData,onlineCtx);
+	
+	    return responseData;
+	}
+  
+}

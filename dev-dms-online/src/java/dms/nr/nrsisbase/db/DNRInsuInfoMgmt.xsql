@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInsuInfoMgmt">
+	<select id="SInsuInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuInfoMgmt.SInsuInfoLstPaging 보증보험 조회 */
+/* IO: 안진갑,2015-12-30T14:03:46(안진갑,2015-08-18T12:31:59) */
+/* Biz: dms.nr.nrsisbase.db.DNRInsuInfoMgmt.SInsuInfoLstPaging 보증보험 조회 */
+/* IO: 안진갑,2015-11-27T17:43:49(안진갑,2015-08-18T12:31:59) */
+WITH INSU_SCRB_INFO AS (
+                    SELECT  B.CNTRT_STA_DT
+                           ,B.SVC_MGMT_NO
+                           ,MAX(B.INSURE_MGMT_NO) AS INSURE_MGMT_NO
+                           ,MAX(B.EQP_MDL_CD) AS EQP_MDL_CD
+                           ,MAX(B.EQP_MDL_NM) AS EQP_MDL_NM
+                           ,MAX(B.UKEY_INSURE_STA_DT) AS UKEY_INSURE_STA_DT
+                           ,MAX(B.UKEY_INSURE_SCRB_AMT) AS UKEY_INSURE_SCRB_AMT
+                           ,MAX(B.UKEY_INSURE_FEE) AS UKEY_INSURE_FEE
+                           ,MAX(B.SGI_INSURE_STA_DT) AS SGI_INSURE_STA_DT
+                           ,MAX(B.SGI_INSURE_SCRB_AMT) AS SGI_INSURE_SCRB_AMT
+                           ,MAX(B.SGI_INSURE_FEE) AS SGI_INSURE_FEE
+                           ,NVL(MAX(B.USCAN_FNSH_YN),'N') AS USCAN_FNSH_YN
+                           ,CASE WHEN MAX(B.UKEY_INSURE_STA_DT) = MAX(B.SGI_INSURE_STA_DT)
+                                      AND MAX(B.UKEY_INSURE_SCRB_AMT) = MAX(B.SGI_INSURE_SCRB_AMT)
+                                      AND MAX(B.UKEY_INSURE_FEE) = MAX(B.SGI_INSURE_FEE)
+                                      AND NVL(MAX(B.USCAN_FNSH_YN),'N') = 'Y'
+                                 THEN 'Y'
+                                 ELSE 'N'
+                             END AS SCRB_FNSH_YN
+                      FROM (
+                              SELECT  A.RENTAL_CNTRT_STA_DT       AS CNTRT_STA_DT         /* 계약일자 */
+                                     ,B.SVC_MGMT_NO                                   /* 서비스관리번호 */
+                                     ,NULL                        AS INSURE_MGMT_NO       /* 보험관리번호 */
+                                     ,A.EQP_MDL_CD                                    /* 모델코드 */                 
+                                     ,C.EQP_MDL_NM                                    /* 모델명 */
+                                     ,NULL                        AS UKEY_INSURE_STA_DT   /* UKEY 가입일자 */
+                                     ,NULL                        AS UKEY_INSURE_SCRB_AMT /* UKEY 보험가입금액 */
+                                     ,NULL                        AS UKEY_INSURE_FEE      /* UKEY 보험료 */
+                                     ,NULL                        AS SGI_INSURE_STA_DT    /* SGI 가입일자 */
+                                     ,NULL                        AS SGI_INSURE_SCRB_AMT  /* SGI 보험가입금액 */
+                                     ,NULL                        AS SGI_INSURE_FEE       /* SIG 보험료 */
+                                     ,DECODE(D.APPLF_ST,'01','N','Y') AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */
+                                FROM  TB_RENTAL_CNTRT A
+                                     ,TB_NR_CNTRT B
+                                     ,TB_EQP_MDL C
+                                     ,TB_NR_APPLF D
+                               WHERE  A.CNTRT_NO = B.CNTRT_NO
+                                 AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+                                 AND  A.CNTRT_NO = D.CNTRT_NO(+)
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.RENTAL_CNTRT_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[             
+                    ]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                                      B.SVC_MGMT_NO = #SVC_MGMT_NO#
+                    ]]></isNotEmpty><![CDATA[
+                              UNION ALL
+                              SELECT  A.RENTAL_SCRB_DT        AS CNTRT_STA_DT         /* 계약일자 */
+                                     ,A.UKEY_SVC_MGMT_NO      AS SVC_MGMT_NO          /* 서비스관리번호 */
+                                     ,A.UKEY_INSURE_MGMT_NO   AS INSURE_MGMT_NO       /* 보험관리번호 */
+                                     ,NULL                    AS EQP_MDL_CD           /* 모델코드 */
+                                     ,NULL                    AS EQP_MDL_NM           /* 모델명 */
+                                     ,A.UKEY_INSURE_STA_DT                            /* UKEY 가입일자 */
+                                     ,A.UKEY_INSURE_SCRB_AMT                          /* UKEY 보험가입금액 */
+                                     ,A.UKEY_INSURE_FEE                               /* UKEY 보험료 */
+                                     ,NULL                    AS SGI_INSURE_STA_DT    /* SGI 가입일자 */
+                                     ,NULL                    AS SGI_INSURE_SCRB_AMT  /* SGI 보험가입금액 */
+                                     ,NULL                    AS SGI_INSURE_FEE       /* SIG 보험료 */
+                                     ,NULL                    AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */                 
+                                FROM  TB_INSU_UKEY A
+                               WHERE  A.OP_TYP_CD = '01'
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.RENTAL_SCRB_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[       
+                    ]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                                      A.UKEY_SVC_MGMT_NO = #SVC_MGMT_NO#
+                    ]]></isNotEmpty><![CDATA[
+                              UNION ALL
+                              SELECT  A.SGI_INSURE_STA_DT     AS CNTRT_STA_DT           /* 계약일자 */
+                                     ,A.SGI_SVC_MGMT_NO       AS SVC_MGMT_NO            /* 서비스관리번호 */
+                                     ,A.SGI_INSURE_MGMT_NO    AS INSURE_MGMT_NO         /* 보험관리번호 */
+                                     ,NULL                    AS EQP_MDL_CD           /* 모델코드 */
+                                     ,NULL                    AS EQP_MDL_NM           /* 모델명 */
+                                     ,NULL                    AS UKEY_INSURE_STA_DT   /* UKEY 가입일자 */
+                                     ,NULL                    AS UKEY_INSURE_SCRB_AMT /* UKEY 보험가입금액 */
+                                     ,NULL                    AS UKEY_INSURE_FEE      /* UKEY 보험료 */
+                                     ,A.SGI_INSURE_STA_DT                             /* SGI 가입일자 */
+                                     ,A.SGI_INSURE_SCRB_AMT                           /* SGI 보험가입금액 */
+                                     ,A.SGI_INSURE_FEE                                /* SIG 보험료 */
+                                     ,NULL                    AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */                                  
+                                FROM  TB_INSU_SGI A
+                               WHERE  A.OP_TYP_CD = 'A1'
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.SGI_INSURE_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[
+                    ]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                                      A.SGI_SVC_MGMT_NO = #SVC_MGMT_NO#
+                    ]]></isNotEmpty><![CDATA[
+                            ) B                           
+                     GROUP  BY B.CNTRT_STA_DT, B.SVC_MGMT_NO                           
+                )
+SELECT PA.*
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY A.INSURE_MGMT_NO ASC, A.CNTRT_STA_DT DESC) AS ROWNO  
+               ,A.*
+          FROM  INSU_SCRB_INFO A
+         WHERE  A.INSURE_MGMT_NO NOT IN ( SELECT SGI_INSURE_MGMT_NO 
+                                                FROM TB_INSU_SGI 
+                                               WHERE OP_TYP_CD IN('Z1','Z2','Z5') 
+                                                 AND SGI_INSURE_STA_DT = SGI_INSURE_END_DT
+                                                 AND CNTRT_NO NOT IN (SELECT CNTRT_NO 
+                                                                        FROM TB_INSU_SGI 
+                                                                       WHERE OP_TYP_CD IN('Z6','Z9')
+                                                                        AND SGI_INSURE_STA_DT = SGI_INSURE_END_DT)
+                                            )
+          ]]><isNotEmpty property="INSURE_MGMT_NO" prepend="AND"><![CDATA[
+                          A.INSURE_MGMT_NO = #INSURE_MGMT_NO#
+          ]]></isNotEmpty><![CDATA[
+          ]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                          A.EQP_MDL_CD = #EQP_MDL_CD#
+          ]]></isNotEmpty><![CDATA[  
+          ]]><isNotEqual property="USCAN_FNSH_YN" prepend="AND" compareValue="%"><![CDATA[
+                          A.USCAN_FNSH_YN = #USCAN_FNSH_YN#
+          ]]></isNotEqual><![CDATA[  
+          ]]><isNotEqual property="SCRB_FNSH_YN" prepend="AND" compareValue="%"><![CDATA[
+                          A.SCRB_FNSH_YN = #SCRB_FNSH_YN#
+          ]]></isNotEqual><![CDATA[
+          ]]><isNotEqual property="INCMP_ITM" prepend="AND" compareValue="%"><![CDATA[
+            ]]><isEqual property="INCMP_ITM" compareValue="01"><![CDATA[
+                          A.UKEY_INSURE_STA_DT IS NULL
+              ]]></isEqual><![CDATA[
+            ]]><isEqual property="INCMP_ITM" compareValue="02"><![CDATA[
+                          A.SGI_INSURE_STA_DT IS NULL
+              ]]></isEqual><![CDATA[    
+          ]]></isNotEqual><![CDATA[  
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInsuInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuInfoMgmt.SInsuInfoTotCnt 보증보험정보 총 건수 */
+/* IO: 안진갑,2015-12-30T13:25:11(안진갑,2015-08-18T12:32:17) */
+WITH INSU_SCRB_INFO AS (
+                    SELECT  B.CNTRT_STA_DT
+                           ,B.SVC_MGMT_NO
+                           ,MAX(B.INSURE_MGMT_NO) AS INSURE_MGMT_NO
+                           ,MAX(B.EQP_MDL_CD) AS EQP_MDL_CD
+                           ,MAX(B.EQP_MDL_NM) AS EQP_MDL_NM
+                           ,MAX(B.UKEY_INSURE_STA_DT) AS UKEY_INSURE_STA_DT
+                           ,MAX(B.UKEY_INSURE_SCRB_AMT) AS UKEY_INSURE_SCRB_AMT
+                           ,MAX(B.UKEY_INSURE_FEE) AS UKEY_INSURE_FEE
+                           ,MAX(B.SGI_INSURE_STA_DT) AS SGI_INSURE_STA_DT
+                           ,MAX(B.SGI_INSURE_SCRB_AMT) AS SGI_INSURE_SCRB_AMT
+                           ,MAX(B.SGI_INSURE_FEE) AS SGI_INSURE_FEE
+                           ,NVL(MAX(B.USCAN_FNSH_YN),'N') AS USCAN_FNSH_YN
+                           ,CASE WHEN MAX(B.UKEY_INSURE_STA_DT) = MAX(B.SGI_INSURE_STA_DT)
+                                      AND MAX(B.UKEY_INSURE_SCRB_AMT) = MAX(B.SGI_INSURE_SCRB_AMT)
+                                      AND MAX(B.UKEY_INSURE_FEE) = MAX(B.SGI_INSURE_FEE)
+                                      AND NVL(MAX(B.USCAN_FNSH_YN),'N') = 'Y'
+                                 THEN 'Y'
+                                 ELSE 'N'
+                             END AS SCRB_FNSH_YN
+                      FROM (
+                              SELECT  A.RENTAL_CNTRT_STA_DT   AS CNTRT_STA_DT         /* 계약일자 */
+                                     ,B.SVC_MGMT_NO                                   /* 서비스관리번호 */
+                                     ,NULL                    AS INSURE_MGMT_NO       /* 보험관리번호 */
+                                     ,A.EQP_MDL_CD                                    /* 모델코드 */                 
+                                     ,C.EQP_MDL_NM                                    /* 모델명 */
+                                     ,NULL                    AS UKEY_INSURE_STA_DT   /* UKEY 가입일자 */
+                                     ,NULL                    AS UKEY_INSURE_SCRB_AMT /* UKEY 보험가입금액 */
+                                     ,NULL                    AS UKEY_INSURE_FEE      /* UKEY 보험료 */
+                                     ,NULL                    AS SGI_INSURE_STA_DT    /* SGI 가입일자 */
+                                     ,NULL                    AS SGI_INSURE_SCRB_AMT  /* SGI 보험가입금액 */
+                                     ,NULL                    AS SGI_INSURE_FEE       /* SIG 보험료 */
+                                     ,DECODE(D.APPLF_ST,'01','N','Y')        AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */
+                                FROM  TB_RENTAL_CNTRT A
+                                     ,TB_NR_CNTRT B
+                                     ,TB_EQP_MDL C
+                                     ,TB_NR_APPLF D
+                               WHERE  A.CNTRT_NO = B.CNTRT_NO
+                                 AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+                                 AND  A.CNTRT_NO = D.CNTRT_NO(+)
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.RENTAL_CNTRT_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[             
+                    ]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                                      B.SVC_MGMT_NO = #SVC_MGMT_NO#
+                    ]]></isNotEmpty><![CDATA[
+                              UNION ALL
+                              SELECT  A.RENTAL_SCRB_DT        AS CNTRT_STA_DT         /* 계약일자 */
+                                     ,A.UKEY_SVC_MGMT_NO      AS SVC_MGMT_NO          /* 서비스관리번호 */
+                                     ,A.UKEY_INSURE_MGMT_NO   AS INSURE_MGMT_NO       /* 보험관리번호 */
+                                     ,NULL                    AS EQP_MDL_CD           /* 모델코드 */
+                                     ,NULL                    AS EQP_MDL_NM           /* 모델명 */
+                                     ,A.UKEY_INSURE_STA_DT                            /* UKEY 가입일자 */
+                                     ,A.UKEY_INSURE_SCRB_AMT                          /* UKEY 보험가입금액 */
+                                     ,A.UKEY_INSURE_FEE                               /* UKEY 보험료 */
+                                     ,NULL                    AS SGI_INSURE_STA_DT    /* SGI 가입일자 */
+                                     ,NULL                    AS SGI_INSURE_SCRB_AMT  /* SGI 보험가입금액 */
+                                     ,NULL                    AS SGI_INSURE_FEE       /* SIG 보험료 */
+                                     ,NULL                    AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */                 
+                                FROM  TB_INSU_UKEY A
+                               WHERE  A.OP_TYP_CD = '01'
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.RENTAL_SCRB_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[       
+                    ]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                                      A.UKEY_SVC_MGMT_NO = #SVC_MGMT_NO#
+                    ]]></isNotEmpty><![CDATA[
+                              UNION ALL
+                              SELECT  A.SGI_INSURE_STA_DT     AS CNTRT_STA_DT           /* 계약일자 */
+                                     ,A.SGI_SVC_MGMT_NO       AS SVC_MGMT_NO            /* 서비스관리번호 */
+                                     ,A.SGI_INSURE_MGMT_NO    AS INSURE_MGMT_NO         /* 보험관리번호 */
+                                     ,NULL                    AS EQP_MDL_CD           /* 모델코드 */
+                                     ,NULL                    AS EQP_MDL_NM           /* 모델명 */
+                                     ,NULL                    AS UKEY_INSURE_STA_DT   /* UKEY 가입일자 */
+                                     ,NULL                    AS UKEY_INSURE_SCRB_AMT /* UKEY 보험가입금액 */
+                                     ,NULL                    AS UKEY_INSURE_FEE      /* UKEY 보험료 */
+                                     ,A.SGI_INSURE_STA_DT                             /* SGI 가입일자 */
+                                     ,A.SGI_INSURE_SCRB_AMT                           /* SGI 보험가입금액 */
+                                     ,A.SGI_INSURE_FEE                                /* SIG 보험료 */
+                                     ,NULL                    AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */                                  
+                                FROM  TB_INSU_SGI A
+                               WHERE  A.OP_TYP_CD = 'A1'
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.SGI_INSURE_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[
+                    ]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                                      A.SGI_SVC_MGMT_NO = #SVC_MGMT_NO#
+                    ]]></isNotEmpty><![CDATA[
+                            ) B
+                     GROUP  BY B.CNTRT_STA_DT, B.SVC_MGMT_NO    
+                )
+SELECT  COUNT(A.CNTRT_STA_DT) AS TOTAL_CNT
+  FROM  INSU_SCRB_INFO A
+ WHERE  A.INSURE_MGMT_NO NOT IN ( SELECT SGI_INSURE_MGMT_NO 
+                                    FROM TB_INSU_SGI 
+                                   WHERE OP_TYP_CD IN('Z1','Z2','Z5') 
+                                     AND SGI_INSURE_STA_DT = SGI_INSURE_END_DT
+                                     AND CNTRT_NO NOT IN (SELECT CNTRT_NO 
+                                                            FROM TB_INSU_SGI 
+                                                           WHERE OP_TYP_CD IN('Z6','Z9')
+                                                             AND SGI_INSURE_STA_DT = SGI_INSURE_END_DT)
+                                 )
+  ]]><isNotEmpty property="INSURE_MGMT_NO" prepend="AND"><![CDATA[
+                  A.INSURE_MGMT_NO = #INSURE_MGMT_NO#
+  ]]></isNotEmpty><![CDATA[
+  ]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                  A.EQP_MDL_CD = #EQP_MDL_CD#
+  ]]></isNotEmpty><![CDATA[  
+  ]]><isNotEqual property="USCAN_FNSH_YN" prepend="AND" compareValue="%"><![CDATA[
+                  A.USCAN_FNSH_YN = #USCAN_FNSH_YN#
+  ]]></isNotEqual><![CDATA[  
+  ]]><isNotEqual property="SCRB_FNSH_YN" prepend="AND" compareValue="%"><![CDATA[
+                  A.SCRB_FNSH_YN = #SCRB_FNSH_YN#
+  ]]></isNotEqual><![CDATA[
+  ]]><isNotEqual property="INCMP_ITM" prepend="AND" compareValue="%"><![CDATA[
+    ]]><isEqual property="INCMP_ITM" compareValue="01"><![CDATA[
+                  A.UKEY_INSURE_STA_DT IS NULL
+      ]]></isEqual><![CDATA[
+    ]]><isEqual property="INCMP_ITM" compareValue="02"><![CDATA[
+                  A.SGI_INSURE_STA_DT IS NULL
+      ]]></isEqual><![CDATA[    
+  ]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SInsuInfoSum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuInfoMgmt.SInsuInfoSum 보증보험 가입금액, 보험료 합계 */
+/* IO: 안진갑,2015-12-30T17:50:45(안진갑,2015-08-18T17:59:44) */
+WITH INSU_SCRB_INFO AS (
+                    SELECT  B.CNTRT_STA_DT
+                           ,B.SVC_MGMT_NO
+                           ,MAX(B.INSURE_MGMT_NO) AS INSURE_MGMT_NO
+                           ,MAX(B.EQP_MDL_CD) AS EQP_MDL_CD
+                           ,MAX(B.EQP_MDL_NM) AS EQP_MDL_NM
+                           ,MAX(B.UKEY_INSURE_STA_DT) AS UKEY_INSURE_STA_DT
+                           ,MAX(B.UKEY_INSURE_SCRB_AMT) AS UKEY_INSURE_SCRB_AMT
+                           ,MAX(B.UKEY_INSURE_FEE) AS UKEY_INSURE_FEE
+                           ,MAX(B.SGI_INSURE_STA_DT) AS SGI_INSURE_STA_DT
+                           ,MAX(B.SGI_INSURE_SCRB_AMT) AS SGI_INSURE_SCRB_AMT
+                           ,MAX(B.SGI_INSURE_FEE) AS SGI_INSURE_FEE
+                           ,NVL(MAX(B.USCAN_FNSH_YN),'N') AS USCAN_FNSH_YN
+                           ,CASE WHEN MAX(B.UKEY_INSURE_STA_DT) = MAX(B.SGI_INSURE_STA_DT)
+                                      AND MAX(B.UKEY_INSURE_SCRB_AMT) = MAX(B.SGI_INSURE_SCRB_AMT)
+                                      AND MAX(B.UKEY_INSURE_FEE) = MAX(B.SGI_INSURE_FEE)
+                                      AND NVL(MAX(B.USCAN_FNSH_YN),'N') = 'Y'
+                                 THEN 'Y'
+                                 ELSE 'N'
+                             END AS SCRB_FNSH_YN
+                      FROM (
+                              SELECT  A.RENTAL_CNTRT_STA_DT   AS CNTRT_STA_DT         /* 계약일자 */
+                                     ,B.SVC_MGMT_NO                                   /* 서비스관리번호 */
+                                     ,NULL                    AS INSURE_MGMT_NO       /* 보험관리번호 */
+                                     ,A.EQP_MDL_CD                                    /* 모델코드 */                 
+                                     ,C.EQP_MDL_NM                                    /* 모델명 */
+                                     ,NULL                    AS UKEY_INSURE_STA_DT   /* UKEY 가입일자 */
+                                     ,NULL                    AS UKEY_INSURE_SCRB_AMT /* UKEY 보험가입금액 */
+                                     ,NULL                    AS UKEY_INSURE_FEE      /* UKEY 보험료 */
+                                     ,NULL                    AS SGI_INSURE_STA_DT    /* SGI 가입일자 */
+                                     ,NULL                    AS SGI_INSURE_SCRB_AMT  /* SGI 보험가입금액 */
+                                     ,NULL                    AS SGI_INSURE_FEE       /* SIG 보험료 */
+                                     ,DECODE(D.APPLF_ST,'01','N','Y')        AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */
+                                FROM  TB_RENTAL_CNTRT A
+                                     ,TB_NR_CNTRT B
+                                     ,TB_EQP_MDL C
+                                     ,TB_NR_APPLF D
+                               WHERE  A.CNTRT_NO = B.CNTRT_NO
+                                 AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+                                 AND  A.CNTRT_NO = D.CNTRT_NO(+)
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.RENTAL_CNTRT_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[             
+                              UNION ALL
+                              SELECT  A.RENTAL_SCRB_DT        AS CNTRT_STA_DT         /* 계약일자 */
+                                     ,A.UKEY_SVC_MGMT_NO      AS SVC_MGMT_NO          /* 서비스관리번호 */
+                                     ,A.UKEY_INSURE_MGMT_NO   AS INSURE_MGMT_NO       /* 보험관리번호 */
+                                     ,NULL                    AS EQP_MDL_CD           /* 모델코드 */
+                                     ,NULL                    AS EQP_MDL_NM           /* 모델명 */
+                                     ,A.UKEY_INSURE_STA_DT                            /* UKEY 가입일자 */
+                                     ,A.UKEY_INSURE_SCRB_AMT                          /* UKEY 보험가입금액 */
+                                     ,A.UKEY_INSURE_FEE                               /* UKEY 보험료 */
+                                     ,NULL                    AS SGI_INSURE_STA_DT    /* SGI 가입일자 */
+                                     ,NULL                    AS SGI_INSURE_SCRB_AMT  /* SGI 보험가입금액 */
+                                     ,NULL                    AS SGI_INSURE_FEE       /* SIG 보험료 */
+                                     ,NULL                    AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */                 
+                                FROM  TB_INSU_UKEY A
+                               WHERE  A.OP_TYP_CD = '01'
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.RENTAL_SCRB_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[       
+                              UNION ALL
+                              SELECT  A.SGI_INSURE_STA_DT     AS CNTRT_STA_DT           /* 계약일자 */
+                                     ,A.SGI_SVC_MGMT_NO       AS SVC_MGMT_NO            /* 서비스관리번호 */
+                                     ,A.SGI_INSURE_MGMT_NO    AS INSURE_MGMT_NO         /* 보험관리번호 */
+                                     ,NULL                    AS EQP_MDL_CD           /* 모델코드 */
+                                     ,NULL                    AS EQP_MDL_NM           /* 모델명 */
+                                     ,NULL                    AS UKEY_INSURE_STA_DT   /* UKEY 가입일자 */
+                                     ,NULL                    AS UKEY_INSURE_SCRB_AMT /* UKEY 보험가입금액 */
+                                     ,NULL                    AS UKEY_INSURE_FEE      /* UKEY 보험료 */
+                                     ,A.SGI_INSURE_STA_DT                             /* SGI 가입일자 */
+                                     ,A.SGI_INSURE_SCRB_AMT                           /* SGI 보험가입금액 */
+                                     ,A.SGI_INSURE_FEE                                /* SIG 보험료 */
+                                     ,NULL                    AS USCAN_FNSH_YN        /* U.SCAN 완료 여부 */                                  
+                                FROM  TB_INSU_SGI A
+                               WHERE  A.OP_TYP_CD = 'A1'
+                    ]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+                                      A.SGI_INSURE_STA_DT BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT# 
+                    ]]></isNotEmpty><![CDATA[
+                            ) B
+                     GROUP  BY B.CNTRT_STA_DT, B.SVC_MGMT_NO    
+                )
+SELECT  NVL(SUM(A.UKEY_INSURE_SCRB_AMT),0) AS SUM_UKEY_INSURE_SCRB_AMT
+       ,NVL(SUM(A.UKEY_INSURE_FEE),0) AS SUM_UKEY_INSURE_FEE
+       ,NVL(SUM(A.SGI_INSURE_SCRB_AMT),0) AS SUM_SGI_INSURE_SCRB_AMT
+       ,NVL(SUM(A.SGI_INSURE_FEE),0) AS SUM_SGI_INSURE_FEE
+       ,COUNT(A.INSURE_MGMT_NO) AS SCRB_CNT
+  FROM  INSU_SCRB_INFO A
+ WHERE  A.SCRB_FNSH_YN = 'Y']]>
+	</select>
+	<select id="SInsuTermPrstSum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuInfoMgmt.SInsuTermPrstSum 해지건수, 환급보험료합계 조회 */
+/* IO: 안진갑,2015-10-13T10:41:04(안진갑,2015-10-13T10:41:04) */]]>
+	</select>
+</sqlMap>

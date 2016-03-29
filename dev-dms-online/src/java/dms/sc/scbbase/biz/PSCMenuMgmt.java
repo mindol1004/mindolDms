@@ -1,0 +1,232 @@
+package dms.sc.scbbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: PSCMenuMgmt</li>
+ * <li>설 명 : 메뉴관리</li>
+ * <li>작성일 : 2014-07-30 13:12:25</li>
+ * <li>작성자 : 심상준 (simair)</li>
+ * </ul>
+ * 
+ * @author 심상준 (simair)
+ */
+public class PSCMenuMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PSCMenuMgmt() {
+		super();
+	}
+
+	/**
+	 * 
+	 * 
+	 * @author
+	 * 
+	 * @param requestData
+	 *            요청정보 DataSet 객체
+	 * @param onlineCtx
+	 *            요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * 
+	 *         <pre>
+	 * - record : RS_MENU_LIST
+	 * 	- field : MENU_ID [필드1]
+	 * 	- field : MENU_NM [필드2]
+	 * 	- field : MENU_DESC [필드3]
+	 * 	- field : MENU_LV [필드4]
+	 * 	- field : MENU_SORT_ORD [필드5]
+	 * 	- field : FRM_ID [필드6]
+	 * 	- field : FRM_NM [필드7]
+	 * 	- field : SUP_MENU_ID [필드8]
+	 * </pre>
+	 */
+	public IDataSet pInqMenuLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			// 1. FU lookup
+			FSCMenuMgmt fSCMenuMgmt = (FSCMenuMgmt) lookupFunctionUnit(FSCMenuMgmt.class);
+			// 2. FM 호출
+			responseData = fSCMenuMgmt.fInqMenuLst(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		return responseData;
+
+	}
+
+	/**
+	 * 메뉴저장
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_MENU_LIST
+	 *		- field : MENU_ID [필드1]
+	 *		- field : MENU_NM [필드2]
+	 *		- field : MENU_DESC [필드3]
+	 *		- field : MENU_LV [필드4]
+	 *		- field : MENU_SORT_ORD [필드5]
+	 *		- field : FRM_ID [필드6]
+	 *		- field : FRM_NM [필드7]
+	 *		- field : SUP_MENU_ID [필드8]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveMenu(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+		try {
+			// 1. FU lookup
+			FSCMenuMgmt fSCMenuMgmt = (FSCMenuMgmt) lookupFunctionUnit(FSCMenuMgmt.class);
+			// 2. 입력 RS설정
+			IRecordSet rs = requestData.getRecordSet("RS_MENU_LIST");
+			IDataSet reqDS = (IDataSet) requestData.clone();
+			reqDS.putField("USER_NO", ca.getUserNo());
+			IRecord record = null;
+			//인력 수정
+			for ( int i = 0 ; i < rs.getRecordCount() ; i++ ) {
+				record = rs.getRecord(i);
+				reqDS.putFieldMap(record);
+
+				if ( StringUtils.equals(DmsConstants.STATUS_INSERTED, record.get(DmsConstants.RECORD_STATUS)) ) { // INSERT
+					fSCMenuMgmt.fRegMenu(reqDS, onlineCtx);
+				} else if ( StringUtils.equals(DmsConstants.STATUS_UPDATED, record.get(DmsConstants.RECORD_STATUS)) ) { // UPDATE
+					fSCMenuMgmt.fUpdMenu(reqDS, onlineCtx);
+				}
+			}
+			//삭제 - RI 때문에 분리
+			for ( int i = rs.getRecordCount() - 1 ; i >= 0 ; i-- ) {
+				record = rs.getRecord(i);
+				reqDS.putFieldMap(record);
+				if ( StringUtils.equals(DmsConstants.STATUS_DELETED, record.get(DmsConstants.RECORD_STATUS)) ) { // DELETE
+					fSCMenuMgmt.fDelMenu(reqDS, onlineCtx);
+				}
+			}
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 4. 결과값 리턴
+		responseData.setOkResultMessage("DMS00000", null); // 정상 처리되었습니다.
+		return responseData;
+	}
+
+	/**
+	 * 사용자즐겨찾기저장
+	 *
+	 * @author 심상준 (simair)
+	 * @since 2014-07-30 13:12:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_USER_FAVI_LIST
+	 *		- field : FAVI_NO [필드1]
+	 *		- field : FRM_ID [필드3]
+	 *		- field : FRM_URL [필드4]
+	 *		- field : FRM_CL_CD [필드5]
+	 *		- field : MENU_ID [필드6]
+	 *		- field : MENU_NM [필드7]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveUserFavi(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+		// 1. FU lookup
+		FSCUserFaviMgmt fSCUserFaviMgmt = (FSCUserFaviMgmt) lookupFunctionUnit(FSCUserFaviMgmt.class);
+		// 2. 입력 RS설정
+		IRecordSet rs = requestData.getRecordSet("RS_USER_FAVI_LIST");
+		int reqCnt = rs.getRecordCount();
+		Map<String, Object> recordMap = null;
+		IDataSet reqDataSet = new DataSet();
+		reqDataSet.putField("USER_NO", ca.getUserNo());
+		reqDataSet.putFieldMap(requestData.getFieldMap());
+		for ( int i = 0 ; i < reqCnt ; i++ ) {
+			recordMap = rs.getRecordMap(i);
+			reqDataSet.putFieldMap(recordMap);
+			// 3. 레코드셋 상태에 따른 분기
+			if ( StringUtils.equals(DmsConstants.STATUS_INSERTED, recordMap.get(DmsConstants.RECORD_STATUS).toString()) ) { // INSERT
+				fSCUserFaviMgmt.fUpdUserFavi(reqDataSet, onlineCtx);
+			} else if ( StringUtils.equals(DmsConstants.STATUS_DELETED, recordMap.get(DmsConstants.RECORD_STATUS).toString()) ) { // DELETE
+				fSCUserFaviMgmt.fDelUserFavi(reqDataSet, onlineCtx);
+			}
+
+		}
+		return responseData;
+	}
+
+	/**
+	 * 사용자즐겨찾기목록조회
+	 *
+	 * @author 심상준 (simair)
+	 * @since 2014-07-30 13:12:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_USER_FAVI_LIST
+	 *		- field : FAVI_NO [필드1]
+	 *		- field : MENU_ID [메뉴ID]
+	 *		- field : MENU_NM [메뉴명]
+	 *		- field : MENU_DESC [메뉴설명]
+	 *		- field : MENU_LV [메뉴레벨]
+	 *		- field : MENU_SORT_ORD [메뉴정렬순서]
+	 *		- field : FULL_PATH_NM [메뉴경로]
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : FRM_NM [화면명]
+	 *		- field : FRM_URL [화면URL]
+	 *		- field : FRM_CL_CD [화면구분코드]
+	 *		- field : FRM_ITEM_GRP_ID [화면항목ID]
+	 *		- field : SUP_MENU_ID [상위메뉴ID]
+	 * </pre>
+	 */
+	public IDataSet pInqUserFaviLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+		try {
+			// 1. FU lookup
+			FSCUserFaviMgmt fSCUserFaviMgmt = (FSCUserFaviMgmt) lookupFunctionUnit(FSCUserFaviMgmt.class);
+			// 2. FM 호출
+			requestData.putField("USER_NO", ca.getUserNo());
+			responseData = fSCUserFaviMgmt.fInqUserFaviLst(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		return responseData;
+
+	}
+
+}

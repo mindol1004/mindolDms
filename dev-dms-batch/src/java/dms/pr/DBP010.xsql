@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.DBP010">
+	<select id="SColorMfactCd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP010.SColorMfactCd 색상 생산업체 공통코드 IF조회 */
+/* IO: 안한모,2015-12-30T13:36:31(admin,2015-03-20T13:38:02) */
+SELECT 
+        A.IF_PROC_DT
+       ,A.IF_FILE_NM
+       ,A.IF_SEQ
+       ,A.CD_CL
+       ,A.CM_CD
+       ,A.CM_CD_NM
+       ,'' AS CM_GRP_CD_ID
+       ,A.PROC_ST_CD
+       ,A.FS_REG_USER_ID
+       ,A.FS_REG_DTM
+       ,CASE WHEN B.CM_CD_ID IS NULL THEN 0
+             ELSE 1
+        END AS CM_CD_100_CNT
+       ,CASE WHEN C.CM_CD_ID IS NULL THEN 0
+             ELSE 1
+        END AS CM_CD_101_CNT
+  FROM  TF_COLOR_MFACT_CD A
+       ,(SELECT CM_CD_ID
+           FROM TB_CM_CD
+          WHERE CM_GRP_CD_ID = 'DMS100') B
+       ,(SELECT CM_CD_ID
+           FROM TB_CM_CD
+          WHERE CM_GRP_CD_ID = 'DMS101') C
+ WHERE  A.PROC_ST_CD = '09'
+   AND  A.IF_PROC_DT = #PROC_DT#
+   AND  A.CM_CD = B.CM_CD_ID(+)
+   AND  A.CM_CD = C.CM_CD_ID(+)]]>
+	</select>
+	<insert id="ICmCd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP010.ICmCd 색상 생산업체 공통코드 입력 */
+/* IO: 안한모,2015-08-13T15:05:02(이영진,2015-08-03T17:37:15) */
+INSERT  
+  INTO  TB_CM_CD
+       (
+        CM_GRP_CD_ID
+       ,CM_CD_ID
+       ,SUP_CM_GRP_CD_ID
+       ,SUP_CM_CD_ID
+       ,CM_CD_NM
+       ,CM_CD_DESC
+       ,CM_CD_SORT_ORD
+       ,USE_YN
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       ,FS_REG_USER_ID
+        ) 
+VALUES 
+       (
+        #CM_GRP_CD_ID#
+       ,#CM_CD#
+       ,''
+       ,''
+       ,#CM_CD_NM#
+       ,#CM_CD_NM#
+       ,99
+       ,'Y'
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       )]]>
+	</insert>
+	<update id="UColorMfactCd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP010.UColorMfactCd 색상 생산업체 공통코드 IF수정 */
+/* IO: 안한모,2015-08-13T15:05:06(이영진,2015-08-03T17:42:50) */
+UPDATE TF_COLOR_MFACT_CD
+    SET PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+        AND IF_FILE_NM = #IF_FILE_NM#
+        AND IF_SEQ = #IF_SEQ#]]>
+	</update>
+</sqlMap>

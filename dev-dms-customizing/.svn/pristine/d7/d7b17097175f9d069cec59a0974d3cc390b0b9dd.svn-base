@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap
+    PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="hpc.code">
+
+    <select id="getCodeGroups" resultClass="string">
+        SELECT CM_GRP_CD_ID AS "GROUP_ID" 
+		FROM TB_CM_GRP_CD
+		WHERE USE_YN = 'Y'
+    </select>
+    
+    <select id="getCodes" parameterClass="map" resultClass="hmap">
+		SELECT   
+		          GRP_CD.CM_GRP_CD_ID    
+				,GRP_CD.CM_GRP_CD_NM    
+				,GRP_CD.CM_GRP_CD_DESC  
+				,GRP_CD.MGMT_CD_YN      
+				,GRP_CD.MGMT_ITEM_NM1   
+				,GRP_CD.MGMT_ITEM_NM2   
+				,GRP_CD.MGMT_ITEM_NM3   
+				,GRP_CD.MGMT_ITEM_NM4   
+				,GRP_CD.MGMT_ITEM_NM5   
+				,GRP_CD.MGMT_ITEM_NM6   
+				,GRP_CD.MGMT_ITEM_NM7   
+				,GRP_CD.MGMT_ITEM_NM8   
+				,GRP_CD.MGMT_ITEM_NM9   
+				,GRP_CD.MGMT_ITEM_NM10  
+				,CM_CD.CM_CD_ID         
+				,CM_CD.SUP_CM_GRP_CD_ID 
+				,CM_CD.SUP_CM_CD_ID     
+				,CM_CD.CM_CD_NM         
+				,CM_CD.CM_CD_DESC       
+				,CM_CD.CM_CD_SORT_ORD   
+				,CM_CD.MGMT_ITEM_CD1    
+				,CM_CD.MGMT_ITEM_CD2    
+				,CM_CD.MGMT_ITEM_CD3    
+				,CM_CD.MGMT_ITEM_CD4    
+				,CM_CD.MGMT_ITEM_CD5    
+				,CM_CD.MGMT_ITEM_CD6    
+				,CM_CD.MGMT_ITEM_CD7    
+				,CM_CD.MGMT_ITEM_CD8    
+				,CM_CD.MGMT_ITEM_CD9    
+				,CM_CD.MGMT_ITEM_CD10   
+		FROM TB_CM_GRP_CD GRP_CD, TB_CM_CD CM_CD
+		WHERE GRP_CD.CM_GRP_CD_ID = CM_CD.CM_GRP_CD_ID
+		  AND GRP_CD.USE_YN = 'Y'
+		  AND CM_CD.USE_YN = 'Y'
+		  AND GRP_CD.CM_GRP_CD_ID=#CM_GRP_CD_ID#
+		ORDER BY CM_CD.CM_CD_SORT_ORD ASC
+    </select>
+
+    <!-- getCodeIds와 getCode는 같이 쓰임. -->
+    <select id="getCodeIds" parameterClass="string" resultClass="string">
+        SELECT DISTINCT CM_CD_ID AS "ID"
+		FROM TB_CM_CD
+		WHERE CM_GRP_CD_ID = #value#
+    </select>
+    
+    <select id="getCode" parameterClass="map" resultClass="hmap">
+		 SELECT   
+					 GRP_CD.CM_GRP_CD_ID    
+					,GRP_CD.CM_GRP_CD_NM    
+					,GRP_CD.CM_GRP_CD_DESC  
+					,GRP_CD.MGMT_CD_YN      
+					,GRP_CD.MGMT_ITEM_NM1   
+					,GRP_CD.MGMT_ITEM_NM2   
+					,GRP_CD.MGMT_ITEM_NM3   
+					,GRP_CD.MGMT_ITEM_NM4   
+					,GRP_CD.MGMT_ITEM_NM5   
+					,GRP_CD.MGMT_ITEM_NM6   
+					,GRP_CD.MGMT_ITEM_NM7   
+					,GRP_CD.MGMT_ITEM_NM8   
+					,GRP_CD.MGMT_ITEM_NM9   
+					,GRP_CD.MGMT_ITEM_NM10  
+					,CM_CD.CM_CD_ID         
+					,CM_CD.SUP_CM_GRP_CD_ID 
+					,CM_CD.SUP_CM_CD_ID     
+					,CM_CD.CM_CD_NM         
+					,CM_CD.CM_CD_DESC       
+					,CM_CD.CM_CD_SORT_ORD   
+					,CM_CD.MGMT_ITEM_CD1    
+					,CM_CD.MGMT_ITEM_CD2    
+					,CM_CD.MGMT_ITEM_CD3    
+					,CM_CD.MGMT_ITEM_CD4    
+					,CM_CD.MGMT_ITEM_CD5    
+					,CM_CD.MGMT_ITEM_CD6    
+					,CM_CD.MGMT_ITEM_CD7    
+					,CM_CD.MGMT_ITEM_CD8    
+					,CM_CD.MGMT_ITEM_CD9    
+					,CM_CD.MGMT_ITEM_CD10   
+
+		FROM TB_CM_GRP_CD GRP_CD, TB_CM_CD CM_CD
+		WHERE GRP_CD.CM_GRP_CD_ID = CM_CD.CM_GRP_CD_ID
+		  AND GRP_CD.USE_YN = 'Y'
+		  AND CM_CD.USE_YN = 'Y'
+		  AND GRP_CD.CM_GRP_CD_ID=#CM_GRP_CD_ID#
+		  AND CM_CD.CM_CD_ID=#CM_CD_ID#
+		ORDER BY CM_CD.CM_CD_SORT_ORD ASC;
+    </select>
+</sqlMap>

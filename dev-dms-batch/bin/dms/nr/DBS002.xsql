@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBS002">
+	<select id="SInsuInv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBS002.SInsuInv 보증보험청구내역 조회 */
+/* IO: 안진갑,2015-12-17T15:42:39(안진갑,2015-08-24T14:53:59) */
+SELECT  'L1' AS OP_CL_CD                                       /*업무구분(청구의뢰)*/
+       ,'014' AS TRMS_CO_CL_CD                                 /*전송회사구분코드*/
+       ,TO_CHAR(SYSDATE,'YYYYMMDD')||SUBSTR(A.INSU_INV_NO, 7) AS INSURE_INV_REQT_NO    /*보험청구의뢰번호*/
+       ,A.INSU_SCUR_NO                                         /*증권번호*/
+       ,A.UKEY_INSURE_MGMT_NO AS INSU_MGMT_NO                  /*보증보험관리번호*/
+       ,A.SVC_MGMT_NO                                          /*서비스관리번호*/
+       ,A.CUST_TYP_CD                                          /*고객유형*/
+       ,A.CTZ_COPREG_NO										   /*주민번호*/
+       ,A.CTZ_COPREG_NO_ENPT                                   /*주민번호 앞 6자리_복호화*/
+       ,A.CUST_NM
+       ,A.CUST_NM_ENPT  			                           /*계약자_복호화*/
+       ,A.INSU_BIZ_REG_NO                                      /*사업자번호*/
+       ,SUBSTRB(E.EQP_MDL_NM,0,12) AS LAST_EQP_MDL_NM          /*최종단말모델명12자리*/
+       ,C.EQP_SER_NO AS LAST_EQP_SER_NO                        /*최종단말연변*/
+       ,B.UKEY_SVC_NO      AS MBL_PHON_NUM
+       ,B.UKEY_SVC_NO_ENPT AS MBL_PHON_NUM_ENPT                /*이동전화번호*/
+       ,A.ATHO_TERM_DT              /*직원해지일자*/
+       ,A.INSPAY_TERM_YN            /*분납해지여부*/
+       ,A.TTUL_CHG_DT               /*명의변경일*/
+       ,A.SVC_SCRB_DT               /*이동전화가입일*/
+       ,A.INSU_STA_DT               /*보험개시일*/
+       ,A.INSU_END_DT               /*보험종료일*/
+       ,A.ALLOT_TOT_FREQ            /*할부총횟수*/
+       ,A.ALLOT_PAYIN_FREQ          /*할부납입횟수*/
+       ,A.INSU_SCRB_AMT             /*보증보험가입금액*/
+       ,A.UKEY_INV_DT AS INV_DT     /*청구일자*/
+       ,LPAD(NVL(A.UNPD_RENTAL_FEE,0),9,'0') AS UNPD_RENTAL_AMT     /*미납장비임대료*/
+       ,LPAD(NVL(A.DMG_CMP_UNRTN_AMT,0),9,'0') AS UNPD_DMG_CMP_AMT  /*미납손해배상금*/
+       ,LPAD(NVL(A.ARR_ADD_AMT,0),9,'0') AS UNPD_ADD_AMT	         /*미납가산금액*/
+       ,LPAD(NVL(A.GROSS_INV_AMT,0),9,'0') AS GROSS_INV_AMT         /*총청구금액*/
+       ,A.FST_ARR_DT                    /*최초연체일자*/
+       ,A.FST_ARR_TTR                   /*최초연체회차*/
+       ,A.RESD_TEL_NO
+       ,A.RESD_TEL_NO_ENPT              /*거주지전화번호*/
+       ,A.RESD_ZIPCD	                /*거주지우편번호*/
+       ,A.BADDR_TEL_NO
+       ,A.BADDR_TEL_NO_ENPT             /*청구지전화번호*/
+       ,A.BADDR_ZIPCD	                /*청구지우편번호*/
+       ,A.RESD_ADDR_CL_CD	            /*거주지주소구분코드*/
+       ,A.RESD_BAS_ADDR	                /*거주지기본주소*/
+       ,A.RESD_DTL_ADDR
+       ,A.RESD_DTL_ADDR_ENPT            /*거주지상세주소*/
+       ,A.BADDR_ADDR_CL_CD	            /*청구지주소구분코드*/
+       ,A.BADDR_BAS_ADDR	            /*청구지기본주소*/
+       ,A.BADDR_DTL_ADDR
+       ,A.BADDR_DTL_ADDR_ENPT	        /*청구지상세주소*/
+       ,A.TEEN_NM
+       ,A.TEEN_NM_ENPT           	    /*미성년명암호화*/
+       ,A.TEEN_CTZ_REG_NO
+       ,A.TEEN_CTZ_REG_NO_ENPT          /*미성년주민등록번호암호화*/
+       ,A.DRT_CALC_YN	                /*일할계산여부*/
+       ,A.PSNL_RGEN_YN	                /*개인회생여부*/
+       ,A.PSNL_RGEN_STEP	            /*개인회생단계*/
+       ,A.PSNL_RGEN_RIBR_YN	            /*개인회생변제여부*/
+       ,A.PSNL_RGEN_RIBR_AMT	        /*개인회생변제금액*/
+       ,A.BRC_EXM_YN	                /*파산면책여부*/
+  FROM  TB_INSU_INV A
+       ,TB_INSU_UKEY B
+       ,TB_NR_CNTRT C
+       ,TB_RENTAL_CNTRT D
+       ,TB_EQP_MDL E
+ WHERE  A.UKEY_INSU_NO = B.UKEY_INSU_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  D.EQP_MDL_CD = E.EQP_MDL_CD
+   AND  A.INV_ST_CD = '02'
+   AND  A.DMS_INV_DT BETWEEN SUBSTR(#PROC_DT#,0,6)||'01' AND SUBSTR(#PROC_DT#,0,6)||'31']]>
+	</select>
+	<insert id="IIFInsuInvList" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS002.IIFInsuInvList 보증보험청구내역 등록 */
+/* IO: 안진갑,2015-12-17T09:59:28(안진갑,2015-08-24T15:14:15) */
+INSERT INTO TF_INSU_INV_LIST
+(
+    IF_PROC_DT
+   ,IF_FILE_NM
+   ,IF_SEQ
+   ,OP_CL_CD                                       
+   ,TRMS_CO_CL_CD                          
+   ,INSURE_INV_REQT_NO   
+   ,INSU_SCUR_NO                                       
+   ,INSU_MGMT_NO                 
+   ,SVC_MGMT_NO                                       
+   ,CUST_TYP_CD                                          
+   ,CTZ_COPREG_NO 
+   ,CTZ_COPREG_NO_ENPT    
+   ,CUST_NM
+   ,CUST_NM_ENPT                         
+   ,BIZ_REG_NO                             
+   ,LAST_EQP_MDL_NM         
+   ,LAST_EQP_SER_NO                      
+   ,MBL_PHON_NUM  
+   ,MBL_PHON_NUM_ENPT                     
+   ,ATHO_TERM_DT            
+   ,INSPAY_TERM_YN          
+   ,TTUL_CHG_DT             
+   ,SVC_SCRB_DT            
+   ,INSU_STA_DT              
+   ,INSU_END_DT              
+   ,ALLOT_TOT_FREQ           
+   ,ALLOT_PAYIN_FREQ         
+   ,INSU_SCRB_AMT            
+   ,INV_DT    
+   ,UNPD_RENTAL_AMT    
+   ,UNPD_DMG_CMP_AMT 
+   ,UNPD_ADD_AMT
+   ,GROSS_INV_AMT               
+   ,FST_ARR_DT                 
+   ,FST_ARR_TTR               
+   ,RESD_TEL_NO
+   ,RESD_TEL_NO_ENPT
+   ,RESD_ZIPCD	               
+   ,BADDR_TEL_NO
+   ,BADDR_TEL_NO_ENPT         
+   ,BADDR_ZIPCD	               
+   ,RESD_ADDR_CL_CD	          
+   ,RESD_BAS_ADDR	           
+   ,RESD_DTL_ADDR	
+   ,RESD_DTL_ADDR_ENPT     
+   ,BADDR_ADDR_CL_CD	        
+   ,BADDR_BAS_ADDR	          
+   ,BADDR_DTL_ADDR
+   ,BADDR_DTL_ADDR_ENPT   
+   ,TEEN_NM	 
+   ,TEEN_NM_ENPT            
+   ,TEEN_CTZ_REG_NO	
+   ,TEEN_CTZ_REG_NO_ENPT      
+   ,DRT_CALC_YN	               
+   ,PSNL_RGEN_YN	            
+   ,PSNL_RGEN_STEP	           
+   ,PSNL_RGEN_RIBR_YN	         
+   ,PSNL_RGEN_RIBR_AMT	       
+   ,BRC_EXM_YN
+   ,PROC_DT
+   ,PROC_TMS
+   ,PROC_ST_CD
+   ,FS_REG_USER_ID
+   ,FS_REG_DTM
+   ,LS_CHG_USER_ID
+   ,LS_CHG_DTM                  
+)
+VALUES(
+    #IF_PROC_DT#
+   ,#IF_FILE_NM#
+   ,#IF_SEQ#
+   ,#OP_CL_CD#
+   ,#TRMS_CO_CL_CD#
+   ,#INSURE_INV_REQT_NO#
+   ,#INSU_SCUR_NO#
+   ,#INSU_MGMT_NO#
+   ,#SVC_MGMT_NO#
+   ,#CUST_TYP_CD#
+   ,#CTZ_COPREG_NO#
+   ,#CTZ_COPREG_NO_ENPT#
+   ,#CUST_NM#
+   ,#CUST_NM_ENPT#
+   ,#INSU_BIZ_REG_NO#
+   ,#LAST_EQP_MDL_NM#
+   ,#LAST_EQP_SER_NO#
+   ,#MBL_PHON_NUM#
+   ,#MBL_PHON_NUM_ENPT#
+   ,#ATHO_TERM_DT#
+   ,#INSPAY_TERM_YN#
+   ,#TTUL_CHG_DT#
+   ,#SVC_SCRB_DT#
+   ,#INSU_STA_DT#
+   ,#INSU_END_DT#
+   ,#ALLOT_TOT_FREQ#
+   ,#ALLOT_PAYIN_FREQ#
+   ,#INSU_SCRB_AMT#
+   ,#INV_DT#
+   ,#UNPD_RENTAL_AMT#
+   ,#UNPD_DMG_CMP_AMT#
+   ,#UNPD_ADD_AMT#
+   ,#GROSS_INV_AMT#
+   ,#FST_ARR_DT#
+   ,#FST_ARR_TTR#
+   ,#RESD_TEL_NO#
+   ,#RESD_TEL_NO_ENPT#
+   ,#RESD_ZIPCD#
+   ,#BADDR_TEL_NO#
+   ,#BADDR_TEL_NO_ENPT#
+   ,#BADDR_ZIPCD#
+   ,#RESD_ADDR_CL_CD#
+   ,#RESD_BAS_ADDR#
+   ,#RESD_DTL_ADDR#
+   ,#RESD_DTL_ADDR_ENPT#
+   ,#BADDR_ADDR_CL_CD#
+   ,#BADDR_BAS_ADDR#
+   ,#BADDR_DTL_ADDR#
+   ,#BADDR_DTL_ADDR_ENPT#
+   ,#TEEN_NM#
+   ,#TEEN_NM_ENPT#
+   ,#TEEN_CTZ_REG_NO#
+   ,#TEEN_CTZ_REG_NO_ENPT#
+   ,#DRT_CALC_YN#
+   ,#PSNL_RGEN_YN#
+   ,#PSNL_RGEN_STEP#
+   ,#PSNL_RGEN_RIBR_YN#
+   ,#PSNL_RGEN_RIBR_AMT#
+   ,#BRC_EXM_YN#
+   ,TO_CHAR(SYSDATE,'YYYYMMDD')
+   ,TO_CHAR(SYSDATE,'HH24MISS')
+   ,'09'
+   ,'BAT'
+   ,SYSDATE
+   ,'BAT'
+   ,SYSDATE
+)]]>
+	</insert>
+</sqlMap>

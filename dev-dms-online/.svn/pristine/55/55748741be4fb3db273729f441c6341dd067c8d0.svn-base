@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRRentalServCntrtMgmt">
+	<insert id="IRentphonServCmphsCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRRentalServCntrtMgmt.IRentphonServCmphsCntrt 임대폰포괄계약등록 */
+/* IO: 박민정,2015-07-21T17:08:13(박민정,2015-07-21T17:03:33) */
+INSERT
+  INTO  TB_RENTPHON_CMPHS_CNTRT                    /* 임대폰포괄계약*/ 
+     (
+       CMPHS_CNTRT_NO	                           /* 포괄계약번호*/ 
+      ,CMPHS_CNTRT_NM	                           /* 포괄계약명*/ 
+      ,CMPHS_CNTRT_STA_DT	                       /* 포괄계약시작일자*/ 
+      ,CMPHS_CNTRT_END_DT	                       /* 포괄계약종료일자*/ 
+      ,DEL_YN	                                   /* 삭제여부*/ 
+      ,FS_REG_USER_ID	                           /* 최초등록사용자ID*/ 
+      ,FS_REG_DTM	                               /* 최초등록일시*/ 
+      ,LS_CHG_USER_ID	                           /* 최종변경사용자ID*/ 
+      ,LS_CHG_DTM	                               /* 최종변경일시*/ 
+     )
+VALUES
+     (
+     #CMPHS_CNTRT_NO#	                           /* 포괄계약번호*/ 
+    ,#CMPHS_CNTRT_NM#	                           /* 포괄계약명*/ 
+    ,#CMPHS_CNTRT_STA_DT#	                       /* 포괄계약시작일자*/ 
+    ,#CMPHS_CNTRT_END_DT#	                       /* 포괄계약종료일자*/ 
+    ,#DEL_YN#	                                   /* 삭제여부*/ 
+    ,#FS_REG_USER_ID#	                           /* 최초등록사용자ID*/ 
+    ,SYSDATE	                                   /* 최초등록일시*/ 
+    ,#LS_CHG_USER_ID#	                           /* 최종변경사용자ID*/ 
+    ,SYSDATE	                                   /* 최종변경일시*/ 
+     )]]>
+	</insert>
+	<select id="SRentphonServCmphsCntrtNum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRRentalServCntrtMgmt.SRentphonServCmphsCntrtNum 임대폰포괄계약일련번호조회 */
+/* IO: 박민정,2015-07-21T17:31:47(박민정,2015-07-21T17:11:18) */
+SELECT  'CC'||LPAD(SQ01_TB_RENTPHON_CMPHS_CNTRT.NEXTVAL,10,'0') AS CMPHS_CNTRT_NO
+  FROM  DUAL]]>
+	</select>
+	<select id="SIRentphonServCmphsCntrtChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRRentalServCntrtMgmt.SIRentphonServCmphsCntrtChk 임대폰포괄계약체크 */
+/* IO: 박민정,2015-07-22T20:49:54(박민정,2015-07-22T12:30:08) */
+SELECT 
+	   COUNT(1) AS ROW_CNT                  /* 사전체크 카운트 */
+  FROM TB_RENTPHON_CMPHS_CNTRT              /* 임대폰포괄계약*/
+ WHERE CMPHS_CNTRT_NM = #CMPHS_CNTRT_NM#    /* 포괄계약명 */]]>
+	</select>
+	<update id="DRentphonServCmphsCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRRentalServCntrtMgmt.DRentphonServCmphsCntrt 임대폰포괄계약삭제 */
+/* IO: 박민정,2015-07-22T15:30:16(박민정,2015-07-22T15:29:19) */
+UPDATE TB_RENTPHON_CMPHS_CNTRT 
+   SET DEL_YN = 'Y'                              /* 삭제여부*/ 
+      ,LS_CHG_USER_ID  = #LS_CHG_USER_ID#        /* 최종변경사용자ID*/ 
+      ,LS_CHG_DTM = SYSDATE                      /* 최종변경일시*/
+ WHERE CMPHS_CNTRT_NO = #CMPHS_CNTRT_NO#
+   AND CMPHS_CNTRT_NM = #CMPHS_CNTRT_NM#
+   AND DEL_YN = 'N']]>
+	</update>
+	<update id="URentphonServCmphsCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRRentalServCntrtMgmt.URentphonServCmphsCntrt 임대폰포괄계약수정 */
+/* IO: 박민정,2015-07-22T15:34:14(박민정,2015-07-22T15:32:40) */
+UPDATE TB_RENTPHON_CMPHS_CNTRT 
+   SET CMPHS_CNTRT_NM  = #CMPHS_CNTRT_NM# 	          /* 포괄계약명*/ 
+      ,CMPHS_CNTRT_STA_DT= #CMPHS_CNTRT_STA_DT#       /* 포괄계약시작일자*/ 
+      ,CMPHS_CNTRT_END_DT = #CMPHS_CNTRT_END_DT#      /* 포괄계약종료일자*/
+      ,LS_CHG_USER_ID  = #LS_CHG_USER_ID#             /* 최종변경사용자ID*/ 
+      ,LS_CHG_DTM = SYSDATE                           /* 최종변경일시*/
+WHERE CMPHS_CNTRT_NO = #CMPHS_CNTRT_NO#]]>
+	</update>
+	<select id="SRentphonServCmphsCntrtLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRRentalServCntrtMgmt.SRentphonServCmphsCntrtLst 임대폰포괄계약조회 */
+/* IO: 박민정,2015-07-23T10:59:21(박민정,2015-07-23T10:56:13) */
+SELECT A.CMPHS_CNTRT_NO            /*포괄계약번호*/
+      ,A.CMPHS_CNTRT_NM	           /*포괄계약명*/
+      ,A.CMPHS_CNTRT_STA_DT	       /*포괄계약시작일자*/
+      ,A.CMPHS_CNTRT_END_DT	       /*포괄계약종료일자*/
+      ,A.DEL_YN	                   /*삭제여부*/
+      ,A.FS_REG_USER_ID	           /*최초등록사용자ID*/
+      ,A.FS_REG_DTM	               /*최초등록일시*/
+      ,A.LS_CHG_USER_ID	           /*최종변경사용자ID*/
+      ,A.LS_CHG_DTM	               /*최종변경일시*/
+  FROM TB_RENTPHON_CMPHS_CNTRT A   /* 임대폰포괄계약*/
+ WHERE A.DEL_YN = 'N'
+]]><isNotEmpty property="CMPHS_CNTRT_NM"><![CDATA[
+   AND A.CMPHS_CNTRT_NM LIKE #CMPHS_CNTRT_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+   AND  A.CMPHS_CNTRT_STA_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+   AND  A.CMPHS_CNTRT_STA_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SRentphonServCmphsToCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsxmbase.db.DPRRentalServCntrtMgmt.SRentphonServCmphsToCnt 임대폰포괄계약조회총건수 */
+/* IO: 박민정,2015-07-23T14:37:25(박민정,2015-07-23T14:30:47) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_RENTPHON_CMPHS_CNTRT A  /* 임대폰포괄계약*/
+ WHERE  A.DEL_YN = 'N'
+]]><isNotEmpty property="CMPHS_CNTRT_NM"><![CDATA[
+   AND A.CMPHS_CNTRT_NM LIKE #CMPHS_CNTRT_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+   AND  A.CMPHS_CNTRT_STA_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+   AND  A.CMPHS_CNTRT_STA_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

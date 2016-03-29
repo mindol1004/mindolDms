@@ -1,0 +1,166 @@
+package dms.nr.nrbeabase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]단말제각관리</li>
+ * <li>설  명 : <pre>분실 단말기에대한 제각 처리정보를 조회한다.</pre></li>
+ * <li>작성일 : 2015-08-06 08:52:40</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class PNREqpExcMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNREqpExcMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-06 08:52:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : ASSET_SLIP_NO [전표번호]
+	 *	- field : ASSET_SLIP_ST [전표상태코드]
+	 *	- field : DEPR_DT [제각일]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_EXC_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_PRCH_AMT [매입가]
+	 *		- field : REM_PRC [회계용잔존가]
+	 *		- field : DEPR_PRC [회계용감가상각]
+	 *		- field : EQP_LOSS_DT [분실일자]
+	 *		- field : EQP_PRCH_DT [입고일=계약일]
+	 *		- field : CAPA_CD [용량]
+	 *		- field : PROV_PRC [충당부채]
+	 *		- field : ASSET_SLIP_ST [전표상태]
+	 *		- field : ASSET_SLIP_NO [전표번호]
+	 *		- field : INVE_ST_CD [단말상태코드]
+	 *		- field : ASSET_NO [자산번호]
+	 *	- record : RS_SUM_LIST
+	 *		- field : TOTAL_CNT [총건수]
+	 *		- field : DEPR_PRC [감가상각누계액]
+	 *		- field : PROV_PRC [충당부채누계액]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpExcLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSEABase", "fInqEqpExcLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-06 08:52:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : ASSET_SLIP_NO [전표번호]
+	 *	- field : ASSET_SLIP_ST [전표상태코드]
+	 *	- field : DEPR_DT [제각일]
+	 *	- field : CASE_WHEN [분기용]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pEqpExcBatchCallOnline(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSEABase", "fEqpExcBatchCallOnline", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-06 08:52:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_POWER_EXC_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_PRCH_AMT [매입가]
+	 *		- field : REM_PRC [회계용잔존가]
+	 *		- field : DEPR_PRC [회계용감가상각]
+	 *		- field : EQP_LOSS_DT [분실일자]
+	 *		- field : EQP_PRCH_DT [입고일=계약일]
+	 *		- field : CAPA_CD [용량]
+	 *		- field : PROV_PRC [충당부채]
+	 *		- field : ASSET_SLIP_ST [전표상태]
+	 *		- field : ASSET_SLIP_NO [전표번호]
+	 *		- field : INVE_ST_CD [단말상태코드]
+	 *		- field : ASSET_NO [자산번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pPowerExcController(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSEABase", "fPowerExcController", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+  
+}

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPInveTrnsfXclMgmt">
+	<select id="SInveTrnsfXclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveTrnsfXclMgmt.SInveTrnsfXclTotCnt 재고이관정산관리조회총건수 */
+/* IO: 이민재,2015-11-25T17:04:05(이민재,2015-11-20T09:13:01) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_EP_INVE_MOV_XCL A
+ WHERE  A.INVE_MOV_DT BETWEEN #CONF_STA_DT# AND #CONF_END_DT#
+   AND  A.DEL_YN = 'N'
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+        UPPER(A.EQP_SER_NO) LIKE UPPER(#EQP_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+        A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="SLIP_ST" compareValue="%" prepend="AND"><![CDATA[
+        NVL(A.INVE_MOV_SLIP_ST,'00') = #SLIP_ST#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SInveTrnsfXclPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveTrnsfXclMgmt.SInveTrnsfXclPaging 재고이관정산관리조회 */
+/* IO: 이민재,2015-11-25T17:03:57(이민재,2015-11-20T09:14:04) */
+SELECT  PA.*
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.INVE_MOV_DT DESC, A.INVE_MOV_XCL_NO) AS ROWNO
+                ,A.INVE_MOV_XCL_NO
+                ,A.INVE_MOV_DT
+                ,A.CNSL_MGMT_NO
+                ,A.PRCH_MGMT_NO
+                ,A.EQP_MDL_CD
+                ,(SELECT  EQP_MDL_NM
+                    FROM  TB_EQP_MDL
+                   WHERE  EQP_MDL_CD = A.EQP_MDL_CD) AS EQP_MDL_NM
+                ,A.EQP_SER_NO
+                ,A.INVE_AMT
+                ,A.INVE_MOV_SLIP_DT AS SLIP_DT
+                ,A.INVE_MOV_SLIP_NO AS SLIP_NO
+                ,NVL(A.INVE_MOV_SLIP_ST,'00') AS SLIP_ST
+                ,SUBSTR(A.INVE_MOV_SLIP_DT,0,4) AS YYYY               /* 전표년도 */
+           FROM  TB_EP_INVE_MOV_XCL A
+          WHERE  A.INVE_MOV_DT BETWEEN #CONF_STA_DT# AND #CONF_END_DT#
+            AND  A.DEL_YN = 'N'
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+                 UPPER(A.EQP_SER_NO) LIKE UPPER(#EQP_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+                 A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="SLIP_ST" compareValue="%" prepend="AND"><![CDATA[
+                 NVL(A.INVE_MOV_SLIP_ST,'00') = #SLIP_ST#
+]]></isNotEqual><![CDATA[
+        )PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

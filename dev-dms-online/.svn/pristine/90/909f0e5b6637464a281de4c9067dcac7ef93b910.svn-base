@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCmpXclMgmt">
+	<select id="SCmpXclLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclLstTotCnt 손해배상금정산개인,법인총건수 */
+/* IO: 진병수,2016-03-16T17:31:06(정동현,2015-08-11T13:16:22) */
+SELECT  COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.AMT),0) AS M_PRC
+  FROM  
+      (
+       SELECT  (SELECT  CM_CD_NM
+                  FROM  TB_CM_CD
+                 WHERE  CM_GRP_CD_ID = 'DMS144' 
+                   AND  CM_CD_ID = C.CUST_TYP 
+               )AS SELEC 
+               ,A.XCL_BIZ_REG_NO AS DEALCO_BLICENS_NO/* 신규계약자사업자등록번호 */
+               ,(SELECT  MAX(BOND_DEALCO_FISCL_ST_CD) 
+                   FROM  TB_XCL_BOND
+                  WHERE  BOND_BIZ_REG_NO = '501000') AS BOND_DEALCO_FISCL_ST_CD
+               ,NVL((SELECT NEW_CNTRTR_NM
+                       FROM (
+                             SELECT  NEW_CNTRTR_NM 
+                                    ,NEW_CNTRTR_BIZ_REG_NO
+                                    ,RANK() OVER(ORDER BY CNTRT_NO DESC) AS R
+                               FROM  TB_NR_CNTRT 
+                              WHERE  CUST_TYP IN ('01','04')
+                            )
+                      WHERE  R = 1       
+                        AND  NEW_CNTRTR_BIZ_REG_NO  = A.XCL_BIZ_REG_NO
+                    ), '개인') AS NEW_CNTRTR_NM 
+               ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS AMT/* 정산금액 */
+               ,A.XCL_SLIP_NO  AS SLIP_NO/* 정산전표번호*/
+               ,(SELECT SLIP_ST_CD FROM TB_SLIP WHERE SLIP_NO = A.XCL_SLIP_NO) AS SLIP_ST_CD/*전표상태*/
+               ,'NR_P' AS SLIP_TYPE/* 전표타입:위약금 */
+               ,'' AS GUBUN 
+               ,#YDATE# AS YYYYMM
+               ,SUBSTR(#YDATE#,0,4) AS YYYY 
+               ,#DMG_STL_INFO_CL# AS DMG_STL_INFO_CL
+               ,(SELECT  A.XCL_DEALCO_CD
+                   FROM  TB_DEALCO B 
+                  WHERE  A.XCL_DEALCO_CD  = B.DEALCO_CD
+                    AND  A.XCL_DEALCO_CD     = '1000000009') AS XCL_DEALCO_CD  
+         FROM  TB_ETC_XCL A
+              ,TB_NR_CNTRT C
+        WHERE  A.OP_CL_CD     = 'NR'
+          AND  A.CNTRT_NO = C.CNTRT_NO
+          AND  A.XCL_ITM_CD IN ('JD', 'JN')          
+          AND  C.CUST_TYP IN  ('01','04')
+]]><isNotEqual prepend="AND" property="DMG_STL_INFO_CL" compareValue="%"><![CDATA[              
+	           A.XCL_ITM_CD = #DMG_STL_INFO_CL#		/* 위약금종류 */
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+               SUBSTR(A.XCL_DT,0,6)  = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="TS"><![CDATA[
+        A.ETC_XCL_TS = #TS#
+]]></isNotEmpty><![CDATA[  
+]]><isNotEqual prepend="AND" property="XCL_DEDC_YN" compareValue="%"><![CDATA[  
+		       NVL(A.XCL_DEDC_YN,'N') = #XCL_DEDC_YN#
+]]></isNotEqual><![CDATA[           
+     GROUP BY  C.CUST_TYP
+              ,A.XCL_BIZ_REG_NO 
+              ,A.XCL_SLIP_NO
+              ,A.XCL_DEALCO_CD
+              ,A.XCL_ITM_CD
+              ,NVL(A.XCL_DEDC_YN, 'N')
+UNION
+SELECT  (SELECT  CM_CD_NM
+           FROM  TB_CM_CD
+          WHERE  CM_GRP_CD_ID = 'DMS144' 
+            AND  CM_CD_ID = C.CUST_TYP 
+        )AS SELEC 
+        ,A.XCL_BIZ_REG_NO AS DEALCO_BLICENS_NO /* 신규계약자사업자등록번호 */
+        ,(SELECT  MAX(BOND_DEALCO_FISCL_ST_CD) 
+            FROM  TB_XCL_BOND
+           WHERE  BOND_BIZ_REG_NO = C.NEW_CNTRTR_BIZ_REG_NO) AS BOND_DEALCO_FISCL_ST_CD
+        ,NVL((SELECT NEW_CNTRTR_NM
+                FROM (
+                      SELECT NEW_CNTRTR_NM , NEW_CNTRTR_BIZ_REG_NO
+                           , RANK() OVER(ORDER BY CNTRT_NO DESC) AS R
+                        FROM TB_NR_CNTRT 
+                       WHERE CUST_TYP IN ('02','03','05')
+                     )
+               WHERE R = 1       
+                 AND NEW_CNTRTR_BIZ_REG_NO  = A.XCL_BIZ_REG_NO
+             ), '개인') AS NEW_CNTRTR_NM 
+        ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS AMT/* 정산금액 */
+        ,A.XCL_SLIP_NO  AS SLIP_NO/* 정산전표번호*/
+        ,(SELECT SLIP_ST_CD FROM TB_SLIP WHERE SLIP_NO = A.XCL_SLIP_NO) AS SLIP_ST_CD/*전표상태*/
+        ,'NR_P' AS SLIP_TYPE/* 전표타입:위약금 */
+        ,'' AS GUBUN 
+        ,#YDATE# AS YYYYMM
+        ,SUBSTR(#YDATE#,0,4) AS YYYY 
+        ,#DMG_STL_INFO_CL# AS DMG_STL_INFO_CL
+        ,(SELECT  A.XCL_DEALCO_CD
+            FROM  TB_DEALCO B 
+           WHERE  A.XCL_DEALCO_CD = B.DEALCO_CD
+             AND  A.XCL_DEALCO_CD    = '1000000009') AS XCL_DEALCO_CD  
+ FROM TB_ETC_XCL A
+     ,TB_NR_CNTRT C
+WHERE  A.OP_CL_CD = 'NR'
+  AND  A.CNTRT_NO = C.CNTRT_NO
+  AND  A.XCL_ITM_CD IN ('JD', 'JN')    
+  AND  C.CUST_TYP IN  ('02','03','05') 
+]]><isNotEqual prepend="AND" property="DMG_STL_INFO_CL" compareValue="%"><![CDATA[              
+	    A.XCL_ITM_CD = #DMG_STL_INFO_CL#		/* 손해배상금종류 */
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        SUBSTR(A.XCL_DT,0,6) = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="TS"><![CDATA[
+        A.ETC_XCL_TS = #TS#
+]]></isNotEmpty><![CDATA[  
+]]><isNotEqual prepend="AND" property="XCL_DEDC_YN" compareValue="%"><![CDATA[  
+		NVL(A.XCL_DEDC_YN,'N') = #XCL_DEDC_YN#
+]]></isNotEqual><![CDATA[            
+GROUP BY  C.CUST_TYP
+         ,A.XCL_BIZ_REG_NO
+         ,C.NEW_CNTRTR_BIZ_REG_NO 
+         ,A.XCL_SLIP_NO
+         ,A.XCL_DEALCO_CD
+         ,A.XCL_ITM_CD
+         ,NVL(A.XCL_DEDC_YN, 'N')
+       )PA]]>
+	</select>
+	<select id="SCmpXclSysLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclSysLst 손해배상금정산정보현재월조회 */
+/* IO: 진병수,2016-03-16T17:41:30(김혁범,2015-09-08T16:37:43) */
+SELECT  G.SVC_MGMT_NO							/*서비스관리번호*/
+       ,A.XCL_SLIP_NO							/*전표번호*/
+       ,F.RENTAL_CNTRT_STA_DT 					/*계약시작일자*/
+       ,F.RENTAL_CNTRT_END_DT 					/*계약종료일자*/
+       ,A.XCL_ITM_CD							/*위약금종류*/
+       ,NVL(SUM(A.XCL_AMT),0) AS DMS_PEN_AMT			/*DMS금액*/
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS UKEY_PEN_AMT	/*UKEY금액*/
+       ,NVL(SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT),0) AS DIV_PEN		/*차액*/
+       ,NVL(SUM(A.XCL_UKEY_RECV_AMT),0) AS PEN_RECV_AMT				/*수납액*/
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT) - SUM(A.XCL_UKEY_RECV_AMT),0) AS UN_DIV_DMG	/*미납액*/
+       ,CASE WHEN G.OP_TYP_CD = '02' OR G.OP_TYP_CD = '07' THEN G.OP_PROC_DT
+        ELSE ''
+        END AS END_DT
+        ,A.CNTRT_NO
+        ,A.ASSET_NO
+        ,NVL(H.SLIP_ST_CD,'00') AS SLIP_ST_CD
+        ,NVL(A.XCL_DEDC_YN,'N') AS XCL_DEDC_YN
+        ,ETC_XCL_TS as TS
+        ,A.XCL_DT
+        ,SUBSTR(A.XCL_DT,1,6) AS YYYYMM        
+ FROM  TB_ETC_XCL A	/*기타정산T*/
+      ,TB_RENTAL_CNTRT F 
+      ,TB_NR_CNTRT G
+      ,TB_SLIP H
+WHERE  A.CNTRT_NO = F.CNTRT_NO
+  AND  F.CNTRT_NO = G.CNTRT_NO
+  AND  A.XCL_ITM_CD IN ('JD', 'JN')  
+  AND  A.XCL_SLIP_NO = H.SLIP_NO(+)
+]]><isNotEqual prepend="AND" property="DMG_STL_INFO_CL" compareValue="%"><![CDATA[              
+	   A.XCL_ITM_CD = #DMG_STL_INFO_CL#
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+       G.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YYYYMM"><![CDATA[
+        SUBSTR(A.XCL_DT,0,6)  = #YYYYMM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="XCL_DEDC_YN" compareValue="%"><![CDATA[  
+		NVL(A.XCL_DEDC_YN,'N') = #XCL_DEDC_YN#
+]]></isNotEqual><![CDATA[  
+]]><isNotEqual prepend="AND" property="DEALCO_BLICENS_NO" compareValue="%"><![CDATA[              
+	    A.XCL_BIZ_REG_NO = #DEALCO_BLICENS_NO#
+]]></isNotEqual><![CDATA[    
+]]><isNotEmpty prepend="AND" property="TS"><![CDATA[
+        A.ETC_XCL_TS = #TS#
+]]></isNotEmpty><![CDATA[  
+ GROUP BY G.SVC_MGMT_NO
+      ,A.XCL_ITM_CD
+      ,A.XCL_SLIP_NO
+      ,F.RENTAL_CNTRT_STA_DT
+      ,F.RENTAL_CNTRT_END_DT
+      ,G.OP_TYP_CD
+      ,G.OP_PROC_DT
+      ,A.CNTRT_NO
+      ,A.ASSET_NO
+      ,NVL(H.SLIP_ST_CD,'00')
+      ,A.XCL_DEDC_YN
+      ,ETC_XCL_TS
+      ,A.XCL_DT
+      ,SUBSTR(A.XCL_DT,1,6)]]>
+	</select>
+	<select id="SCmpXclSysLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclSysLstTotCnt 손해배상금정산정보현재월총건수 */
+/* IO: 안진갑,2016-02-18T13:03:51(김혁범,2015-09-08T17:30:46) */
+SELECT  COUNT(*) AS S_CNT
+       ,NVL(SUM(PA.UKEY_PEN_AMT),0) AS S_PRC 
+  FROM  (
+          SELECT  G.SVC_MGMT_NO							/*서비스관리번호*/
+                 ,A.XCL_SLIP_NO							/*전표번호*/
+                 ,F.RENTAL_CNTRT_STA_DT 					/*계약시작일자*/
+                 ,F.RENTAL_CNTRT_END_DT 					/*계약종료일자*/
+                 ,A.XCL_ITM_CD							/*위약금종류*/
+                 ,NVL(SUM(A.XCL_AMT),0) AS DMS_PEN_AMT			/*DMS금액*/
+                 ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS UKEY_PEN_AMT	/*UKEY금액*/
+                 ,NVL(SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT),0) AS DIV_PEN		/*차액*/
+                 ,NVL(SUM(A.XCL_UKEY_RECV_AMT),0) AS PEN_RECV_AMT				/*수납액*/
+                 ,NVL(SUM(A.XCL_UKEY_INV_AMT) - SUM(A.XCL_UKEY_RECV_AMT),0) AS UN_DIV_DMG	/*미납액*/
+                 ,CASE WHEN G.OP_TYP_CD = '02' OR G.OP_TYP_CD = '07' THEN G.OP_PROC_DT
+                  ELSE ''
+                  END AS END_DT
+                 ,A.CNTRT_NO
+                 ,A.ASSET_NO
+                 ,NVL(H.SLIP_ST_CD,'00') AS SLIP_ST_CD
+           FROM  TB_ETC_XCL A	/*기타정산T*/
+                ,TB_RENTAL_CNTRT F
+                ,TB_NR_CNTRT G
+                ,TB_SLIP H
+          WHERE  A.CNTRT_NO = F.CNTRT_NO
+            AND  F.CNTRT_NO = G.CNTRT_NO
+            AND  A.XCL_ITM_CD IN ('JD', 'JN')            
+            AND  A.XCL_SLIP_NO = H.SLIP_NO(+)
+]]><isNotEqual prepend="AND" property="DMG_STL_INFO_CL" compareValue="%"><![CDATA[              
+	    A.XCL_ITM_CD = #DMG_STL_INFO_CL#
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        G.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YYYYMM"><![CDATA[
+        SUBSTR(A.XCL_DT,0,6)  = #YYYYMM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="XCL_DEDC_YN" compareValue="%"><![CDATA[  
+		NVL(A.XCL_DEDC_YN,'N') = #XCL_DEDC_YN#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="DEALCO_BLICENS_NO" compareValue="%"><![CDATA[              
+	    A.XCL_BIZ_REG_NO = #DEALCO_BLICENS_NO#
+]]></isNotEqual><![CDATA[    
+   GROUP BY G.SVC_MGMT_NO
+      ,A.XCL_ITM_CD
+      ,A.XCL_SLIP_NO
+      ,F.RENTAL_CNTRT_STA_DT
+      ,F.RENTAL_CNTRT_END_DT
+      ,G.OP_TYP_CD
+      ,G.OP_PROC_DT
+      ,A.CNTRT_NO
+      ,A.ASSET_NO
+      ,NVL(H.SLIP_ST_CD,'00')
+       )PA]]>
+	</select>
+	<select id="SCmpXclPsnlCorpList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclPsnlCorpList 손해배상금정산 개인,법인체크리스트 */
+/* IO: 진병수,2016-03-16T17:39:40(문재웅,2015-10-01T17:52:58) */
+SELECT  (SELECT  CM_CD_NM
+           FROM  TB_CM_CD
+          WHERE  CM_GRP_CD_ID = 'DMS144' 
+            AND  CM_CD_ID = C.CUST_TYP 
+        )AS SELEC 
+        ,A.XCL_BIZ_REG_NO AS DEALCO_BLICENS_NO/* 신규계약자사업자등록번호 */
+        ,(SELECT  MAX(BOND_DEALCO_FISCL_ST_CD) 
+            FROM  TB_XCL_BOND
+           WHERE  BOND_BIZ_REG_NO = '501000') AS BOND_DEALCO_FISCL_ST_CD
+        ,NVL((SELECT NEW_CNTRTR_NM
+                FROM (
+                      SELECT NEW_CNTRTR_NM , NEW_CNTRTR_BIZ_REG_NO
+                           , RANK() OVER(ORDER BY CNTRT_NO DESC) AS R
+                        FROM TB_NR_CNTRT 
+                       WHERE CUST_TYP IN ('01','04')
+                     )
+               WHERE R = 1       
+                 AND NEW_CNTRTR_BIZ_REG_NO  = A.XCL_BIZ_REG_NO
+             ), '개인') AS NEW_CNTRTR_NM 
+        ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS AMT/* 정산금액 */
+        ,A.XCL_SLIP_NO  AS SLIP_NO/* 정산전표번호*/
+        ,(SELECT SLIP_ST_CD FROM TB_SLIP WHERE SLIP_NO = A.XCL_SLIP_NO) AS SLIP_ST_CD/*전표상태*/
+        ,'NR_P' AS SLIP_TYPE/* 전표타입:위약금 */
+        ,'' AS GUBUN 
+        ,#YDATE# AS YYYYMM
+        ,(SELECT SUBSTR(SLIP_DT,0,4) FROM TB_SLIP WHERE SLIP_NO = A.XCL_SLIP_NO) AS YYYY 
+        ,A.XCL_ITM_CD AS DMG_STL_INFO_CL
+        ,(SELECT  A.XCL_DEALCO_CD
+            FROM  TB_DEALCO B 
+           WHERE  A.XCL_DEALCO_CD  = B.DEALCO_CD
+             AND  A.XCL_DEALCO_CD     = '1000000009') AS XCL_DEALCO_CD  
+        ,NVL(A.XCL_DEDC_YN,'N') AS XCL_DEDC_YN
+        ,ETC_XCL_TS AS TS        
+ FROM  TB_ETC_XCL A
+      ,TB_NR_CNTRT C
+WHERE  A.OP_CL_CD     = 'NR'
+  AND  A.CNTRT_NO = C.CNTRT_NO
+  AND  A.XCL_ITM_CD IN ('JD', 'JN')  
+  AND  C.CUST_TYP IN  ('01','04')
+]]><isNotEqual prepend="AND" property="DMG_STL_INFO_CL" compareValue="%"><![CDATA[              
+	    A.XCL_ITM_CD = #DMG_STL_INFO_CL#		/* 위약금종류 */
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        SUBSTR(A.XCL_DT,0,6)  = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="XCL_DEDC_YN" compareValue="%"><![CDATA[  
+		NVL(A.XCL_DEDC_YN,'N') = #XCL_DEDC_YN#
+]]></isNotEqual><![CDATA[           
+GROUP BY  C.CUST_TYP
+         ,A.XCL_BIZ_REG_NO 
+         ,A.XCL_SLIP_NO
+         ,A.XCL_DEALCO_CD
+         ,A.XCL_ITM_CD
+         ,NVL(A.XCL_DEDC_YN,'N')
+         ,ETC_XCL_TS
+UNION
+SELECT  (SELECT  CM_CD_NM
+           FROM  TB_CM_CD
+          WHERE  CM_GRP_CD_ID = 'DMS144' 
+            AND  CM_CD_ID = C.CUST_TYP 
+        )AS SELEC 
+        ,A.XCL_BIZ_REG_NO AS DEALCO_BLICENS_NO /* 신규계약자사업자등록번호 */
+       ,(SELECT  MAX(BOND_DEALCO_FISCL_ST_CD) 
+            FROM  TB_XCL_BOND
+           WHERE  BOND_BIZ_REG_NO = C.NEW_CNTRTR_BIZ_REG_NO) AS BOND_DEALCO_FISCL_ST_CD
+        ,NVL((SELECT NEW_CNTRTR_NM
+                FROM (
+                      SELECT NEW_CNTRTR_NM , NEW_CNTRTR_BIZ_REG_NO
+                           , RANK() OVER(ORDER BY CNTRT_NO DESC) AS R
+                        FROM TB_NR_CNTRT 
+                       WHERE CUST_TYP IN ('02','03','05')
+                     )
+               WHERE R = 1       
+                 AND NEW_CNTRTR_BIZ_REG_NO  = A.XCL_BIZ_REG_NO
+             ), '개인') AS NEW_CNTRTR_NM 
+        ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS AMT/* 정산금액 */
+        ,A.XCL_SLIP_NO  AS SLIP_NO/* 정산전표번호*/
+        ,(SELECT SLIP_ST_CD FROM TB_SLIP WHERE SLIP_NO = A.XCL_SLIP_NO) AS SLIP_ST_CD/*전표상태*/
+        ,'NR_P' AS SLIP_TYPE/* 전표타입:위약금 */
+        ,'' AS GUBUN 
+        ,#YDATE# AS YYYYMM
+        ,(SELECT SUBSTR(SLIP_DT,0,4) FROM TB_SLIP WHERE SLIP_NO = A.XCL_SLIP_NO) AS YYYY 
+        ,A.XCL_ITM_CD AS DMG_STL_INFO_CL
+        ,(SELECT  A.XCL_DEALCO_CD
+            FROM  TB_DEALCO B 
+           WHERE  A.XCL_DEALCO_CD = B.DEALCO_CD
+             AND  A.XCL_DEALCO_CD    = '1000000009') AS XCL_DEALCO_CD  
+        ,NVL(A.XCL_DEDC_YN,'N') AS XCL_DEDC_YN
+        ,ETC_XCL_TS AS TS             
+ FROM TB_ETC_XCL A
+     ,TB_NR_CNTRT C
+WHERE  A.OP_CL_CD = 'NR'
+  AND  A.CNTRT_NO = C.CNTRT_NO
+  AND  A.XCL_ITM_CD IN ('JD', 'JN')  
+  AND  C.CUST_TYP IN  ('02','03','05') 
+]]><isNotEqual prepend="AND" property="DMG_STL_INFO_CL" compareValue="%"><![CDATA[              
+	    A.XCL_ITM_CD = #DMG_STL_INFO_CL#		/* 손해배상금종류 */
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        SUBSTR(A.XCL_DT,0,6) = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="XCL_DEDC_YN" compareValue="%"><![CDATA[  
+		NVL(A.XCL_DEDC_YN,'N') = #XCL_DEDC_YN#
+]]></isNotEqual><![CDATA[            
+GROUP BY  C.CUST_TYP
+         ,A.XCL_BIZ_REG_NO
+         ,C.NEW_CNTRTR_BIZ_REG_NO 
+         ,A.XCL_SLIP_NO
+         ,A.XCL_DEALCO_CD
+         ,A.XCL_ITM_CD
+         ,NVL(A.XCL_DEDC_YN,'N')
+         ,ETC_XCL_TS]]>
+	</select>
+	<select id="SCmpXclAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclAllExcel 손해배상금정산정보전체엑셀 */
+/* IO: 안진갑,2016-02-17T18:07:42(김혁범,2015-10-08T10:09:18) */
+SELECT  '개인'                     AS "구분"
+       ,NVL(A.XCL_DEALCO_CD,'501000') AS "사업자번호" /* 신규계약자사업자등록번호 */
+       ,'개인'                  AS "법인명"
+       ,C.SVC_MGMT_NO AS "서비스관리번호"
+       ,C.CNTRT_NO AS "계약번호"
+       ,C.SVC_NO AS "전화번호"
+       ,NVL(TO_CHAR(TO_DATE(B.RENTAL_CNTRT_STA_DT,'YYYYMMDD'),'YYYY-MM-DD'),'') AS "계약시작일"
+       ,NVL(TO_CHAR(TO_DATE(B.RENTAL_CNTRT_END_DT,'YYYYMMDD'),'YYYY-MM-DD'),'') AS "계약종료일"
+       ,NVL(TO_CHAR(TO_DATE(C.OP_PROC_DT,'YYYYMMDD'),'YYYY-MM-DD'),'') AS "실종료일" /*실종료일*/
+       ,NVL(G.CM_CD_NM, '') AS "손해배상금종류"
+       ,NVL(SUM(A.XCL_AMT),0) AS "DMS금액"/*DMS금액*/
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS "Ukey금액"
+       ,NVL(SUM(A.XCL_UKEY_RECV_AMT),0) AS "수납액"
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT) - SUM(A.XCL_UKEY_RECV_AMT),0) AS "미납액"
+       ,NVL(SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT),0) AS "차액"
+       ,A.XCL_SLIP_NO AS "전표번호"/* 정산전표번호*/       
+       ,NVL((SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS153' 
+            AND  CM_CD_ID = A.XCL_SLIP_NO),'미발행') AS  "전표상태"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS278' 
+            AND  CM_CD_ID = NVL(A.XCL_DEDC_YN,'N')) AS  "정산포함여부"            
+  FROM  TB_ETC_XCL A/*기타정산T*/
+       ,TB_RENTAL_CNTRT B
+       ,TB_NR_CNTRT C
+       ,TB_CM_CD D
+       ,TB_SLIP F
+       ,TB_CM_CD G
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.CNTRT_NO   = C.CNTRT_NO
+   AND  A.XCL_ST_CD = D.CM_CD_ID(+)
+   AND  A.XCL_ITM_CD  = G.CM_CD_ID(+)
+   AND  A.ETC_XCL_NO = F.SLIP_NO(+)
+   AND  C.CUST_TYP  IN ('01','04')/* 고객유형 */
+   AND  A.DEL_YN     = 'N'
+   AND  A.XCL_ITM_CD IN ('JD', 'JN')
+]]><isNotEqual prepend="AND" property="DMG_STL_INFO_CL" compareValue="%"><![CDATA[              
+	           A.XCL_ITM_CD = #DMG_STL_INFO_CL#		/* 위약금종류 */
+]]></isNotEqual><![CDATA[ 
+   AND  D.CM_GRP_CD_ID(+) = 'DMS153'  
+   AND  G.CM_GRP_CD_ID(+) = 'DMS145'  
+   AND  SUBSTR(A.XCL_DT, 1, 6) = #YDATE#
+]]><isNotEqual prepend="AND" property="XCL_DEDC_YN" compareValue="%"><![CDATA[  
+		       NVL(A.XCL_DEDC_YN,'N') = #XCL_DEDC_YN#
+]]></isNotEqual><![CDATA[
+GROUP BY  A.XCL_DEALCO_CD
+         ,C.SVC_MGMT_NO
+         ,C.CNTRT_NO
+         ,C.SVC_NO
+         ,B.RENTAL_CNTRT_STA_DT
+         ,B.RENTAL_CNTRT_END_DT
+         ,C.OP_PROC_DT
+         ,G.CM_CD_NM
+         ,A.XCL_ITM_CD
+         ,A.XCL_SLIP_NO
+         ,D.CM_CD_NM
+         ,A.XCL_DEDC_YN         
+UNION
+SELECT  '법인'                AS "구분"
+       ,C.NEW_CNTRTR_CORP_REG_NO AS "사업자번호" /* 신규계약자사업자등록번호 */
+       ,C.NEW_CNTRTR_NM       AS "법인명"
+       ,C.SVC_MGMT_NO AS "서비스관리번호"
+       ,C.CNTRT_NO AS "계약번호"
+       ,C.SVC_NO AS "전화번호"
+       ,NVL(TO_CHAR(TO_DATE(B.RENTAL_CNTRT_STA_DT,'YYYYMMDD'),'YYYY-MM-DD'),'') AS "계약시작일"
+       ,NVL(TO_CHAR(TO_DATE(B.RENTAL_CNTRT_END_DT,'YYYYMMDD'),'YYYY-MM-DD'),'') AS "계약종료일"
+       ,NVL(TO_CHAR(TO_DATE(C.OP_PROC_DT,'YYYYMMDD'),'YYYY-MM-DD'),'') AS "실종료일" /*실종료일*/
+       ,NVL(G.CM_CD_NM, '') AS "손해배상금종류"
+       ,NVL(SUM(A.XCL_AMT),0) AS "DMS금액"/*DMS금액*/
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS "Ukey금액"
+       ,NVL(SUM(A.XCL_UKEY_RECV_AMT),0) AS "수납액"
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT) - SUM(A.XCL_UKEY_RECV_AMT),0) AS "미납액"
+       ,NVL(SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT),0) AS "차액"
+       ,A.XCL_SLIP_NO AS "전표번호"/* 정산전표번호*/
+       ,NVL((SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS153' 
+            AND  CM_CD_ID = A.XCL_SLIP_NO),'미발행') AS  "전표상태"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS278' 
+            AND  CM_CD_ID = NVL(A.XCL_DEDC_YN,'N')) AS  "정산포함여부"            
+  FROM  TB_ETC_XCL A/*기타정산T*/
+       ,TB_RENTAL_CNTRT B 
+       ,TB_NR_CNTRT C
+       ,TB_CM_CD D
+       ,TB_SLIP F
+       ,TB_CM_CD G
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.CNTRT_NO   = C.CNTRT_NO
+   AND  A.XCL_ST_CD = D.CM_CD_ID(+)
+   AND  A.XCL_ITM_CD  = G.CM_CD_ID(+)
+   AND  A.ETC_XCL_NO = F.SLIP_NO(+)
+   AND  C.CUST_TYP  IN ('02','03','05')/* 고객유형 */
+   AND  A.DEL_YN     = 'N'
+   AND  A.XCL_ITM_CD IN ('JD', 'JN')
+]]><isNotEqual prepend="AND" property="DMG_STL_INFO_CL" compareValue="%"><![CDATA[              
+	           A.XCL_ITM_CD = #DMG_STL_INFO_CL#		/* 위약금종류 */
+]]></isNotEqual><![CDATA[ 
+   AND  D.CM_GRP_CD_ID(+) = 'DMS153'
+   AND  G.CM_GRP_CD_ID(+) = 'DMS145'     
+   AND  SUBSTR(A.XCL_DT, 1, 6) = #YDATE#
+]]><isNotEqual prepend="AND" property="XCL_DEDC_YN" compareValue="%"><![CDATA[  
+		       NVL(A.XCL_DEDC_YN,'N') = #XCL_DEDC_YN#
+]]></isNotEqual><![CDATA[
+GROUP BY  C.NEW_CNTRTR_CORP_REG_NO
+         ,C.NEW_CNTRTR_NM
+         ,C.SVC_MGMT_NO
+         ,C.CNTRT_NO
+         ,C.SVC_NO
+         ,B.RENTAL_CNTRT_STA_DT
+         ,B.RENTAL_CNTRT_END_DT
+         ,C.OP_PROC_DT
+         ,G.CM_CD_NM
+         ,A.XCL_ITM_CD
+         ,A.XCL_SLIP_NO
+         ,D.CM_CD_NM
+         ,A.XCL_DEDC_YN]]>
+	</select>
+	<update id="UpdateCmpXclMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.UpdateCmpXclMgmt 손해배상금정산체크해제항목업데이트 */
+/* IO: 김혁범,2015-12-24T13:58:16(김혁범,2015-12-09T11:10:18) */
+UPDATE  TB_ETC_XCL
+   SET  XCL_AMT = #UKEY_PEN_AMT#
+ WHERE  OP_CL_CD = 'NR' 
+   AND  XCL_ITM_CD = #XCL_ITM_CD#
+   AND  XCL_DEDC_YN = 'N']]>
+	</update>
+	<update id="UpdateXclBondSum" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.UpdateXclBondSum BOND테이블금액업데이트 */
+/* IO: 김혁범,2015-12-24T11:36:06(김혁범,2015-12-24T11:28:58) */
+UPDATE TB_XCL_BOND
+   SET BOND_ITM_AMT = #AMT#
+      ,LS_CHG_USER_ID = #USERNO#
+      ,LS_CHG_DTM = SYSDATE
+ WHERE OP_CL_CD = 'NR'
+   AND BOND_XCL_YM = #YYYYMM#
+   AND BOND_DEALCO_CD = #XCL_DEALCO_CD#
+   AND XCL_ITM_CL = #DMG_STL_INFO_CL#]]>
+	</update>
+	<update id="UpdateYCmpXclMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.UpdateYCmpXclMgmt 손해배상금체크항목 공제여부 업데이트 */
+/* IO: 진병수,2016-03-16T17:48:35(김혁범,2015-12-24T13:56:41) */
+UPDATE  TB_ETC_XCL M
+   SET  XCL_DEDC_YN = DECODE(NVL(#XCL_DEDC_YN#,'N'),'N','Y','N')  
+     ,  ETC_XCL_TS  = CASE WHEN #XCL_DEDC_YN#  = 'Y'
+                           THEN TO_CHAR(
+                                 (
+                                  SELECT NVL(MAX(A.ETC_XCL_TS),'0')+1 AS NEXT_TS 
+                                    FROM TB_ETC_XCL  A
+                                       , TB_SLIP     S
+                                    WHERE A.OP_CL_CD    = 'NR'
+                                      AND SUBSTR(A.XCL_DT,1,6) = SUBSTR(#YYYYMM#,1,6)
+                                      AND A.XCL_ITM_CD    IN ('JD','JN')
+                                      AND S.SLIP_NO  (+)=  A.XCL_SLIP_NO
+                                      AND NVL(S.SLIP_ST_CD,'05')  > '05'                      
+                                 )
+                                )
+                           ELSE ETC_XCL_TS
+                      END 
+ WHERE  SUBSTR(M.XCL_DT,1,6) = SUBSTR(#YYYYMM#,1,6)   
+   AND  XCL_ITM_CD = #XCL_ITM_CD#
+   AND  CNTRT_NO = #CNTRT_NO#
+   AND  ASSET_NO = #ASSET_NO#]]>
+	</update>
+</sqlMap>

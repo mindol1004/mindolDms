@@ -1,0 +1,356 @@
+package dms.ep.epssxbase.biz;
+
+import java.math.BigDecimal;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]재고정산관리</li>
+ * <li>설  명 : <pre>[FU]재고정산관리</pre></li>
+ * <li>작성일 : 2015-10-14 10:18:26</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class FEPInveXclMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPInveXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]중고단말기재고정산조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:18:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STRD_MTH [기준년월]
+	 *	- field : OP_GB_CD [재고업무구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INVE_XCL_LIST
+	 *		- field : INVE_XCL_NO [재고 정산 번호]
+	 *		- field : XCL_STRD_DT [정산 기준 일자]
+	 *		- field : INVE_CL_CD [재고구분]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : INVE_XCL_CNT [재고 정산 건수]
+	 *		- field : INVE_SLIP_DT [재고 전표 일자]
+	 *		- field : INVE_SLIP_NO [재고 전표 번호]
+	 *		- field : INVE_SLIP_ST [재고 전표 상태]
+	 *		- field : INVE_CNCL_SLIP_DT [재고 취소 전표 일자]
+	 *		- field : INVE_CNCL_SLIP_NO [재고 취소 전표 번호]
+	 *		- field : CHECKED [CHECKED]
+	 * </pre>
+	 */
+	public IDataSet fSInqEpEqpInveXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DEPInveXclMgmt dEPInveXclMgmt = (DEPInveXclMgmt) lookupDataUnit(DEPInveXclMgmt.class);
+            // 2. LISTDM호출
+            responseData = dEPInveXclMgmt.dSInqEpEqpInveXclList(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }    
+
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]중고단말기재고정산등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:18:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : OP_GB_CD [재고업무구분]
+	 *	- field : CLCT_FR_DT [조회회수시작일자]
+	 *	- field : CLCT_TO_DT [조회회수종료일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fIEpEqpInveXclRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet resData = new DataSet();
+
+        String strInveXclNo = ""; //재고정산번호
+        String strInveTypeCd = ""; //재고유형
+        String sCurrDt = DateUtils.getCurrentDate(); // 현재일자
+        
+        try {
+            CommonArea ca = getCommonArea(onlineCtx);
+            // 1. DU lookup
+            DEPInveXclMgmt dEPInveXclMgmt = (DEPInveXclMgmt) lookupDataUnit(DEPInveXclMgmt.class);
+            requestData.putField("FS_REG_USER_ID", ca.getUserNo());
+            requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+            strInveTypeCd = requestData.getField("OP_GB_CD").toString();
+            // 2. 재고생성
+            IRecordSet rsInveXclList = null;
+            if("20".equals(strInveTypeCd)){ //미착재고
+                // 2-11. 재고정산일련번호채번
+                resData = dEPInveXclMgmt.dSInqEpEqpInveXclSeq(requestData, onlineCtx);
+                strInveXclNo = resData.getField("INVE_XCL_NO").toString();
+                requestData.putField("INVE_XCL_NO", strInveXclNo);
+                // 2-12. 에코폰 선할인 정산 상세 생성
+                requestData.putField("INVE_CL_CD", "10"); // 재고구분 10:에코폰, 20:자수폰
+                dEPInveXclMgmt.dIEpEqpNotArrivPreDcInveRgst(requestData, onlineCtx);
+                // 2-13. 에코폰 선할인 생성건수 합계 추출
+                resData = dEPInveXclMgmt.dSInqEpEqpInveXclSumList(requestData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    requestData.putField("DEDC_TYP_CD", "02"); //공제유형코드 선할인
+                    requestData.putField("INVE_TYP_CD", strInveTypeCd); //재고유형코드
+                    requestData.putField("XCL_STRD_DT", sCurrDt); //정산 기준 일자
+                    requestData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    requestData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    // 2-14. 재고합계등록
+                    dEPInveXclMgmt.dIEpEqpInveXclRgst(requestData, onlineCtx);
+                    // 2-21. 재고정산일련번호채번
+                    resData = dEPInveXclMgmt.dSInqEpEqpInveXclSeq(requestData, onlineCtx);
+                    strInveXclNo = resData.getField("INVE_XCL_NO").toString();
+                }
+                requestData.putField("INVE_XCL_NO", strInveXclNo);
+                // 2-22. 자수폰 선할인 정산 상세 생성
+                requestData.putField("INVE_CL_CD", "20"); // 재고구분 10:에코폰, 20:자수폰
+                dEPInveXclMgmt.dIEpEqpNotArrivPreDcInveRgst(requestData, onlineCtx);
+                // 2-23. 자수폰 선할인 생성건수 합계 추출
+                resData = dEPInveXclMgmt.dSInqEpEqpInveXclSumList(requestData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    requestData.putField("DEDC_TYP_CD", "02"); //공제유형코드 선할인
+                    requestData.putField("INVE_TYP_CD", strInveTypeCd); //재고유형코드
+                    requestData.putField("XCL_STRD_DT", sCurrDt); //정산 기준 일자
+                    requestData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    requestData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    // 2-24. 재고합계등록
+                    dEPInveXclMgmt.dIEpEqpInveXclRgst(requestData, onlineCtx);
+                    // 2-3. 계좌송금 정산 상세 생성
+                    // 2-31. 재고정산일련번호채번
+                    resData = dEPInveXclMgmt.dSInqEpEqpInveXclSeq(requestData, onlineCtx);
+                    strInveXclNo = resData.getField("INVE_XCL_NO").toString();
+                }
+                requestData.putField("INVE_XCL_NO", strInveXclNo);
+                // 2-32. 에코폰 계좌송금 정산 상세 생성
+                requestData.putField("INVE_CL_CD", "10"); // 재고구분 10:에코폰, 20:자수폰
+                dEPInveXclMgmt.dIEpEqpNotArrivSendAmtInveRgst(requestData, onlineCtx);
+                // 2-33. 에코폰 계좌송금 생성건수 합계 추출
+                resData = dEPInveXclMgmt.dSInqEpEqpInveXclSumList(requestData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    requestData.putField("DEDC_TYP_CD", "01"); //공제유형코드 계좌송금
+                    requestData.putField("INVE_TYP_CD", strInveTypeCd); //재고유형코드
+                    requestData.putField("XCL_STRD_DT", sCurrDt); //정산 기준 일자
+                    requestData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    requestData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    // 2-14. 재고합계등록
+                    dEPInveXclMgmt.dIEpEqpInveXclRgst(requestData, onlineCtx);
+                    // 2-41. 재고정산일련번호채번
+                    resData = dEPInveXclMgmt.dSInqEpEqpInveXclSeq(requestData, onlineCtx);
+                    strInveXclNo = resData.getField("INVE_XCL_NO").toString();
+                }
+                requestData.putField("INVE_XCL_NO", strInveXclNo);
+                // 2-42. 자수폰 계좌송금 정산 상세 생성
+                requestData.putField("INVE_CL_CD", "20"); // 재고구분 10:에코폰, 20:자수폰
+                dEPInveXclMgmt.dIEpEqpNotArrivSendAmtInveRgst(requestData, onlineCtx);
+                // 2-43. 자수폰 계좌송금 생성건수 합계 추출
+                resData = dEPInveXclMgmt.dSInqEpEqpInveXclSumList(requestData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    requestData.putField("DEDC_TYP_CD", "01"); //공제유형코드 계좌송금
+                    requestData.putField("INVE_TYP_CD", strInveTypeCd); //재고유형코드
+                    requestData.putField("XCL_STRD_DT", sCurrDt); //정산 기준 일자
+                    requestData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    requestData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    // 2-44. 재고합계등록
+                    dEPInveXclMgmt.dIEpEqpInveXclRgst(requestData, onlineCtx);
+                    // 2-5. 요금선납 정산 상세 생성
+                    // 2-51. 재고정산일련번호채번
+                    resData = dEPInveXclMgmt.dSInqEpEqpInveXclSeq(requestData, onlineCtx);
+                    strInveXclNo = resData.getField("INVE_XCL_NO").toString();
+                }
+                requestData.putField("INVE_XCL_NO", strInveXclNo);
+                // 2-52. 에코폰 요금선납 정산 상세 생성
+                requestData.putField("INVE_CL_CD", "10"); // 재고구분 10:에코폰, 20:자수폰
+                dEPInveXclMgmt.dIEpEqpNotArrivFreeDedcInveRgst(requestData, onlineCtx);
+                // 2-53. 에코폰 요금선납 생성건수 합계 추출
+                resData = dEPInveXclMgmt.dSInqEpEqpInveXclSumList(requestData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    requestData.putField("DEDC_TYP_CD", "03"); //공제유형코드 요금선납
+                    requestData.putField("INVE_TYP_CD", strInveTypeCd); //재고유형코드
+                    requestData.putField("XCL_STRD_DT", sCurrDt); //정산 기준 일자
+                    requestData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    requestData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    // 2-54. 재고합계등록
+                    dEPInveXclMgmt.dIEpEqpInveXclRgst(requestData, onlineCtx);
+                    // 2-61. 재고정산일련번호채번
+                    resData = dEPInveXclMgmt.dSInqEpEqpInveXclSeq(requestData, onlineCtx);
+                    strInveXclNo = resData.getField("INVE_XCL_NO").toString();
+                }                
+                requestData.putField("INVE_XCL_NO", strInveXclNo);
+                // 2-62. 자수폰 요금선납 정산 상세 생성
+                requestData.putField("INVE_CL_CD", "20"); // 재고구분 10:에코폰, 20:자수폰
+                dEPInveXclMgmt.dIEpEqpNotArrivFreeDedcInveRgst(requestData, onlineCtx);
+                // 2-63. 자수폰 요금선납 생성건수 합계 추출
+                resData = dEPInveXclMgmt.dSInqEpEqpInveXclSumList(requestData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    requestData.putField("DEDC_TYP_CD", "03"); //공제유형코드 요금선납
+                    requestData.putField("INVE_TYP_CD", strInveTypeCd); //재고유형코드
+                    requestData.putField("XCL_STRD_DT", sCurrDt); //정산 기준 일자
+                    requestData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    requestData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    // 2-64. 재고합계등록
+                    dEPInveXclMgmt.dIEpEqpInveXclRgst(requestData, onlineCtx);
+                }                
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }    
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]중고단말기미착재고정산조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:18:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INVE_XCL_NO [재고 정산 번호]
+	 *	- field : EXCEL_FIRST [EXCEL_FIRST]
+	 *	- field : EXCEL_LAST [EXCEL_LAST]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : INVE_XCL_DTL_LIST
+	 *		- field : INVE_XCL_NO [재고 정산 번호]
+	 *		- field : XCL_STRD_DT [정산기준일자]
+	 *		- field : INVE_CL_CD [재고구분코드]
+	 *		- field : DEDC_TYP_CD [공제유형코드]
+	 *		- field : INVE_TYP_CD [재고유형코드]
+	 *		- field : INVE_SLIP_DT [재고전표일자]
+	 *		- field : INVE_SLIP_NO [재고전표번호]
+	 *		- field : INVE_SLIP_ST [재고전표상태]
+	 *		- field : INVE_CNCL_SLIP_DT [재고취소전표일자]
+	 *		- field : INVE_CNCL_SLIP_NO [재고취소전표번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [접수일자]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : EQP_MDL_CD [단말기코드]
+	 *		- field : EQP_MDL_NM [단말기명]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : SKN_EQP_ST [SKN감정등급]
+	 *		- field : EQP_ST [등급]
+	 *		- field : XCL_AMT [정산금액]
+	 *		- field : LOSS_AMT [손실금액]
+	 *		- field : ROWNO [ROWNO]
+	 *		- field : EXCEL_TOTAL_CNT [EXCEL_TOTAL_CNT]
+	 * </pre>
+	 */
+	public IDataSet fSInqEpEqpNotArrivInveXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+
+        try {
+            // 1. DU lookup
+            DEPInveXclMgmt dEPInveXclMgmt = (DEPInveXclMgmt) lookupDataUnit(DEPInveXclMgmt.class);
+            // 2. LISTDM호출
+            responseData = dEPInveXclMgmt.dSInqEpEqpNotArrivInveXclList(requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }    
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]중고단말기재고정산상세등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:18:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : INVE_XCL_DTL_LIST
+	 *		- field : INVE_XCL_NO [재고 정산 번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUEpEqpInveXclDtlRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqData = new DataSet();
+        IDataSet resData = new DataSet();
+        IRecordSet rs = requestData.getRecordSet("INVE_XCL_DTL_LIST");
+        
+        try {
+            CommonArea ca = getCommonArea(onlineCtx);
+            // 1. DU lookup
+            DEPInveXclMgmt dEPInveXclMgmt = (DEPInveXclMgmt) lookupDataUnit(DEPInveXclMgmt.class);
+            
+            IRecordSet rsInveXclList = null;
+            for(int i = 0; i < rs.getRecordCount(); i++){
+                reqData.putFieldMap(rs.getRecordMap(i));
+                reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                if(i == 0){
+                    //해당정산번호의상세를 모두 삭제
+                    dEPInveXclMgmt.dDEpEqpInveXclDtlDel(reqData, onlineCtx);
+                }
+                //등록대상상세의 삭제여부를 N으로 수정
+                dEPInveXclMgmt.dUEpEqpInveXclDelDtlUpd(reqData, onlineCtx);
+            }
+            if(reqData != null && reqData.getField("INVE_XCL_NO") != null && !"".equals(reqData.getField("INVE_XCL_NO").toString())){
+                resData = dEPInveXclMgmt.dSInqEpEqpInveXclSumList(reqData, onlineCtx);
+                rsInveXclList = resData.getRecordSet("INVE_XCL_SUM_LIST");
+                if(rsInveXclList != null && rsInveXclList.getRecordCount() > 0 && Long.parseLong(rsInveXclList.get(0, "INVE_XCL_CNT").toString()) > 0){
+                    reqData.putField("XCL_AMT", rsInveXclList.get(0, "XCL_AMT")); //정산 금액
+                    reqData.putField("INVE_XCL_CNT", rsInveXclList.get(0, "INVE_XCL_CNT")); //재고 정산 건수
+                    // 재고합계등록
+                    dEPInveXclMgmt.dUEpEqpInveXclSumUpd(reqData, onlineCtx);
+                }
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }    
+    
+        return responseData;
+    }
+  
+}

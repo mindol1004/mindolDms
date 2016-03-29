@@ -1,0 +1,1352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPTlyReg">
+	<select id="SGnrlJdgTlyRegLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SGnrlJdgTlyRegLst 일반감정검수등록목록조회 */
+/* IO: 김윤환,2015-11-02T13:49:41(김윤환,2015-09-01T14:27:59) */
+SELECT 
+		A.CNSL_MGMT_NO															/* 상담 관리 번호 */
+		,A.EQP_MDL_CD															/* 단말기 모델 코드 */
+		,D.EQP_MDL_NM 															/* 단말기 모델명 */	 
+		,A.EQP_SER_NO															/* 단말기 일련 번호 */
+		,A.CNSL_DT																/* 상담 일자 */
+		,(SELECT DEALCO_NM 
+    	    FROM TB_DEALCO 
+    	   WHERE DEALCO_CD = B.AFFIL_AGN AND DEL_YN = 'N' ) AS AFFIL_AGN_NM 	/*소속 대리점명*/
+		,B.AGN_ORG_CD															/* 대리점 조직 코드 */
+		,B.AFFIL_AGN															/* 소속 대리점 */
+		,A.CNSL_DEALCO_CD														/*상담 거래처코드*/
+		,B.DEALCO_NM AS CNSL_DEALCO_NM 											/* 거래처 명 */
+		,A.EQP_COLOR_CD															/* 단말기 색상 코드 */
+		,A.ONING_DT																/* 개통 일자 */
+		,DECODE(A.EQP_ST,'A+','A','B+','B',NVL(A.EQP_ST,'선택')) AS EQP_ST		/* 단말기 상태 */
+		,NVL(A.EQP_ST_DTAIL,'A+') AS EQP_ST_DTAIL 								/* 단말기 상태 세부 */
+		,' ' EQP_ST_TXT															/* 내용 모름 ?*/
+		,A.USE_PRD_DDCT_AMT														/* 사용 기간 차감 금액 */
+		,NVL(A.INR_CORR_YN,'N') AS INR_CORR_YN									/* 내부 부식 여부 */
+		,NVL(A.PWR_SYS,'N') AS PWR_SYS 											/* 전원 시스템 */
+		,NVL(A.CALL_QULT_TEST,'N') AS CALL_QULT_TEST							/* 통화 품질 테스트 */
+		,NVL(A.DATA_PRFM,'N') AS DATA_PRFM										/* DATA 성능 */
+		,NVL(A.SCRN_TEST,'N') AS SCRN_TEST										/* 화면 테스트 */
+		,NVL(A.FUNC_TEST,'N') AS FUNC_TEST										/* 기능 테스트 */
+		,NVL(A.LOSS_EQP_YN,'N') AS LOSS_EQP_YN									/* 분실 단말기 여부 */
+		,NVL(A.RWD_RTN_OBJ_YN,'N') AS RWD_RTN_OBJ_YN							/* 보상 반납 대상 여부 */
+		,NVL(A.RENTP_YN,'N') AS RENTP_YN										/* 임대폰 여부 */
+		,NVL(A.WET_YN,'N') AS WET_YN											/* 침수 여부 */
+		,NVL(A.USIM_EQPCHG_YN,'N') AS USIM_EQPCHG_YN							/* USIM 기변 여부 */
+		,NVL(A.OTHRCO_FORGN_EQP_YN,'N') AS OTHRCO_FORGN_EQP_YN					/* 타사 해외 단말기 여부 */
+		,A.SUGG																	/* 의견 */
+		,NVL(A.EVALCNSLR_AUTCT_YN,'N') AS EVALCNSLR_AUTCT_YN					/* 평가원 인증 여부 */
+		,NVL(A.FULLSET_YN,'N') AS FULLSET_YN									/* FULLSET 여부 */
+		,A.CNSL_AMT																/* 상담 금액 */
+		,NVL(A.PRCH_CL,'N') AS PRCH_CL											/* 매입 구분 */		
+		,A.DPSTR																/* 예금주 */
+		,NVL(A.BANK_CD,' ') AS BANK_CD											/* 은행 코드 */
+		,A.ACCO_NO																/* 계좌 번호 */
+		,A.TEL_NO																/* 전화 번호 */
+		,A.ZIPCD_1 																/* 우편번호 1 */
+		,A.ZIPCD_2 																/* 우편번호 2 */
+		,A.ADDR																	/* 주소 */
+		,A.ETC_ADDR																/* 기타 주소 */
+		,A.FS_REG_USER_ID														/* 최초등록사용자ID */
+		,A.LS_CHG_USER_ID														/* 최종변경사용자ID */
+		,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.LS_CHG_USER_ID) AS USER_NM 			/* 최종변경자 */	
+		,C.PRCH_MGMT_NO															/* 매입 관리 번호 */
+		,C.EVALCNSLR_SUGG AS EVALCNSLR_SUGG 									/* 평가원 의견 */
+		,NVL(C.ADJ_AMT,0) AS ADJ_AMT											/* 조정 금액 */
+		,A.FEE_DEDC_YN															/* 요금 공제 여부 */
+		,A.SVC_NO																/* 서비스 번호 */
+		,A.SVC_MGMT_NO															/* 서비스 관리 번호 */
+		,A.IMEI																	/* IMEI */
+		,A.ETC_CMPT 															/* 기타 구성품 */
+		,' ' PRC_GB																/* 내용모름 */
+		,NVL(C.CUST_IDEA,' ') AS CUST_IDEA										/* 고객 의사 */
+		,NVL(C.AMT_RMT_YN,' ') AS AMT_RMT_YN 									/* 금액 송금 여부 */
+		,A.UPDATE_COUNT 														/* UPDATE_COUNT */
+		,A.POLY_OBJ_YN 															/* 정책 대상 여부 */
+		,A.POLY_OBJ_CD 															/* 정책 대상 코드 */
+		,NVL(C.PROGR_ST ,A.PROGR_ST) AS PROGR_ST 								/* 진행상태 */
+		/*,FBAS_GET_COMMCDNM_VAL('ZBAS_C_00490',NVL(C.PRC_ST ,A.PRC_ST)) PRC_NM*/ /* 진행상태명_UI */
+		,NVL(C.BOX_NO,A.BOX_NO) AS BOX_NO										/* 박스 번호 */
+		,A.SKN_CL																/* SKN 구분 */
+		,A.SKN_EQP_ST															/* SKN 단말기 상태 */
+		,A.SKN_JDG_AMT															/* SKN 감정 금액 */
+		,NVL(C.SKN_JDG_CL,' ') AS SKN_JDG_CL									/* SKN 감정 구분 */
+		,NVL(C.SKN_SMPL_JDG_DAMT,0) AS SKN_SMPL_JDG_DAMT						/* SKN 샘플 감정 차액 */
+		,NVL(A.PRE_DC_CL,'N') AS PRE_DC_CL										/* 선 할인 구분 */
+		,NVL(C.SCRN_AFIMG_YN,'X') AS SCRN_AFIMG_YN								/* 화면 잔상 여부 */
+		,NVL(A.STRD_INCEN,0) AS STRD_INCEN										/* 기준 인센티브 */
+		,A.FST_RGSTR															/* 최초 등록자 */
+		,A.ASIANA_CARD_NO														/* 아시아나 카드 번호 */
+		,A.SCRB_MTHD 															/* 가입 방법 */
+		,NVL(C.SELL_GRADE ,A.SELL_GRADE) AS SELL_GRADE							/* 판매등급 */
+		,C.CMCT_CO																/* 통신 회사 */
+        ,A.DPSTR_ENPT                                                           /* 예금주 암호화 */
+        ,A.TEL_NO_ENPT                                                          /* 전화번호 암호화 */        
+        ,A.ETC_ADDR_ENPT                                                        /* 기타 주소 암호화 */
+        ,A.ACCO_NO_ENPT                                                         /* 계좌번호 암호화 */
+        ,A.SVC_NO_ENPT                                                          /* 서비스번호 암호화 */
+   FROM TB_EP_CST_CONSULT_MGMT A
+		,TB_DEALCO B
+		,TB_EP_CST_PRCHS_MGMT C
+		,TB_EQP_MDL D 
+  WHERE A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+	AND A.CNSL_DEALCO_CD = B.DEALCO_CD
+	AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)   
+	AND A.EQP_MDL_CD = D.EQP_MDL_CD
+	AND A.DEL_YN = 'N'
+	AND B.DEL_YN = 'N'
+	AND C.DEL_YN(+) = 'N'
+	AND D.DEL_YN = 'N'  
+	AND A.SKN_CL = 'N'
+	AND C.SKN_CL(+) = 'N']]>
+	</select>
+	<select id="SGnrlJdgTlyRegCmptLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SGnrlJdgTlyRegCmptLst 일반감정검수등록구성품목록조회 */
+/* IO: 김윤환,2015-09-08T19:01:19(김윤환,2015-09-01T14:35:12) */
+SELECT 
+	   A.EQP_MDL_CD													/* 단말기 모델 코드 */
+	   ,A.OUTS_MCN_CL												/* 주변 기기 구분 */
+	   /*,FBAS_GET_COMMCDNM_VAL('ZBAS_P_00030',A.DTL_CL) DTL_NM*/	/* 단말기부가상품 */
+	   ,A.QTY														/* 수량 */
+	   ,A.UPRC														/* 단가 */
+	   ,A.UPRC AS UNIT_UPRC    										/* ? 단가*/
+	   ,A.SALE_UPRC													/* 매출 단가 */
+	   ,NVL(C.NORM_QTY,0) AS NORM_QTY								/* 정상 수량 */
+	   ,NVL(C.HLD_QTY,0) AS HLD_QTY									/* 보유 수량 */
+	   ,NVL(C.SKN_SMPL_QTY,0) AS SKN_SMPL_QTY						/* SKN 샘플 수량 */
+	   ,DECODE(C.DDCT_AMT,NULL,A.UPRC*A.QTY,C.DDCT_AMT) DDCT_AMT	/* 차감 금액 */
+	   ,C.CNSL_SER_NO												/* 상담 일련 번호 */
+	   ,TO_CHAR(ADD_MONTHS(TO_DATE(B.LAUNC_DT,'YYYYMMDD'),-36),'YYYYMMDD') AS LAUNC_DT	/* 출시 일자 */
+	   ,' ' AS PRCH_MGMT_NO											/* 매입관리번호 */
+	   ,C.CNSL_MGMT_NO												/* 상담 관리 번호 */
+	   ,A.BATR_CD 													/* 배터리 코드 */
+	   ,C.PROD_CL													/* 상품 구분 */
+  FROM TB_EP_BAS_PROD_DTL A
+	   ,TB_EQP_MDL B
+	   ,(SELECT 
+				IA.EQP_MDL_CD										/* 단말기 모델 코드 */
+				,IA.CNSL_SER_NO										/* 상담 일련 번호 */
+				,IA.DTL_CL											/* 상세 구분 */
+				,IA.NORM_QTY										/* 정상 수량 */
+				,IA.HLD_QTY											/* 보유 수량 */
+				,IA.SKN_SMPL_QTY									/* SKN 샘플 수량 */
+				,IA.DDCT_AMT										/* 차감 금액 */
+				,IA.CNSL_MGMT_NO									/* 상담 관리 번호 */
+				,IB.PROD_CL 										/* 상품 구분 */
+				,IC.CNSL_DT											/* 상담 일자 */
+		   FROM TB_EP_CST_CONSULT_DTL IA
+				,TB_EQP_MDL IB
+				,TB_EP_CST_CONSULT_MGMT IC
+		  WHERE IA.CNSL_MGMT_NO = #CNSL_MGMT_NO# 					/* 조건 */
+			AND IA.CMPT_PROD_CD = IB.EQP_MDL_CD(+) 					/* 구성품 상품 코드 */
+			AND IA.CNSL_MGMT_NO = IC.CNSL_MGMT_NO
+			AND IA.DEL_YN = 'N'
+			AND IB.DEL_YN(+) = 'N'
+			AND IC.DEL_YN = 'N'
+		) C
+  WHERE A.EQP_MDL_CD = B.EQP_MDL_CD
+	AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+	AND A.OUTS_MCN_CL = C.DTL_CL(+)
+	AND A.EQP_MDL_CD = #EQP_MDL_CD# 								/* 조건 */
+	AND A.BYGRD = '1' 												/* 등급별 */
+	AND A.DEL_YN = 'N'
+	AND B.DEL_YN = 'N'
+	AND A.FRDT <= (SELECT CNSL_DT 
+					 FROM TB_EP_CST_CONSULT_MGMT
+					WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#) 			/* 조건 */
+	AND A.TODT >= (SELECT CNSL_DT 
+					 FROM TB_EP_CST_CONSULT_MGMT
+					WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#) 			/* 조건 */
+  ORDER BY 2]]>
+	</select>
+	<select id="SPrchGnrlJdgTlyRegLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SPrchGnrlJdgTlyRegLst 매입일반감정검수등록목록조회 */
+/* IO: 정동현,2015-09-16T14:44:40(김윤환,2015-09-01T14:11:17) */
+SELECT 
+		C.CNSL_MGMT_NO 														/* 상담 관리 번호 */
+		,C.EQP_MDL_CD  														/* 단말기 모델 코드 */
+		,D.EQP_MDL_NM 														/* 단말기 모델명 */	 
+		,C.EQP_SER_NO  														/* 상담 관리 일련 번호 */
+		,C.CNSL_DT 															/* 상담 일자 */
+		,(SELECT DEALCO_NM 
+    	    FROM TB_DEALCO 
+    	   WHERE DEALCO_CD = B.AFFIL_AGN AND DEL_YN = 'N' ) AS AFFIL_AGN_NM 	/*소속 대리점명*/
+		,B.AGN_ORG_CD  														/* 대리점 조직 코드 */
+		,B.AFFIL_AGN  														/* 소속 대리점 */
+		,A.CNSL_DEALCO_CD 													/* 상담 거래처 코드 */
+		,B.DEALCO_NM AS CNSL_DEALCO_NM 										/* 거래처 명 */
+		,C.EQP_COLOR_CD 													/* 단말기 색상 코드 */
+		,C.ONING_DT 														/* 개통 일자 */
+		,DECODE(A.EQP_ST,'A+','A','B+','B',nvl(A.EQP_ST,'선택')) AS EQP_ST 	/* 단말기 상태 */
+		,NVL(C.EQP_ST_DTAIL,'A+') AS EQP_ST_DTAIL  							/* 단말기 상태 세부 */
+		,' ' EQP_ST_TXT 													/* ? */
+		,C.USE_PRD_DDCT_AMT  												/* 사용 기간 차감 금액 */
+		,NVL(C.INR_CORR_YN,'N') AS INR_CORR_YN 								/* 내부 부식 여부 */
+		,NVL(C.PWR_SYS,'N') AS PWR_SYS 										/* 전원 시스템 */
+		,NVL(C.CALL_QULT_TEST,'N') AS CALL_QULT_TEST 						/* 통화 품질 테스트 */
+		,NVL(C.DATA_PRFM,'N') AS DATA_PRFM 									/* DATA 성능 */
+		,NVL(C.SCRN_TEST,'N') AS SCRN_TEST 									/* 화면 테스트 */
+		,NVL(C.FUNC_TEST,'N') AS FUNC_TEST 									/* 기능 테스트 */
+		,NVL(C.LOSS_EQP_YN,'N') AS LOSS_EQP_YN 								/* 분실 단말기 여부 */
+		,NVL(C.RWD_RTN_OBJ_YN,'N') AS RWD_RTN_OBJ_YN 						/* 보상 반납 대상 여부 */
+		,NVL(C.RENTP_YN,'N') AS RENTP_YN 									/* 임대폰 여부 */
+		,NVL(C.WET_YN,'N') AS WET_YN 										/* 침수 여부 */
+		,NVL(C.USIM_EQPCHG_YN,'N') AS USIM_EQPCHG_YN 						/* USIM 기변 여부 */
+		,NVL(C.OTHRCO_FORGN_EQP_YN,'N') AS OTHRCO_FORGN_EQP_YN 				/* 타사 해외 단말기 여부 */
+		,A.SUGG 															/* 의견 */
+		,NVL(C.EVALCNSLR_AUTCT_YN,'N') AS EVALCNSLR_AUTCT_YN 				/* 평가원 인증 여부 */
+		,NVL(C.FULLSET_YN,'N') AS FULLSET_YN 								/* FULLSET 여부 */
+		,C.PRCH_AMT AS CNSL_AMT  											/* 매입 금액 */
+		,NVL(C.PRCH_CL,'N') AS PRCH_CL 										/* 매입 구분 */		
+		,C.DPSTR  															/* 예금주 */
+		,NVL(C.BANK_CD,' ') AS BANK_CD 										/* 은행 코드 */
+		,C.ACCO_NO 															/* 계좌 번호 */
+		,C.TEL_NO 															/* 전화 번호 */
+		,C.ZIPCD_1  														/* 우편번호 1 */
+		,C.ZIPCD_2  														/* 우편번호 2 */
+		,C.ADDR 															/* 주소 */
+		,C.ETC_ADDR 														/* 기타 주소 */
+		,C.FS_REG_USER_ID  													/* 최초 등록 사용자 ID */
+		,C.LS_CHG_USER_ID  													/* 최종 변경 사용자 ID */
+		,(SELECT USER_NM FROM TB_USER WHERE USER_NO = C.LS_CHG_USER_ID) AS USER_NM 			/* 최종변경자 */	
+		,C.PRCH_MGMT_NO  													/* 매입 관리 번호 */
+		,C.EVALCNSLR_SUGG AS EVALCNSLR_SUGG  								/* 평가원 의견 */
+		,NVL(C.ADJ_AMT,0) AS ADJ_AMT 										/* 조정 금액 */
+		,C.FEE_DEDC_YN 														/* 요금 공제 여부 */
+		,C.SVC_NO 															/* 서비스 번호 */
+		,C.SVC_MGMT_NO  													/* 서비스 관리 번호 */
+		,C.IMEI 															/* IMEI */
+		,C.ETC_CMPT 														/* 기타 구성품 */
+		,' ' PRC_GB 														/* */
+		,NVL(C.CUST_IDEA,'') AS CUST_IDEA 									/* 고객 의사 */
+		,NVL(C.AMT_RMT_YN,' ') AS AMT_RMT_YN 								/* 금액 송금 여부 */
+		,A.UPDATE_COUNT	 													/* UPDATE COUNT */
+		,C.POLY_OBJ_YN 														/* 정책 대상 여부 */
+		,C.POLY_OBJ_CD 														/* 정책대상코드 */
+		,C.PROGR_ST 														/* 진행 상태 */
+		,C.BOX_NO 															/* 박스 번호 */     
+		,NVL(C.RETUR_DEALCO_CL,'0') AS RETUR_DEALCO_CL 						/* 반송 거래처 구분 */
+		,NVL(C.PRE_DC_CL,'N') AS PRE_DC_CL 									/* 선 할인 구분 */
+		,NVL(C.SCRN_AFIMG_YN,'X') AS SCRN_AFIMG_YN 							/* 화면 잔상 여부 */		
+		,C.FST_RGSTR 														/* 최초 등록자 */
+		,C.ASIANA_CARD_NO  													/* 아시아나 카드 번호 */
+		,NVL(C.SELL_GRADE , A.SELL_GRADE) AS SELL_GRADE   					/* 판매등급 */
+		,C.CMCT_CO															/* 통신 회사 */
+        ,C.DPSTR_ENPT                                                       /* 예금주 암호화 */
+        ,C.TEL_NO_ENPT                                                      /* 전화번호 암호화 */        
+        ,C.ETC_ADDR_ENPT                                                    /* 기타 주소 암호화 */
+        ,C.ACCO_NO_ENPT                                                     /* 계좌번호 암호화 */
+        ,C.SVC_NO_ENPT                                                      /* 서비스번호 암호화 */
+   FROM TB_EP_CST_CONSULT_MGMT A  											/* 상담관리 */
+		,TB_DEALCO B 														/* 거래처 */
+		,TB_EP_CST_PRCHS_MGMT C 											/* 매입관리 */
+		,TB_EQP_MDL D 														/* 단말기정보 */
+  WHERE A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+	AND A.CNSL_DEALCO_CD = B.DEALCO_CD
+	AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)  
+	AND A.EQP_MDL_CD = D.EQP_MDL_CD
+	AND A.DEL_YN = 'N'
+	AND B.DEL_YN = 'N'
+	AND C.DEL_YN(+) = 'N'  
+	AND D.DEL_YN = 'N'  
+	AND A.SKN_CL = 'N'
+	AND C.SKN_CL(+) = 'N']]>
+	</select>
+	<select id="SPrchGnrlJdgTlyRegCmptLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SPrchGnrlJdgTlyRegCmptLst 매입일반감정검수등록구성품목록조회 */
+/* IO: 김윤환,2015-09-15T11:21:32(김윤환,2015-09-01T14:20:28) */
+SELECT 
+		A.EQP_MDL_CD 														/*단말기 모델 코드*/
+		,A.OUTS_MCN_CL														/*주변 기기 구분(단말기부가상품)*/
+		/*,FBAS_GET_COMMCDNM_VAL('ZBAS_P_00030', A.OUTS_MCN_CL) DTL_NM*/ 	/*단말기부가상품*/
+		,A.QTY																/*수량*/
+		,A.UPRC																/*단가*/
+		,A.UPRC AS UNIT_UPRC    											/*단가2*/
+		,A.SALE_UPRC														/*매출 단가*/
+		,NVL(C.NORM_QTY,0) AS NORM_QTY										/* 정상 수량 */
+		,NVL(C.HLD_QTY,0) AS HLD_QTY										/* 보유 수량 */
+		,NVL(C.SKN_SMPL_QTY,0) AS SKN_SMPL_QTY								/* SKN 샘플 수량 */
+		,DECODE(C.DDCT_AMT,NULL,A.UPRC*A.QTY,C.DDCT_AMT) AS DDCT_AMT
+		,C.PRCH_SER_NO														/* 매입 일련 번호 */
+		,TO_CHAR(ADD_MONTHS(TO_DATE(B.LAUNC_DT,'YYYYMMDD'),-36),'YYYYMMDD') AS LAUNC_DT /* 출시 일자 */
+		,' ' AS PRCH_MGMT_NO
+		,C.CNSL_MGMT_NO														/* 상담 관리 번호 */
+		,A.BATR_CD															/*배터리 코드*/ 
+		,C.PROD_CL															/* 상세 구분 */        
+   FROM TB_EP_BAS_PROD_DTL A 												/* 상품관리상세 */
+		,TB_EQP_MDL B
+		,( SELECT 
+				  IC.EQP_MDL_CD 											/* 단말기 모델 코드 */
+				  ,IA.PRCH_SER_NO											/* 매입 일련 번호 */
+				  ,IA.DTL_CL												/* 상세 구분 */
+				  ,IA.NORM_QTY												/* 정상 수량 */
+				  ,IA.HLD_QTY												/* 보유 수량 */
+				  ,IA.SKN_SMPL_QTY											/* SKN 샘플 수량 */
+				  ,IA.DDCT_AMT												/* 차감 금액 */
+				  ,IC.CNSL_MGMT_NO											/* 상담 관리 번호 */
+				  ,IB.PROD_CL												/* 상품 구분 */
+				  ,IC.CNSL_DT												/* 상담 일자 */
+		     FROM TB_EP_CST_PRCHS_DTL IA 									/* TB_매입관리상세 */
+				  ,TB_EQP_MDL IB
+				  ,TB_EP_CST_PRCHS_MGMT IC 									/* TB_매입관리 */
+		    WHERE IA.PRCH_MGMT_NO = IC.PRCH_MGMT_NO
+			  AND IA.CMPT_PROD_CD = IB.EQP_MDL_CD(+)
+			  AND IC.CNSL_MGMT_NO = #CNSL_MGMT_NO# 							/* 조건 */
+			  AND IA.DEL_YN = 'N'
+			  AND IB.DEL_YN(+) = 'N'
+			  AND IC.DEL_YN = 'N'
+	     ) C
+  WHERE A.EQP_MDL_CD = B.EQP_MDL_CD
+    AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+    AND A.OUTS_MCN_CL = C.DTL_CL(+)
+    AND A.EQP_MDL_CD = #EQP_MDL_CD# 										/* 조건 */
+    AND A.BYGRD = '1'
+    AND A.DEL_YN = 'N'
+    AND B.DEL_YN = 'N'
+    AND A.FRDT <= C.CNSL_DT 
+    AND A.TODT >= C.CNSL_DT 
+  ORDER BY 2]]>
+	</select>
+	<select id="SEqpMdlInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SEqpMdlInfo 단말기모델정보조회 */
+/* IO: 김윤환,2015-09-02T19:29:19(김윤환,2015-09-02T19:28:10) */
+SELECT 
+		A.EQP_MDL_CD  						/*단말기 모델 코드*/
+		,A.EQP_MDL_NM						/*단말기 모델 명*/
+		,A.MFACT_CD							/*생산업체 코드*/
+		,A.LAUNC_DT							/*출시 일자*/
+		,A.SETOFF_COFC						/*상계 계수*/
+		,A.PREFR_PRC_CL						/*선호도 가격 구분*/
+		,B.PRC_RT							/*가격 비율*/
+		,A.HLMT_PRC							/*상한 가격*/
+		,B.LLMT_PRC							/*하한 가격*/
+		,A.SLFCO_CL							/*자사 구분*/
+		,NVL(A.FIX_PRC_YN,'N') AS FIX_PRC_YN/*고정 가격 여부*/
+		,CASE WHEN TO_CHAR(ADD_MONTHS(TO_DATE(A.LAUNC_DT,'YYYYMMDD'),36),'YYYYMMDD') <= TO_CHAR(SYSDATE,'YYYYMMDD') 
+		 THEN 'Y'
+		 ELSE 'N'
+		 END AS LAUNC_YN					/*출시 여부*/
+		,A.PROD_CHRTIC_1					/*상품 특성 1 (DMS164) */
+		,A.COMC								/* 통신방식 (DMS178)*/
+		,SUBSTR(TO_CHAR(SYSDATE,'YYYYMMDD'),0,4)-3 AS BEFORE_YEAR		/* 기준전년도 */
+   FROM TB_EQP_MDL A
+		,(SELECT 
+				 IA.PRC_GRADE					/*가격 등급*/
+				 ,IA.PRC_RT						/*가격 비율*/
+				 ,IA.LLMT_PRC					/*하한 가격*/
+			FROM TB_EP_BAS_RATE_MGMT IA 
+		   WHERE IA.PRC_RT_CL = '2'				/*가격 비율 구분*/
+			 AND IA.EFF_STA_DT <= TO_CHAR(SYSDATE,'YYYYMMDD')				/*유효 시작 일자*/
+			 AND IA.EFF_END_DT >= TO_CHAR(SYSDATE,'YYYYMMDD')				/*유효 종료 일자*/
+			 AND IA.DEL_YN = 'N'
+		) B   
+  WHERE A.PREFR_PRC_CL = B.PRC_GRADE(+) 
+  	AND A.EQP_MDL_CD = #EQP_MDL_CD# 			/* 조건 */
+	AND A.DEL_YN = 'N'
+  ORDER BY 1,7 DESC,8 DESC]]>
+	</select>
+	<select id="SEqpMdlGradeInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SEqpMdlGradeInfo 단말기등급정보조회 */
+/* IO: 김윤환,2015-09-03T10:37:39(김윤환,2015-09-02T20:13:21) */
+SELECT 
+	   PRC_GRADE
+	   ,RATE
+	   ,PRC_RT_SEQ
+	   ,STRD_INCEN
+  FROM (
+		 SELECT 
+				'선택' AS PRC_GRADE
+				,100 AS RATE
+				,0 AS PRC_RT_SEQ
+				,0 AS STRD_INCEN
+		   FROM DUAL
+		  UNION ALL
+		 SELECT A.PRC_GRADE  							/* 가격 등급 */
+				,DECODE(B.FIX_PRC_YN,'Y',C.UPRC,A.PRC_RT) AS RATE 
+				,A.PRC_RT_SEQ 							/* 가격 비율 순번 */
+				,C.STRD_INCEN 							/* 기준 인센티브 */
+		   FROM TB_EP_BAS_RATE_MGMT  A
+				,(SELECT 
+						 IA.GRADE_CL					/*등급구분*/
+						 ,IA.FIX_PRC_YN					/*고정 가격 여부*/
+						 ,IA.EQP_MDL_CD					/*단말기 모델 코드*/
+				    FROM TB_EQP_MDL IA
+				   WHERE IA.EQP_MDL_CD = #EQP_MDL_CD#  	/* 조건 */
+					 AND IA.DEL_YN = 'N') B
+				,(SELECT 
+						 IB.GRADE						/*등급*/
+						 ,IB.UPRC						/*단가*/
+						 ,IB.STRD_INCEN					/*기준 인센티브*/
+					FROM TB_EP_BAS_PROD_FIX_PRICE IB
+				   WHERE IB.EQP_MDL_CD = #EQP_MDL_CD#  	/* 조건 */
+					 AND IB.DEL_YN = 'N'
+					 AND IB.FRDT <= NVL((SELECT CNSL_DT  			/* 상담일자 */
+										FROM TB_EP_CST_CONSULT_MGMT
+									   WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#),TO_CHAR(SYSDATE,'YYYYMMDD'))  /* 조건 */
+					 AND IB.TODT >= NVL((SELECT CNSL_DT 			/* 상담일자 */
+										FROM TB_EP_CST_CONSULT_MGMT
+									   WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#),TO_CHAR(SYSDATE,'YYYYMMDD'))) C
+		  WHERE A.GRADE_CL = B.GRADE_CL 							/*등급구분*/
+			AND A.PRC_GRADE = C.GRADE(+)
+			AND A.PRC_RT_CL = '1'
+]]><isEqual property="SCRB_MTHD" compareValue="C"><![CDATA[			
+			AND A.PRC_GRADE != 'B'  								/* 가입방법이 C일경우*/
+]]></isEqual><![CDATA[			
+			AND A.EFF_STA_DT <= NVL((SELECT CNSL_DT
+                               		   FROM TB_EP_CST_CONSULT_MGMT
+                              		  WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#),TO_CHAR(SYSDATE,'YYYYMMDD'))
+      		AND A.EFF_END_DT >= NVL((SELECT CNSL_DT
+                               		   FROM TB_EP_CST_CONSULT_MGMT
+                              		  WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#),TO_CHAR(SYSDATE,'YYYYMMDD'))
+	        AND A.DEL_YN = 'N'
+	    )
+ WHERE RATE IS NOT NULL
+ ORDER BY PRC_RT_SEQ]]>
+	</select>
+	<update id="UGnrlTlyFnshTbEpCstConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.UGnrlTlyFnshTbEpCstConsultMgmt 일반검수완료대상상담관리정보수정 */
+/* IO: 정동현,2015-09-16T16:17:51(김윤환,2015-09-07T19:05:01) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET SUGG = #SUGG#  				      /* 의견 */	   
+	   ,DPSTR = #DPSTR#  	      	  	  /* 예금주 */
+	   ,BANK_CD = #BANK_CD#  		      /* 은행 코드 */
+	   ,ACCO_NO = #ACCO_NO#        		  /* 계좌번호 */
+	   ,TEL_NO = #TEL_NO#  			      /* 전화번호 */
+	   ,ZIPCD_1 = #ZIPCD_1#  		      /* 우편번호1 */
+	   ,ZIPCD_2 = #ZIPCD_2#  		      /* 우편번호2 */
+	   ,ADDR = #ADDR#  				      /* 주소 */
+	   ,ETC_ADDR = #ETC_ADDR#             /* 기타주소 */     
+	   ,SVC_NO = #SVC_NO#  			      /* 서비스 번호 */
+	   ,SVC_MGMT_NO = #SVC_MGMT_NO#       /* 서비스 관리 번호 */
+	   ,FEE_DEDC_YN = #FEE_DEDC_YN#       /* 요금 공제 여부 */
+	   ,DPSTR_ENPT = #DPSTR_ENPT#         /* 예금주 암호화 */
+       ,TEL_NO_ENPT = #TEL_NO_ENPT#       /* 전화번호 암호화 */       
+       ,ETC_ADDR_ENPT = #ETC_ADDR_ENPT#   /* 기타 주소 암호화 */
+       ,ACCO_NO_ENPT = #ACCO_NO_ENPT#     /* 계좌번호 암호화 */
+       ,SVC_NO_ENPT = #SVC_NO_ENPT#       /* 서비스번호 암호화 */
+	   ,UPDATE_COUNT = UPDATE_COUNT+1
+	   ,LS_CHG_DTM = SYSDATE
+	   ,LS_CHG_USER_ID = #USER_ID# 
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UGnrlTlyFnshTbEpCstPrchsMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.UGnrlTlyFnshTbEpCstPrchsMgmt 일반검수완료대상매입관리정보수정 */
+/* IO: 정동현,2015-09-16T16:18:34(김윤환,2015-09-07T19:07:27) */
+UPDATE TB_EP_CST_PRCHS_MGMT
+   SET DPSTR = #DPSTR#  					/* 예금주 */
+	   ,BANK_CD = #BANK_CD#  				/* 은행 코드 */
+	   ,ACCO_NO = #ACCO_NO#  				/* 계좌 번호 */
+	   ,TEL_NO = #TEL_NO#  					/* 전화 번호 */
+	   ,ZIPCD_1 = #ZIPCD_1#  				/* 우편번호 1*/
+	   ,ZIPCD_2 = #ZIPCD_2#  				/* 우편번호 2*/
+	   ,ADDR = #ADDR#  						/* 주소 */
+	   ,ETC_ADDR = #ETC_ADDR#  				/* 기타주소 */     
+	   ,SVC_NO = #SVC_NO#  					/* 서비스 번호 */
+	   ,SVC_MGMT_NO = #SVC_MGMT_NO#  		/* 서비스 관리 번호 */
+	   ,FEE_DEDC_YN = #FEE_DEDC_YN#  		/* 요금 공제 여부 */
+	   ,DPSTR_ENPT = #DPSTR_ENPT#           /* 예금주 암호화 */
+       ,TEL_NO_ENPT = #TEL_NO_ENPT#         /* 전화번호 암호화 */       
+       ,ETC_ADDR_ENPT = #ETC_ADDR_ENPT#     /* 기타 주소 암호화 */
+       ,ACCO_NO_ENPT = #ACCO_NO_ENPT#       /* 계좌번호 암호화 */
+       ,SVC_NO_ENPT = #SVC_NO_ENPT#         /* 서비스번호 암호화 */
+	   ,UPDATE_COUNT = UPDATE_COUNT+1
+	   ,LS_CHG_DTM = SYSDATE
+	   ,LS_CHG_USER_ID = #USER_ID#
+	   ,BOX_NO = #BOX_NO#  					/* 박스번호 */
+	   ,CMCT_CO = #CMCT_CO#  				/* 통신회사 */
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#  		/* 매입관리번호 */]]>
+	</update>
+	<select id="SGnrlTlyProgrConsultCount" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SGnrlTlyProgrConsultCount 일반검수진행대상상담수정정보조회 */
+/* IO: 김윤환,2015-09-07T19:22:41(김윤환,2015-09-07T19:22:41) */
+SELECT 
+	   UPDATE_COUNT
+  FROM TB_EP_CST_CONSULT_MGMT
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</select>
+	<update id="UGnrlTlyProgrConsultSt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.UGnrlTlyProgrConsultSt 일반검수진행상담상태수정 */
+/* IO: 김윤환,2015-09-07T19:24:43(김윤환,2015-09-07T19:24:31) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET PROGR_ST = '15'  				/* 진행 상태 */
+   	   ,PRCH_CL = 'R' 					/* 매입 구분 */
+       ,UPDATE_COUNT = UPDATE_COUNT+1
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #USER_ID#   
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UGnrlTlyProgrTbEpCstPrchsMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.UGnrlTlyProgrTbEpCstPrchsMgmt 일반검수진행대상매입관리정보수정 */
+/* IO: 정동현,2015-09-16T16:27:54(김윤환,2015-09-07T19:42:58) */
+UPDATE TB_EP_CST_PRCHS_MGMT
+   SET EQP_MDL_CD = #EQP_MDL_CD#  							/* 단말기 모델 코드 */
+	   ,EQP_SER_NO = #EQP_SER_NO#  							/* 단말기 일련 번호 */
+	   ,PRCH_DT = SYSDATE  									/* 매입 일자 */
+	   ,EQP_COLOR_CD = #EQP_COLOR_CD#  						/* 단말기 색상 코드 */
+	   ,ONING_DT = #ONING_DT#  								/* 개통 일자 */
+	   ,EQP_ST = #EQP_ST_TXT#  								/*단말기 상태_ 매핑컬럼 확인*/
+	   ,USE_PRD_DDCT_AMT = #USE_PRD_DDCT_AMT#				/* 사용 기간 차감 금액 */
+	   ,INR_CORR_YN = #INR_CORR_YN#							/* 내부 부식 여부 */
+	   ,PWR_SYS = #PWR_SYS#									/* 전원 시스템 */
+	   ,CALL_QULT_TEST = #CALL_QULT_TEST#					/* 통화 품질 테스트 */
+	   ,DATA_PRFM = #DATA_PRFM#								/* DATA 성능 */
+	   ,SCRN_TEST = #SCRN_TEST#								/* 화면 테스트 */
+	   ,FUNC_TEST = #FUNC_TEST#								/* 기능 테스트 */
+	   ,LOSS_EQP_YN = #LOSS_EQP_YN#							/* 분실 단말기 여부 */
+	   ,RWD_RTN_OBJ_YN = #RWD_RTN_OBJ_YN#					/* 보상 반납 대상 여부 */
+	   ,RENTP_YN = #RENTP_YN#								/* 임대폰 여부 */
+	   ,WET_YN = #WET_YN#									/* 침수 여부 */
+	   ,USIM_EQPCHG_YN = #USIM_EQPCHG_YN#					/* USIM 기변 여부 */
+	   ,OTHRCO_FORGN_EQP_YN = #OTHRCO_FORGN_EQP_YN#			/* 타사 해외 단말기 여부 */
+	   ,EVALCNSLR_SUGG = #EVALCNSLR_SUGG#					/* 평가원 의견 */
+	   ,EVALCNSLR_AUTCT_YN = #EVALCNSLR_AUTCT_YN#			/* 평가원 인증 여부 */
+	   ,FULLSET_YN = #FULLSET_YN#							/* FULLSET 여부 */
+	   ,PRCH_AMT = #CNSL_AMT#								/* 매입금액 */
+	   ,ADJ_AMT = #ADJ_AMT#									/* 조정 금액 */      
+	   ,DPSTR = #DPSTR#										/* 예금주 */
+	   ,BANK_CD = #BANK_CD#									/* 은행 코드 */
+	   ,ACCO_NO = #ACCO_NO#									/* 계좌번호 */
+	   ,TEL_NO = #TEL_NO#									/* 전화 번호 */
+	   ,ZIPCD_1 = #ZIPCD_1#									/* 우편번호 1 */
+	   ,ZIPCD_2 = #ZIPCD_2#									/* 우편번호 2 */
+	   ,ADDR = #ADDR#										/* 주소 */
+	   ,ETC_ADDR = #ETC_ADDR#								/* 기타주소 */     
+	   ,PRCH_CL = #PRCH_CL#									/* 매입구분 */
+	   ,UPDATE_COUNT = UPDATE_COUNT+1
+	   ,LS_CHG_DTM = SYSDATE
+	   ,LS_CHG_USER_ID = #USER_ID#  
+	   ,FEE_DEDC_YN = #FEE_DEDC_YN#							/* 요금 공제 여부 */
+	   ,SVC_NO = #SVC_NO#  									/* 서비스 번호 */
+	   ,SVC_MGMT_NO = #SVC_MGMT_NO#  						/* 서비스 관리 번호 */
+	   ,IMEI = #IMEI#										/* IMEI */
+	   ,ETC_CMPT = #ETC_CMPT#								/* 기타 구성품 */
+	   ,INPT = #USER_ID#									/* 검수자(로그인 대상) */ 
+	   ,TLY_DT = TO_CHAR(SYSDATE,'YYYYMMDD') 				/* 검수일자 */
+	   ,POLY_OBJ_YN = #POLY_OBJ_YN#							/* 정책 대상 여부 */
+	   ,POLY_OBJ_CD = #POLY_OBJ_CD#							/* 정책 대상 코드 */
+	   ,PROGR_ST = DECODE(NVL(#PRCH_CL#,'N'),'Y','13','14')	/* 진행상태 */
+	   ,EQP_ST_DTAIL = DECODE(#EQP_ST_TXT#,'A',#EQP_ST_DTAIL#,'B',#EQP_ST_DTAIL#,'')	/* 단말기 상태세부 */
+	   ,SCRN_AFIMG_YN = #SCRN_AFIMG_YN#						/* 화면 잔상 여부 */
+	   ,SELL_GRADE = #SELL_GRADE#							/* 판매 등급 */
+	   ,CMCT_CO = #CMCT_CO#  								/* 통신회사 */
+	   ,DPSTR_ENPT = #DPSTR_ENPT#                           /* 예금주 암호화 */
+       ,TEL_NO_ENPT = #TEL_NO_ENPT#                         /* 전화번호 암호화 */       
+       ,ETC_ADDR_ENPT = #ETC_ADDR_ENPT#                     /* 기타 주소 암호화 */
+       ,ACCO_NO_ENPT = #ACCO_NO_ENPT#                       /* 계좌번호 암호화 */
+       ,SVC_NO_ENPT = #SVC_NO_ENPT#                         /* 서비스번호 암호화 */
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</update>
+	<insert id="IGnrlTlyProgrTbEpCstPrchsDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.IGnrlTlyProgrTbEpCstPrchsDtl 일반검수진행매입상세정보등록 */
+/* IO: 김윤환,2015-10-12T16:11:03(정동현,2015-09-16T17:04:11) */
+INSERT 
+  INTO TB_EP_CST_PRCHS_DTL 
+  (
+	PRCH_MGMT_NO 			/* 매입 관리 번호 */         
+	,PRCH_SER_NO			/* 매입 일련 번호 */         
+	,DTL_CL					/* 상세 구분 */
+	,CL_CD					/* 구분 코드 */
+	,PRCH_QTY				/* 매입 수량 */
+	,NORM_QTY				/* 정상 수량 */
+	,HLD_QTY				/* 보유 수량 */
+	,DDCT_AMT				/* 차감 금액 */
+	,DEL_YN
+	,UPDATE_COUNT
+	,FS_REG_DTM
+	,FS_REG_USER_ID
+	,LS_CHG_DTM
+	,LS_CHG_USER_ID
+	,CMPT_PROD_CD			/* 구성품 상품 코드 */
+	,PRCH_UPRC				/* 매입 단가 */
+  ) VALUES (    
+	#PRCH_MGMT_NO#         
+	,(SELECT NVL(MAX(TO_NUMBER(PRCH_SER_NO)),0)+1 AS PRCH_SER_NO 
+        FROM TB_EP_CST_PRCHS_DTL 
+       WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#)        
+	,#OUTS_MCN_CL#
+	,'1'    
+	,#QTY#
+	,#NORM_QTY#
+	,#HLD_QTY#
+	,#DDCT_AMT#
+	,'N'
+	,1
+	,SYSDATE
+	,#USER_ID#
+	,SYSDATE
+	,#USER_ID#
+	,#BATR_CD#
+	,#UNIT_UPRC#
+   )]]>
+	</insert>
+	<delete id="DGnrlTlyProgrTbEpCstPrchsDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.DGnrlTlyProgrTbEpCstPrchsDtl 일반검수진행매입상세정보삭제 */
+/* IO: 김윤환,2015-09-08T19:30:27(김윤환,2015-09-07T20:03:17) */
+DELETE 
+  FROM TB_EP_CST_PRCHS_DTL
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</delete>
+	<update id="UGnrlTlyProgrTbEpCstConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.UGnrlTlyProgrTbEpCstConsultMgmt 일반검수진행상담관리정보수정 */
+/* IO: 정동현,2015-09-16T16:31:29(김윤환,2015-09-07T20:08:04) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET EQP_MDL_CD = #EQP_MDL_CD#  										/* 단말기 모델 코드 */
+	   ,EQP_SER_NO = #EQP_SER_NO#  										/* 단말기 일련 번호 */
+	   ,CNSL_DT = #CNSL_DT#  											/* 상담 일자 */
+	   ,CNSL_DEALCO_CD = #CNSL_DEALCO_CD#  								/* 상담 거래처 코드 */
+	   ,EQP_COLOR_CD = #EQP_COLOR_CD# 									/* 단말기 색상 코드 */
+	   ,ONING_DT = #ONING_DT#  											/* 개통 일자 */
+	   ,EQP_ST = #EQP_ST_TXT# 											/* 단말기 상태_ 매핑확인 */
+	   ,USE_PRD_DDCT_AMT = #USE_PRD_DDCT_AMT# 							/* 사용 기간 차감 금액 */
+	   ,INR_CORR_YN = #INR_CORR_YN#  									/* 내부 부식 여부 */
+	   ,PWR_SYS = #PWR_SYS#  											/* 전원 시스템 */
+	   ,CALL_QULT_TEST = #CALL_QULT_TEST#  								/* 통화 품질 테스트 */        
+	   ,DATA_PRFM = #DATA_PRFM#  										/* DATA 성능 */
+	   ,SCRN_TEST = #SCRN_TEST#  										/* 화면 테스트 */
+	   ,FUNC_TEST = #FUNC_TEST#  										/* 기능 테스트 */
+	   ,LOSS_EQP_YN = #LOSS_EQP_YN#  									/* 분실 단말기 여부 */
+	   ,RWD_RTN_OBJ_YN = #RWD_RTN_OBJ_YN# 								/* 보상 반납 대상 여부 */
+	   ,RENTP_YN = #RENTP_YN#  											/* 임대폰 여부 */
+	   ,WET_YN = #WET_YN#  												/* 침수 여부 */
+	   ,USIM_EQPCHG_YN = #USIM_EQPCHG_YN#  								/* USIM 기변 여부 */
+	   ,OTHRCO_FORGN_EQP_YN = #OTHRCO_FORGN_EQP_YN#  					/* 타사 해외 단말기 여부 */
+	   ,EVALCNSLR_AUTCT_YN = #EVALCNSLR_AUTCT_YN#  						/* 평가원 인증 여부 */
+	   ,FULLSET_YN = #FULLSET_YN#  										/* FULLSET 여부 */
+	   ,CNSL_AMT = #CNSL_AMT#  											/* 상담 금액 */	   
+	   ,DPSTR = #DPSTR#  												/* 예금주 */
+	   ,BANK_CD = #BANK_CD#  											/* 은행 코드 */
+	   ,ACCO_NO = #ACCO_NO#  											/* 계좌 번호 */	   
+	   ,TEL_NO = #TEL_NO#  												/* 전화 번호 */
+	   ,ZIPCD_1 = #ZIPCD_1#  											/* 우편번호 1 */
+	   ,ZIPCD_2 = #ZIPCD_2#  											/* 우편번호 2 */
+	   ,ADDR = #ADDR#  													/* 주소 */
+	   ,ETC_ADDR = #ETC_ADDR#  											/* 기타 주소 */
+	   ,PRCH_CL = #PRCH_CL#  											/* 매입 구분 */
+	   ,UPDATE_COUNT = UPDATE_COUNT+1
+	   ,LS_CHG_DTM = SYSDATE 
+	   ,LS_CHG_USER_ID = #USER_ID#
+	   ,FEE_DEDC_YN = #FEE_DEDC_YN#  									/* 요금 공제 여부 */
+	   ,SVC_NO = #SVC_NO#												/* 서비스 번호 */
+	   ,SVC_MGMT_NO = #SVC_MGMT_NO#										/* 서비스 관리 번호 */
+	   ,IMEI = #IMEI#   												/* IMEI */
+	   ,ETC_CMPT = #ETC_CMPT#  											/* 기타 구성품 */
+	   ,POLY_OBJ_YN = #POLY_OBJ_YN#  									/* 정책 대상 여부 */
+	   ,POLY_OBJ_CD = #POLY_OBJ_CD#  									/* 정책 대상 코드 */
+	   ,PROGR_ST = DECODE(NVL(#PRCH_CL#,'N'),'Y','13','14') 			/* 진행상태 */
+	   ,EQP_ST_DTAIL = DECODE(#EQP_ST_TXT#,'A',#EQP_ST_DTAIL#,'B',#EQP_ST_DTAIL#,'') 		/* 단말기상태세부_매핑확인 */
+	   ,SELL_GRADE = #SELL_GRADE#  										/* 판매 등급 */
+	   ,DPSTR_ENPT = #DPSTR_ENPT#                                       /* 예금주 암호화 */
+       ,TEL_NO_ENPT = #TEL_NO_ENPT#                                     /* 전화번호 암호화 */       
+       ,ETC_ADDR_ENPT = #ETC_ADDR_ENPT#                                 /* 기타 주소 암호화 */
+       ,ACCO_NO_ENPT = #ACCO_NO_ENPT#                                   /* 계좌번호 암호화 */
+       ,SVC_NO_ENPT = #SVC_NO_ENPT#                                     /* 서비스번호 암호화 */
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#  									/* 상담 관리 번호 */]]>
+	</update>
+	<select id="SPrchMgmtNoSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SPrchMgmtNoSeq 매입관리번호조회 */
+/* IO: 김윤환,2015-09-07T20:08:50(김윤환,2015-09-07T20:08:50) */
+ SELECT 
+ 		'PRC'||LPAD(TO_CHAR(SQ01_TB_EP_CST_PRCHS_MGMT.NEXTVAL),9,'0') AS PRCH_MGMT_NO
+   FROM DUAL]]>
+	</select>
+	<insert id="IGnrlTlyProgrTbEpCstPrchsMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.IGnrlTlyProgrTbEpCstPrchsMgmt 일반검수진행매입관리정보등록 */
+/* IO: 정동현,2015-09-17T12:54:13(김윤환,2015-09-07T20:16:40) */
+INSERT 
+  INTO TB_EP_CST_PRCHS_MGMT 
+  (	 
+	  PRCH_MGMT_NO 						/* 매입 관리 번호	*/
+	  ,CNSL_MGMT_NO 					/* 상담 관리 번호 */
+	  ,EQP_MDL_CD 						/* 단말기 모델 코드 */         
+	  ,EQP_SER_NO 						/* 단말기 일련 번호 */         
+	  ,PRCH_DT							/* 매입 일자 */
+	  ,CNSL_DT      					/* 상담 일자 */    
+	  ,CNSL_DEALCO_CD      				/* 상담 거래처 코드 */
+	  ,EQP_COLOR_CD        				/* 단말기 색상 코드 */
+	  ,ONING_DT          				/* 개통 일자 */
+	  ,EQP_ST							/* 단말기 상태 */          
+	  ,USE_PRD_DDCT_AMT					/* 사용 기간 차감 금액 */ 
+	  ,INR_CORR_YN						/* 내부 부식 여부 */    
+	  ,PWR_SYS 							/* 전원 시스템*/        
+	  ,CALL_QULT_TEST					/* 통화 품질 테스트 */         
+	  ,DATA_PRFM 						/* DATA 성능 */        
+	  ,SCRN_TEST 						/* 화면 테스트 */         
+	  ,FUNC_TEST 						/* 기능 테스트 */    
+	  ,LOSS_EQP_YN						/* 분실 단말기 여부 */         
+	  ,RWD_RTN_OBJ_YN					/* 보상 반납 대상 여부 */       
+	  ,RENTP_YN							/* 임대폰 여부 */        
+	  ,WET_YN							/* 침수여부 */        
+	  ,USIM_EQPCHG_YN 					/* USIM 기변 여부 */        
+	  ,OTHRCO_FORGN_EQP_YN				/* 타사 해외 단말기 여부 */        
+	  ,EVALCNSLR_SUGG					/* 평가원 의견 */            
+	  ,EVALCNSLR_AUTCT_YN				/* 평가원 인증 여부 */      
+	  ,FULLSET_YN						/* FULLSET 여부 */      
+	  ,PRCH_AMT							/* 매입 금액 */
+	  ,PRCH_CL							/* 매입 구분 */      
+	  ,DPSTR							/* 예금주 */
+	  ,BANK_CD							/* 은행 코드 */
+	  ,ACCO_NO							/* 계좌번호 */
+	  ,TEL_NO							/* 전화번호 */
+	  ,ZIPCD_1							/* 우편번호 1 */
+	  ,ZIPCD_2							/* 우편번호 2 */
+	  ,ADDR								/* 주소 */
+	  ,ETC_ADDR							/* 기타 주소 */        
+	  ,AMT_RMT_YN						/* 금액 송금 여부 */
+	  ,ADJ_AMT							/* 조정 금액 */           
+	  ,DEL_YN
+	  ,UPDATE_COUNT
+	  ,FS_REG_DTM
+	  ,FS_REG_USER_ID
+	  ,LS_CHG_DTM
+	  ,LS_CHG_USER_ID
+	  ,FEE_DEDC_YN						/* 요금 공제 여부 */
+	  ,SVC_NO							/* 서비스 번호 */
+	  ,SVC_MGMT_NO						/* 서비스 관리 번호 */
+	  ,IMEI								/* IMEI */
+	  ,ETC_CMPT							/* 기타 구성품 */
+	  ,INPT								/* 검수자 */
+	  ,TLY_DT							/* 검수일자 */
+	  ,POLY_OBJ_YN						/* 정책 대상 여부 */
+	  ,POLY_OBJ_CD						/* 정책 대상 코드 */
+	  ,PROGR_ST							/* 진행상태 */
+	  ,BOX_NO							/* 박스 번호 */
+	  ,SKN_CL							/* SKN 구분 */
+	  ,EQP_ST_DTAIL						/* 단말기 상태 세부 */
+	  ,PRE_DC_CL						/* 선 할인 구분 */
+	  ,SCRN_AFIMG_YN					/* 화면 잔상 여부 */
+	  ,STRD_INCEN						/* 기준 인센티브 */
+	  ,UKEY_EQP_PRC						/* UKEY 단말기 가격 */
+	  ,UKEY_STRD_INCEN					/* UKEY 기준 인센티브 */
+	  ,UKEY_STRD_INCEN_SCOP_AMT			/* UKEY 기준 인센티브 범위 금액 */
+	  ,FST_RGSTR						/* 최초 등록자 */
+	  ,ASIANA_CARD_NO					/* 아시아나 카드 번호 */
+	  ,SCRB_MTHD						/* 가입방법 */
+	  ,SELL_GRADE						/* 판매등급 */
+	  ,CMCT_CO							/* 통신 회사 */
+	  ,DPSTR_ENPT             	        /* 예금주 암호화 */
+      ,TEL_NO_ENPT            	        /* 전화번호 암호화 */     
+      ,ETC_ADDR_ENPT         	        /* 기타 주소 암호화 */
+      ,ACCO_NO_ENPT          	        /* 계좌번호 암호화 */
+      ,SVC_NO_ENPT           	        /* 서비스번호 암호화 */
+	  
+  ) VALUES (
+	  #PRCH_MGMT_NO#
+	  ,#CNSL_MGMT_NO#
+	  ,#EQP_MDL_CD#        
+	  ,#EQP_SER_NO#       
+	  ,TO_CHAR(SYSDATE,'YYYYMMDD')
+	  ,NVL(#CNSL_DT#,TO_CHAR(SYSDATE,'YYYYMMDD'))
+	  ,#CNSL_DEALCO_CD#      
+	  ,#EQP_COLOR_CD#
+	  ,#ONING_DT#
+	  ,#EQP_ST_TXT# 					/* 매핑확인 */
+	  ,#USE_PRD_DDCT_AMT#
+	  ,#INR_CORR_YN#
+	  ,#PWR_SYS#
+	  ,#CALL_QULT_TEST#
+	  ,#DATA_PRFM#
+	  ,#SCRN_TEST#
+	  ,#FUNC_TEST#     
+	  ,#LOSS_EQP_YN#
+	  ,#RWD_RTN_OBJ_YN#
+	  ,#RENTP_YN#
+	  ,#WET_YN#
+	  ,#USIM_EQPCHG_YN#
+	  ,#OTHRCO_FORGN_EQP_YN#
+	  ,#EVALCNSLR_SUGG#
+	  ,#EVALCNSLR_AUTCT_YN#
+	  ,#FULLSET_YN#
+	  ,#CNSL_AMT#
+	  ,#PRCH_CL#    
+	  ,#DPSTR#
+	  ,#BANK_CD#
+	  ,#ACCO_NO#
+	  ,#TEL_NO#
+	  ,#ZIPCD_1#
+	  ,#ZIPCD_2#
+	  ,#ADDR#
+	  ,#ETC_ADDR#      
+	  ,#IN_YN#  							/* 금액 송금 여부_매핑확인  */
+	  ,#ADJ_AMT#
+	  ,'N'
+	  ,1
+	  ,SYSDATE
+	  ,#USER_ID#
+	  ,SYSDATE
+	  ,#USER_ID#
+	  ,#FEE_DEDC_YN#
+	  ,#SVC_NO#
+	  ,#SVC_MGMT_NO#
+	  ,#IMEI# 
+	  ,#ETC_CMPT#
+	  ,#USER_ID#
+	  ,TO_CHAR(SYSDATE,'YYYYMMDD')
+	  ,#POLY_OBJ_YN#
+	  ,#POLY_OBJ_CD#
+	  ,DECODE(NVL(#PRCH_CL#,'N'),'Y','13','14')
+	  ,#BOX_NO#
+	  ,'N'
+	  ,DECODE(#EQP_ST_TXT#,'A',#EQP_ST_DTAIL#,'B',#EQP_ST_DTAIL#,'')  /* 매핑확인 */
+	  ,#PRE_DC_CL#
+	  ,#SCRN_AFIMG_YN#
+	  ,#STRD_INCEN#
+	  ,#UKEY_EQP_PRC#
+	  ,#UKEY_STRD_INCEN#
+	  ,#UKEY_STRD_INCEN_SCOP_AMT#
+	  ,#FST_RGSTR#	
+	  ,#ASIANA_CARD_NO#
+	  ,#SCRB_MTHD# 
+	  ,#SELL_GRADE#
+	  ,#CMCT_CO#
+	  ,#DPSTR_ENPT#           /* 예금주 암호화 */
+      ,#TEL_NO_ENPT#         /* 전화번호 암호화 */      
+      ,#ETC_ADDR_ENPT#     /* 기타 주소 암호화 */
+      ,#ACCO_NO_ENPT#       /* 계좌번호 암호화 */
+      ,#SVC_NO_ENPT#         /* 서비스번호 암호화 */
+  )]]>
+	</insert>
+	<select id="STbEpCstPrchsMgmtCount" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.STbEpCstPrchsMgmtCount 매입관리건수조회 */
+/* IO: 김윤환,2015-09-14T09:22:34(김윤환,2015-09-09T13:41:16) */
+SELECT 
+	   COUNT(*) AS PRCH_MGMT_COUNT 
+  FROM TB_EP_CST_PRCHS_MGMT
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND DEL_YN = 'N'
+]]><isNotEmpty property="JDC_CL"><![CDATA[
+]]><isEqual property="JDC_CL" compareValue="RE"><![CDATA[			
+   AND SKN_CL = 'Y'  								/* 재감정 검수등록 일 경우 */
+]]></isEqual><![CDATA[
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SRpetJdgTlyRegLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SRpetJdgTlyRegLst 재감정검수등록목록조회 */
+/* IO: 김윤환,2015-11-02T13:50:30(김윤환,2015-09-11T09:44:51) */
+SELECT 
+		A.CNSL_MGMT_NO															/* 상담 관리 번호 */
+		,A.EQP_MDL_CD															/* 단말기 모델 코드 */
+		,D.EQP_MDL_NM 															/* 단말기 모델명 */	 
+		,A.EQP_SER_NO															/* 단말기 일련 번호 */
+		,A.CNSL_DT																/* 상담 일자 */
+		,(SELECT DEALCO_NM 
+    	    FROM TB_DEALCO 
+    	   WHERE DEALCO_CD = B.AFFIL_AGN AND DEL_YN = 'N' ) AS AFFIL_AGN_NM 	/*소속 대리점명*/
+		,B.AGN_ORG_CD															/* 대리점 조직 코드 */
+		,B.AFFIL_AGN															/* 소속 대리점 */
+		,A.CNSL_DEALCO_CD														/*상담 거래처코드*/
+		,B.DEALCO_NM AS CNSL_DEALCO_NM 											/* 거래처 명 */
+		,A.EQP_COLOR_CD															/* 단말기 색상 코드 */
+		,A.ONING_DT																/* 개통 일자 */
+		,DECODE(A.EQP_ST,'A+','A','B+','B',NVL(A.EQP_ST,'선택')) AS EQP_ST		/* 단말기 상태 */
+		,NVL(A.EQP_ST_DTAIL,'A+') AS EQP_ST_DTAIL 								/* 단말기 상태 세부 */
+		,' ' AS EQP_ST_TXT															/* 내용 모름 ?*/
+		,A.USE_PRD_DDCT_AMT														/* 사용 기간 차감 금액 */
+		,NVL(A.INR_CORR_YN,'N') AS INR_CORR_YN									/* 내부 부식 여부 */
+		,NVL(A.PWR_SYS,'N') AS PWR_SYS 											/* 전원 시스템 */
+		,NVL(A.CALL_QULT_TEST,'N') AS CALL_QULT_TEST							/* 통화 품질 테스트 */
+		,NVL(A.DATA_PRFM,'N') AS DATA_PRFM										/* DATA 성능 */
+		,NVL(A.SCRN_TEST,'N') AS SCRN_TEST										/* 화면 테스트 */
+		,NVL(A.FUNC_TEST,'N') AS FUNC_TEST										/* 기능 테스트 */
+		,NVL(A.LOSS_EQP_YN,'N') AS LOSS_EQP_YN									/* 분실 단말기 여부 */
+		,NVL(A.RWD_RTN_OBJ_YN,'N') AS RWD_RTN_OBJ_YN							/* 보상 반납 대상 여부 */
+		,NVL(A.RENTP_YN,'N') AS RENTP_YN										/* 임대폰 여부 */
+		,NVL(A.WET_YN,'N') AS WET_YN											/* 침수 여부 */
+		,NVL(A.USIM_EQPCHG_YN,'N') AS USIM_EQPCHG_YN							/* USIM 기변 여부 */
+		,NVL(A.OTHRCO_FORGN_EQP_YN,'N') AS OTHRCO_FORGN_EQP_YN					/* 타사 해외 단말기 여부 */
+		,A.SUGG																	/* 의견 */
+		,NVL(A.EVALCNSLR_AUTCT_YN,'N') AS EVALCNSLR_AUTCT_YN					/* 평가원 인증 여부 */
+		,NVL(A.FULLSET_YN,'N') AS FULLSET_YN									/* FULLSET 여부 */
+		,A.CNSL_AMT																/* 상담 금액 */
+		,NVL(A.PRCH_CL,'N') AS PRCH_CL											/* 매입 구분 */		
+		,A.DPSTR																/* 예금주 */
+		,NVL(A.BANK_CD,' ') AS BANK_CD											/* 은행 코드 */
+		,A.ACCO_NO																/* 계좌 번호 */
+		,A.TEL_NO																/* 전화 번호 */
+		,A.ZIPCD_1 																/* 우편번호 1 */
+		,A.ZIPCD_2 																/* 우편번호 2 */
+		,A.ADDR																	/* 주소 */
+		,A.ETC_ADDR																/* 기타 주소 */
+		,A.FS_REG_USER_ID														/* 최초등록사용자ID */
+		,A.LS_CHG_USER_ID														/* 최종변경사용자ID */
+		,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.LS_CHG_USER_ID) AS USER_NM 			/* 최종변경자 */	
+		,C.PRCH_MGMT_NO															/* 매입 관리 번호 */
+		,C.EVALCNSLR_SUGG AS EVALCNSLR_SUGG 									/* 평가원 의견 */
+		,NVL(C.ADJ_AMT,0) AS ADJ_AMT											/* 조정 금액 */
+		,A.FEE_DEDC_YN															/* 요금 공제 여부 */
+		,A.SVC_NO																/* 서비스 번호 */
+		,A.SVC_MGMT_NO															/* 서비스 관리 번호 */
+		,A.IMEI																	/* IMEI */
+		,A.ETC_CMPT 															/* 기타 구성품 */
+		,' ' PRG_GB																/* 내용모름 */
+		,NVL(C.CUST_IDEA,' ') AS CUST_IDEA										/* 고객 의사 */
+		,NVL(C.AMT_RMT_YN,' ') AS AMT_RMT_YN 									/* 금액 송금 여부 */
+		,A.UPDATE_COUNT 														/* UPDATE_COUNT */
+		,A.POLY_OBJ_YN 															/* 정책 대상 여부 */
+		,A.POLY_OBJ_CD 															/* 정책 대상 코드 */
+		,NVL(C.PROGR_ST ,A.PROGR_ST) AS PROGR_ST 								/* 진행상태 */
+		/*,FBAS_GET_COMMCDNM_VAL('ZBAS_C_00490',NVL(C.PRC_ST ,A.PRC_ST)) PRC_NM*/ /* 진행상태명_UI */
+		,NVL(C.BOX_NO,A.BOX_NO) AS BOX_NO										/* 박스 번호 */
+		,A.SKN_CL																/* SKN 구분 */
+		,A.SKN_EQP_ST															/* SKN 단말기 상태 */
+		,A.SKN_JDG_AMT															/* SKN 감정 금액 */    
+    	,A.EQP_PRC 																/* 단말기 가격 */
+		,NVL(A.STRD_INCEN,0) AS STRD_INCEN  									/* 기준 인센티브 */
+	 	,NVL(A.STRD_INCEN_SCOP_AMT,0) AS STRD_INCEN_SCOP_AMT 					/* 기준 인센티브 범위 금액 */
+	 	,NVL(C.STRD_INCEN,0) AS PRCH_STRD_INCEN 								/* 기준 인센티브 */    
+		,NVL(C.SKN_JDG_CL,'') AS SKN_JDG_CL										/* SKN 감정 구분 */    
+    	,NVL(C.SKN_JDG_CL_SUB,'') AS SKN_JDG_CL_SUB 							/* SKN 감정 구분 서브 */    
+		,NVL(C.SKN_SMPL_JDG_DAMT,0) AS SKN_SMPL_JDG_DAMT						/* SKN 샘플 감정 차액 */    
+    	,'N' AS AGN_DDCT_YN 													/* 대리점차감여부 */
+	 	,C.PAY_MTHD 															/* 지급 방법 */
+	 	,C.PAY_DT 																/* 지급 일자 */   
+		,NVL(A.PRE_DC_CL,'N') AS PRE_DC_CL										/* 선 할인 구분 */
+		,NVL(C.SCRN_AFIMG_YN,'X') AS SCRN_AFIMG_YN								/* 화면 잔상 여부 */
+		,A.FST_RGSTR															/* 최초 등록자 */
+		,A.ASIANA_CARD_NO														/* 아시아나 카드 번호 */
+		,A.SCRB_MTHD 															/* 가입 방법 */
+		,NVL(C.SELL_GRADE ,A.SELL_GRADE) AS SELL_GRADE							/* 판매등급 */
+		,C.CMCT_CO																/* 통신 회사 */
+		,A.DPSTR_ENPT                                                           /* 예금주 암호화 */
+        ,A.TEL_NO_ENPT                                                          /* 전화번호 암호화 */        
+        ,A.ETC_ADDR_ENPT                                                        /* 기타 주소 암호화 */
+        ,A.ACCO_NO_ENPT                                                         /* 계좌번호 암호화 */
+        ,A.SVC_NO_ENPT                                                          /* 서비스번호 암호화 */
+   FROM TB_EP_CST_CONSULT_MGMT A
+		,TB_DEALCO B
+		,TB_EP_CST_PRCHS_MGMT C
+		,TB_EQP_MDL D 
+  WHERE A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+	AND A.CNSL_DEALCO_CD = B.DEALCO_CD
+	AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)   
+	AND A.EQP_MDL_CD = D.EQP_MDL_CD
+	AND A.DEL_YN = 'N'
+	AND B.DEL_YN = 'N'
+	AND C.DEL_YN(+) = 'N'
+	AND D.DEL_YN = 'N'  
+	AND A.SKN_CL = 'Y'
+	AND C.SKN_CL(+) = 'Y']]>
+	</select>
+	<select id="SRpetJdgTlyRegCmptLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SRpetJdgTlyRegCmptLst 재감정검수등록구성품목록조회 */
+/* IO: 김윤환,2015-09-11T09:48:17(김윤환,2015-09-11T09:48:17) */
+SELECT 
+	   A.EQP_MDL_CD													/* 단말기 모델 코드 */
+	   ,A.OUTS_MCN_CL												/* 주변 기기 구분 */
+	   /*,FBAS_GET_COMMCDNM_VAL('ZBAS_P_00030',A.DTL_CL) DTL_NM*/	/* 단말기부가상품 */
+	   ,A.QTY														/* 수량 */
+	   ,A.UPRC														/* 단가 */
+	   ,A.UPRC AS UNIT_UPRC    										/* ? 단가*/
+	   ,A.SALE_UPRC													/* 매출 단가 */
+	   ,NVL(C.NORM_QTY,0) AS NORM_QTY								/* 정상 수량 */
+	   ,NVL(C.HLD_QTY,0) AS HLD_QTY									/* 보유 수량 */
+	   ,NVL(C.SKN_SMPL_QTY,0) AS SKN_SMPL_QTY						/* SKN 샘플 수량 */
+	   ,DECODE(C.DDCT_AMT,NULL,A.UPRC*A.QTY,C.DDCT_AMT) DDCT_AMT	/* 차감 금액 */
+	   ,C.CNSL_SER_NO												/* 상담 일련 번호 */
+	   ,TO_CHAR(ADD_MONTHS(TO_DATE(B.LAUNC_DT,'YYYYMMDD'),-36),'YYYYMMDD') AS LAUNC_DT	/* 출시 일자 */
+	   ,' ' AS PRCH_MGMT_NO											/* 매입관리번호 */
+	   ,C.CNSL_MGMT_NO												/* 상담 관리 번호 */
+	   ,A.BATR_CD 													/* 배터리 코드 */
+	   ,C.PROD_CL													/* 상품 구분 */
+  FROM TB_EP_BAS_PROD_DTL A
+	   ,TB_EQP_MDL B
+	   ,(SELECT 
+				IA.EQP_MDL_CD										/* 단말기 모델 코드 */
+				,IA.CNSL_SER_NO										/* 상담 일련 번호 */
+				,IA.DTL_CL											/* 상세 구분 */
+				,IA.NORM_QTY										/* 정상 수량 */
+				,IA.HLD_QTY											/* 보유 수량 */
+				,IA.SKN_SMPL_QTY									/* SKN 샘플 수량 */
+				,IA.DDCT_AMT										/* 차감 금액 */
+				,IA.CNSL_MGMT_NO									/* 상담 관리 번호 */
+				,IB.PROD_CL 										/* 상품 구분 */
+				,IC.CNSL_DT											/* 상담 일자 */
+		   FROM TB_EP_CST_CONSULT_DTL IA
+				,TB_EQP_MDL IB
+				,TB_EP_CST_CONSULT_MGMT IC
+		  WHERE IA.CNSL_MGMT_NO = #CNSL_MGMT_NO# 					/* 조건 */
+			AND IA.CMPT_PROD_CD = IB.EQP_MDL_CD(+) 					/* 구성품 상품 코드 */
+			AND IA.CNSL_MGMT_NO = IC.CNSL_MGMT_NO
+			AND IA.DEL_YN = 'N'
+			AND IB.DEL_YN(+) = 'N'
+			AND IC.DEL_YN = 'N'
+		) C
+  WHERE A.EQP_MDL_CD = B.EQP_MDL_CD
+	AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+	AND A.OUTS_MCN_CL = C.DTL_CL(+)
+	AND A.EQP_MDL_CD = #EQP_MDL_CD# 								/* 조건 */
+	AND A.BYGRD = '1' 												/* 등급별 */
+	AND A.DEL_YN = 'N'
+	AND B.DEL_YN = 'N'
+	AND A.FRDT <= (SELECT CNSL_DT 
+					 FROM TB_EP_CST_CONSULT_MGMT
+					WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#) 			/* 조건 */
+	AND A.TODT >= (SELECT CNSL_DT 
+					 FROM TB_EP_CST_CONSULT_MGMT
+					WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#) 			/* 조건 */
+  ORDER BY 2]]>
+	</select>
+	<select id="SPrchRpetJdgTlyRegLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SPrchRpetJdgTlyRegLst 매입재감정검수등록목록조회 */
+/* IO: 김윤환,2015-09-16T19:26:46(김윤환,2015-09-11T09:42:24) */
+SELECT 
+		C.CNSL_MGMT_NO 														/* 상담 관리 번호 */
+		,C.EQP_MDL_CD  														/* 단말기 모델 코드 */
+		,D.EQP_MDL_NM 														/* 단말기 모델명 */	 
+		,C.EQP_SER_NO  														/* 상담 관리 일련 번호 */
+		,C.CNSL_DT 															/* 상담 일자 */
+		,(SELECT DEALCO_NM 
+    	    FROM TB_DEALCO 
+    	   WHERE DEALCO_CD = B.AFFIL_AGN AND DEL_YN = 'N' ) AS AFFIL_AGN_NM 	/*소속 대리점명*/
+		,B.AGN_ORG_CD  														/* 대리점 조직 코드 */
+		,B.AFFIL_AGN  														/* 소속 대리점 */
+		,A.CNSL_DEALCO_CD 													/* 상담 거래처 코드 */
+		,B.DEALCO_NM AS CNSL_DEALCO_NM 										/* 거래처 명 */
+		,C.EQP_COLOR_CD 													/* 단말기 색상 코드 */
+		,C.ONING_DT 														/* 개통 일자 */
+		,DECODE(C.EQP_ST,'A+','A','B+','B',nvl(C.EQP_ST,'선택')) AS EQP_ST 	/* 단말기 상태 */
+		,NVL(A.EQP_ST_DTAIL,'A+') AS EQP_ST_DTAIL  							/* 단말기 상태 세부 */
+		,DECODE(C.EQP_ST,'A+','A','B+','B',nvl(C.EQP_ST,'선택')) AS EQP_ST_TXT 													/* ? */
+		,C.USE_PRD_DDCT_AMT  												/* 사용 기간 차감 금액 */
+		,NVL(C.INR_CORR_YN,'N') AS INR_CORR_YN 								/* 내부 부식 여부 */
+		,NVL(C.PWR_SYS,'N') AS PWR_SYS 										/* 전원 시스템 */
+		,NVL(C.CALL_QULT_TEST,'N') AS CALL_QULT_TEST 						/* 통화 품질 테스트 */
+		,NVL(C.DATA_PRFM,'N') AS DATA_PRFM 									/* DATA 성능 */
+		,NVL(C.SCRN_TEST,'N') AS SCRN_TEST 									/* 화면 테스트 */
+		,NVL(C.FUNC_TEST,'N') AS FUNC_TEST 									/* 기능 테스트 */
+		,NVL(C.LOSS_EQP_YN,'N') AS LOSS_EQP_YN 								/* 분실 단말기 여부 */
+		,NVL(C.RWD_RTN_OBJ_YN,'N') AS RWD_RTN_OBJ_YN 						/* 보상 반납 대상 여부 */
+		,NVL(C.RENTP_YN,'N') AS RENTP_YN 									/* 임대폰 여부 */
+		,NVL(C.WET_YN,'N') AS WET_YN 										/* 침수 여부 */
+		,NVL(C.USIM_EQPCHG_YN,'N') AS USIM_EQPCHG_YN 						/* USIM 기변 여부 */
+		,NVL(C.OTHRCO_FORGN_EQP_YN,'N') AS OTHRCO_FORGN_EQP_YN 				/* 타사 해외 단말기 여부 */
+		,A.SUGG 															/* 의견 */
+		,NVL(C.EVALCNSLR_AUTCT_YN,'N') AS EVALCNSLR_AUTCT_YN 				/* 평가원 인증 여부 */
+		,NVL(C.FULLSET_YN,'N') AS FULLSET_YN 								/* FULLSET 여부 */
+		,C.PRCH_AMT AS CNSL_AMT  											/* 매입 금액 */
+		,NVL(C.PRCH_CL,'N') AS PRCH_CL 										/* 매입 구분 */		
+		,C.DPSTR  															/* 예금주 */
+		,C.DPSTR_ENPT                                                       /* 예금주 암호화 */
+		,NVL(C.BANK_CD,' ') AS BANK_CD 										/* 은행 코드 */
+		,C.ACCO_NO 															/* 계좌 번호 */
+		,C.ACCO_NO_ENPT                                                     /* 계좌 번호 암호화 */
+		,C.TEL_NO 															/* 전화 번호 */
+		,C.TEL_NO_ENPT                                                      /* 전화 번호 암ㅎ화 */
+		,C.ZIPCD_1  														/* 우편번호 1 */
+		,C.ZIPCD_2  														/* 우편번호 2 */
+		,C.ADDR 															/* 주소 */		
+		,C.ETC_ADDR 														/* 기타 주소 */
+		,C.ETC_ADDR_ENPT                                                    /* 기타 주소 암호화 */
+		,C.FS_REG_USER_ID  													/* 최초 등록 사용자 ID */
+		,C.LS_CHG_USER_ID  													/* 최종 변경 사용자 ID */
+		,(SELECT USER_NM FROM TB_USER WHERE USER_NO = C.LS_CHG_USER_ID) AS USER_NM 			/* 최종변경자 */	
+		,C.PRCH_MGMT_NO  													/* 매입 관리 번호 */
+		,C.EVALCNSLR_SUGG AS EVALCNSLR_SUGG  								/* 평가원 의견 */
+		,NVL(C.ADJ_AMT,0) AS ADJ_AMT 										/* 조정 금액 */
+		,C.FEE_DEDC_YN 														/* 요금 공제 여부 */
+		,C.SVC_NO 															/* 서비스 번호 */
+		,C.SVC_NO_ENPT                                                      /* 서비스 번호 암호화 */
+		,C.SVC_MGMT_NO  													/* 서비스 관리 번호 */
+		,C.IMEI 															/* IMEI */
+		,C.ETC_CMPT 														/* 기타 구성품 */
+		,' ' AS PRG_GB 														/* */
+		,NVL(C.CUST_IDEA,'') AS CUST_IDEA 									/* 고객 의사 */
+		,NVL(C.AMT_RMT_YN,' ') AS AMT_RMT_YN 								/* 금액 송금 여부 */
+		,A.UPDATE_COUNT	 													/* UPDATE COUNT */
+		,C.POLY_OBJ_YN 														/* 정책 대상 여부 */
+		,C.POLY_OBJ_CD 														/* 정책대상코드 */
+		,C.PROGR_ST 														/* 진행 상태 */
+		,C.BOX_NO 															/* 박스 번호 */     
+		,NVL(C.RETUR_DEALCO_CL,'0') AS RETUR_DEALCO_CL 						/* 반송 거래처 구분 */
+    	,NVL(C.PRE_DC_CL,'N') AS PRE_DC_CL 									/* 선 할인 구분 */    
+    	,C.SKN_CL  															/* SKN 구분 */
+    	,C.SKN_EQP_ST  														/* SKN 단말기 상태 */
+    	,A.SKN_JDG_AMT 														/* SKN 감정 금액 */
+    	,A.EQP_PRC	 														/* 단말기 가격 */
+    	,NVL(A.STRD_INCEN,0) AS STRD_INCEN  								/* 기준 인센티브 */
+	  	,NVL(A.STRD_INCEN_SCOP_AMT,0) AS STRD_INCEN_SCOP_AMT 				/* 기준 인센티브 범위 금액 */
+	  	,NVL(C.STRD_INCEN,0) AS PRCH_STRD_INCEN 						/* 기준 인센티브 */
+	  	,NVL(C.SKN_JDG_CL,'') AS SKN_JDG_CL 								/* SKN 감정 구분 */
+	  	,NVL(C.SKN_JDG_CL_SUB,'') AS SKN_JDG_CL_SUB 						/* SKN 감정 구분 서브 */	 
+	  	,NVL(C.SKN_SMPL_JDG_DAMT,0) AS SKN_SMPL_JDG_DAMT 					/* SKN 샘플 감정 차액 */  
+	  	/*,DECODE(NVL(C.AGN_DDCT_YN,'N'),'Y','1','0') AS AGN_DDCT_YN*/ 			/* 대리점 차감 여부 */        
+	  	,NVL(C.AGN_DDCT_YN,'N') AS AGN_DDCT_YN 								/* 대리점 차감 여부 */
+		,NVL(C.SCRN_AFIMG_YN,'X') AS SCRN_AFIMG_YN 							/* 화면 잔상 여부 */		
+		,C.FST_RGSTR 														/* 최초 등록자 */
+		,C.ASIANA_CARD_NO  													/* 아시아나 카드 번호 */
+		,NVL(C.SELL_GRADE , A.SELL_GRADE) AS SELL_GRADE   					/* 판매등급 */
+		,C.CMCT_CO															/* 통신 회사 */
+   FROM TB_EP_CST_CONSULT_MGMT A  											/* 상담관리 */
+		,TB_DEALCO B 														/* 거래처 */
+		,TB_EP_CST_PRCHS_MGMT C 											/* 매입관리 */
+		,TB_EQP_MDL D 														/* 단말기정보 */
+  WHERE A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+	AND A.CNSL_DEALCO_CD = B.DEALCO_CD
+	AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)  
+	AND A.EQP_MDL_CD = D.EQP_MDL_CD
+	AND A.DEL_YN = 'N'
+	AND B.DEL_YN = 'N'
+	AND C.DEL_YN(+) = 'N'  
+	AND D.DEL_YN = 'N'  
+	AND A.SKN_CL = 'Y'
+	AND C.SKN_CL(+) = 'Y']]>
+	</select>
+	<select id="SPrchRpetJdgTlyRegCmptLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.SPrchRpetJdgTlyRegCmptLst 매입재감정검수등록구성품목록조회 */
+/* IO: 김윤환,2015-09-15T11:21:21(김윤환,2015-09-11T09:46:38) */
+SELECT 
+		A.EQP_MDL_CD 														/*단말기 모델 코드*/
+		,A.OUTS_MCN_CL														/*주변 기기 구분(단말기부가상품)*/
+		/*,FBAS_GET_COMMCDNM_VAL('ZBAS_P_00030', A.OUTS_MCN_CL) DTL_NM*/ 	/*단말기부가상품*/
+		,A.QTY																/*수량*/
+		,A.UPRC																/*단가*/
+		,A.UPRC AS UNIT_UPRC    											/*단가2*/
+		,A.SALE_UPRC														/*매출 단가*/
+		,NVL(C.NORM_QTY,0) AS NORM_QTY										/* 정상 수량 */
+		,NVL(C.HLD_QTY,0) AS HLD_QTY										/* 보유 수량 */
+		,NVL(C.SKN_SMPL_QTY,0) AS SKN_SMPL_QTY								/* SKN 샘플 수량 */
+		,DECODE(C.DDCT_AMT,NULL,A.UPRC*A.QTY,C.DDCT_AMT) AS DDCT_AMT
+		,C.PRCH_SER_NO														/* 매입 일련 번호 */
+		,TO_CHAR(ADD_MONTHS(TO_DATE(B.LAUNC_DT,'YYYYMMDD'),-36),'YYYYMMDD') AS LAUNC_DT /* 출시 일자 */
+		,' ' AS PRCH_MGMT_NO
+		,C.CNSL_MGMT_NO														/* 상담 관리 번호 */
+		,A.BATR_CD															/*배터리 코드*/ 
+		,C.PROD_CL															/* 상세 구분 */        
+   FROM TB_EP_BAS_PROD_DTL A 												/* 상품관리상세 */
+		,TB_EQP_MDL B
+		,( SELECT 
+				  IC.EQP_MDL_CD 											/* 단말기 모델 코드 */
+				  ,IA.PRCH_SER_NO											/* 매입 일련 번호 */
+				  ,IA.DTL_CL												/* 상세 구분 */
+				  ,IA.NORM_QTY												/* 정상 수량 */
+				  ,IA.HLD_QTY												/* 보유 수량 */
+				  ,IA.SKN_SMPL_QTY											/* SKN 샘플 수량 */
+				  ,IA.DDCT_AMT												/* 차감 금액 */
+				  ,IC.CNSL_MGMT_NO											/* 상담 관리 번호 */
+				  ,IB.PROD_CL												/* 상품 구분 */
+				  ,IC.CNSL_DT												/* 상담 일자 */
+		     FROM TB_EP_CST_PRCHS_DTL IA 									/* TB_매입관리상세 */
+				  ,TB_EQP_MDL IB
+				  ,TB_EP_CST_PRCHS_MGMT IC 									/* TB_매입관리 */
+		    WHERE IA.PRCH_MGMT_NO = IC.PRCH_MGMT_NO
+			  AND IA.CMPT_PROD_CD = IB.EQP_MDL_CD(+)
+			  AND IC.CNSL_MGMT_NO = #CNSL_MGMT_NO# 							/* 조건 */
+			  AND IA.DEL_YN = 'N'
+			  AND IB.DEL_YN(+) = 'N'
+			  AND IC.DEL_YN = 'N'
+	     ) C
+  WHERE A.EQP_MDL_CD = B.EQP_MDL_CD
+    AND A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+    AND A.OUTS_MCN_CL = C.DTL_CL(+)
+    AND A.EQP_MDL_CD = #EQP_MDL_CD# 										/* 조건 */
+    AND A.BYGRD = '1'
+    AND A.DEL_YN = 'N'
+    AND B.DEL_YN = 'N'
+    AND A.FRDT <= C.CNSL_DT 
+    AND A.TODT >= C.CNSL_DT 
+  ORDER BY 2]]>
+	</select>
+	<insert id="IRpetTlyProgrTbEpCstPrchsMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.IRpetTlyProgrTbEpCstPrchsMgmt 재검수진행매입관리정보등록 */
+/* IO: 김윤환,2015-09-17T11:10:18(김윤환,2015-09-14T15:56:30) */
+INSERT 
+  INTO TB_EP_CST_PRCHS_MGMT 
+  (
+    PRCH_MGMT_NO 					/* 매입 관리 번호 */
+    ,CNSL_MGMT_NO 					/* 상담 관리 번호 */
+    ,EQP_MDL_CD 					/* 단말기모델코드*/         
+    ,EQP_SER_NO 					/* 단말기 일련 번호 */         
+    ,PRCH_DT						/* 매입 일자 */
+    ,CNSL_DT      					/* 상담 일자 */    
+    ,CNSL_DEALCO_CD					/* 상담 거래처 코드 */      
+    ,EQP_COLOR_CD					/* 단말기 색상 코드 */        
+    ,ONING_DT      					/* 개통 일자 */    
+    ,EQP_ST          				/* 단말기 상태 */
+    ,USE_PRD_DDCT_AMT 				/* 사용 기간 차감 금액 */
+    ,INR_CORR_YN    				/* 내부 부식 여부 */
+    ,PWR_SYS       					/* 전원 시스템 */
+    ,CALL_QULT_TEST         		/* 통화 품질 테스트 */
+    ,DATA_PRFM         				/* DATA 성능 */
+    ,SCRN_TEST          			/* 화면 테스트 */
+    ,FUNC_TEST     					/* 기능 테스트 */
+    ,LOSS_EQP_YN         			/* 분실 단말기 여부 */
+    ,RWD_RTN_OBJ_YN       			/* 보상 반납 대상 여부 */
+    ,RENTP_YN        				/* 임대폰 여부 */
+    ,WET_YN        					/* 침수 여부 */
+    ,USIM_EQPCHG_YN         		/* USIM 기변 여부 */
+    ,OTHRCO_FORGN_EQP_YN        	/* 타사 해외 단말기 여부 */
+    ,EVALCNSLR_SUGG            		/* 평가원 의견 */    
+    ,EVALCNSLR_AUTCT_YN      		/* 평가원 인증 여부 */    
+    ,FULLSET_YN      				/* FULLSET 여부 */    
+    ,PRCH_AMT						/* 매입 금액 */    
+    ,PRCH_CL  						/* 매입 구분 */
+    ,DPSTR							/* 예금주 */
+    ,BANK_CD						/* 은행 코드 */
+    ,ACCO_NO						/* 계좌 번호 */
+    ,TEL_NO							/* 전화 번호 */
+    ,ZIPCD_1						/* 우편번호 1 */
+    ,ZIPCD_2						/* 우편번호 2 */
+    ,ADDR							/* 주소 */
+    ,ETC_ADDR						/* 기타 주소 */        
+    ,AMT_RMT_YN						/* 금액 송금 여부 */
+    ,ADJ_AMT     					/* 조정 금액 */      
+    ,DEL_YN          				/* 삭제 여부 */
+    ,UPDATE_COUNT         			/* UPDATE COUNT */
+    ,FS_REG_DTM         			/* 최초 등록 일시 */    
+    ,FS_REG_USER_ID					/* 최초 등록 사용자 ID */    
+    ,LS_CHG_DTM						/* 최종 변경 일시 */
+    ,LS_CHG_USER_ID					/* 최종 변경 사용자 ID */    
+    ,FEE_DEDC_YN					/*요금 공제 여부*/
+    ,SVC_NO							/* 서비스 번호 */
+    ,SVC_MGMT_NO					/* 서비스 관리 번호 */
+    ,IMEI							/* IMEI */
+    ,ETC_CMPT						/* 기타 구성품 */
+    ,INPT							/* 검수자 */
+    ,TLY_DT							/* 검수 일자 */
+    ,POLY_OBJ_YN					/* 정책 대상 여부 */
+    ,POLY_OBJ_CD					/* 정책 대상 코드 */
+    ,PROGR_ST						/* 진행 상태 */
+    ,BOX_NO							/* 박스 번호 */
+    ,SKN_CL							/* SKN 구분 */
+    ,SKN_EQP_ST						/* SKN 단말기 상태 */
+    ,SKN_JDG_CL						/* SKN 구분 */
+    ,SKN_JDG_AMT					/* SKN 감정 금액 */
+    ,SKN_SMPL_JDG_DAMT				/* SKN 샘플 감정 차액 */
+    ,AGN_DDCT_YN					/* 대리점 차감 여부 */
+    ,EQP_ST_DTAIL					/* 단말기 상태 세부 */
+    ,SKN_JDG_CL_SUB					/* SKN 감정 구분 서브 */
+    ,PAY_MTHD						/* 지급 방법 */
+    ,PAY_DT							/* 지급 일자 */
+    ,SCRN_AFIMG_YN					/* 화면 잔상 여부 */
+    ,STRD_INCEN						/* 기준 인센티브 */
+    ,UKEY_EQP_PRC					/* UKEY 단말기 가격 */
+    ,UKEY_STRD_INCEN				/* UKEY 기준 인센티브 */
+    ,UKEY_STRD_INCEN_SCOP_AMT		/* UKEY 기준 인센티브 범위 금액 */
+    ,FST_RGSTR						/* 최초 등록자 */
+    ,ASIANA_CARD_NO					/* 아시아나 카드 번호 */
+    ,SCRB_MTHD						/* 가입 방법 */
+    ,SELL_GRADE						/* 판매 등급 */
+    ,CMCT_CO						/* 통신 회사 */
+    ,DPSTR_ENPT                     /* 예금주 암호화 */
+    ,TEL_NO_ENPT                    /* 전화번호 암호화 */    
+    ,ETC_ADDR_ENPT                  /* 상세주소 암호화 */
+    ,ACCO_NO_ENPT                   /* 계좌번호 암호화 */
+    ,SVC_NO_ENPT                    /* 서비스번호 암호화 */
+  ) VALUES (
+    #PRCH_MGMT_NO#
+    ,#CNSL_MGMT_NO#
+    ,#EQP_MDL_CD#        
+    ,#EQP_SER_NO#       
+    ,TO_CHAR(SYSDATE,'YYYYMMDD')
+    ,NVL(#CNSL_DT#,TO_CHAR(SYSDATE,'YYYYMMDD'))
+    ,#CNSL_DEALCO_CD#      
+    ,#EQP_COLOR_CD#
+    ,#ONING_DT#
+    ,#EQP_ST_TXT#
+    ,#USE_PRD_DDCT_AMT#
+    ,#INR_CORR_YN#
+    ,#PWR_SYS#
+    ,#CALL_QULT_TEST#
+    ,#DATA_PRFM#
+    ,#SCRN_TEST#
+    ,#FUNC_TEST#     
+    ,#LOSS_EQP_YN#    
+    ,#RWD_RTN_OBJ_YN#
+    ,#RENTP_YN#
+    ,#WET_YN#
+    ,#USIM_EQPCHG_YN#
+    ,#OTHRCO_FORGN_EQP_YN#
+    ,#EVALCNSLR_SUGG#    
+    ,#EVALCNSLR_AUTCT_YN#    
+    ,#FULLSET_YN#    
+    ,#CNSL_AMT#    
+    ,'Y'        
+    ,#DPSTR#    
+    ,#BANK_CD#    
+    ,#ACCO_NO#    
+    ,#TEL_NO#    
+    ,#ZIPCD_1#    
+    ,#ZIPCD_2#    
+    ,#ADDR#    
+    ,#ETC_ADDR#              
+    ,#AMT_RMT_YN#    
+    ,#ADJ_AMT#    
+    ,'N'    
+    ,1    
+    ,SYSDATE    
+    ,#USER_ID#    
+    ,SYSDATE    
+    ,#USER_ID#        
+    ,#FEE_DEDC_YN#    
+    ,#SVC_NO#    
+    ,#SVC_MGMT_NO#    
+    ,#IMEI#     
+    ,#ETC_CMPT#    
+    ,#USER_ID#
+    ,TO_CHAR(SYSDATE,'YYYYMMDD')    
+    ,#POLY_OBJ_YN#    
+    ,#POLY_OBJ_CD#    
+    ,'13'
+    ,#BOX_NO#  
+    ,'Y'  
+    ,#SKN_EQP_ST#  
+    ,#SKN_JDG_CL#
+    ,#SKN_JDG_AMT#  
+    ,#SKN_SMPL_JDG_DAMT#  
+    ,#AGN_DDCT_YN#
+    ,DECODE(#EQP_ST_TXT#,'A',#EQP_ST_DTAIL#,'B',#EQP_ST_DTAIL#,'')	  
+    ,DECODE(#SKN_JDG_CL#,'01',#SKN_JDG_CL_SUB#,'')	  
+    ,#PAY_MTHD#  
+    ,#PAY_DT#  
+    ,#SCRN_AFIMG_YN#  
+    ,#STRD_INCEN#  
+    ,#EQP_PRC#  
+    ,#STRD_INCEN#  
+    ,#STRD_INCEN_SCOP_AMT#  
+    ,#FST_RGSTR#	  
+    ,#ASIANA_CARD_NO#  
+    ,#SCRB_MTHD#	  
+    ,#SELL_GRADE#
+    ,#CMCT_CO#
+    ,#DPSTR_ENPT#                     /* 예금주 암호화 */
+    ,#TEL_NO_ENPT#                    /* 전화번호 암호화 */    
+    ,#ETC_ADDR_ENPT#                  /* 상세주소 암호화 */
+    ,#ACCO_NO_ENPT#                   /* 계좌번호 암호화 */
+    ,#SVC_NO_ENPT#                    /* 서비스번호 암호화 */
+  )]]>
+	</insert>
+	<insert id="IRpetTlyProgrTbEpCstPrchsDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.IRpetTlyProgrTbEpCstPrchsDtl 재검수진행매입상세정보등록 */
+/* IO: 김윤환,2015-10-12T16:11:14(김윤환,2015-09-14T15:57:21) */
+INSERT 
+  INTO TB_EP_CST_PRCHS_DTL 
+  (
+	PRCH_MGMT_NO 			/* 매입 관리 번호 */         
+	,PRCH_SER_NO			/* 매입 일련 번호 */         
+	,DTL_CL					/* 상세 구분 */
+	,CL_CD					/* 구분 코드 */
+	,PRCH_QTY				/* 매입 수량 */
+	,NORM_QTY				/* 정상 수량 */
+	,HLD_QTY				/* 보유 수량 */
+	,DDCT_AMT				/* 차감 금액 */
+	,DEL_YN
+	,UPDATE_COUNT
+	,FS_REG_DTM
+	,FS_REG_USER_ID
+	,LS_CHG_DTM
+	,LS_CHG_USER_ID
+	,CMPT_PROD_CD			/* 구성품 상품 코드 */
+	,PRCH_UPRC				/* 매입 단가 */
+  	,SKN_SMPL_QTY 			/* SKN 샘플 수량 */
+  ) VALUES (    
+	#PRCH_MGMT_NO#         
+	,(SELECT NVL(MAX(TO_NUMBER(PRCH_SER_NO)),0)+1 AS PRCH_SER_NO 
+        FROM TB_EP_CST_PRCHS_DTL 
+       WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#)        
+	,#OUTS_MCN_CL#
+	,'1'    
+	,#QTY#
+	,#NORM_QTY#
+	,#HLD_QTY#
+	,#DDCT_AMT#
+	,'N'
+	,1
+	,SYSDATE
+	,#USER_ID#
+	,SYSDATE
+	,#USER_ID#
+	,#BATR_CD#
+	,#UNIT_UPRC#
+  	,#SKN_SMPL_QTY#
+  )]]>
+	</insert>
+	<update id="URpetTlyTbEpCstConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPTlyReg.URpetTlyTbEpCstConsultMgmt 재검수대상상담관리정보수정 */
+/* IO: 김윤환,2015-09-14T15:58:12(김윤환,2015-09-14T15:58:12) */
+UPDATE TB_EP_CST_CONSULT_MGMT
+   SET EQP_MDL_CD = #EQP_MDL_CD#  		/* 단말기 모델 코드 */
+   	   ,EQP_SER_NO = #EQP_SER_NO#		/* 단말기 일련 번호 */
+       ,PRCH_CL = 'Y'					/* 매입 구분 */
+       ,UPDATE_COUNT = UPDATE_COUNT+1
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #USER_ID#
+       ,PROGR_ST = '13'
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+</sqlMap>

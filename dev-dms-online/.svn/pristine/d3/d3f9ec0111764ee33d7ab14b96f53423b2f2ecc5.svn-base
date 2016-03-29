@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPSaleXclMgmt">
+	<insert id="ISaleXclSlip" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSaleXclMgmt.ISaleXclSlip 판매정산관리전표등록 */
+/* IO: 이민재,2015-10-21T16:04:16(이민재,2015-10-21T14:29:45) */
+MERGE  INTO TB_EP_EQP_SALE
+USING  DUAL
+   ON  ( 
+         GNRL_SELL_NO = #GNRL_SELL_NO# 
+         AND GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#
+       )
+ WHEN  MATCHED THEN
+       UPDATE 
+          SET  SALE_AMT = #SELL_PRC#
+              ,LS_CHG_USER_ID = #USERNO#
+              ,LS_CHG_DTM = SYSDATE
+ WHEN  NOT MATCHED THEN
+       INSERT
+             (
+              GNRL_SELL_NO         /* 일반 판매 번호 */
+             ,GNRL_SELL_CHG_SEQ    /* 일반 판매 변경 순번 */
+             ,SALE_AMT             /* 매출 금액 */
+             ,DEL_YN               /* 삭제 여부 */
+             ,FS_REG_USER_ID       /* 최초등록사용자ID */
+             ,FS_REG_DTM           /* 최초등록일시 */
+             ,LS_CHG_USER_ID       /* 최종변경사용자ID */
+             ,LS_CHG_DTM           /* 최종변경일시 */
+             )
+       VALUES
+             (
+              #GNRL_SELL_NO#       /* 일반 판매 번호 */
+             ,#GNRL_SELL_CHG_SEQ#  /* 일반 판매 변경 순번 */
+             ,#SELL_PRC#           /* 매출 금액 */
+             ,'N'                  /* 삭제 여부 */
+             ,#USERNO#             /* 최초등록사용자ID */
+             ,SYSDATE              /* 최초등록일시 */
+             ,#USERNO#             /* 최종변경사용자ID */
+             ,SYSDATE              /* 최종변경일시 */       
+             )]]>
+	</insert>
+</sqlMap>

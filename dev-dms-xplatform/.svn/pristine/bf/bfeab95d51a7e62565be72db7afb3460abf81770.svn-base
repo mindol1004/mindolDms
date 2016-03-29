@@ -1,0 +1,1483 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  comApp.xjs
+ * 03. js 설명 :  공통 Application관련 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+/************************************************************************************************
+ * gfn_transaction                      : transaction을 공통으로 처리하기 위한 함수.
+ * _gfn_callBack                        : transaction 수행 후 callBack을 공통으로 처리하기 위한 함수.
+ * _gfn_callBackNoErrMsg                : transaction 수행 후 callBack을 공통으로 처리하기 위한 함수(에러메시지 없음)
+ * gfn_setInitForm                      : 모든 Form 초기 로딩시 공통 로직 처리
+ * gfn_setInitPop                       : 모든 popup 초기 로딩시 공통 로직 처리
+ * _gfn_gridOnheadclick                 : 그리드 정렬 공통함수 설정(기본설정)
+ * gfn_formBeforeOnClose                : 폼내 데이터셋 변경여부에 따라 Form Close여부 리턴
+ * gfn_setFormOnkeyUp                   : 단축키설정(Debug View) Onkeyup 함수 추가 
+ * gfn_shotKey_onkeyup                  : 화면 공통 ShotKey설정
+ * gfn_message                          : 메세지 코드에 따른 실제 메세지값을 찾은 후 팝업창을	
+                                          생성해서 해당 값을 보여주는 함수
+ * gfn_getMsg                           : 메세지 코드에 따른 실제 메세지값을 찾는 함수
+ * gfn_rdPrint                          : Report Disigner 연동
+ * gfn_fileDialog                       : 시스템 기본 FileDialog를 호출한다.
+ * gfn_beforeFormCloseCheck             : 화면Close전에 처리할 공통내용이 있으면 처리
+ * gfn_beforeFormCloseConfirm           : 변경여부에 따라 Confirm창을 호출하고 결과를 리턴
+ * gfn_getUserInfo                      : 로그인사용자정보
+ * gfn_setGridTitleCount                : 서브타이틀(Static)에 Dataset row count표시
+ * gfn_setGridTitleCountPaging          : 서브타이틀(Static)에 Dataset row count표시(페이징)
+ * gfn_toggleGridFilter                 : Grid Head 클릭시 Grid Filter적용 활성화/비활성화 
+ * gfn_getCodeDs                        : 그룹코드에 해당하는 코드를 대상 데이터셋에 복사한다.
+ * gfn_searchSecureInfo                 : 개인정보 조회
+ * gfn_setParam                         : 인자를 넘겨줄 경우에 넘겨주는 규칙대로 인자/값을 설정
+ * gfn_getMchtInfo                      : MCHT_NO에 해당하는 정보를 셋팅
+ * gfn_setPosition2All                  : 상하좌우 포지션2 정보를 셋팅
+ * gfn_setPosition2                     : 좌우 포지션2 정보를 셋팅
+************************************************************************************************/
+
+/************************************************************************************************
+ * Function : transaction을 공통으로 처리하기 위한 함수.
+ * @param   : sSvcID - Transaction을 구분하기 위한 ID
+              sTrID  - Transaction을 구분하기 위한 ID(서버용)
+              sPtrn  - Transaction을 거래 유형을 식별하는 한자리 값
+						- C : 입력, R : 조회, U : 수정, D: 삭제, (복합 유형의 거래는 대표 거래 구분코드 설정)
+			  sInputDs - Transaction을 요청할 때 입력 값으로 보낼 Dataset ID
+			             (a=b의 형태로 입력하고, 빈칸으로 구분)
+						 sInputDs에 각각의 Dataset id뒤에 ':U', ':A', ':N' 의 옵션이 붙을 수 있습니다.
+                         ':U' 는 갱신된 내용만을 Input Dataset으로 보내며, ':A' 는 모든 정보를 보냅니다. 
+                         ':N' 은 현재 Delete를 제외한 Data를 Normal 상태로 보냅니다. 
+                         지정하지 않는 Dataset은 Normal로 동작합니다.
+			  sOutputDs - Transaction의 처리 결과를 받을 Dataset ID
+			              (a=b의 형태로 입력하고, 빈칸으로 구분)
+			  sArgs - Transaction을 위한 인자값
+			          (a=b의 형태로 입력하고, 빈칸으로 구분)
+			  sCallBackFnc - Transaction의 결과를 돌려줄 함수의 이름
+			  
+			  bAsync - 비동기 여부를 지정(Default : true)
+			  bWaitCursor - 통신 중에 WaitCursor를 보여줄지 여부(Default : true) 
+			                bAsync = false에는 동작하지 않음.
+			  iHttptimeout - HTTP 통신 시 Wait Time(초)를 설정(Default : gv_HttpTimeout)
+              nDataType   - 전송할 형태를 지정합니다. 
+	                        Default : gv_DataType - 0 (XML 타입)
+	                        0(XML 타입),1(Binary 타입), 2(SSV 타입)
+	          bCompress - 통신시 PostData를 압축할지 여부를 지정합니다.(Default : false)
+	          bErrorMsg - 서버쪽 에러메시지창 출력여부(Default : true) 
+ * Return   : callback
+************************************************************************************************/
+
+var ncEndDate;
+var ncMsgFlag;
+var ncMsgId;
+var ncMsg;
+
+var page = 1;
+var page_size = 50;
+var total_record_cnt = 0;
+var bLastIndexUse = false; 
+var wasInstanceId = "";
+
+var objID;
+var objSearchDivId= ""; // form내 search Div id 
+
+function gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc, bAsync, bWaitCursor, iHttptimeout, nDataType, bCompress, bErrorMsg)
+{
+	if ( gfn_isEmpty(sSvcID) || gfn_isEmpty(sTrID) ) return;
+	
+    if (gfn_isEmpty(sPtrn)) sPtrn = "R";
+    if (gfn_isEmpty(bAsync)) bAsync = true;
+    if (gfn_isEmpty(bWaitCursor)) bWaitCursor = true;
+    if (gfn_isEmpty(iHttptimeout)) iHttptimeout = gv_HttpTimeout;
+    //if (gfn_isEmpty(nDataType)) nDataType = gv_DataType;
+    nDataType = gv_DataType; // 전역변수에 의한 통신방식으로 변경 2015.02.09
+    if (gfn_isEmpty(bCompress)) bCompress = false;
+    if (gfn_isEmpty(bErrorMsg)) bErrorMsg = true;
+    
+ 	var sRealTranID = sSvcID + DELIMITER_TRANSACTION + sCallBackFnc;
+ 	var sCallSvc = (sTrID == "PSCLginOp_pLgin" || sTrID == "PSCLginOp_pLgout" || sTrID == "PSCUserMgmt_pChgPwd")? "/login.xpf" : "/dms.xpf" ;
+ 	var sRealURL = gv_ServiceUrl + "::" + gds_svcconfig.lookup("DOMAIN_CD", gv_domainCd, gv_RunMode+"Url") + sCallSvc;
+ 	//var sRealURL    = application.services[gv_ServiceUrl].url + "/spc.xpf";
+ 	application.httptimeout = iHttptimeout;
+
+ 	try {
+		form.setWaitCursor(bWaitCursor, true);
+ 	} catch(e){}
+ 	
+	//공통파라메타	
+    /* 요청
+        항목명              	필드명          필드설명
+        ---------------------------------------------------------------------------------------------
+        글로벌 ID           	globId          시스템일시(17)+환경구분코드(1)+시스템코드(2)+채널코드(4)+회사코드(3)+일련번호(2)
+													ex)20140707140413546 + R + CL + XIUI + HPC + 00"
+        PC IP주소           	ipad            IP 주소
+        PC MAC주소          	macAddr         Mac 주소
+        거래단말번호       	trnTrnmNo       단말번호 : 회사코드(3)+단말구분(2)+일련번호(4) 
+                                                (HPC단말거래가 아닌 경우 공백, 이부분에 대해 Xplatform담당자와 상의필요)
+        SSO 세션 KEY        	ssoSesnKey      SSO 제공, Xplatform 셋팅
+        환경구분코드       	envDvcd         L:로컬, D:개발, T:테스트, R:운영
+        전문요청일시       	ncStartDate     거래요청시각을 YYYYMMDDHHMISSsss 형식으로 기재
+        전문버전구분코드   	mesgVrsnDvcd    표준UI연동정의서버전 예: v0.99->099, v1.00 -> 100, v1.01 -> 101
+        거래코드            	ncTrId          호출할 서비스의 거래코드
+        화면번호            	scrnNo          통합단말 화면번호
+        거래유형구분코드   	trnPtrnDvcd     전문의 거래 유형을 식별하는 한자리 값
+													- C : 입력, R : 조회, U : 수정, D: 삭제, (복합 유형의 거래는 대표 거래 구분코드 설정)
+        회사코드            	compCd          파리크라상, 베스킨라빈스코리아등(취득할 수 없으시에는 공백으로 전송)
+        부서코드            	deptCd          사용자 소속부서코드(취득할 수 없으시에는 공백으로 전송)
+        부점코드            	brCd            사용자 소속부점코드(취득할 수 없으시에는 공백으로 전송)
+        사용자번호          	userNo          사용자 번호 또는 사용자 ID(취득할 수 없으시에는 공백으로 전송)
+        사용자로케일        	userLocale      최초 시스템으로 넘어온 Locale정보(ko_KR, en_US등)
+        CTI 여부             	ctiYn           단말에서 설정(별도의 설정이 없다면 무조건'N')
+                                                - Y : CTI 단말, N: 지점 단말
+     * 응답
+        항목명              	필드명         필드설명
+        ---------------------------------------------------------------------------------------------
+        전문응답일시        	ncEndDate       거래요청 응답시각을 YYYYMMDDHHMISSsss 형식으로 기재
+        거래정상처리여부   	ncMsgFlag       정상처리여부. 예: 정상이며 'OK', 에러이면 'ERROR'
+        메시지 ID           	ncMsgId
+        메시지 내용         	ncMsg
+    */
+    //응답 초기화
+    ncEndDate 	= "";
+	ncMsgFlag 	= "";
+	ncMsgId		= "";
+	ncMsg		= "";
+	
+	gfn_message("B","");	//하단 메시지 clear
+
+	var sTodayFullTime = gfn_todayFullTime();			//시스템일시
+	var nRandomNum = Math.floor(Math.random() * 100);	//일련번호
+	var sSerialNo = gfn_padRightB(nRandomNum, 2, "0");
+
+	//시스템일시 +환경구분코드(1)+시스템코드(2)+채널코드(4)+회사코드(3)+일련번호	
+	var globId   		= sTodayFullTime + "RCLXIUIHPC"+ sSerialNo; 
+	var ipad   			= gv_IPAddress;
+	var macAddr  		= gv_MacAddress;
+	var trnTrnmNo		= ""; 
+	var ssoSesnKey  	= ""; 
+	var envDvcd     	= gfn_left(gv_RunMode,1);
+	var ncStartDate		= sTodayFullTime;
+	var mesgVrsnDvcd	= "053";
+	var ncTrId          = sTrID;
+	var scrnNo          = objID; //comAutr objId사용 this.getOwnerFrame().form.name;
+	var trnPtrnDvcd     = sPtrn;
+	var compCd			= "";
+	var deptCd			= "";
+	var brCd            = "";
+	var	userNo          = gfn_getUserInfo("USER_NO");  
+	var userLocale		= gv_UserLocale;
+	var ctiYn			= "N";
+	
+	sArgs  = sArgs.replace(null, "").replace("null", "").replace("undefined", "");
+	sArgs += " globId="+wrapQuote(globId);
+	sArgs += " ipad="+wrapQuote(ipad);
+	sArgs += " macAddr="+wrapQuote(macAddr);
+	sArgs += " trnTrnmNo="+wrapQuote(trnTrnmNo);
+	sArgs += " ssoSesnKey="+wrapQuote(gds_user.getColumn(0,'SESS_NO'));
+	sArgs += " envDvcd="+wrapQuote(envDvcd);
+	sArgs += " ncStartDate="+wrapQuote(ncStartDate);
+	sArgs += " mesgVrsnDvcd="+wrapQuote(mesgVrsnDvcd);
+	sArgs += " ncTrId="+wrapQuote(ncTrId);
+	sArgs += " scrnNo="+wrapQuote(scrnNo);
+	sArgs += " trnPtrnDvcd="+wrapQuote(trnPtrnDvcd);
+	sArgs += " compCd="+wrapQuote(compCd);
+	sArgs += " deptCd="+wrapQuote(deptCd);
+	sArgs += " brCd="+wrapQuote(brCd);
+	sArgs += " userNo="+wrapQuote(userNo);
+	sArgs += " userLocale="+wrapQuote(userLocale);
+	sArgs += " ctiYn="+wrapQuote(ctiYn);
+	sArgs += " page="+wrapQuote(page);
+	sArgs += " page_size="+wrapQuote(page_size);
+	//sArgs += " reqBrndCd="+wrapQuote(gds_user.getColumn(0,'REQ_BRND_CD'));
+	//sArgs += " reqChnlCd="+wrapQuote(gds_user.getColumn(0,'REQ_CHNL_CD'));
+	sArgs += " isBckOffice="+wrapQuote("Y");
+	
+
+// trace("sRealTranID==="+sRealTranID);
+// trace("sRealURL==="+sRealURL);
+// trace("sInputDs==="+sInputDs);
+// trace("sOutputDs==="+sOutputDs);
+// trace("bAsync==="+bAsync);
+// trace("nDataType==="+nDataType);
+// trace("bCompress==="+bCompress);
+// trace("sArgs==="+sArgs);
+
+	if (bErrorMsg == true){
+		transaction(sRealTranID, sRealURL, sInputDs, sOutputDs, sArgs, "_gfn_callBack", bAsync, nDataType, bCompress);
+	} else {
+		transaction(sRealTranID, sRealURL, sInputDs, sOutputDs, sArgs, "_gfn_callBackNoErrMsg", bAsync, nDataType, bCompress);
+	}
+}
+
+/************************************************************************************************
+ * Function : transaction 수행 후 callBack을 공통으로 처리하기 위한 함수.
+ * @param   : sSvcID - Transaction을 구분하기 위한 ID
+			  iErrorCode - Transaction Return Error Code
+                         - ErrorCode가 0 이상일때에는 정상처리로 처리된 입력 DataSet의 상태는
+                           Normal로 변경되며,Binding된 Component가 Redraw 됩니다.
+                         - ErrorCode가 0 미만의 음수일때에는 실패로 처리되며 처리된 
+                           입력 DataSet의 상태는 변경되지 않습니다.
+			  sErrorMsg - Transaction Return Error Message
+ * Return   : callback
+************************************************************************************************/
+function _gfn_callBack(sRealTranID, iErrorCode, sErrorMsg)
+{
+ 	//trace("sRealTranID ==>> "+sRealTranID+" : iErrorCode ==>> "+iErrorCode+" : sErrorMsg ==>> "+sErrorMsg);
+ 	//trace("ncMsgFlag ==>> "+ncMsgFlag+" : ncMsgId ==>> "+ncMsgId+" : ncMsg ==>> "+ncMsg);
+ 	
+	//this.enable = true;
+ 	try {
+		form.setWaitCursor(false, true);
+ 	} catch(e){}
+ 		
+	application.httptimeout = gv_HttpTimeout;
+	
+	//alert(ncMsgId+"//"+ncMsg);
+	//alert(iErrorCode+"//"+sErrorMsg);
+	
+	//공통 메시지처리
+	if ( iErrorCode == 0 ) {
+		gfn_message("B",ncMsg);
+	} else if ( iErrorCode == -200 ) {
+		gfn_message("A","DMS00030","E");
+	} else {
+		gfn_message("A",ncMsg,"E");
+	}
+			
+	//[0]:sSvcID, [1]:sCallBack
+	var arrTemp = String(sRealTranID).split(DELIMITER_TRANSACTION);
+
+	if(!gfn_isNull(arrTemp[1]))	{
+		eval(arrTemp[1] + "(arrTemp[0], iErrorCode, sErrorMsg, ncMsgId, ncMsg)");
+	}
+}
+
+/************************************************************************************************
+ * Function : transaction 수행 후 callBack을 공통으로 처리하기 위한 함수.
+ * @param   : sSvcID - Transaction을 구분하기 위한 ID
+			  iErrorCode - Transaction Return Error Code
+                         - ErrorCode가 0 이상일때에는 정상처리로 처리된 입력 DataSet의 상태는
+                           Normal로 변경되며,Binding된 Component가 Redraw 됩니다.
+                         - ErrorCode가 0 미만의 음수일때에는 실패로 처리되며 처리된 
+                           입력 DataSet의 상태는 변경되지 않습니다.
+			  sErrorMsg - Transaction Return Error Message
+ * Return   : callback
+************************************************************************************************/
+function _gfn_callBackNoErrMsg(sRealTranID, iErrorCode, sErrorMsg)
+{
+	form.setWaitCursor(false, true);
+	application.httptimeout = gv_HttpTimeout;
+
+	//[0]:sSvcID, [1]:sCallBack
+	var arrTemp = String(sRealTranID).split(DELIMITER_TRANSACTION);
+
+	if(!gfn_isNull(arrTemp[1]))	{
+		eval(arrTemp[1] + "(arrTemp[0], iErrorCode, sErrorMsg, ncMsgId, ncMsg)");
+	}
+}
+
+/************************************************************************************************
+ * Function : 모든 Form 초기 로딩시 공통 로직 처리
+ * @param   : objForm - Form Object
+ * @param   : e - Form LoadEventInfo
+ * @param   : sScrID - Program ID(화면ID)
+ * Return   : void
+************************************************************************************************/
+function gfn_setInitForm(obj:Form, e:LoadEventInfo, sScrID)
+{
+	objID = sScrID;
+	//trace(" gfn_setInitForm >>>>>"+obj.name);
+	
+    // 화면의 권한 적용
+    gds_autr.filter("FRM_ID=="+wrapQuote(sScrID));
+    gfn_setAutrForm(obj,sScrID);
+    
+    // 화면의 다국어 적용(샘플)
+    // TODO:테스트후 삭제
+    gv_Language = "ENG";
+    if ( sScrID == "sample0070") {	
+		gfn_setDomain(obj, sScrID);
+	} 
+    
+    //2015.2.5 form 단축키설정(Debug View) Onkeyup 함수 통합 
+     gfn_setFormOnkeyUp(obj);
+}
+
+/************************************************************************************************
+ * Function : 모든 popup 초기 로딩시 공통 로직 처리
+ * @param   : objForm - Form Object
+ * @param   : e - Form LoadEventInfo
+ * @param   : sScrID - Program ID(화면ID)
+ * Return   : void
+************************************************************************************************/
+function gfn_setInitPop(obj:Form, e:LoadEventInfo, sScrID)
+{
+ 	objID = sScrID; 
+ 	
+ 	// 화면의 다국어 적용(샘플)
+    // TODO:테스트후 삭제
+    gv_Language = "ENG";
+    if ( sScrID == "sample0070" ) {	
+		gfn_setDomain(obj, sScrID);
+	} 
+	 
+	 //2015.2.5 form 단축키설정(Debug View) Onkeyup 함수 통합 
+     gfn_setFormOnkeyUp(obj);
+     
+	// 단축키설정(Debug View)
+   /*if ( gv_RunMode == "Local" || "Dev") {
+		obj.onkeyup.addHandler(gfn_shotKey_onkeyup);
+    }*/
+    
+}
+/************************************************************************************************
+ * Function : 그리드 정렬 공통함수 설정(기본설정)
+ * @param   : obj - Grid Object
+ * @param   : e - GridClickEventInfo
+ * Return   : void
+************************************************************************************************/
+function _gfn_gridOnheadclick(obj:Grid, e:GridClickEventInfo) 
+{
+	gfn_gridSort(obj, e);
+}
+
+/************************************************************************************************
+ * Function : 폼내 데이터셋 변경여부에 따라 Form Close여부 리턴
+ * @param   : obj - Form Object
+ * @param   : sDs - 체크 dataset명 ( 1개만 허용 )
+ * Return   : true/false
+************************************************************************************************/
+function gfn_formBeforeOnClose(obj, sDs) 
+{
+	var bRtnVal = gfn_isUpdated(eval(sDs));	//변경여부
+	if ( bRtnVal ) {
+		bRtnVal = gfn_message("C","DMS00029");
+		if ( bRtnVal ) {	//변경내용 있으나 무시
+			return true;
+		} else {
+			return false;	//변경Check
+		}
+	} else {	//변경내용 없슴
+		return true;
+	}
+}
+
+/************************************************************************************************
+ * Function :  단축키설정(Debug View) Onkeyup 함수 추가 
+ * @param   : objForm - Form Object
+ * Return   : void
+************************************************************************************************/
+function gfn_setFormOnkeyUp(obj:Form){
+
+	// 단축키설정(Debug View)
+    if ( gv_RunMode == "Local" || gv_RunMode =="Dev") {
+		obj.onkeyup.addHandler(gfn_shotKey_onkeyup);		
+    }
+    
+	//조회조건초기화
+	var bComponents;
+	var aComponents = obj.components;
+	for(var i=0; i<aComponents.length; i++){
+		if(aComponents[i] instanceof Div && aComponents[i].class == "bg_search" && aComponents[i].enableESC != "N") {
+			objSearchDivId = aComponents[i].name;  //div Id 변수에 저장 
+			//ESC키 입력시 조회조건 전체 초기화 주석처리 2015.07.28 심상준
+			obj.onkeyup.addHandler(gfn_shotKey_onkeyup2);
+			
+			bComponents = aComponents[i].components;
+			//브랜드명인 경우 	
+			for(var j=0; j<bComponents.length; j++){
+				if(bComponents[j] instanceof Edit) {
+					if(bComponents[j].name =="edt_brndNm" || bComponents[j].name =="edt_brnNm" 
+						|| bComponents[j].name == "edt_brndCd" || bComponents[j].name == "edt_brnCd"
+						|| bComponents[j].name =="edt_mchtNm" || bComponents[j].name =="edt_mchtNo"
+						|| bComponents[j].name =="edt_cmCd" || bComponents[j].name =="edt_cmNm"		//검색조건 공통코드 초기화 2015.07.07 이영진
+						|| bComponents[j].name =="edt_sapCd"
+						|| bComponents[j].name =="edt_eqpMdlNm" || bComponents[j].name =="edt_eqpMdlCd" //단말기모델코드
+						|| bComponents[j].name =="edt_dealCoNm" || bComponents[j].name =="edt_dealCoCd"){ //거래처 코드
+						bComponents[j].ontextchange.addHandler(gfn_editBrndMchtNm_ontextchange);  //브랜드, 가맹점 수정시 코드값 초기화 함수 추가 
+					} else if(bComponents[j].name =="edt_msgVal" ||  bComponents[j].name =="edt_mbrInfo"){
+						bComponents[j].ontextchange.addHandler(gfn_editMsgVal_ontextchange);  //회원정보 수정시 코드값 초기화 함수 추가 
+					} else if(bComponents[j].name =="edt_userNm"){
+						bComponents[j].ontextchange.addHandler(gfn_editUserNm_ontextchange);  //사용자명 수정시 코드값 초기화 함수 추가 
+					} else if(bComponents[j].name =="edt_cardProdNm"){
+						bComponents[j].ontextchange.addHandler(gfn_editCardProdNm_ontextchange);  //카드상품명 수정시 코드값 초기화 함수 추가 
+					} else if(bComponents[j].class =="Code"){
+						bComponents[j].ontextchange.addHandler(gfn_editCd_ontextchange);  //
+					}
+					if(bComponents[j].class =="Code") {
+						var gbn = bComponents[j].name.substring(bComponents[j].name.length, bComponents[j].name.length-2);
+						var cname = bComponents[j].name.substr(0, bComponents[j].name.length-2);
+						
+						if ( gbn == "CD" ) {
+							cname = cname + "NM";
+						} else {
+							cname = cname + "Nm";
+						}
+						var cval = eval(aComponents[i].name+"."+cname);
+						if( cval != undefined ) {
+							cval.ontextchange.addHandler(gfn_editCd_ontextchange);
+						}
+					}
+				}
+			}			
+			break;
+		}
+	}
+}
+/************************************************************************************************
+ * Function : 카드상품명 수정시 카드상품코드값 초기화  
+ * param   : obj - Edit
+ *             e - TextChangeEventInfo
+ * return  : void
+************************************************************************************************/
+function gfn_editCardProdNm_ontextchange(obj:Edit,  e:TextChangeEventInfo)
+{
+	try{
+		if(e.pretext != e.posttext){		
+			var objParent = obj.parent;
+			if(objParent.edt_cardProdCd instanceof Edit) objParent.edt_cardProdCd.value = "";
+		}
+	} catch(e){
+	}
+}
+/************************************************************************************************
+ * Function : 사용자명 수정시 사용자번호값 초기화  
+ * param   : obj - Edit
+ *             e - TextChangeEventInfo
+ * return  : void
+************************************************************************************************/
+function gfn_editUserNm_ontextchange(obj:Edit,  e:TextChangeEventInfo)
+{
+	try{
+		if(e.pretext != e.posttext){		
+			var objParent = obj.parent;
+			if(objParent.edt_userNo instanceof Edit) objParent.edt_userNo.value = "";
+		}
+	} catch(e){
+	}
+}
+/************************************************************************************************
+ * Function : 회원정보 코드명 수정시 코드값 초기화  
+ * param   : obj - Edit
+ *             e - TextChangeEventInfo
+ * return  : void
+************************************************************************************************/
+function gfn_editMsgVal_ontextchange(obj:Edit,  e:TextChangeEventInfo)
+{
+	try{
+		if(e.pretext != e.posttext){		
+			var objParent = obj.parent;
+			if(objParent.edt_mbrNo instanceof Edit) objParent.edt_mbrNo.value = "";
+		}
+	} catch(e){
+	}
+}
+/************************************************************************************************
+ * Function : 브랜드,가맹점 등 코드명 수정시 코드값 초기화  
+ * param   : obj - Edit
+ *             e - TextChangeEventInfo
+ * return  : void
+************************************************************************************************/
+function gfn_editBrndMchtNm_ontextchange(obj:Edit,  e:TextChangeEventInfo)
+{
+	try{
+		if(e.pretext != e.posttext){		
+			var objParent = obj.parent;
+			if(obj.name == "edt_brndCd" || obj.name == "edt_brnCd"){
+				//브랜드명
+				if(objParent.edt_brndNm instanceof Edit) objParent.edt_brndNm.value = "";
+				if(objParent.edt_brnNm instanceof Edit)  objParent.edt_brnNm.value = "";		
+			} else if(obj.name == "edt_brndNm" || obj.name == "edt_brnNm"){
+				//브랜드코드
+				if(objParent.edt_brndCd instanceof Edit) objParent.edt_brndCd.value = "";
+				if(objParent.edt_brnCd instanceof Edit)  objParent.edt_brnCd.value = "";		
+								
+				//if(objParent.edt_sapCd instanceof Edit)  objParent.edt_sapCd.value = ""; //sap코드		
+				//가맹점		
+				//if(objParent.edt_mchtNo instanceof Edit) objParent.edt_mchtNo.value = "";	
+				//if(objParent.edt_mchtNm instanceof Edit) objParent.edt_mchtNm.value = "";	
+			} else if(obj.name == "edt_mchtNo" ){
+				//sap코드			
+				if(objParent.edt_sapCd instanceof Edit)  objParent.edt_sapCd.value = "";
+				//가맹점번호 					
+				if(objParent.edt_mchtNo instanceof Edit) objParent.edt_mchtNm.value = "";	
+					
+			} else if(obj.name == "edt_mchtNm"){
+				//브랜드
+				//if(objParent.edt_brndCd instanceof Edit) objParent.edt_brndCd.value = "";
+				//if(objParent.edt_brnCd instanceof Edit)  objParent.edt_brnCd.value = "";
+				//if(objParent.edt_brndNm instanceof Edit) objParent.edt_brndNm.value = "";
+				//if(objParent.edt_brnNm instanceof Edit)  objParent.edt_brnNm.value = "";	
+				//sap코드		
+				if(objParent.edt_sapCd instanceof Edit)  objParent.edt_sapCd.value = "";	
+				//가맹점번호 					
+				if(objParent.edt_mchtNo instanceof Edit) objParent.edt_mchtNo.value = "";
+					
+			} else if(obj.name == "edt_sapCd"){			
+				//브랜드
+				//if(objParent.edt_brndCd instanceof Edit) objParent.edt_brndCd.value = "";
+				//if(objParent.edt_brnCd instanceof Edit)  objParent.edt_brnCd.value = "";
+				//if(objParent.edt_brndNm instanceof Edit) objParent.edt_brndNm.value = "";
+				//if(objParent.edt_brnNm instanceof Edit)  objParent.edt_brnNm.value = "";		
+				//가맹점 
+				if(objParent.edt_mchtNo instanceof Edit) objParent.edt_mchtNo.value = "";
+				if(objParent.edt_mchtNm instanceof Edit) objParent.edt_mchtNm.value = "";	
+			} else if(obj.name == "edt_cmCd"){
+				//공통코드 2015.07.07 이영진
+				if(objParent.edt_cmNm instanceof Edit)  objParent.edt_cmNm.value = "";		
+			} else if(obj.name == "edt_cmNm"){
+				//공통코드명 2015.07.07 이영진
+				if(objParent.edt_cmCd instanceof Edit) objParent.edt_cmCd.value = "";		
+			} else if(obj.name =="edt_eqpMdlCd"){
+				//모델코드
+				if(objParent.edt_eqpMdlNm instanceof Edit) objParent.edt_eqpMdlNm.value = "";
+			} else if(obj.name == "edt_eqpMdlNm"){
+				//모델명
+				if(objParent.edt_eqpMdlCd instanceof Edit) objParent.edt_eqpMdlCd.value = "";
+			} else if(obj.name =="edt_dealCoCd"){
+				//거래처코드
+				if(objParent.edt_dealCoNm instanceof Edit) objParent.edt_dealCoNm.value = "";
+			} else if(obj.name == "edt_dealCoNm"){
+				//거래처명
+				if(objParent.edt_dealCoCd instanceof Edit) objParent.edt_dealCoCd.value = "";
+			}
+		}
+	} catch(e){
+	}
+}
+
+function gfn_editCd_ontextchange(obj:Edit,  e:TextChangeEventInfo)
+{
+	try{
+		if(e.pretext != e.posttext){		
+			var objParent = obj.parent;
+			var gbn = obj.name.substring(obj.name.length, obj.name.length-2);
+			var cname = obj.name.substr(0, obj.name.length-2);
+			
+			if ( gbn == "CD" || gbn == "Cd" ) {
+				if ( gbn == "CD" ) {
+					cname = cname + "NM";
+				} else {
+					cname = cname + "Nm";
+				}
+			} else if ( gbn == "NM" || gbn == "Nm" ) {
+				if ( gbn == "NM" ) {
+					cname = cname + "CD";
+				} else {
+					cname = cname + "Cd";
+				}
+			}
+			
+			var cobj = eval(objParent.name+"."+cname);
+			if( cobj != undefined ) {
+				cobj.value = "";
+			}
+		}
+	} catch(e){
+	}
+}
+
+/************************************************************************************************
+ * Function : 화면 공통 ShotKey설정
+ * @param   : obj - Form Object
+ * @param   : e - KeyEventInfo
+ * Return   : void
+************************************************************************************************/
+function gfn_shotKey_onkeyup(obj:Form, e:KeyEventInfo)
+{
+ 	try {
+		if(e.altKey == false && e.ctrlKey == false && e.keycode == KEYCODE_F1) {	//F1
+			//Debug View호출
+			var arrArgs = {argFormObject:this, argFromUrl:objID};
+			var sRtnVal = gfn_dialog("DebugView", arrArgs, "", "", "true");
+		} 	
+	} catch (e) 
+	{
+		trace(e.message);
+	}
+}
+/************************************************************************************************
+ * Function : 화면 공통 ShotKey설정
+ *				form내에 조회조건 div이 있는 경우 ESC 버튼 클릭시 초기화 추가  
+ * @param   : obj - Form Object
+ * @param   : e - KeyEventInfo
+ * Return   : void
+************************************************************************************************/
+function gfn_shotKey_onkeyup2(obj:Form, e:KeyEventInfo)
+{
+ 	try {
+		//ESC키 입력
+		if(e.altKey == false && e.ctrlKey == false && e.keycode == KEYCODE_ESC) {	
+			gfn_initSearchDiv(objSearchDivId);
+		} 	
+	} catch (e) 
+	{
+		trace(e.message);
+	}
+}
+/************************************************************************************************
+ * Function : Grid 공통 로직 연결 설정
+ * @param   : objGrid - Grid Object
+ * @param   : sChkColId - Check Column ID
+ * Return   : void
+************************************************************************************************/
+// function gfn_setInitGrid(objGrid:Grid, objGridBtn:GridButton, objGridPage:GridPage)
+// {
+// 	if (gfn_isNull(objGrid)) return;
+// 	//Grid Button
+// 	if (!gfn_isNull(GridButton)) objGridBtn.fn_GridButtonSetup(objGrid);
+// 	//Grid Paging
+// 	if (!gfn_isNull(objGridNavi)) objGridNavi.fn_GridNaviSetup(objGrid);
+// }
+
+/************************************************************************************************
+ * Function : 메세지 코드에 따른 실제 메세지값을 찾은 후 팝업창을	
+              생성해서 해당 값을 보여주는 함수
+ * @param   : strMsgType - Alert "A" / Confirm "C" / Bottom "B" 구분
+ * @param   : strMsgId - Message ID or Message
+ * @param   : strType - Message Type( E:"error", W:"warning", I:"information", Q:"question")
+ * @param   : strCaption - Message Caption
+ * @param   : strParam - message Param
+ * Return   : true/false (confirm)
+************************************************************************************************/
+function gfn_message(strMsgType, strMsgId, strType, strCaption, strParam) 
+{
+	if(gfn_isNull(strMsgType)) strMsgType = "A";
+	if(gfn_isNull(strParam)) strParam = "";
+	//if(gfn_isNull(strMsgId)) return;
+	
+	var strText = gfn_nvl(gfn_getMsg(strMsgId,strParam),"");
+	
+	var arrText     = strText.split("^");
+	var nTextLength = arrText.length;
+
+	strText = "";
+	for ( i=0; i < nTextLength; i++ ) {
+		if ( i == 0 ) {
+			strText = arrText[i]
+		} else {
+			strText = strText + String.fromCharCode(13) + arrText[i];
+		}
+	}
+	
+	strType = gfn_nvl(strType, "");
+	strType = strType.toUpperCase();
+	
+	var nRow = gds_msg.findRowExpr(COLUMN_MESSAGE_ID + "=='" + strMsgId + "'");
+	
+	if(gfn_isNull(strType)) strType = gds_msg.getColumn(nRow, "MESSAGE_TYPE_XD");
+	
+	if ( strType == "E" || strType == "ERROR" ) {
+		strType = "error";
+	} else if ( strType == "W" || strType == "WARNING" ) {
+		strType = "warning";
+	} else if ( strType == "I" || strType == "INFORMATION" ) {
+		strType = "information";
+	} else if ( strType == "Q" || strType == "QUESTION" ) {
+		strType = "question";
+	} else {
+		strType =  "default";
+	}
+	
+	//팝업 띄우기
+	var sRtnVal;
+	if ( strMsgType == "A" ) {	//Alert Message
+		if(gfn_isNull(strCaption)) strCaption = strType.substr(0,1).toUpperCase() + strType.substr(1);
+		if ( strType == "information" ) {		
+			sRtnVal = confirm(strText, strCaption, strType);
+		} else {
+			sRtnVal = alert(strText, strCaption, strType);
+		}
+		
+	} else if ( strMsgType == "C" ) {	//Confirm Message
+		if(gfn_isNull(strCaption)) {
+			if ( strType == "default" ) {
+				strCaption = "Confirm"
+			} else {
+				strCaption = strType.substr(0,1).toUpperCase() + strType.substr(1);
+			}
+		}
+		sRtnVal = confirm(strText, strCaption, strType);
+	} else if ( strMsgType == "B" ) {	//Bottom Message
+		var objFrame =  application.getActiveForm();
+			//if ( objFrame.mainformtype == "work" ) objFrame.div_Bottom.stStatusText.text = strText;
+			try{
+				objFrame.div_Bottom.stStatusText.text = strText;
+			} catch(e) {}
+		
+		sRtnVal = "";
+	} else {
+		sRtnVal = "";
+	}
+	
+	return sRtnVal;
+}
+
+/************************************************************************************************
+ * Function : 메세지 코드에 따른 실제 메세지값을 찾는 함수
+ * @param   : sMsgId - Message ID or Message
+ * @param   : sParam[] - 메세지값으로 치환될 Parameter Array
+ * Return   : 등록된 MessageId에 해당하는 실제 메세지값
+              등록된 MessageId가 없을 경우 MessageId를 그대로 반환
+************************************************************************************************/
+function gfn_getMsg(sMsgId, sParam)
+{
+	if (gfn_isNull(sMsgId ))	return;
+
+	var sMsgTxt = '';
+	var nFindRow = gds_msg.findRowExpr(COLUMN_MESSAGE_ID + "=='" + sMsgId + "'");
+	if (nFindRow == -1)	return sMsgId;
+	   
+	var sMsgTxt = gds_msg.getColumn(nFindRow, COLUMN_MESSAGE_TXT);
+	if (sMsgTxt == '')	return sMsgId;
+	
+	if (!gfn_isNull(sParam)) {
+        if (sParam instanceof Array) {
+            for (var i = 0; i < sParam.length; i++) {
+                sMsgTxt = sMsgTxt.replace(eval("'{'+i+'}'"), sParam[i]);
+            }
+        } else {
+            sMsgTxt = sMsgTxt.replace("{0}", sParam);
+        }
+    }
+	
+	//return sMsgTxt;
+	return String(sMsgTxt).replace("\\n", String.fromCharCode(13) + String.fromCharCode(10));
+}
+
+/************************************************************************************************
+ * Function : 메세지 코드에 따른 실제 메세지값을 찾는 함수(트랜잭션 전 메시지값 처리)
+ * @param   : sMsgId - Message ID or Message
+ * @param   : sParam[] - 메세지값으로 치환될 Parameter Array
+ * Return   : 등록된 MessageId에 해당하는 실제 메세지값
+              등록된 MessageId가 없을 경우 MessageId를 그대로 반환
+************************************************************************************************/
+function gfn_getSysMsg(sMsgId, sParam)
+{
+	if (gfn_isNull(sMsgId ))	return;
+
+	var sMsgTxt = '';
+	var strGetColumn;
+	if ( gv_language == "KOR" ) {	//Korean
+		strGetColumn = "MESSAGE_KOR";
+	} else {	//English
+		strGetColumn = "MESSAGE_ENG";
+	}
+
+	var nFindRow = gdsSysMessage.findRowExpr("MSSAGE_ID=='"+ sMsgId +"'");
+	if (nFindRow == -1)	return sMsgId;
+	   
+	var sMsgTxt = gdsSysMessage.getColumn(nFindRow, strGetColumn);
+	if (sMsgTxt == '')	return sMsgId;
+
+	if (!gfn_isNull(sParam)) {
+        if (sParam instanceof Array) {
+            for (var i = 0; i < sParam.length; i++) {
+                sMsgTxt = sMsgTxt.replace(eval("'{'+i+'}'"), sParam[i]);
+            }
+        } else {
+            sMsgTxt = sMsgTxt.replace("{0}", sParam);
+        }
+    }
+	
+	return sMsgTxt;
+}
+
+/********************************************************************************************************************************************
+ * Function : Report Disigner 연동
+ * @param   : sReportTitle : 보고서 Title
+ * @param   : sReportUrl : RD 파일 위치
+ * @param   : sDsList : DataSet list("," 로 구분)
+ * @param   : sArgs : parameter  ex)title[테스트보고서] empno[1234567] empname[홍길동]
+ * @param   : bPreview : 미리보기(화면보기) 사용여부 (true 사용 false :바로출력)
+ * @param   : sActivexID : Form에 따로 Viewer를 사용하는경우
+ * @param   : bToolbar : ToolBar의 표시 여부 제어 (true:사용, false:미사용)
+ * @param   : nZoomRatio : 출력물의 화면 배율을 % 단위로 지정합니다.(Null 이면 자동조절)
+ * @param   : sPrinterKind : 프린터 지정 ( 입력값은 프린터 이름(예 : Chungho CHC-3035 KX)이며 null 일경우 디폴트 프린터로 출력함)			
+ * @param   : nCopyCnt : 인쇄매수
+ * Return   : Report View
+********************************************************************************************************************************************/
+function gfn_rdPrint(sReportTitle, sReportUrl, sDsList, sArgs, bPreview, sActivexID, bToolbar, nZoomRatio , sPrinterKind, nCopyCnt)
+{
+	if ( gfn_isNull(sReportUrl) ) return;
+	
+	//2015.1.8 임지후 파라미터 추가
+	//인쇄매수 설정
+	if (gfn_isNull(nCopyCnt)){
+		nCopyCnt = 1;
+	}
+	
+	//XMLFILE 구현방식
+	var sXmlData = "";
+	if(!gfn_isNull(sDsList)){
+		if ( sDsList.toString().indexOf("<?xml") == -1 ) {	
+			sXmlData = gfn_makeXML(sDsList);	//데이타셋을 xml로 변환
+		} else {	
+			sXmlData = sDsList;		//XML로 변환된 데이타 or Null(RD에서 DB접속)
+		}
+	}
+	
+	if (gfn_isNull(bPreview) || bPreview == "true") {	//미리보기
+		if (gfn_isNull(sActivexID)) {	//미리보기 공통 팝업사용
+			var sParam = {argReportTitle:sReportTitle, argReportUrl:sReportUrl, argXmlData:sXmlData, argArgs:sArgs, argToolbar:bToolbar, argZoomRatio:nZoomRatio};
+			//resize가능, Titlebar사용
+			var sSucc  = gfn_dialog("RDviewer", sParam, "", true, true, true);
+		} else {	//Form 미리보기 사용
+			_gfn_runReport(sReportUrl, sXmlData, sArgs, sActivexID, bToolbar, nZoomRatio,sPrinterKind, nCopyCnt);
+		}
+	} else { // 바로출력인경우 사용
+		_gfn_runReport(sReportUrl, sXmlData, sArgs, sActivexID, bToolbar, nZoomRatio,sPrinterKind, nCopyCnt);
+    }
+}
+
+/*************************************************************************************************************************************
+ * Function : Report실행
+ * @param   : sReportUrl : RD 파일 위치
+ * @param   : sDsList : DataSet list("," 로 구분)
+ * @param   : sArgs : parameter  ex)title[테스트보고서] empno[1234567] empname[홍길동]
+ * @param   : sActivexID : Form에 따로 Viewer를 사용하는경우
+ * @param   : bToolbar : ToolBar의 표시 여부 제어 (Y : 툴바 숨김 , N : 툴바 출력)
+ * @param   : nZoomRatio : 출력물의 화면 배율을 % 단위로 지정합니다.(Null 이면 자동조절)
+ * @param   : sPrinterKind : 프린터 지정 ( 입력값은 프린터 이름(예 : Chungho CHC-3035 KX)이며 null 일경우 디폴트 프린터로 출력함)			
+ * @param   : nCopyCnt : 인쇄매수
+ * Return   : Report View
+*************************************************************************************************************************************/
+function _gfn_runReport(sReportUrl, sXmlData, sArgs, sActivexID, bToolbar, nZoomRatio, sPrinterKind, nCopyCnt)
+{
+
+	if ( gv_RunMode == "Local" ) {
+		sReportUrl    = "C:/projects/skcc-dms/workspace/dev-dms-xplatform/WebContent/kokr/REPORT" + sReportUrl;
+	} else {
+		sReportUrl = application.services[gv_ServiceUrl].url + gds_svcconfig.lookup("DOMAIN_CD", gv_domainCd, gv_RunMode+"Url")
+ 				   + "/dms/REPORT"
+ 				   + sReportUrl;
+	}
+	
+	var objActivexID;
+	if ( !gfn_isNull(sActivexID) ) {
+		objActivexID = eval(sActivexID);
+	} else {
+		if ( !this.isValidObject("tempRDviewer") ) {
+			objActivexID = new ActiveX();
+			objActivexID.init("tempRDviewer", 10, 10, 10, 10);
+			objActivexID.progid = PROGID_REPORT_TOOL;
+			this.addChild(objActivexID.name, objActivexID);
+			objActivexID.show();
+			//objActivexID.visible = false;
+		} else {
+			objActivexID = eval("tempRDviewer");
+		}
+	}
+	
+	// 툴바 숨김/표시 : default : true(사용)로 처리
+	if(bToolbar == "false") {
+		objActivexID.callMethod("HideToolbar");
+	}
+
+	objActivexID.SetPageLineColor(255,255,255);	
+	objActivexID.SetBackgroundColor(255,255,255);
+	
+	objActivexID.ApplyLicense(gv_ReportAgentUrl);     //2014-11-05 LYM TEMP License 적용
+		
+	//Wait 이미지 실행
+	form.setWaitCursor(true, true);
+	
+	//var sReportParam = " /rdebugmode [1]";
+	var sReportParam = "";
+	
+	objActivexID.AutoAdjust = 0;
+	
+	if (gfn_isNull(nZoomRatio)) {
+		objActivexID.ZoomRatio = 100;
+	} else {
+		objActivexID.ZoomRatio = nZoomRatio; 
+	}
+	
+	sReportParam = " /rv " + sArgs;
+	
+	if(gfn_isNull(sXmlData)) {
+		sReportParam += " /rcontype [Data Server] /rf ["+gv_reportAgentUrl+"] /rui [admin] /rpw [1234]";
+		//2015.1.8 임지후 프린터종류 파라미터 추가 
+		if(!gfn_isNull(sPrinterKind)) {
+			sReportParam += " /rpdrv [" + sPrinterKind + "] ";			
+		}
+	} else {
+		objActivexID.SetRData(sXmlData);		
+		//2015.1.8 임지후 프린터종류 지정
+		if(!gfn_isNull(sPrinterKind)) {		
+			objActivexID.SetPrintInfo(sPrinterKind , nCopyCnt , 1, 4);
+		} 
+	}
+	
+	var bSucc = objActivexID.FileOpen(sReportUrl, sReportParam);
+
+// 	//개발단계에서만 사용  debug 모드
+// 	//sReportParam += " /rdebugmode [1]";
+// 	
+// 	//에러메시지만 표시
+// 	//0 : 모든 메시지박스 숨김
+// 	//1 : 에러 메시지만 보여줌
+// 	//2 : 에러 또는 경고 메시지만 보여줌
+// 	//3 : 모든 메시지(에러,경고,정보) 보여줌. 기본값
+// 	sReportParam += " /rmessageboxshow [0]";
+// 
+// 	//Crownix Report Viewer 에서 오른쪽 마우스 버튼을 누르면 Pop-up메뉴가 생기는데 이를 생기지 않게 하는 파라미터입니다.
+// 	sReportParam += " /rnpu";
+// 	
+// 	//Crownix Report Viewer는 실행모드와 편집모드를 제공합니다. 실행모드에서는 보고서 조회만 가능하고 편집모드에서는 보고서 편집까지 가능하며 실행모드가 기본값입니다. 편집모드로 보고서가 실행되게 하려면 이 파라미터를 사용합니다.
+// 	//단, 편집모드는 Crownix Report Designer의 파일-문서속성-문서 탭에서 최종보고서 편집이나 최종보고서 메모 옵션을 설정한 경우에만 사용할 수 있습니다.
+// 	//sReportParam += " /reditmode";
+// 	if ( sArgs.indexOf("/reditmode") > -1 ) {	//편집모드
+// 		//편집모드 상태에서 텍스트상자, 표의 선 등 객체가 선택되어 움직이는 것을 막는 파라미터입니다.
+// 		//편집모드에서 객체는 고정된 상태로 글자 수정을 하기 위해 주로 사용합니다.
+// 		sReportParam += " /rfixallobject";	
+// 		
+// 		// /reditmode 파라미터를 사용하여 편집모드 상태로 Viewer를 실행시킨 경우, 편집모드 툴바가 보이지 않도록 하는 파라미터입니다
+// 		sReportParam += " /rhideeditbar";
+// 	}
+ 
+	//Wait 이미지 종료
+	form.setWaitCursor(false, true);
+	
+	//2015.1.8 임지후 프린터종류 지정시 인쇄 dialog없이 바로 인쇄하기 
+	if ( objActivexID.name == "tempRDviewer" ) {
+	
+		if(!gfn_isNull(sPrinterKind)){
+			objActivexID.CMPrint();
+		} else {
+			//바로 출력시 - 인쇄 Dialog Open
+			objActivexID.callMethod("PrintDialog");
+
+		}
+	}
+	
+}
+
+/************************************************************************************************
+ * Function : 시스템 기본 FileDialog를 호출한다.
+ * @param   : strOpenMode			Dialog 종류 	: LOAD, SAVE, MULTILOAD
+ * @param   : strFilterFlag			파일형식필터	: EXCEL, IMAGE
+ * Return   : String 파일 전체 경로
+************************************************************************************************/
+function gfn_fileDialog(strOpenMode, strFilterFlag)
+{
+	// 엑셀 다운로드 기능시 파일을 생성하지 않고 띄움
+	if (strOpenMode == "SAVE" && strFilterFlag == "EXCEL") {
+		return "SAVE_EXCEL";
+	}
+
+	lv_VirtualFile = null;
+
+	var v_Title = "";
+	var v_ConstMode = null;
+
+	if (strOpenMode == "SAVE") {
+		v_Title = "Save";
+		v_ConstMode = FileDialog.SAVE;
+	} else if (strOpenMode == "LOAD") {
+		v_Title = "Open";
+		v_ConstMode = FileDialog.LOAD;
+	} else if (strOpenMode == "MULTILOAD") {
+		v_Title = "Open";
+		v_ConstMode = FileDialog.MULTILOAD;
+	}
+
+	var v_Filter = "";
+	if (strFilterFlag == "EXCEL") {
+		v_Filter = "Excel 97 - 2003 통합문서 (*.xls)|*.xls|Excel 통합문서 (*.xlsx)|*.xlsx";
+	} else if (strFilterFlag == "IMAGE") {
+		v_Filter = "image files (*.bmp;*.jpg;*.jpeg;*.gif;*.png)|*.bmp;*.jpg;*.jpeg;*.gif;*.png";
+	} else {
+		v_Filter = "All (*.*)|*.*";
+	}
+
+	var fd = new FileDialog();
+
+	fd.defaultextention = true;
+	fd.filter = v_Filter;
+
+	var vFile = fd.open(v_Title, v_ConstMode, "%MyDocument%");
+	var filePath = "";
+
+	if (vFile == undefined || vFile == null) {
+		filePath = "";
+	} else {
+		filePath = vFile.fullpath;
+		vFile.close();
+	}
+
+	if (strOpenMode == "SAVE" && strFilterFlag == "EXCEL") {
+		lv_VirtualFile = vFile;
+	}
+
+	fd = null;
+
+	return filePath;
+}
+
+/************************************************************************************************
+ * Function : 화면 인쇄 기능
+ * @param   : 
+ * Return   : void
+************************************************************************************************/
+function gfn_capture()
+{
+	//var argA = application.getActiveForm().saveToImageObject();
+
+	//var objRetVal = gfn_dialog("CaptureViewer", "comm::commCaptureViewer.xfdl", {argImage:argA});
+}
+
+/************************************************************************************************
+ * Function : 화면Close전에 처리할 공통내용이 있으면 처리
+ * @param   : obj  - Form object
+ * Return   : true/false
+************************************************************************************************/
+function gfn_beforeFormCloseCheck(sChkDS)
+{
+	if ( gfn_isNull(sChkDS) ) return true;
+	
+	var arrChkDS = sChkDS.split(",");
+	var nChkCnt  = arrChkDS.length;
+	//trace("arrChkDS.length==="+nChkCnt);
+	var bResult = false;
+	for ( i=0; i<nChkCnt; i++ ){
+		bResult = gfn_isUpdated(eval(arrChkDS[i]));
+		
+		if ( bResult ) break;	//한건이라도 수정사항이 있으면
+	}
+	
+	if(bResult) {
+		var sConfirm = gfn_message("C","DMS00029");	//변경된 자료가 있습니다. \n\n그래도 종료하시겠습니까?
+		if (sConfirm == CONST_RETURN_YES) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return true;
+	}
+}
+
+/************************************************************************************************
+ * Function : 변경여부에 따라 Confirm창을 호출하고 결과를 리턴
+ * @param   : bResult  - 변경여부 true/false
+ * Return   : true/false
+************************************************************************************************/
+function gfn_beforeFormCloseConfirm(bResult)
+{
+	if(bResult) {
+		var sConfirm = gfn_message("C","DMS00029");	//변경된 자료가 있습니다. \n\n그래도 종료하시겠습니까?
+		if (sConfirm == CONST_RETURN_YES) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return true;
+	}
+}
+
+/************************************************************************************************
+ * Function : 로그인사용자정보
+ * @param   : sColumn - String
+ * Return   : Column Value
+************************************************************************************************/
+function gfn_getUserInfo(sColumn) 
+{
+	if (gfn_isNull(gfn_trim(sColumn)))	return "";
+	if (gds_user.rowcount == 0)			return "";
+	
+	var	vRtn = gds_user.getColumn(0, sColumn);
+	
+	return gfn_trim(vRtn);
+}
+
+var _sObjFullPath = "";
+function gfn_getFullPath(obj)
+{
+	var rtn = ""; 
+		
+	if ( _sObjFullPath == "" ) {
+		_sObjFullPath = obj.name;
+	}	
+
+	if ( obj.parent.toString().toUpperCase() == "[OBJECT CHILDFRAME]" ) {
+	//if ( obj.parent.toString() == "DivWork" ) {
+	
+		var arr = _sObjFullPath.split(".");
+		
+		for ( var i = (arr.length-2); i >=0; i -- ) {
+			rtn = rtn + arr[i] + ".";
+		}
+	   
+		//_sObjFullPath = rtn.substr(0,rtn.length -2);
+		_sObjFullPath = rtn.substr(0,rtn.length -1);
+		
+		return ;
+	}
+
+	var obj = obj.parent;
+		_sObjFullPath = _sObjFullPath + "." + obj.name; 
+
+	gfn_GetFullPath(obj);	
+}
+
+/************************************************************************************************
+ * Function : 서브타이틀(Static)에 Dataset row count표시
+ * @param   : objStc - Static Object
+ * @param   : objDs - count용 Dataset Object
+ * Return   : objStc 에 objDs Row Count표시
+************************************************************************************************/
+function gfn_setGridTitleCount(objStc:Static, objDs:Dataset)
+{
+	if ( gfn_isNull(objStc.userText) ) objStc.userText = objStc.text;
+	var nCnt = objDs.rowcount;
+	
+	objStc.usedecorate = true; 
+	
+	objStc.text = objStc.userText 
+	         + " <b v='false'><fc v='#dcdcdc'>l </fc><fc v='#77787a'>총</fc> </b><fc v='#31a3dc'>" 
+	         + gfn_toFixedLocaleString(nCnt)
+	         + "</fc><b v='false'><fc v='#77787a'>건</fc></b>";
+}
+
+/************************************************************************************************
+ * Function : 서브타이틀(Static)에 Dataset row count표시
+ * @param   : objStc - Static Object
+ * @param   : nCnt - total count
+ * @param   : plusYN - 다량데이터조회여부 
+ * Return   : objStc 에 objDs Row Count표시
+************************************************************************************************/
+function gfn_setGridTitleCountPaging(objStc:Static, nCnt, plusYN)
+{
+	if ( gfn_isNull(objStc.userText) ) objStc.userText = objStc.text;
+	
+	objStc.usedecorate = true; 
+	//10,000건 단위인 경우 (ex, 10001,20001,....=>  10000+ 20000+,....로 플러스표시 추가) 
+	var sPlus = "";
+	if( plusYN =="Y" && nCnt>LAST_SEARCH_RANGE && nCnt % LAST_SEARCH_RANGE == 1 ){
+		nCnt -= 1; 
+		sPlus = "+";
+		bLastIndexUse = true;
+	} else {
+		bLastIndexUse = false;
+	}	
+	
+	objStc.text = objStc.userText 
+	         + " <b v='false'><fc v='#dcdcdc'>l </fc><fc v='#77787a'>총</fc> </b><fc v='#31a3dc'>" 
+	         + gfn_toFixedLocaleString(nCnt)+sPlus
+	         + "</fc><b v='false'><fc v='#77787a'>건</fc></b>";
+}
+/************************************************************************************************
+ * Function : Grid Head 클릭시 Grid Filter적용 활성화/비활성화
+              - UserGrid와 연동
+              - UserGrid의 showHeadAppendFilter(), hideHeadAppendFilter() 와 연동
+ * @param   : obj - Grid Object
+ * Return   : void
+************************************************************************************************/
+function gfn_toggleGridFilter(obj)
+{
+	if ( obj instanceof UserGrid ) {
+		if ( obj.ufn_getStatusFilter() == "true" ) {
+			obj.ufn_hideHeadAppendFilter();
+		} else {
+			obj.ufn_showHeadAppendFilter();
+		}
+	} else {
+		alert("UserGrid 미사용시 사용 할 수 없슴");
+	}
+}
+
+/************************************************************************************************
+ * Function : 그룹코드에 해당하는 코드를 대상 데이터셋에 복사한다.
+ * @param : objForm - 폼 Object
+ *        strDsGrpFlagList - 그룹코드=대상데이터셋=전체플래그[N:노멀, S:선택, A:전체],
+ *        strCallbackFunc - 코드가 세팅된후 불려질 콜백함수 
+ * Return : 없음.
+ * 사용예 : gfn_setCodeDS(this, "CM001=DS_TYPE1=N,CM002=DS_TYPE2=S,CM003=DS_TYPE3=A,...", "afterCodeCallBack");			// CReam
+************************************************************************************************/
+function gfn_getCodeDs(objForm, strDsGrpFlagList, strCallbackFunc)
+{
+	var arrDsGrpFlag = strDsGrpFlagList.split(",");
+	
+	//trace("strDsGrpFlagList : " + strDsGrpFlagList);
+	//trace("arrDsGrpFlag : " + arrDsGrpFlag);
+	
+	var strGrpCd = "";
+	var strFlag  = "";
+	var strOutDs = "";
+	var strTemp;
+	
+	for(var i = 0; i < arrDsGrpFlag.length; i++) {
+		strTemp = arrDsGrpFlag[i].trim().split("=");
+		strGrpCd += (i==0 ? "" : ",") + strTemp[0].trim();
+		strOutDs += (i==0 ? "" : " ") + strTemp[1].trim() + "=output" + (i + 1);
+		strFlag  += (i==0 ? "" : ",") + strTemp[2].trim();
+	}
+	
+	//임시데이터셋 생성
+	var objDataset = gfn_makeDataSet("ds_ncFieldMapCode");
+	objDataset.addColumn("CM_GRP_CD_ID","string");
+	objDataset.addColumn("FLAG","string");
+	objDataset.addRow();
+	objDataset.setColumn(0,"CM_GRP_CD_ID",strGrpCd);
+	objDataset.setColumn(0,"FLAG",strFlag);
+
+
+	var sSvcID		 = "svcSetCode";
+	var sTrID		 = "PSCCmCdMgmt_pInqCmCd";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_ncFieldMapCode";
+	var sOutputDs	 = strOutDs;
+	var sArgs		 = "";
+	var sCallBackFnc = strCallbackFunc;
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, strCallbackFunc);
+
+	return "";
+}
+
+/************************************************************************************************
+ * Function : 로그인한 사용자가 접근가능한 브랜드 ,가맹점 목록을 조회하여 데이터셋에 복사한다.
+ * @param : 
+ *        strBrndDs - 브랜드데이터셋
+ *        strMchtDs - 가맹점데이터셋
+ *        strCallbackFunc - 코드가 세팅된후 불려질 콜백함수 
+ * Return : 없음.
+************************************************************************************************/
+function gfn_getUsrBrndMchtLstDs(strBrndDs,strMchtDs,strCallbackFunc) 
+{
+	if(!isValidObject(strBrndDs) && !isValidObject(strMchtDs)){
+		return;
+	}
+
+	//임시데이터셋 생성
+	var objDataset = gfn_makeDataSet("ds_ncFieldMapBrndMcht");
+	objDataset.addColumn("FLAG","string");
+	objDataset.addRow();
+	
+	//결과 데이터셋 매핑  
+	var strOutDs ="";
+	if(isValidObject(strBrndDs) && isValidObject(strMchtDs)){
+		objDataset.setColumn(0,"FLAG","ALL"); //조회타입 : all 
+		strOutDs = strBrndDs+"=rsAutrBrnd "
+					+ strMchtDs+"=rsAutrMcht"; 
+	} else if( isValidObject(strBrndDs) ) {
+		objDataset.setColumn(0,"FLAG","BRND"); //조회타입 : 브랜드 
+		strOutDs = strBrndDs+"=rsAutrBrnd"; 
+	} else if( isValidObject(strMchtDs) ) { 
+		objDataset.setColumn(0,"FLAG","MCHT"); //조회타입 : 가맹점 
+		strOutDs = strMchtDs+"=rsAutrMcht"; 
+	}
+	var sSvcID	 = "svcSetBrndMcht";
+	var sTrID		 = "PSCUserAutRolMgmt_pUsrBrndMchtLst";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_ncFieldMapBrndMcht";
+	var sOutputDs	= strOutDs;
+	var sArgs		  = "";
+	var sCallBackFnc = strCallbackFunc;
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, strCallbackFunc);
+
+	return "";
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명     : 개인정보 조회 
+ * param  : pSvcID :         서비스ID명   String
+ *            pCallBackFnc : 콜백함수명    String
+ *   		  pInqDs        : 개인정보조회대상 INPUT/OUTPUT 겸용 데이터셋명 String
+ *            pRegHstDs    : 개인정보이력등록용 데이터셋명 Strirng
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function gfn_searchSecureInfo(pSvcID, pCallBackFnc, pInqDs, pRegHstDs )
+{
+	var regHstDs ="";
+	if(gfn_isEmpty(pCallBackFnc) || gfn_isEmpty(pInqDs)){
+		trace("파라미터 값이 입력되지 않았습니다.");
+		return;		
+	}	
+	//inputDsList 설정 (개인정보이력등록Ds가 존재하는 경우 트랜잭션ID 변경) 
+	if(!gfn_isEmpty(pRegHstDs) ){
+		regHstDs = " ncFieldMap="+pRegHstDs;
+	} else {
+		//임시데이터셋 생성
+		var objDataset = gfn_makeDataSet("ds_searchSecureInfo");
+		objDataset.addColumn("REG_HST_YN","string");
+		objDataset.addRow();
+		objDataset.setColumn(0,'REG_HST_YN',"N");
+		regHstDs = " ncFieldMap="+"ds_searchSecureInfo";
+	}
+	var sSvcID	 = gfn_isEmpty(pSvcID) ? "" : pSvcID ;
+	var sTrID		 = "PSCPrnInfoInq_pInqPrnInfo";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_PRN_INFO_INQ="+pInqDs+regHstDs;
+	var sOutputDs	= pInqDs+"=RS_PARAM";
+	var sArgs		 = "";
+	var sCallBackFnc = pCallBackFnc;
+		
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+/*******************************************************************************
+* Function : 인자를 넘겨줄 경우에 넘겨주는 규칙대로 인자/값을 설정
+* @param : p_name - 설정할 파리미터명
+           p_value - 설정할 값
+* Return : Parameter String
+*******************************************************************************/
+function gfn_setParam(p_name, p_value)
+{
+	return p_name + "=" + wrapQuote(p_value) + " ";
+}
+
+/************************************************************************************************
+ * Function : MCHT_NO에 해당하는 정보를 셋팅한다.
+ * @param : mchtNo - 가맹점번호
+ * Return : mchtNo - 가맹점번호
+ *          mchtNm - 가맹점명
+ *          sapCd - SAP코드
+ *          brndCd - 브랜드코드
+ *          brndNm - 브랜드명
+ * 사용예 : 	var objRtn = gfn_getMchtInfo("091183867");
+ * div_search.edt_sapCd.value = objRtn["sapCd"];
+ * div_search.edt_mchtNm.value = objRtn["mchtNm"];
+ * div_search.edt_brnCd.value = objRtn["brndCd"];
+ * div_search.edt_brnNm.value = objRtn["brndNm"];
+************************************************************************************************/
+function gfn_getMchtInfo(mchtNo)
+{
+	//임시데이터셋 생성
+	var objDataset = gfn_makeDataSet("ds_ncFieldMapMcht");
+	objDataset.addColumn("MCHT_NO","string");
+	objDataset.addRow();
+	objDataset.setColumn(0,"MCHT_NO",mchtNo);
+	
+	var objDataset = gfn_makeDataSet("ds_mchtInfoTemp");
+
+	var sSvcID		 = "searchMain";
+	var sTrID		 = "PBSAFMchtMgmt_pSrchMchtBkof";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_ncFieldMapMcht";
+	var sOutputDs	 = "ds_mchtInfoTemp=rsMchtSrch";
+	var sArgs		 = "";
+	var sCallBackFnc = "";
+	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc, false);
+
+	if (ds_mchtInfoTemp.rowcount == 1)
+	{
+		var objRtn = new Object;
+		objRtn["mchtNo"] = ds_mchtInfoTemp.getColumn(0,"MCHT_NO");
+		objRtn["mchtNm"] = ds_mchtInfoTemp.getColumn(0,"MCHT_NM");
+		objRtn["sapCd"] = ds_mchtInfoTemp.getColumn(0,"SAP_CD");
+		objRtn["brndCd"] = ds_mchtInfoTemp.getColumn(0,"BRND_CD");
+		objRtn["brndNm"] = ds_mchtInfoTemp.getColumn(0,"BRND_NM");
+		return objRtn;
+	}
+
+	return "";
+}
+
+/************************************************************************************************
+ * Function : 상하좌우 포지션2 정보를 셋팅한다.
+ * @param : objThis - 대상obj
+ * Return : 
+ * 사용예 : gfn_setPosition2All(this);
+************************************************************************************************/
+function gfn_setPosition2All(objThis)
+{
+	var aComponents = objThis.components;
+	var nWidth = objThis.position.width;
+	var nHeight = objThis.position.height;
+	var sStyle;
+	
+	for(var i=0; i<aComponents.length; i++){
+		if(aComponents[i] instanceof Div) {
+			if(aComponents[i].visible == true) {
+				if(aComponents[i].positiontype == "position2") {
+					sStyle = "absolute";
+					sStyle +=  " l:" + Math.round((aComponents[i].position.left / nWidth * 100),2) + "%";
+					sStyle +=  " w:" + Math.round((aComponents[i].position.width / nWidth * 100),2) + "%";
+					sStyle +=  " t:" + Math.round((aComponents[i].position.top / nHeight * 100),2) + "%";
+					sStyle +=  " h:" + Math.round((aComponents[i].position.height / nHeight * 100),2) + "%";
+					aComponents[i].position2 = sStyle;
+				}
+				gfn_setPosition2All(aComponents[i]);
+			}
+		} else if(aComponents[i] instanceof Tab) {
+			if(aComponents[i].visible == true) {
+				if(aComponents[i].positiontype == "position2") {
+					sStyle = "absolute";
+					sStyle +=  " l:" + Math.round((aComponents[i].position.left / nWidth * 100),2) + "%";
+					sStyle +=  " w:" + Math.round((aComponents[i].position.width / nWidth * 100),2) + "%";
+					sStyle +=  " t:" + Math.round((aComponents[i].position.top / nHeight * 100),2) + "%";
+					sStyle +=  " h:" + Math.round((aComponents[i].position.height / nHeight * 100),2) + "%";
+					aComponents[i].position2 = sStyle;
+				}
+				gfn_setPosition2All(aComponents[i]);
+			}
+		} else if(aComponents[i].visible == true) {
+			if(aComponents[i].positiontype == "position2") {
+				sStyle = "absolute";
+				sStyle +=  " l:" + Math.round((aComponents[i].position.left / nWidth * 100),2) + "%";
+				sStyle +=  " w:" + Math.round((aComponents[i].position.width / nWidth * 100),2) + "%";
+				sStyle +=  " t:" + Math.round((aComponents[i].position.top / nHeight * 100),2) + "%";
+				sStyle +=  " h:" + Math.round((aComponents[i].position.height / nHeight * 100),2) + "%";
+				aComponents[i].position2 = sStyle;
+			}
+		}
+	}
+}
+
+/************************************************************************************************
+ * Function : 좌우 포지션2 정보를 셋팅한다.
+ * @param : objThis - 대상obj
+ * Return : 
+ * 사용예 : gfn_setPosition2(div_main);
+************************************************************************************************/
+function gfn_setPosition2(objThis)
+{
+	var aComponents = objThis.components;
+	var nWidth = objThis.position.width;
+	var nHeight = objThis.position.height;
+	var sStyle;
+	
+	for(var i=0; i<aComponents.length; i++){
+		if(aComponents[i] instanceof Div) {
+			if(aComponents[i].visible == true) {
+				if(aComponents[i].positiontype == "position2") {
+					sStyle = "absolute";
+					sStyle +=  " l:" + Math.round((aComponents[i].position.left / nWidth * 100),2) + "%";
+					sStyle +=  " w:" + Math.round((aComponents[i].position.width / nWidth * 100),2) + "%";
+					sStyle +=  " t:" + aComponents[i].position.top + "px";
+					sStyle +=  " h:" + aComponents[i].position.height + "px";
+					aComponents[i].position2 = sStyle;
+				}
+				gfn_setPosition2(aComponents[i]);
+			}
+		} else if(aComponents[i] instanceof Tab) {
+			if(aComponents[i].visible == true) {
+				if(aComponents[i].positiontype == "position2") {
+					sStyle = "absolute";
+					sStyle +=  " l:" + Math.round((aComponents[i].position.left / nWidth * 100),2) + "%";
+					sStyle +=  " w:" + Math.round((aComponents[i].position.width / nWidth * 100),2) + "%";
+					sStyle +=  " t:" + aComponents[i].position.top + "px";
+					sStyle +=  " h:" + aComponents[i].position.height + "px";
+					aComponents[i].position2 = sStyle;
+				}
+				gfn_setPosition2(aComponents[i]);
+			}
+		} else if(aComponents[i].visible == true) {
+			if(aComponents[i].positiontype == "position2") {
+				sStyle = "absolute";
+				sStyle +=  " l:" + Math.round((aComponents[i].position.left / nWidth * 100),2) + "%";
+				sStyle +=  " w:" + Math.round((aComponents[i].position.width / nWidth * 100),2) + "%";
+				sStyle +=  " t:" + aComponents[i].position.top + "px";
+				sStyle +=  " h:" + aComponents[i].position.height + "px";
+				aComponents[i].position2 = sStyle;
+			}
+		}
+	}
+}]]></Script>

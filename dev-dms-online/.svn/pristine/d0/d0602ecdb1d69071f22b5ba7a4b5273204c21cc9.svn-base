@@ -1,0 +1,153 @@
+package dms.nr.nrbeabase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]단말기회수정보관리</li>
+ * <li>설  명 : <pre>단말기회수정보관리</pre></li>
+ * <li>작성일 : 2015-07-17 16:10:31</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PNREqpClctInfoMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNREqpClctInfoMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>단말기회수정보조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-07-17 16:10:31
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 *	- field : NEW_CNTRTR_NM [고객명]
+	 *	- field : SVC_NO [이동전화번호]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : SKN_SDT [계약시작일]
+	 *	- field : SKN_EDT [계약종료일]
+	 *	- field : RTN_STA_DT [반납시작일]
+	 *	- field : RTN_END_DT [반납종료일]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : IN_STA_DT [물류센터회수시작일]
+	 *	- field : IN_END_DT [물류센터회수종료일]
+	 *	- field : IN_OBJ_DTL_CD [회수상태]
+	 *	- field : EQP_SER_NO [단말일련번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CLCT_INFO_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : NEW_CNTRTR_NM [고객명]
+	 *		- field : SVC_NO [이동전화번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : RENTAL_CNTRT_PRD [계약기간코드]
+	 *		- field : NEW_CNTRT_DT [계약일]
+	 *		- field : RENTAL_CNTRT_STA_DT [계약시작일]
+	 *		- field : RENTAL_CNTRT_END_DT [계약종료일]
+	 *		- field : EQP_PRCH_AMT [매입금액]
+	 *		- field : FISCL_REMPRC [잔존가]
+	 *		- field : RTN_REG_DT [단말반납일]
+	 *		- field : EQP_RTN_YN [단말반납여부]
+	 *		- field : EQP_IN_DT [R센터회수일]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : SKN_CLCT_DT [SKN입고일]
+	 *		- field : CLCT_OBJ_REG_DT [회수대상등록일]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : DEALCO_NM [대리점명]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpClctInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSEABase", "fInqEqpClctInfoLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기회수정보상세조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-07-17 16:10:31
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CLCT_INFO_DTL
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : NEW_CNTRTR_NM [고객명]
+	 *		- field : SVC_NO [이동전화번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : COLOR_CD [색상코드]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : CNTRT_PRD [계약기간코드]
+	 *		- field : CNTRT_STA_DT [계약시작일]
+	 *		- field : CNTRT_END_DT [계약종료일]
+	 *		- field : EQP_PRCH_AMT [매입금액]
+	 *		- field : FISCL_REMPRC [잔존가]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : EQP_RTN_DT [반납일]
+	 *		- field : EQP_RTN_YN [단말반납여부]
+	 *		- field : NEW_CNTRT_DT [계약일]
+	 *		- field : EQP_IN_DT [R센터입고일]
+	 *		- field : SKN_CLCT_DT [물류센터회수일]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : DEALCO_NM [대리점명]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpClctInfoDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSEABase", "fInqEqpClctInfoDtl", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+  
+}

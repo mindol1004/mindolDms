@@ -1,0 +1,2277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpPrSNoMgmt">
+	<select id="SEqpPrSNoListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListPaging 단말기매입매출전표현황전체조회 */
+/* IO: 김상오,2015-12-23T17:04:11(박민정,2015-12-09T16:56:39) */
+SELECT /*+ FIRST_ROWS */ * FROM (
+SELECT  ROWNUM AS ROWNO
+        ,A.CNSL_DT                                                                     /*접수일자*/
+        ,A.CLCT_DT                                                                     /*회수일자(반영일자)*/
+        ,A.CNSL_MGMT_NO                                                                /*상담관리번호*/
+        ,A.EQP_MDL_CD                                                                  /*단말기 코드*/
+        ,A.EQP_SER_NO                                                                  /*단말기 일련번호*/
+        ,A.EQP_MDL_NM                                                                  /*모델명*/
+        ,A.SKN_CL                                                                      /*현장 / 감정구분*/
+        ,A.PROGR_ST                                                                    /*진행상태*/
+        ,A.RWD_CD		                                                                   /*보상유형*/
+        ,M_INVE_SLIP_NO                                                                /*미착AP번호*/
+        ,M_INVE_SLIP_DT                                                                /*미착AP기산일*/
+        ,M_XCL_AMT                                                                     /*미착금액*/
+        ,C_INVE_SLIP_NO                                                                /*확정AP번호*/
+        ,C_INVE_SLIP_DT                                                                /*확정AP기산일*/
+        ,C_XCL_AMT                                                                     /*확정금액*/
+        ,N_XCL_AMT                                                                     /*반제 반환금액*/
+        ,DECODE(N_INVE_TYP_CD, '20', N_INVE_CNCL_SLIP_NO ) AS M_INVE_CNCL_SLIP_NO      /*미착반제 AP번호*/
+        ,DECODE(N_INVE_TYP_CD, '10', N_INVE_CNCL_SLIP_NO ) AS C_INVE_CNCL_SLIP_NO      /*확정반제 AP번호*/
+        ,N_INVE_CNCL_SLIP_DT                                                           /*확정반제 AP기산일*/
+        ,PAY_SLIP_NO                                                                   /*전표번호*/
+        ,PAY_SLIP_DT                                                                   /*전표일자*/
+        ,PAY_XCL_AMT                                                                   /*금액*/
+        ,PAY_CNCL_SLIP_NO                                                              /*취소전표번호*/
+        ,PAY_CNCL_SLIP_DT                                                              /*전표번호*/
+        ,PAY_RMT_DT                                                                    /*송금일자*/
+        ,PAY_TS                                                                        /*공제 차수*/
+        ,AR_SALE_AMT                                                                   /*AR 매출가*/
+        ,AR_XCL_SLIP_NO                                                                /*AR 매출번호*/
+        ,AR_XCL_SLIP_DT                                                                /*AR 기산일*/
+  FROM 
+        (SELECT /*+ ORDERED USE_HASH( A ) */
+                A.CNSL_DT                                                             /*접수일자*/
+                ,A.CLCT_DT                                                             /*회수일자(반영일자)*/
+                ,A.CNSL_MGMT_NO                                                        /*상담관리번호*/
+                ,EM.EQP_MDL_CD                                                         /*단말기 코드*/
+                ,A.EQP_SER_NO                                                          /*단말기 일련번호*/
+                ,EM.EQP_MDL_NM                                                         /*모델명*/
+                ,A.SKN_CL                                                              /*현장 / 감정구분*/
+                ,A.PROGR_ST                                                            /*진행상태*/
+                ,A.PRE_DC_CL
+                ,A.PAY_MTHD                                                            
+                ,CASE WHEN A.PRE_DC_CL = 'Y' THEN '선할인'
+                      WHEN A.PAY_MTHD = '01' THEN '계좌송금'
+                      WHEN A.SCRB_MTHD = 'T' THEN '클럽T'
+                      WHEN A.PAY_MTHD = '02' THEN '요금선납'
+                      ELSE '계좌송금'  
+                 END RWD_CD	                                                           /*보상유형*/
+          FROM  TB_EP_CST_CONSULT_MGMT A
+               ,TB_EQP_MDL EM
+         WHERE A.DEL_YN = 'N'
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[                                            /*접수일*/
+           AND A.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[                                            /*회수일*/ 
+           AND A.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND A.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND A.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND A.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(A.PRE_DC_CL, 'N') <> 'Y'   
+	 AND NVL(A.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND A.PAY_MTHD = '02'  
+     AND A.SCRB_MTHD <> 'T' 
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND A.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+     AND EM.EQP_MDL_CD = A.EQP_MDL_CD
+     
+        )A
+       ,(/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+               ,B.XCL_AMT  AS M_XCL_AMT                                                 /*상담금액(미착AP매입금액)*/
+               ,A.DEDC_TYP_CD  AS M_DEDC_TYP_CD                                         /*공제유형코드 ( AP유형)*/
+               ,A.INVE_SLIP_NO AS M_INVE_SLIP_NO                                        /*미착AP번호*/
+               ,A.INVE_SLIP_DT AS M_INVE_SLIP_DT                                        /*미착AP기산일*/
+               ,A.INVE_TYP_CD  AS M_INVE_TYP_CD                                         /*AP처리구분*/
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+               
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+           
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.INVE_TYP_CD = '20'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO IS NOT NULL  
+
+        )C
+       ,(/* ■■CASE 확정 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                 B.CNSL_MGMT_NO
+                ,A.DEDC_TYP_CD AS C_DEDC_TYP_CD                                          /*공제유형코드 (AP유형)*/
+                ,B.XCL_AMT AS C_XCL_AMT                                                  /*(확정AP매입가)*/
+                ,A.INVE_SLIP_NO AS C_INVE_SLIP_NO                                        /*확정AP번호*/
+                ,A.INVE_SLIP_DT AS C_INVE_SLIP_DT                                        /*확정AP기산일*/
+           FROM  TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+                
+            WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+              
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND A.INVE_TYP_CD  = '10'                                                   /*확정재고*/
+              AND A.CNCL_SLIP_YN = 'N'                                     /*취소전표여부*/
+              AND A.INVE_SLIP_NO IS NOT NULL               
+
+        )D
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+               ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                            /*공제유형코드 (AP유형)*/
+               ,B.XCL_AMT AS N_XCL_AMT                                                    /*(반제AP 반환금액)*/
+               ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                                /*반제AP번호*/
+               ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                                /*반제AP기산일*/
+               ,INVE_TYP_CD AS N_INVE_TYP_CD
+          FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+              
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+           
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.CNCL_SLIP_YN = 'Y'                                         /*취소전표여부*/
+          AND B.INVE_CNCL_SLIP_NO IS NOT NULL               
+
+       )E
+      ,(/* ■■CASE AR  ■■ */  
+         SELECT /*+ ORDERED  */
+         B.CNSL_MGMT_NO
+        ,B.SELL_PRC AS AR_SALE_AMT                                                /*AR 매출가*/
+        ,A.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                          /*AR 매출번호*/
+        ,A.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                          /*AR 기산일*/
+   FROM   TB_EP_EQP_SALE A ,
+          TB_EP_SAL_GNRL_SALE D ,
+          TB_EP_SAL_EQUIPMENT_SALE B ,
+          (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E 
+ WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+        
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+        
+   AND A.XCL_SLIP_NO IS NOT NULL
+
+         )F
+      ,(
+         SELECT D.CNSL_MGMT_NO
+               ,A.DCINAD_SLIP_NO      AS PAY_SLIP_NO                                       /*전표번호*/
+               ,A.DCINAD_SLIP_DT      AS PAY_SLIP_DT                                       /*전표일자*/
+               ,D.XCL_AMT             AS PAY_XCL_AMT                                       /*금액*/
+               ,A.DCINAD_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO                                  /*취소전표번호*/
+               ,A.DCINAD_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT                                  /*전표번호*/
+               ,'' AS PAY_RMT_DT                                                           /*송금일자*/
+               ,''  AS PAY_TS                                                              /*공제 차수*/
+          FROM TB_EP_DCINAD_XCL A
+               ,TB_EP_DCINAD_XCL_DTL D 
+
+          WHERE A.DCINAD_XCL_NO = D.DCINAD_XCL_NO
+            AND A.DEL_YN = 'N' 
+            AND D.DEL_YN = 'N' 
+
+            AND D.DEDC_TYP_CD = '02'
+            
+            AND A.DCINAD_SLIP_NO IS NOT NULL  
+
+        UNION ALL
+        SELECT /*+ ORDERED */
+               D.CNSL_MGMT_NO
+              ,A.ACCO_RMT_SLIP_NO      AS PAY_SLIP_NO                                      /*전표번호*/    
+              ,A.ACCO_RMT_SLIP_DT      AS PAY_SLIP_DT                                      /*전표일자*/     
+              ,D.XCL_AMT               AS PAY_XCL_AMT                                      /*금액*/         
+              ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO                                 /*취소전표번호*/
+              ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT                                 /*전표번호*/
+              ,D.RMT_DT AS PAY_RMT_DT                                                      /*송금일자*/
+              ,''  AS PAY_TS                                                               /*공제 차수*/
+         FROM TB_EP_ACCO_RMT_XCL A
+             ,TB_EP_ACCO_RMT_XCL_DTL D 
+             ,(SELECT DD.CNSL_MGMT_NO 
+                     ,DD.ACCO_RMT_CNCL_SLIP_NO                                             /*취소전표번호*/
+                     ,DD.ACCO_RMT_CNCL_SLIP_DT                                             /*전표번호*/    
+                 FROM TB_EP_ACCO_RMT_XCL AA
+                     ,TB_EP_ACCO_RMT_XCL_DTL DD 
+                WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                  AND AA.DEL_YN = 'N' 
+                  AND DD.DEL_YN = 'N' 
+                  AND AA.CNCL_SLIP_YN = 'Y') E
+
+         WHERE A.ACCO_RMT_XCL_NO = D.ACCO_RMT_XCL_NO
+
+           AND A.ACCO_RMT_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+           AND A.DEL_YN = 'N' 
+           AND D.DEL_YN = 'N' 
+
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.ACCO_RMT_SLIP_NO IS NOT NULL  
+
+        UNION ALL    
+        SELECT /*+ ORDERED */
+               D.CNSL_MGMT_NO
+              ,A.FEE_PPAY_SLIP_NO      AS PAY_SLIP_NO                                       /*전표번호*/    
+              ,A.FEE_PPAY_SLIP_DT      AS PAY_SLIP_DT                                       /*전표일자*/     
+              ,D.XCL_AMT               AS PAY_XCL_AMT                                       /*금액*/         
+              ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO                                  /*취소전표번호*/
+              ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT                                  /*전표번호*/    
+              ,'' AS PAY_RMT_DT                                                             /*송금일자*/
+              ,D.PPAY_PROC_TS  AS PAY_TS                                                    /*공제 차수*/
+         FROM TB_EP_FEE_PPAY_XCL A
+             ,TB_EP_FEE_PPAY_XCL_DTL D 
+             ,(SELECT DD.CNSL_MGMT_NO 
+                     ,DD.ACCO_RMT_CNCL_SLIP_NO                                              /*취소전표번호*/
+                     ,DD.ACCO_RMT_CNCL_SLIP_DT                                              /*전표번호*/    
+                FROM TB_EP_ACCO_RMT_XCL AA
+                    ,TB_EP_ACCO_RMT_XCL_DTL DD 
+               WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                 AND AA.DEL_YN = 'N' 
+                 AND DD.DEL_YN = 'N' 
+                 AND AA.CNCL_SLIP_YN = 'Y' )E
+
+          WHERE A.FEE_PPAY_XCL_NO = D.FEE_PPAY_XCL_NO
+
+            AND A.FEE_PPAY_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+            AND A.DEL_YN = 'N' 
+            AND D.DEL_YN = 'N'
+ 
+            AND A.FEE_PPAY_SLIP_NO IS NOT NULL  
+
+         )G
+   WHERE A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)
+) PA     
+WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#
+ORDER BY ROWNO]]>
+	</select>
+	<select id="SEqpPrSNoListToCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListToCnt 단말기매입매출전표현황전체총건수 */
+/* IO: 김상오,2015-12-23T16:16:34(박민정,2015-12-09T16:56:39) */
+SELECT /*+ FIRST_ROWS */ COUNT(*) AS TOTAL_CNT
+  FROM 
+        (SELECT  A.CNSL_MGMT_NO                                                        /*상담관리번호*/
+          FROM  TB_EP_CST_CONSULT_MGMT A
+               ,TB_EQP_MDL EM
+         WHERE A.DEL_YN = 'N'
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[                                            /*접수일*/
+           AND A.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[                                            /*회수일*/ 
+           AND A.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND A.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND A.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND A.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(A.PRE_DC_CL, 'N') <> 'Y'   
+	 AND NVL(A.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND A.PAY_MTHD = '02'  
+     AND A.SCRB_MTHD <> 'T' 
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND A.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+     AND EM.EQP_MDL_CD = A.EQP_MDL_CD
+     
+        )A
+       ,(/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.INVE_TYP_CD = '20'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO IS NOT NULL  
+
+        )C
+       ,(/* ■■CASE 확정 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                 B.CNSL_MGMT_NO
+                ,A.DEDC_TYP_CD AS C_DEDC_TYP_CD                                          /*공제유형코드 (AP유형)*/
+                ,B.XCL_AMT AS C_XCL_AMT                                                  /*(확정AP매입가)*/
+                ,A.INVE_SLIP_NO AS C_INVE_SLIP_NO                                        /*확정AP번호*/
+                ,A.INVE_SLIP_DT AS C_INVE_SLIP_DT                                        /*확정AP기산일*/
+           FROM  TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+                
+            WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+              
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND A.INVE_TYP_CD  = '10'                                                   /*확정재고*/
+              AND A.CNCL_SLIP_YN = 'N'                                     /*취소전표여부*/
+              AND A.INVE_SLIP_NO IS NOT NULL               
+
+        )D
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+               ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                            /*공제유형코드 (AP유형)*/
+               ,B.XCL_AMT AS N_XCL_AMT                                                    /*(반제AP 반환금액)*/
+               ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                                /*반제AP번호*/
+               ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                                /*반제AP기산일*/
+               ,INVE_TYP_CD AS N_INVE_TYP_CD
+          FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+              
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+           
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.CNCL_SLIP_YN = 'Y'                                         /*취소전표여부*/
+          AND B.INVE_CNCL_SLIP_NO IS NOT NULL               
+
+       )E
+      ,(/* ■■CASE AR  ■■ */  
+         SELECT /*+ ORDERED  */
+         B.CNSL_MGMT_NO
+        ,B.SELL_PRC AS AR_SALE_AMT                                                /*AR 매출가*/
+        ,A.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                          /*AR 매출번호*/
+        ,A.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                          /*AR 기산일*/
+   FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E 
+ WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+        
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+
+   AND A.XCL_SLIP_NO IS NOT NULL
+
+         )F
+      ,(
+         SELECT D.CNSL_MGMT_NO
+               ,A.DCINAD_SLIP_NO      AS PAY_SLIP_NO                                       /*전표번호*/
+               ,A.DCINAD_SLIP_DT      AS PAY_SLIP_DT                                       /*전표일자*/
+               ,D.XCL_AMT             AS PAY_XCL_AMT                                       /*금액*/
+               ,A.DCINAD_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO                                  /*취소전표번호*/
+               ,A.DCINAD_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT                                  /*전표번호*/
+               ,'' AS PAY_RMT_DT                                                           /*송금일자*/
+               ,''  AS PAY_TS                                                              /*공제 차수*/
+          FROM TB_EP_DCINAD_XCL A
+               ,TB_EP_DCINAD_XCL_DTL D 
+
+          WHERE A.DCINAD_XCL_NO = D.DCINAD_XCL_NO
+            AND A.DEL_YN = 'N' 
+            AND D.DEL_YN = 'N' 
+            
+            AND D.DEDC_TYP_CD = '02'
+
+            AND A.DCINAD_SLIP_NO IS NOT NULL  
+
+        UNION ALL
+        SELECT /*+ ORDERED */
+               D.CNSL_MGMT_NO
+              ,A.ACCO_RMT_SLIP_NO      AS PAY_SLIP_NO                                      /*전표번호*/    
+              ,A.ACCO_RMT_SLIP_DT      AS PAY_SLIP_DT                                      /*전표일자*/     
+              ,D.XCL_AMT               AS PAY_XCL_AMT                                      /*금액*/         
+              ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO                                 /*취소전표번호*/
+              ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT                                 /*전표번호*/
+              ,D.RMT_DT AS PAY_RMT_DT                                                      /*송금일자*/
+              ,''  AS PAY_TS                                                               /*공제 차수*/
+         FROM TB_EP_ACCO_RMT_XCL A
+             ,TB_EP_ACCO_RMT_XCL_DTL D 
+             ,(SELECT DD.CNSL_MGMT_NO 
+                     ,DD.ACCO_RMT_CNCL_SLIP_NO                                             /*취소전표번호*/
+                     ,DD.ACCO_RMT_CNCL_SLIP_DT                                             /*전표번호*/    
+                 FROM TB_EP_ACCO_RMT_XCL AA
+                     ,TB_EP_ACCO_RMT_XCL_DTL DD 
+                WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                  AND AA.DEL_YN = 'N' 
+                  AND DD.DEL_YN = 'N' 
+                  AND AA.CNCL_SLIP_YN = 'Y') E
+            
+         WHERE A.ACCO_RMT_XCL_NO = D.ACCO_RMT_XCL_NO
+           
+           AND A.ACCO_RMT_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+           AND A.DEL_YN = 'N' 
+           AND D.DEL_YN = 'N' 
+           
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.ACCO_RMT_SLIP_NO IS NOT NULL  
+
+        UNION ALL    
+        SELECT /*+ ORDERED */
+               D.CNSL_MGMT_NO
+              ,A.FEE_PPAY_SLIP_NO      AS PAY_SLIP_NO                                       /*전표번호*/    
+              ,A.FEE_PPAY_SLIP_DT      AS PAY_SLIP_DT                                       /*전표일자*/     
+              ,D.XCL_AMT               AS PAY_XCL_AMT                                       /*금액*/         
+              ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO                                  /*취소전표번호*/
+              ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT                                  /*전표번호*/    
+              ,'' AS PAY_RMT_DT                                                             /*송금일자*/
+              ,D.PPAY_PROC_TS  AS PAY_TS                                                    /*공제 차수*/
+         FROM TB_EP_FEE_PPAY_XCL A
+             ,TB_EP_FEE_PPAY_XCL_DTL D 
+             ,(SELECT DD.CNSL_MGMT_NO 
+                     ,DD.ACCO_RMT_CNCL_SLIP_NO                                              /*취소전표번호*/
+                     ,DD.ACCO_RMT_CNCL_SLIP_DT                                              /*전표번호*/    
+                FROM TB_EP_ACCO_RMT_XCL AA
+                    ,TB_EP_ACCO_RMT_XCL_DTL DD 
+               WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                 AND AA.DEL_YN = 'N' 
+                 AND DD.DEL_YN = 'N' 
+                 AND AA.CNCL_SLIP_YN = 'Y' )E
+           
+          WHERE A.FEE_PPAY_XCL_NO = D.FEE_PPAY_XCL_NO
+            
+            AND A.FEE_PPAY_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+            AND A.DEL_YN = 'N' 
+            AND D.DEL_YN = 'N'
+             
+            AND A.FEE_PPAY_SLIP_NO IS NOT NULL  
+
+         )G
+   WHERE A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)]]>
+	</select>
+	<select id="SEqpPrSNoListMPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListMPaging 단말기매입매출전표현황미착전표조회 */
+/* IO: 김상오,2015-12-23T17:04:03(김상오,2015-12-11T15:32:42) */
+SELECT /*+ FIRST_ROWS */ * FROM (
+SELECT ROWNUM AS ROWNO
+       ,A.CNSL_DT                                                                  /*접수일자*/
+       ,A.CLCT_DT                                                                  /*회수일자(반영일자)*/
+       ,A.CNSL_MGMT_NO                                                             /*상담관리번호*/
+       ,A.EQP_MDL_CD                                                               /*단말기 코드*/
+       ,A.EQP_SER_NO                                                               /*단말기 일련번호*/
+       ,A.EQP_MDL_NM                                                               /*모델명*/
+       ,A.SKN_CL                                                                   /*현장 / 감정구분*/
+       ,A.PROGR_ST   /*진행상태*/
+       ,A.RWD_CD		
+       ,M_INVE_SLIP_NO                                                                /*미착AP번호*/
+       ,M_INVE_SLIP_DT                                                                /*미착AP기산일*/
+       ,M_XCL_AMT                                                                     /*미착금액*/
+       ,C_INVE_SLIP_NO                                                                /*확정AP번호*/
+       ,C_INVE_SLIP_DT                                                                /*확정AP기산일*/
+       ,C_XCL_AMT                                                                     /*확정금액*/
+       ,N_XCL_AMT                                                                /*반제 반환금액*/
+       ,DECODE(N_INVE_TYP_CD, '20', N_INVE_CNCL_SLIP_NO ) AS M_INVE_CNCL_SLIP_NO /*미착반제 AP번호*/
+       ,DECODE(N_INVE_TYP_CD, '10', N_INVE_CNCL_SLIP_NO ) AS C_INVE_CNCL_SLIP_NO /*확정반제 AP번호*/
+       ,N_INVE_CNCL_SLIP_DT                                                        /*확정반제 AP기산일*/
+       ,PAY_SLIP_NO       /*전표번호*/
+       ,PAY_SLIP_DT      /*전표일자*/
+       ,PAY_XCL_AMT      /*금액*/
+       ,PAY_CNCL_SLIP_NO  /*취소전표번호*/
+       ,PAY_CNCL_SLIP_DT  /*전표번호*/
+       ,PAY_RMT_DT           /*송금일자*/
+       ,PAY_TS /*공제 차수*/
+       ,AR_SALE_AMT                                                  /*AR 매출가*/
+       ,AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+       ,AR_XCL_SLIP_DT                                            /*AR 기산일*/
+  FROM (/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+                CM.CNSL_DT                                                                  /*접수일자*/
+                ,CM.CLCT_DT                                                                  /*회수일자(반영일자)*/
+                ,CM.CNSL_MGMT_NO                                                             /*상담관리번호*/
+                ,EM.EQP_MDL_CD                                                               /*단말기 코드*/
+                ,CM.EQP_SER_NO                                                               /*단말기 일련번호*/
+                ,EM.EQP_MDL_NM                                                               /*모델명*/
+                ,CM.SKN_CL                                                                   /*현장 / 감정구분*/
+                ,CM.PROGR_ST   /*진행상태*/
+                ,CASE WHEN CM.PRE_DC_CL = 'Y' THEN '선할인'
+                      WHEN CM.PAY_MTHD = '01' THEN '계좌송금'
+                      WHEN CM.SCRB_MTHD = 'T' THEN '클럽T'
+                      WHEN CM.PAY_MTHD = '02' THEN '요금선납'
+                      ELSE '계좌송금'  
+                 END RWD_CD	
+                ,B.XCL_AMT  AS M_XCL_AMT                                                                     /*상담금액(미착AP매입금액)*/
+                ,A.DEDC_TYP_CD  AS M_DEDC_TYP_CD                                                                   /*공제유형코드 ( AP유형)*/
+                ,A.INVE_SLIP_NO AS M_INVE_SLIP_NO                                                                  /*미착AP번호*/
+                ,A.INVE_SLIP_DT AS M_INVE_SLIP_DT                                                                  /*미착AP기산일*/
+                ,A.INVE_TYP_CD  AS M_INVE_TYP_CD                                                                  /*AP처리구분*/
+          FROM  TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+                ,TB_EP_CST_CONSULT_MGMT CM
+
+                ,TB_EQP_MDL EM
+          WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+            AND CM.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+
+            AND A.DEL_YN = 'N'
+            AND B.DEL_YN = 'N'
+            AND CM.DEL_YN = 'N'
+
+            AND A.INVE_TYP_CD = '20'
+            AND A.CNCL_SLIP_YN = 'N'
+            AND A.INVE_SLIP_NO IS NOT NULL
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일*/
+              AND CM.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*회수일*/ 
+              AND CM.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND CM.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND CM.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND CM.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND CM.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND CM.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(CM.PRE_DC_CL, 'N') <> 'Y'         
+     AND NVL(CM.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND CM.PAY_MTHD = '02'  
+     AND CM.SCRB_MTHD <> 'T' 
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND CM.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+            AND EM.EQP_MDL_CD(+) = CM.EQP_MDL_CD
+      ) A
+       ,(/* ■■CASE 확정 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+                ,A.DEDC_TYP_CD AS C_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+                ,B.XCL_AMT AS C_XCL_AMT                                              /*(확정AP매입가)*/
+                ,A.INVE_SLIP_NO AS C_INVE_SLIP_NO                                    /*확정AP번호*/
+                ,A.INVE_SLIP_DT AS C_INVE_SLIP_DT                                    /*확정AP기산일*/
+           FROM TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+                
+          WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+            
+            AND A.DEL_YN = 'N'
+            AND B.DEL_YN = 'N'
+            AND A.INVE_TYP_CD  = '10'  /*확정재고*/
+            AND A.CNCL_SLIP_YN = 'N' /*취소전표여부*/
+            AND A.INVE_SLIP_NO IS NOT NULL
+
+      ) D
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+                ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+                ,B.XCL_AMT AS N_XCL_AMT                                              /*(반제AP 반환금액)*/
+                ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                          /*반제AP번호*/
+                ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                          /*반제AP기산일*/
+                ,INVE_TYP_CD AS N_INVE_TYP_CD
+           FROM TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+                
+          WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+            AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+             
+            AND A.DEL_YN = 'N'
+            AND B.DEL_YN = 'N'
+            AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+            AND B.INVE_CNCL_SLIP_NO IS NOT NULL
+
+      ) E
+      ,(/* ■■CASE AR  ■■ */  
+         SELECT /*+ ORDERED USE_HASH(A D) */
+                 B.CNSL_MGMT_NO
+                ,B.SELL_PRC AS AR_SALE_AMT                                                  /*AR 매출가*/
+                ,A.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+                ,A.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                            /*AR 기산일*/
+          FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E 
+               
+ WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+
+   AND A.XCL_SLIP_NO IS NOT NULL  
+      ) F
+      ,(SELECT /*+ ORDERED */
+               D.CNSL_MGMT_NO
+               ,A.DCINAD_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/
+               ,A.DCINAD_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/
+               ,D.XCL_AMT             AS PAY_XCL_AMT      /*금액*/
+               ,A.DCINAD_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+               ,A.DCINAD_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/
+               ,'' AS PAY_RMT_DT  /*송금일자*/
+               ,''  AS PAY_TS /*공제 차수*/
+          FROM TB_EP_DCINAD_XCL A
+               ,TB_EP_DCINAD_XCL_DTL D 
+
+         WHERE A.DCINAD_XCL_NO = D.DCINAD_XCL_NO
+           AND D.DEDC_TYP_CD = '02'
+           AND A.DEL_YN = 'N' 
+           AND D.DEL_YN = 'N' 
+
+           AND A.DCINAD_SLIP_NO IS NOT NULL  
+        UNION ALL
+        SELECT /*+ ORDERED */
+                D.CNSL_MGMT_NO
+               ,A.ACCO_RMT_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/    
+               ,A.ACCO_RMT_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/     
+               ,D.XCL_AMT               AS PAY_XCL_AMT      /*금액*/         
+               ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+               ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/
+               ,D.RMT_DT AS PAY_RMT_DT /*송금일자*/
+               ,''  AS PAY_TS /*공제 차수*/
+          FROM TB_EP_ACCO_RMT_XCL A
+              ,TB_EP_ACCO_RMT_XCL_DTL D 
+              ,(SELECT DD.CNSL_MGMT_NO 
+                      ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+                      ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+                 FROM TB_EP_ACCO_RMT_XCL AA
+                     ,TB_EP_ACCO_RMT_XCL_DTL DD 
+               WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                 AND AA.DEL_YN = 'N' 
+                 AND DD.DEL_YN = 'N' 
+                 AND AA.CNCL_SLIP_YN = 'Y'      
+               ) E
+          WHERE A.ACCO_RMT_XCL_NO = D.ACCO_RMT_XCL_NO
+
+             AND A.ACCO_RMT_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+             AND A.DEL_YN = 'N' 
+             AND D.DEL_YN = 'N' 
+             AND A.CNCL_SLIP_YN = 'N'
+             AND A.ACCO_RMT_SLIP_NO IS NOT NULL  
+         UNION ALL    
+         SELECT /*+ ORDERED */
+                D.CNSL_MGMT_NO
+               ,A.FEE_PPAY_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/    
+               ,A.FEE_PPAY_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/     
+               ,D.XCL_AMT               AS PAY_XCL_AMT      /*금액*/         
+               ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+               ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/    
+               ,'' AS PAY_RMT_DT           /*송금일자*/
+               ,D.PPAY_PROC_TS  AS PAY_TS /*공제 차수*/
+          FROM TB_EP_FEE_PPAY_XCL A
+              ,TB_EP_FEE_PPAY_XCL_DTL D 
+              ,(SELECT DD.CNSL_MGMT_NO 
+                      ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+                      ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+                 FROM TB_EP_ACCO_RMT_XCL AA
+                     ,TB_EP_ACCO_RMT_XCL_DTL DD 
+               WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                 AND AA.DEL_YN = 'N' 
+                 AND DD.DEL_YN = 'N' 
+                 AND AA.CNCL_SLIP_YN = 'Y'      
+               ) E
+          WHERE A.FEE_PPAY_XCL_NO = D.FEE_PPAY_XCL_NO
+
+             AND A.FEE_PPAY_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+             AND A.DEL_YN = 'N' 
+             AND D.DEL_YN = 'N' 
+             AND A.FEE_PPAY_SLIP_NO IS NOT NULL  
+
+          )G
+   WHERE A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)
+) PA     
+WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#
+ORDER BY ROWNO]]>
+	</select>
+	<select id="SEqpPrSNoListCPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListCPaging 단말기매입매출전표현황확정전표조회 */
+/* IO: 김상오,2015-12-23T17:04:20(김상오,2015-12-11T16:00:41) */
+SELECT /*+ FIRST_ROWS */ * FROM (
+SELECT  ROWNUM AS ROWNO
+        ,A.CNSL_DT                                                                  /*접수일자*/
+       ,A.CLCT_DT                                                                  /*회수일자(반영일자)*/
+       ,A.CNSL_MGMT_NO                                                             /*상담관리번호*/
+       ,A.EQP_MDL_CD                                                               /*단말기 코드*/
+       ,A.EQP_SER_NO                                                               /*단말기 일련번호*/
+       ,A.EQP_MDL_NM                                                               /*모델명*/
+       ,A.SKN_CL                                                                   /*현장 / 감정구분*/
+       ,A.PROGR_ST   /*진행상태*/
+       ,A.RWD_CD		
+       ,M_INVE_SLIP_NO                                                                /*미착AP번호*/
+       ,M_INVE_SLIP_DT                                                                /*미착AP기산일*/
+       ,M_XCL_AMT                                                                     /*미착금액*/
+       ,C_INVE_SLIP_NO                                                                /*확정AP번호*/
+       ,C_INVE_SLIP_DT                                                                /*확정AP기산일*/
+       ,C_XCL_AMT                                                                     /*확정금액*/
+       ,N_XCL_AMT                                                                /*반제 반환금액*/
+       ,DECODE(N_INVE_TYP_CD, '20', N_INVE_CNCL_SLIP_NO ) AS M_INVE_CNCL_SLIP_NO /*미착반제 AP번호*/
+       ,DECODE(N_INVE_TYP_CD, '10', N_INVE_CNCL_SLIP_NO ) AS C_INVE_CNCL_SLIP_NO /*확정반제 AP번호*/
+       ,N_INVE_CNCL_SLIP_DT                                                        /*확정반제 AP기산일*/
+        ,PAY_SLIP_NO       /*전표번호*/
+        ,PAY_SLIP_DT      /*전표일자*/
+        ,PAY_XCL_AMT      /*금액*/
+        ,PAY_CNCL_SLIP_NO  /*취소전표번호*/
+        ,PAY_CNCL_SLIP_DT  /*전표번호*/
+        ,PAY_RMT_DT           /*송금일자*/
+        ,PAY_TS /*공제 차수*/
+        ,AR_SALE_AMT                                                  /*AR 매출가*/
+        ,AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+        ,AR_XCL_SLIP_DT                                            /*AR 기산일*/
+  FROM  (SELECT /*+  ORDERED USE_HASH(A B) */
+                CM.CNSL_DT                                                                  /*접수일자*/
+               ,CM.CLCT_DT                                                                  /*회수일자(반영일자)*/
+               ,CM.CNSL_MGMT_NO                                                             /*상담관리번호*/
+               ,EM.EQP_MDL_CD                                                               /*단말기 코드*/
+               ,CM.EQP_SER_NO                                                               /*단말기 일련번호*/
+               ,EM.EQP_MDL_NM                                                               /*모델명*/
+               ,CM.SKN_CL                                                                   /*현장 / 감정구분*/
+               ,CM.PROGR_ST   /*진행상태*/
+               ,CASE WHEN CM.PRE_DC_CL = 'Y' THEN '선할인'
+                     WHEN CM.PAY_MTHD = '01' THEN '계좌송금'
+                     WHEN CM.SCRB_MTHD = 'T' THEN '클럽T'
+                     WHEN CM.PAY_MTHD = '02' THEN '요금선납'
+                     ELSE '계좌송금'  
+                END RWD_CD	
+               ,A.DEDC_TYP_CD AS C_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+                  ,B.XCL_AMT AS C_XCL_AMT                                              /*(확정AP매입가)*/
+                  ,A.INVE_SLIP_NO AS C_INVE_SLIP_NO                                    /*확정AP번호*/
+                  ,A.INVE_SLIP_DT AS C_INVE_SLIP_DT                                    /*확정AP기산일*/
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+               ,TB_EP_CST_CONSULT_MGMT CM
+
+               ,TB_EQP_MDL EM
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+           AND CM.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND CM.DEL_YN = 'N'
+
+           AND A.INVE_TYP_CD = '10'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO is not null
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일*/
+              AND CM.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*회수일*/ 
+              AND CM.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND CM.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND CM.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND CM.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND CM.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND CM.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(CM.PRE_DC_CL, 'N') <> 'Y'         
+     AND NVL(CM.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND CM.PAY_MTHD = '02'  
+     AND CM.SCRB_MTHD <> 'T'
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND CM.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+           AND EM.EQP_MDL_CD = CM.EQP_MDL_CD
+       ) A
+       ,(/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+               B.CNSL_MGMT_NO
+               ,B.XCL_AMT  AS M_XCL_AMT                                                                     /*상담금액(미착AP매입금액)*/
+               ,A.DEDC_TYP_CD  AS M_DEDC_TYP_CD                                                                   /*공제유형코드 ( AP유형)*/
+               ,A.INVE_SLIP_NO AS M_INVE_SLIP_NO                                                                  /*미착AP번호*/
+               ,A.INVE_SLIP_DT AS M_INVE_SLIP_DT                                                                  /*미착AP기산일*/
+               ,A.INVE_TYP_CD  AS M_INVE_TYP_CD                                                                  /*AP처리구분*/
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+               
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+           
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.INVE_TYP_CD = '20'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO IS NOT NULL  
+
+
+      ) C
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+              ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+              ,B.XCL_AMT AS N_XCL_AMT                                              /*(반제AP 반환금액)*/
+              ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                          /*반제AP번호*/
+              ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                          /*반제AP기산일*/
+              ,INVE_TYP_CD AS N_INVE_TYP_CD
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+             
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+         
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+          AND B.INVE_CNCL_SLIP_NO IS NOT NULL  
+
+
+      ) E
+      ,(/* ■■CASE AR  ■■ */  
+         SELECT /*+ ORDERED USE_HASH(A D ) */
+                 B.CNSL_MGMT_NO
+                ,B.SELL_PRC AS AR_SALE_AMT                                                  /*AR 매출가*/
+                ,A.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+                ,A.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                            /*AR 기산일*/
+          FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E
+ WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+       
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+     
+   AND A.XCL_SLIP_NO IS NOT NULL  
+
+
+      ) F
+      ,(
+SELECT /*+ ORDERED */
+        D.CNSL_MGMT_NO
+       ,A.DCINAD_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/
+       ,A.DCINAD_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/
+       ,D.XCL_AMT             AS PAY_XCL_AMT      /*금액*/
+       ,A.DCINAD_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+       ,A.DCINAD_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/
+       ,'' AS PAY_RMT_DT  /*송금일자*/
+       ,''  AS PAY_TS /*공제 차수*/
+  FROM TB_EP_DCINAD_XCL A
+       ,TB_EP_DCINAD_XCL_DTL D 
+      
+ WHERE A.DCINAD_XCL_NO = D.DCINAD_XCL_NO
+    AND D.DEDC_TYP_CD = '02'
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+    
+    AND A.DCINAD_SLIP_NO IS NOT NULL  
+
+UNION ALL
+SELECT /*+ ORDERED */
+       D.CNSL_MGMT_NO
+      ,A.ACCO_RMT_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/    
+      ,A.ACCO_RMT_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/     
+      ,D.XCL_AMT               AS PAY_XCL_AMT      /*금액*/         
+      ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+      ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/
+      ,D.RMT_DT AS PAY_RMT_DT /*송금일자*/
+      ,''  AS PAY_TS /*공제 차수*/
+ FROM TB_EP_ACCO_RMT_XCL A
+     ,TB_EP_ACCO_RMT_XCL_DTL D 
+     ,(SELECT DD.CNSL_MGMT_NO 
+             ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+             ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+        FROM TB_EP_ACCO_RMT_XCL AA
+            ,TB_EP_ACCO_RMT_XCL_DTL DD 
+      WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+        AND AA.DEL_YN = 'N' 
+        AND DD.DEL_YN = 'N' 
+        AND AA.CNCL_SLIP_YN = 'Y'      
+      ) E
+ WHERE A.ACCO_RMT_XCL_NO = D.ACCO_RMT_XCL_NO
+    AND A.ACCO_RMT_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+    AND A.CNCL_SLIP_YN = 'N'
+    AND A.ACCO_RMT_SLIP_NO IS NOT NULL  
+
+UNION ALL    
+SELECT /*+ ORDERED */
+       D.CNSL_MGMT_NO
+      ,A.FEE_PPAY_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/    
+      ,A.FEE_PPAY_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/     
+      ,D.XCL_AMT               AS PAY_XCL_AMT      /*금액*/         
+      ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+      ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/    
+      ,'' AS PAY_RMT_DT           /*송금일자*/
+      ,D.PPAY_PROC_TS  AS PAY_TS /*공제 차수*/
+ FROM TB_EP_FEE_PPAY_XCL A
+     ,TB_EP_FEE_PPAY_XCL_DTL D 
+     ,(SELECT DD.CNSL_MGMT_NO 
+             ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+             ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+        FROM TB_EP_ACCO_RMT_XCL AA
+            ,TB_EP_ACCO_RMT_XCL_DTL DD 
+      WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+        AND AA.DEL_YN = 'N' 
+        AND DD.DEL_YN = 'N' 
+        AND AA.CNCL_SLIP_YN = 'Y'      
+      ) E
+ WHERE A.FEE_PPAY_XCL_NO = D.FEE_PPAY_XCL_NO
+    AND A.FEE_PPAY_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+    AND A.FEE_PPAY_SLIP_NO IS NOT NULL  
+
+ )G
+   WHERE A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)
+)PA
+WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#
+ORDER BY ROWNO]]>
+	</select>
+	<select id="SEqpPrSNoListAPPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListAPPaging 단말기매입매출전표현황AP전표조회 */
+/* IO: 김상오,2015-12-23T17:03:40(김상오,2015-12-11T16:13:07) */
+SELECT /*+ FIRST_ROWS */ * FROM (
+SELECT ROWNUM AS ROWNO
+        ,A.CNSL_DT                                                                  /*접수일자*/
+       ,A.CLCT_DT                                                                  /*회수일자(반영일자)*/
+       ,A.CNSL_MGMT_NO                                                             /*상담관리번호*/
+       ,A.EQP_MDL_CD                                                               /*단말기 코드*/
+       ,A.EQP_SER_NO                                                               /*단말기 일련번호*/
+       ,A.EQP_MDL_NM                                                               /*모델명*/
+       ,A.SKN_CL                                                                   /*현장 / 감정구분*/
+       ,A.PROGR_ST   /*진행상태*/
+       ,A.RWD_CD		
+       ,M_INVE_SLIP_NO                                                                /*미착AP번호*/
+       ,M_INVE_SLIP_DT                                                                /*미착AP기산일*/
+       ,M_XCL_AMT                                                                     /*미착금액*/
+       ,C_INVE_SLIP_NO                                                                /*확정AP번호*/
+       ,C_INVE_SLIP_DT                                                                /*확정AP기산일*/
+       ,C_XCL_AMT                                                                     /*확정금액*/
+       ,N_XCL_AMT                                                                /*반제 반환금액*/
+       ,DECODE(N_INVE_TYP_CD, '20', N_INVE_CNCL_SLIP_NO ) AS M_INVE_CNCL_SLIP_NO /*미착반제 AP번호*/
+       ,DECODE(N_INVE_TYP_CD, '10', N_INVE_CNCL_SLIP_NO ) AS C_INVE_CNCL_SLIP_NO /*확정반제 AP번호*/
+       ,N_INVE_CNCL_SLIP_DT                                                        /*확정반제 AP기산일*/
+        ,PAY_SLIP_NO       /*전표번호*/
+        ,PAY_SLIP_DT      /*전표일자*/
+        ,PAY_XCL_AMT      /*금액*/
+        ,PAY_CNCL_SLIP_NO  /*취소전표번호*/
+        ,PAY_CNCL_SLIP_DT  /*전표번호*/
+        ,PAY_RMT_DT           /*송금일자*/
+        ,PAY_TS /*공제 차수*/
+        ,AR_SALE_AMT                                                  /*AR 매출가*/
+        ,AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+        ,AR_XCL_SLIP_DT                                            /*AR 기산일*/
+FROM (SELECT /*+ ORDERED */
+          CM.CNSL_DT          /*접수일자*/
+          ,CM.CLCT_DT          /*회수일자(반영일자)*/
+          ,CM.CNSL_MGMT_NO          /*상담관리번호*/
+          ,EM.EQP_MDL_CD          /*단말기 코드*/
+          ,CM.EQP_SER_NO          /*단말기 일련번호*/
+          ,EM.EQP_MDL_NM          /*모델명*/
+          ,CM.SKN_CL          /*현장 / 감정구분*/
+          ,CM.PROGR_ST          /*진행상태*/
+          ,CASE
+            WHEN CM.PRE_DC_CL = 'Y'            THEN '선할인'
+            WHEN CM.PAY_MTHD = '01'            THEN '계좌송금'
+            WHEN CM.SCRB_MTHD = 'T'            THEN '클럽T'
+            WHEN CM.PAY_MTHD = '02'            THEN '요금선납'
+            ELSE '계좌송금'
+           END RWD_CD 
+          ,PAY_SLIP_NO          /*전표번호*/
+          ,PAY_SLIP_DT          /*전표일자*/
+          ,PAY_XCL_AMT          /*금액*/
+          ,PAY_CNCL_SLIP_NO          /*취소전표번호*/
+          ,PAY_CNCL_SLIP_DT          /*전표번호*/
+          ,PAY_RMT_DT          /*송금일자*/
+          ,PAY_TS          /*공제 차수*/
+          FROM (SELECT /*+ ORDERED */
+                       D.CNSL_MGMT_NO          /*상담관리번호*/
+                       ,A.DCINAD_SLIP_NO AS PAY_SLIP_NO          /*전표번호*/
+                       ,A.DCINAD_SLIP_DT AS PAY_SLIP_DT          /*전표일자*/
+                       ,D.XCL_AMT AS PAY_XCL_AMT          /*금액*/
+                       ,A.DCINAD_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO          /*취소전표번호*/
+                       ,A.DCINAD_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT          /*전표번호*/
+                       ,'' AS PAY_RMT_DT          /*송금일자*/
+                       ,'' AS PAY_TS          /*공제 차수*/
+                  FROM TB_EP_DCINAD_XCL A ,
+                       TB_EP_DCINAD_XCL_DTL D 
+                 WHERE A.DCINAD_XCL_NO     = D.DCINAD_XCL_NO
+                  AND D.DEDC_TYP_CD     = '02'
+                  AND A.DEL_YN          = 'N'
+                  AND D.DEL_YN          = 'N'
+                  AND A.DCINAD_SLIP_NO IS NOT NULL
+                UNION ALL
+                SELECT /*+ ORDERED */
+                  D.CNSL_MGMT_NO          /*상담관리번호*/
+                  ,A.ACCO_RMT_SLIP_NO AS PAY_SLIP_NO                  /*전표번호*/
+                  ,A.ACCO_RMT_SLIP_DT AS PAY_SLIP_DT                  /*전표일자*/
+                  ,D.XCL_AMT AS PAY_XCL_AMT                  /*금액*/
+                  ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO                  /*취소전표번호*/
+                  ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT                  /*전표번호*/
+                  ,D.RMT_DT AS PAY_RMT_DT                  /*송금일자*/
+                  ,'' AS PAY_TS                  /*공제 차수*/
+                FROM TB_EP_ACCO_RMT_XCL A ,
+                     TB_EP_ACCO_RMT_XCL_DTL D ,
+                     (SELECT DD.CNSL_MGMT_NO 
+                             ,DD.ACCO_RMT_CNCL_SLIP_NO                      /*취소전표번호*/
+                             ,DD.ACCO_RMT_CNCL_SLIP_DT                      /*전표번호*/
+                        FROM TB_EP_ACCO_RMT_XCL AA ,
+                             TB_EP_ACCO_RMT_XCL_DTL DD
+                       WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                         AND AA.DEL_YN        = 'N'
+                         AND DD.DEL_YN        = 'N'
+                         AND AA.CNCL_SLIP_YN  = 'Y'
+                      )                  E 
+                WHERE A.ACCO_RMT_XCL_NO     = D.ACCO_RMT_XCL_NO
+                  AND A.ACCO_RMT_SLIP_NO  = E.ACCO_RMT_CNCL_SLIP_NO(+)
+                  AND A.DEL_YN            = 'N'
+                  AND D.DEL_YN            = 'N'
+                  AND A.CNCL_SLIP_YN      = 'N'
+                  AND A.ACCO_RMT_SLIP_NO IS NOT NULL
+                UNION ALL
+                SELECT /*+ ORDERED */
+                       D.CNSL_MGMT_NO          /*상담관리번호*/,
+                       A.FEE_PPAY_SLIP_NO AS PAY_SLIP_NO          /*전표번호*/          ,
+                       A.FEE_PPAY_SLIP_DT AS PAY_SLIP_DT          /*전표일자*/          ,
+                       D.XCL_AMT AS PAY_XCL_AMT          /*금액*/          ,
+                       E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO          /*취소전표번호*/          ,
+                       E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT          /*전표번호*/          ,
+                       '' AS PAY_RMT_DT          /*송금일자*/          ,
+                       D.PPAY_PROC_TS AS PAY_TS          /*공제 차수*/
+                  FROM TB_EP_FEE_PPAY_XCL A ,
+                       TB_EP_FEE_PPAY_XCL_DTL D ,
+                       (SELECT DD.CNSL_MGMT_NO 
+                               ,DD.ACCO_RMT_CNCL_SLIP_NO                           /*취소전표번호*/                           
+                               ,DD.ACCO_RMT_CNCL_SLIP_DT                           /*전표번호*/
+                          FROM TB_EP_ACCO_RMT_XCL AA ,
+                               TB_EP_ACCO_RMT_XCL_DTL DD
+                         WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                           AND AA.DEL_YN        = 'N'
+                           AND DD.DEL_YN        = 'N'
+                           AND AA.CNCL_SLIP_YN  = 'Y'
+                       )E 
+                  WHERE A.FEE_PPAY_XCL_NO     = D.FEE_PPAY_XCL_NO
+                    AND A.FEE_PPAY_SLIP_NO  = E.ACCO_RMT_CNCL_SLIP_NO(+)
+                    AND A.DEL_YN            = 'N'
+                    AND D.DEL_YN            = 'N'
+                    AND A.FEE_PPAY_SLIP_NO IS NOT NULL
+                ) A
+                ,TB_EP_CST_CONSULT_MGMT CM 
+                ,TB_EQP_MDL EM
+          WHERE A.CNSL_MGMT_NO = CM.CNSL_MGMT_NO
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일*/
+ AND CM.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*회수일*/ 
+  AND CM.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND CM.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND CM.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND CM.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND CM.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND CM.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(CM.PRE_DC_CL, 'N') <> 'Y'         
+     AND NVL(CM.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND CM.PAY_MTHD = '02' 
+     AND CM.SCRB_MTHD <> 'T' 
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND CM.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+            AND EM.EQP_MDL_CD(+)       = CM.EQP_MDL_CD
+   ) A
+       ,(/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+               ,B.XCL_AMT  AS M_XCL_AMT                                                                     /*상담금액(미착AP매입금액)*/
+               ,A.DEDC_TYP_CD  AS M_DEDC_TYP_CD                                                                   /*공제유형코드 ( AP유형)*/
+               ,A.INVE_SLIP_NO AS M_INVE_SLIP_NO                                                                  /*미착AP번호*/
+               ,A.INVE_SLIP_DT AS M_INVE_SLIP_DT                                                                  /*미착AP기산일*/
+               ,A.INVE_TYP_CD  AS M_INVE_TYP_CD                                                                  /*AP처리구분*/
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+               
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+           
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.INVE_TYP_CD = '20'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO IS NOT NULL
+
+      ) C
+       ,(/* ■■CASE 확정 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+                ,A.DEDC_TYP_CD AS C_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+                ,B.XCL_AMT AS C_XCL_AMT                                              /*(확정AP매입가)*/
+                ,A.INVE_SLIP_NO AS C_INVE_SLIP_NO                                    /*확정AP번호*/
+                ,A.INVE_SLIP_DT AS C_INVE_SLIP_DT                                    /*확정AP기산일*/
+             FROM TB_EP_INVE_XCL A 
+                  ,TB_EP_INVE_XCL_DTL B
+                  
+            WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+              
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND A.INVE_TYP_CD  = '10'  /*확정재고*/
+              AND A.CNCL_SLIP_YN = 'N' /*취소전표여부*/
+              AND A.INVE_SLIP_NO IS NOT NULL
+ 
+      ) D
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+                ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+                ,B.XCL_AMT AS N_XCL_AMT                                              /*(반제AP 반환금액)*/
+                ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                          /*반제AP번호*/
+                ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                          /*반제AP기산일*/
+                ,INVE_TYP_CD AS N_INVE_TYP_CD
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+               
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+           
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+          AND B.INVE_CNCL_SLIP_NO IS NOT NULL
+ 
+      ) E
+      ,(/* ■■CASE AR  ■■ */  
+         SELECT /*+ use_hash(A D) */
+         B.CNSL_MGMT_NO
+        ,B.SELL_PRC AS AR_SALE_AMT                                                /*AR 매출가*/
+        ,A.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                          /*AR 매출번호*/
+        ,A.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                          /*AR 기산일*/
+   FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E 
+              
+ WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+        
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+         
+   AND A.XCL_SLIP_NO IS NOT NULL  
+ 
+      ) F
+   WHERE A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+)PA     
+WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#
+ORDER BY ROWNO]]>
+	</select>
+	<select id="SEqpPrSNoListARPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListARPaging 단말기매입매출전표현황AR전표조회 */
+/* IO: 김상오,2015-12-23T17:03:50(김상오,2015-12-11T16:13:50) */
+SELECT /*+ FIRST_ROWS */ * FROM (
+SELECT ROWNUM AS ROWNO
+       ,A.CNSL_DT                                                                  /*접수일자*/
+       ,A.CLCT_DT                                                                  /*회수일자(반영일자)*/
+       ,A.CNSL_MGMT_NO                                                             /*상담관리번호*/
+       ,A.EQP_MDL_CD                                                               /*단말기 코드*/
+       ,A.EQP_SER_NO                                                               /*단말기 일련번호*/
+       ,A.EQP_MDL_NM                                                               /*모델명*/
+       ,A.SKN_CL                                                                   /*현장 / 감정구분*/
+       ,A.PROGR_ST   /*진행상태*/
+       ,A.RWD_CD		
+       ,M_INVE_SLIP_NO                                                                /*미착AP번호*/
+       ,M_INVE_SLIP_DT                                                                /*미착AP기산일*/
+       ,M_XCL_AMT                                                                     /*미착금액*/
+       ,C_INVE_SLIP_NO                                                                /*확정AP번호*/
+       ,C_INVE_SLIP_DT                                                                /*확정AP기산일*/
+       ,C_XCL_AMT                                                                     /*확정금액*/
+       ,N_XCL_AMT                                                                /*반제 반환금액*/
+       ,DECODE(N_INVE_TYP_CD, '20', N_INVE_CNCL_SLIP_NO ) AS M_INVE_CNCL_SLIP_NO /*미착반제 AP번호*/
+       ,DECODE(N_INVE_TYP_CD, '10', N_INVE_CNCL_SLIP_NO ) AS C_INVE_CNCL_SLIP_NO /*확정반제 AP번호*/
+       ,N_INVE_CNCL_SLIP_DT                                                        /*확정반제 AP기산일*/
+        ,PAY_SLIP_NO       /*전표번호*/
+        ,PAY_SLIP_DT      /*전표일자*/
+        ,PAY_XCL_AMT      /*금액*/
+        ,PAY_CNCL_SLIP_NO  /*취소전표번호*/
+        ,PAY_CNCL_SLIP_DT  /*전표번호*/
+        ,PAY_RMT_DT           /*송금일자*/
+        ,PAY_TS /*공제 차수*/
+        ,AR_SALE_AMT                                                  /*AR 매출가*/
+        ,AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+        ,AR_XCL_SLIP_DT                                            /*AR 기산일*/
+  FROM 
+        (/* ■■CASE AR  ■■ */  
+         SELECT /*+ ORDERED */
+                CM.CNSL_DT                                                                  /*접수일자*/
+               ,CM.CLCT_DT                                                                  /*회수일자(반영일자)*/
+               ,CM.CNSL_MGMT_NO                                                             /*상담관리번호*/
+               ,EM.EQP_MDL_CD                                                               /*단말기 코드*/
+               ,CM.EQP_SER_NO                                                               /*단말기 일련번호*/
+               ,EM.EQP_MDL_NM                                                               /*모델명*/
+               ,CM.SKN_CL                                                                   /*현장 / 감정구분*/
+               ,CM.PROGR_ST   /*진행상태*/
+               ,CASE WHEN CM.PRE_DC_CL = 'Y' THEN '선할인'
+                     WHEN CM.PAY_MTHD = '01' THEN '계좌송금'
+                     WHEN CM.SCRB_MTHD = 'T' THEN '클럽T'
+                     WHEN CM.PAY_MTHD = '02' THEN '요금선납'
+                     ELSE '계좌송금'  
+                END RWD_CD	
+                ,B.SELL_PRC AS AR_SALE_AMT                                                  /*AR 매출가*/
+                ,A.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+                ,A.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                            /*AR 기산일*/
+          FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               TB_EP_CST_CONSULT_MGMT CM ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E 
+               ,TB_EQP_MDL EM
+
+WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+        AND    CM.CNSL_MGMT_NO     = B.CNSL_MGMT_NO
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+        AND    CM.DEL_YN = 'N'
+        AND A.XCL_SLIP_NO IS NOT NULL
+           AND EM.EQP_MDL_CD(+) = CM.EQP_MDL_CD
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일*/
+              AND CM.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*회수일*/ 
+              AND CM.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND CM.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND CM.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND CM.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND CM.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND CM.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(CM.PRE_DC_CL, 'N') <> 'Y'         
+     AND NVL(CM.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND CM.PAY_MTHD = '02'  
+     AND CM.SCRB_MTHD <> 'T'
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND CM.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+       ) A
+       ,(/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+               ,B.XCL_AMT  AS M_XCL_AMT                                                                     /*상담금액(미착AP매입금액)*/
+               ,A.DEDC_TYP_CD  AS M_DEDC_TYP_CD                                                                   /*공제유형코드 ( AP유형)*/
+               ,A.INVE_SLIP_NO AS M_INVE_SLIP_NO                                                                  /*미착AP번호*/
+               ,A.INVE_SLIP_DT AS M_INVE_SLIP_DT                                                                  /*미착AP기산일*/
+               ,A.INVE_TYP_CD  AS M_INVE_TYP_CD                                                                  /*AP처리구분*/
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.INVE_TYP_CD = '20'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO IS NOT NULL  
+
+      ) C
+       ,(/* ■■CASE 확정 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+                ,A.DEDC_TYP_CD AS C_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+                ,B.XCL_AMT AS C_XCL_AMT                                              /*(확정AP매입가)*/
+                ,A.INVE_SLIP_NO AS C_INVE_SLIP_NO                                    /*확정AP번호*/
+                ,A.INVE_SLIP_DT AS C_INVE_SLIP_DT                                    /*확정AP기산일*/
+           FROM TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+            WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND A.INVE_TYP_CD  = '10'  /*확정재고*/
+              AND A.CNCL_SLIP_YN = 'N' /*취소전표여부*/
+              AND A.INVE_SLIP_NO IS NOT NULL  
+
+      ) D
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+              ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+              ,B.XCL_AMT AS N_XCL_AMT                                              /*(반제AP 반환금액)*/
+              ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                          /*반제AP번호*/
+              ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                          /*반제AP기산일*/
+              ,INVE_TYP_CD AS N_INVE_TYP_CD
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+
+          AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+          AND B.INVE_CNCL_SLIP_NO IS NOT NULL  
+
+      ) E
+
+      ,(
+SELECT  /*+ ORDERED */
+        D.CNSL_MGMT_NO
+       ,A.DCINAD_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/
+       ,A.DCINAD_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/
+       ,D.XCL_AMT             AS PAY_XCL_AMT      /*금액*/
+       ,A.DCINAD_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+       ,A.DCINAD_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/
+       ,'' AS PAY_RMT_DT  /*송금일자*/
+       ,''  AS PAY_TS /*공제 차수*/
+  FROM TB_EP_DCINAD_XCL A
+       ,TB_EP_DCINAD_XCL_DTL D 
+ WHERE A.DCINAD_XCL_NO = D.DCINAD_XCL_NO
+    AND D.DEDC_TYP_CD = '02'
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+
+    AND A.DCINAD_SLIP_NO IS NOT NULL  
+
+UNION ALL
+SELECT /*+ ORDERED */
+       D.CNSL_MGMT_NO
+      ,A.ACCO_RMT_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/    
+      ,A.ACCO_RMT_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/     
+      ,D.XCL_AMT               AS PAY_XCL_AMT      /*금액*/         
+      ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+      ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/
+      ,D.RMT_DT AS PAY_RMT_DT /*송금일자*/
+      ,''  AS PAY_TS /*공제 차수*/
+ FROM TB_EP_ACCO_RMT_XCL A
+     ,TB_EP_ACCO_RMT_XCL_DTL D 
+     ,(SELECT DD.CNSL_MGMT_NO 
+             ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+             ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+        FROM TB_EP_ACCO_RMT_XCL AA
+            ,TB_EP_ACCO_RMT_XCL_DTL DD 
+      WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+        AND AA.DEL_YN = 'N' 
+        AND DD.DEL_YN = 'N' 
+        AND AA.CNCL_SLIP_YN = 'Y'      
+      ) E
+
+ WHERE A.ACCO_RMT_XCL_NO = D.ACCO_RMT_XCL_NO
+
+    AND A.ACCO_RMT_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+
+    AND A.CNCL_SLIP_YN = 'N'
+    AND A.ACCO_RMT_SLIP_NO IS NOT NULL  
+
+UNION ALL    
+SELECT /*+ ORDERED */
+       D.CNSL_MGMT_NO
+      ,A.FEE_PPAY_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/    
+      ,A.FEE_PPAY_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/     
+      ,D.XCL_AMT               AS PAY_XCL_AMT      /*금액*/         
+      ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+      ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/    
+      ,'' AS PAY_RMT_DT           /*송금일자*/
+      ,D.PPAY_PROC_TS  AS PAY_TS /*공제 차수*/
+ FROM TB_EP_FEE_PPAY_XCL A
+     ,TB_EP_FEE_PPAY_XCL_DTL D 
+     ,(SELECT DD.CNSL_MGMT_NO 
+             ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+             ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+        FROM TB_EP_ACCO_RMT_XCL AA
+            ,TB_EP_ACCO_RMT_XCL_DTL DD 
+      WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+        AND AA.DEL_YN = 'N' 
+        AND DD.DEL_YN = 'N' 
+        AND AA.CNCL_SLIP_YN = 'Y'      
+      ) E
+ WHERE A.FEE_PPAY_XCL_NO = D.FEE_PPAY_XCL_NO
+
+    AND A.FEE_PPAY_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+    AND A.FEE_PPAY_SLIP_NO IS NOT NULL  
+
+ )G
+   WHERE A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)
+)PA     
+WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#
+ORDER BY ROWNO]]>
+	</select>
+	<select id="SEqpPrSNoListMToCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListMToCnt 단말기매입매출전표현황미착전표총건수 */
+/* IO: 김상오,2015-12-23T16:16:29(김상오,2015-12-11T15:32:42) */
+SELECT /*+ FIRST_ROWS */ COUNT(*) AS TOTAL_CNT
+  FROM (/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+                CM.CNSL_MGMT_NO                                                             /*상담관리번호*/
+          FROM  TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+                ,TB_EP_CST_CONSULT_MGMT CM
+
+                ,TB_EQP_MDL EM
+          WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+            AND CM.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+
+            AND A.DEL_YN = 'N'
+            AND B.DEL_YN = 'N'
+            AND CM.DEL_YN = 'N'
+
+            AND A.INVE_TYP_CD = '20'
+            AND A.CNCL_SLIP_YN = 'N'
+            AND A.INVE_SLIP_NO IS NOT NULL
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일*/
+              AND CM.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*회수일*/ 
+              AND CM.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND CM.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND CM.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND CM.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND CM.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND CM.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(CM.PRE_DC_CL, 'N') <> 'Y'         
+     AND NVL(CM.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND CM.PAY_MTHD = '02'  
+     AND CM.SCRB_MTHD <> 'T'
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND CM.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+            AND EM.EQP_MDL_CD(+) = CM.EQP_MDL_CD
+      ) A
+       ,(/* ■■CASE 확정 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+                
+           FROM TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+                
+          WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+            
+            AND A.DEL_YN = 'N'
+            AND B.DEL_YN = 'N'
+            AND A.INVE_TYP_CD  = '10'  /*확정재고*/
+            AND A.CNCL_SLIP_YN = 'N' /*취소전표여부*/
+            AND A.INVE_SLIP_NO IS NOT NULL
+
+      ) D
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+           FROM TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+
+          WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+            AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+             
+            AND A.DEL_YN = 'N'
+            AND B.DEL_YN = 'N'
+            AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+            AND B.INVE_CNCL_SLIP_NO IS NOT NULL
+
+      ) E
+      ,(/* ■■CASE AR  ■■ */  
+         SELECT /*+ ORDERED USE_HASH(A D) */
+                 B.CNSL_MGMT_NO
+                
+          FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E 
+               
+ WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+        
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+        
+   AND A.XCL_SLIP_NO IS NOT NULL  
+      ) F
+      ,(SELECT /*+ ORDERED */
+               D.CNSL_MGMT_NO
+
+          FROM TB_EP_DCINAD_XCL A
+               ,TB_EP_DCINAD_XCL_DTL D 
+               
+         WHERE A.DCINAD_XCL_NO = D.DCINAD_XCL_NO
+           AND D.DEDC_TYP_CD = '02'
+           AND A.DEL_YN = 'N' 
+           AND D.DEL_YN = 'N' 
+           
+           AND A.DCINAD_SLIP_NO IS NOT NULL  
+
+        UNION ALL
+        SELECT /*+ ORDERED */
+                D.CNSL_MGMT_NO
+
+          FROM TB_EP_ACCO_RMT_XCL A
+              ,TB_EP_ACCO_RMT_XCL_DTL D 
+              ,(SELECT DD.CNSL_MGMT_NO 
+                      ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+                      ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+                 FROM TB_EP_ACCO_RMT_XCL AA
+                     ,TB_EP_ACCO_RMT_XCL_DTL DD 
+               WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                 AND AA.DEL_YN = 'N' 
+                 AND DD.DEL_YN = 'N' 
+                 AND AA.CNCL_SLIP_YN = 'Y'      
+               ) E
+
+          WHERE A.ACCO_RMT_XCL_NO = D.ACCO_RMT_XCL_NO
+             
+             AND A.ACCO_RMT_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+             AND A.DEL_YN = 'N' 
+             AND D.DEL_YN = 'N' 
+             AND A.CNCL_SLIP_YN = 'N'
+             AND A.ACCO_RMT_SLIP_NO IS NOT NULL  
+         UNION ALL    
+         SELECT /*+ ORDERED */
+                D.CNSL_MGMT_NO
+          
+          FROM TB_EP_FEE_PPAY_XCL A
+              ,TB_EP_FEE_PPAY_XCL_DTL D 
+              ,(SELECT DD.CNSL_MGMT_NO 
+                      ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+                      ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+                 FROM TB_EP_ACCO_RMT_XCL AA
+                     ,TB_EP_ACCO_RMT_XCL_DTL DD 
+               WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                 AND AA.DEL_YN = 'N' 
+                 AND DD.DEL_YN = 'N' 
+                 AND AA.CNCL_SLIP_YN = 'Y'      
+               ) E
+           
+          WHERE A.FEE_PPAY_XCL_NO = D.FEE_PPAY_XCL_NO
+            
+             AND A.FEE_PPAY_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+             AND A.DEL_YN = 'N' 
+             AND D.DEL_YN = 'N' 
+             AND A.FEE_PPAY_SLIP_NO IS NOT NULL  
+
+          )G
+   WHERE A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)]]>
+	</select>
+	<select id="SEqpPrSNoListCToCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListCToCnt 단말기매입매출전표현황확정전표총건수 */
+/* IO: 김상오,2015-12-23T16:16:39(김상오,2015-12-11T16:00:41) */
+SELECT /*+ FIRST_ROWS */ COUNT(*) AS TOTAL_CNT
+  FROM  (SELECT /*+  ORDERED  */
+                CM.CNSL_MGMT_NO                                                             /*상담관리번호*/
+               
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+               ,TB_EP_CST_CONSULT_MGMT CM
+
+               ,TB_EQP_MDL EM
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+           AND CM.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND CM.DEL_YN = 'N'
+
+           AND A.INVE_TYP_CD = '10'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO is not null
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일*/
+              AND CM.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*회수일*/ 
+              AND CM.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND CM.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND CM.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND CM.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND CM.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND CM.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(CM.PRE_DC_CL, 'N') <> 'Y'         
+     AND NVL(CM.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND CM.PAY_MTHD = '02'  
+     AND CM.SCRB_MTHD <> 'T'
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND CM.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+           AND EM.EQP_MDL_CD = CM.EQP_MDL_CD
+       ) A
+       ,(/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+               B.CNSL_MGMT_NO
+               ,B.XCL_AMT  AS M_XCL_AMT                                                                     /*상담금액(미착AP매입금액)*/
+               ,A.DEDC_TYP_CD  AS M_DEDC_TYP_CD                                                                   /*공제유형코드 ( AP유형)*/
+               ,A.INVE_SLIP_NO AS M_INVE_SLIP_NO                                                                  /*미착AP번호*/
+               ,A.INVE_SLIP_DT AS M_INVE_SLIP_DT                                                                  /*미착AP기산일*/
+               ,A.INVE_TYP_CD  AS M_INVE_TYP_CD                                                                  /*AP처리구분*/
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+             
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+         
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.INVE_TYP_CD = '20'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO IS NOT NULL  
+
+
+      ) C
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+              ,A.DEDC_TYP_CD AS N_DEDC_TYP_CD                                      /*공제유형코드 (AP유형)*/
+              ,B.XCL_AMT AS N_XCL_AMT                                              /*(반제AP 반환금액)*/
+              ,B.INVE_CNCL_SLIP_NO AS N_INVE_CNCL_SLIP_NO                          /*반제AP번호*/
+              ,B.INVE_CNCL_SLIP_DT AS N_INVE_CNCL_SLIP_DT                          /*반제AP기산일*/
+              ,INVE_TYP_CD AS N_INVE_TYP_CD
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+             
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+         
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+          AND B.INVE_CNCL_SLIP_NO IS NOT NULL  
+
+
+      ) E
+      ,(/* ■■CASE AR  ■■ */  
+         SELECT /*+ ORDERED USE_HASH(A D ) */
+                 B.CNSL_MGMT_NO
+                ,B.SELL_PRC AS AR_SALE_AMT                                                  /*AR 매출가*/
+                ,A.XCL_SLIP_NO AS AR_XCL_SLIP_NO                                            /*AR 매출번호*/
+                ,A.XCL_SLIP_DT AS AR_XCL_SLIP_DT                                            /*AR 기산일*/
+          FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E 
+              
+ WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+        
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+       
+   AND A.XCL_SLIP_NO IS NOT NULL  
+
+
+      ) F
+      ,(
+SELECT /*+ ORDERED */
+        D.CNSL_MGMT_NO
+       ,A.DCINAD_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/
+       ,A.DCINAD_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/
+       ,D.XCL_AMT             AS PAY_XCL_AMT      /*금액*/
+       ,A.DCINAD_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+       ,A.DCINAD_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/
+       ,'' AS PAY_RMT_DT  /*송금일자*/
+       ,''  AS PAY_TS /*공제 차수*/
+  FROM TB_EP_DCINAD_XCL A
+       ,TB_EP_DCINAD_XCL_DTL D 
+     
+ WHERE A.DCINAD_XCL_NO = D.DCINAD_XCL_NO
+    AND D.DEDC_TYP_CD = '02'
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+    AND A.DCINAD_SLIP_NO IS NOT NULL  
+
+
+UNION ALL
+SELECT /*+ ORDERED */
+       D.CNSL_MGMT_NO
+      ,A.ACCO_RMT_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/    
+      ,A.ACCO_RMT_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/     
+      ,D.XCL_AMT               AS PAY_XCL_AMT      /*금액*/         
+      ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+      ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/
+      ,D.RMT_DT AS PAY_RMT_DT /*송금일자*/
+      ,''  AS PAY_TS /*공제 차수*/
+ FROM TB_EP_ACCO_RMT_XCL A
+     ,TB_EP_ACCO_RMT_XCL_DTL D 
+     ,(SELECT DD.CNSL_MGMT_NO 
+             ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+             ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+        FROM TB_EP_ACCO_RMT_XCL AA
+            ,TB_EP_ACCO_RMT_XCL_DTL DD 
+      WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+        AND AA.DEL_YN = 'N' 
+        AND DD.DEL_YN = 'N' 
+        AND AA.CNCL_SLIP_YN = 'Y'      
+      ) E
+  
+ WHERE A.ACCO_RMT_XCL_NO = D.ACCO_RMT_XCL_NO
+    
+    AND A.ACCO_RMT_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+    AND A.CNCL_SLIP_YN = 'N'
+    AND A.ACCO_RMT_SLIP_NO IS NOT NULL  
+
+
+UNION ALL    
+SELECT /*+ ORDERED */
+       D.CNSL_MGMT_NO
+      ,A.FEE_PPAY_SLIP_NO      AS PAY_SLIP_NO       /*전표번호*/    
+      ,A.FEE_PPAY_SLIP_DT      AS PAY_SLIP_DT      /*전표일자*/     
+      ,D.XCL_AMT               AS PAY_XCL_AMT      /*금액*/         
+      ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO  /*취소전표번호*/
+      ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT  /*전표번호*/    
+      ,'' AS PAY_RMT_DT           /*송금일자*/
+      ,D.PPAY_PROC_TS  AS PAY_TS /*공제 차수*/
+ FROM TB_EP_FEE_PPAY_XCL A
+     ,TB_EP_FEE_PPAY_XCL_DTL D 
+     ,(SELECT DD.CNSL_MGMT_NO 
+             ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+             ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+        FROM TB_EP_ACCO_RMT_XCL AA
+            ,TB_EP_ACCO_RMT_XCL_DTL DD 
+      WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+        AND AA.DEL_YN = 'N' 
+        AND DD.DEL_YN = 'N' 
+        AND AA.CNCL_SLIP_YN = 'Y'      
+      ) E
+    
+ WHERE A.FEE_PPAY_XCL_NO = D.FEE_PPAY_XCL_NO
+    
+    AND A.FEE_PPAY_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+    AND A.FEE_PPAY_SLIP_NO IS NOT NULL  
+
+
+ )G
+   WHERE A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)]]>
+	</select>
+	<select id="SEqpPrSNoListAPToCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListAPToCnt 단말기매입매출전표현황AP전표총건수 */
+/* IO: 김상오,2015-12-23T16:16:17(김상오,2015-12-11T16:13:07) */
+SELECT /*+ FIRST_ROWS */ COUNT(*) AS TOTAL_CNT
+  FROM (SELECT /*+ ORDERED */
+          CM.CNSL_DT          /*접수일자*/
+          ,CM.CLCT_DT          /*회수일자(반영일자)*/
+          ,CM.CNSL_MGMT_NO          /*상담관리번호*/
+          ,EM.EQP_MDL_CD          /*단말기 코드*/
+          ,CM.EQP_SER_NO          /*단말기 일련번호*/
+          ,EM.EQP_MDL_NM          /*모델명*/
+          ,CM.SKN_CL          /*현장 / 감정구분*/
+          ,CM.PROGR_ST          /*진행상태*/
+          ,CASE
+            WHEN CM.PRE_DC_CL = 'Y'            THEN '선할인'
+            WHEN CM.PAY_MTHD = '01'            THEN '계좌송금'
+            WHEN CM.SCRB_MTHD = 'T'            THEN '클럽T'
+            WHEN CM.PAY_MTHD = '02'            THEN '요금선납'
+            ELSE '계좌송금'
+           END RWD_CD 
+          ,PAY_SLIP_NO          /*전표번호*/
+          ,PAY_SLIP_DT          /*전표일자*/
+          ,PAY_XCL_AMT          /*금액*/
+          ,PAY_CNCL_SLIP_NO          /*취소전표번호*/
+          ,PAY_CNCL_SLIP_DT          /*전표번호*/
+          ,PAY_RMT_DT          /*송금일자*/
+          ,PAY_TS          /*공제 차수*/
+          FROM (SELECT /*+ ORDERED */
+                       D.CNSL_MGMT_NO          /*상담관리번호*/
+                       ,A.DCINAD_SLIP_NO AS PAY_SLIP_NO          /*전표번호*/
+                       ,A.DCINAD_SLIP_DT AS PAY_SLIP_DT          /*전표일자*/
+                       ,D.XCL_AMT AS PAY_XCL_AMT          /*금액*/
+                       ,A.DCINAD_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO          /*취소전표번호*/
+                       ,A.DCINAD_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT          /*전표번호*/
+                       ,'' AS PAY_RMT_DT          /*송금일자*/
+                       ,'' AS PAY_TS          /*공제 차수*/
+                  FROM TB_EP_DCINAD_XCL A ,
+                       TB_EP_DCINAD_XCL_DTL D 
+                 WHERE A.DCINAD_XCL_NO     = D.DCINAD_XCL_NO
+                  AND D.DEDC_TYP_CD     = '02'
+                  AND A.DEL_YN          = 'N'
+                  AND D.DEL_YN          = 'N'
+                  AND A.DCINAD_SLIP_NO IS NOT NULL
+                UNION ALL
+                SELECT /*+ ORDERED */
+                  D.CNSL_MGMT_NO          /*상담관리번호*/
+                  ,A.ACCO_RMT_SLIP_NO AS PAY_SLIP_NO                  /*전표번호*/
+                  ,A.ACCO_RMT_SLIP_DT AS PAY_SLIP_DT                  /*전표일자*/
+                  ,D.XCL_AMT AS PAY_XCL_AMT                  /*금액*/
+                  ,E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO                  /*취소전표번호*/
+                  ,E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT                  /*전표번호*/
+                  ,D.RMT_DT AS PAY_RMT_DT                  /*송금일자*/
+                  ,'' AS PAY_TS                  /*공제 차수*/
+                FROM TB_EP_ACCO_RMT_XCL A ,
+                     TB_EP_ACCO_RMT_XCL_DTL D ,
+                     (SELECT DD.CNSL_MGMT_NO 
+                             ,DD.ACCO_RMT_CNCL_SLIP_NO                      /*취소전표번호*/
+                             ,DD.ACCO_RMT_CNCL_SLIP_DT                      /*전표번호*/
+                        FROM TB_EP_ACCO_RMT_XCL AA ,
+                             TB_EP_ACCO_RMT_XCL_DTL DD
+                       WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                         AND AA.DEL_YN        = 'N'
+                         AND DD.DEL_YN        = 'N'
+                         AND AA.CNCL_SLIP_YN  = 'Y'
+                      )                  E 
+                WHERE A.ACCO_RMT_XCL_NO     = D.ACCO_RMT_XCL_NO
+                  AND A.ACCO_RMT_SLIP_NO  = E.ACCO_RMT_CNCL_SLIP_NO(+)
+                  AND A.DEL_YN            = 'N'
+                  AND D.DEL_YN            = 'N'
+                  AND A.CNCL_SLIP_YN      = 'N'
+                  AND A.ACCO_RMT_SLIP_NO IS NOT NULL
+                UNION ALL
+                SELECT /*+ ORDERED */
+                       D.CNSL_MGMT_NO          /*상담관리번호*/,
+                       A.FEE_PPAY_SLIP_NO AS PAY_SLIP_NO          /*전표번호*/          ,
+                       A.FEE_PPAY_SLIP_DT AS PAY_SLIP_DT          /*전표일자*/          ,
+                       D.XCL_AMT AS PAY_XCL_AMT          /*금액*/          ,
+                       E.ACCO_RMT_CNCL_SLIP_NO AS PAY_CNCL_SLIP_NO          /*취소전표번호*/          ,
+                       E.ACCO_RMT_CNCL_SLIP_DT AS PAY_CNCL_SLIP_DT          /*전표번호*/          ,
+                       '' AS PAY_RMT_DT          /*송금일자*/          ,
+                       D.PPAY_PROC_TS AS PAY_TS          /*공제 차수*/
+                  FROM TB_EP_FEE_PPAY_XCL A ,
+                       TB_EP_FEE_PPAY_XCL_DTL D ,
+                       (SELECT DD.CNSL_MGMT_NO 
+                               ,DD.ACCO_RMT_CNCL_SLIP_NO                           /*취소전표번호*/                           
+                               ,DD.ACCO_RMT_CNCL_SLIP_DT                           /*전표번호*/
+                          FROM TB_EP_ACCO_RMT_XCL AA ,
+                               TB_EP_ACCO_RMT_XCL_DTL DD
+                         WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+                           AND AA.DEL_YN        = 'N'
+                           AND DD.DEL_YN        = 'N'
+                           AND AA.CNCL_SLIP_YN  = 'Y'
+                       )E 
+                  WHERE A.FEE_PPAY_XCL_NO     = D.FEE_PPAY_XCL_NO
+                    AND A.FEE_PPAY_SLIP_NO  = E.ACCO_RMT_CNCL_SLIP_NO(+)
+                    AND A.DEL_YN            = 'N'
+                    AND D.DEL_YN            = 'N'
+                    AND A.FEE_PPAY_SLIP_NO IS NOT NULL
+                ) A
+                ,TB_EP_CST_CONSULT_MGMT CM 
+                ,TB_EQP_MDL EM
+          WHERE A.CNSL_MGMT_NO = CM.CNSL_MGMT_NO
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일*/
+ AND CM.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*회수일*/ 
+  AND CM.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND CM.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND CM.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND CM.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND CM.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND CM.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(CM.PRE_DC_CL, 'N') <> 'Y'         
+     AND NVL(CM.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND CM.PAY_MTHD = '02'  
+     AND CM.SCRB_MTHD <> 'T'
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND CM.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+            AND EM.EQP_MDL_CD(+)       = CM.EQP_MDL_CD
+   ) A
+       ,(/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+             
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+           
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.INVE_TYP_CD = '20'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO IS NOT NULL
+ 
+      ) C
+       ,(/* ■■CASE 확정 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+             FROM TB_EP_INVE_XCL A 
+                  ,TB_EP_INVE_XCL_DTL B
+            WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND A.INVE_TYP_CD  = '10'  /*확정재고*/
+              AND A.CNCL_SLIP_YN = 'N' /*취소전표여부*/
+              AND A.INVE_SLIP_NO IS NOT NULL
+ 
+      ) D
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+              
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+           
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+          AND B.INVE_CNCL_SLIP_NO IS NOT NULL
+ 
+      ) E
+      ,(/* ■■CASE AR  ■■ */  
+         SELECT /*+ ORDERED */
+          B.CNSL_MGMT_NO
+   FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E  
+ WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+         
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+        
+   AND A.XCL_SLIP_NO IS NOT NULL  
+ 
+      ) F
+   WHERE A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)]]>
+	</select>
+	<select id="SEqpPrSNoListARToCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsrpbase.db.DEPEqpPrSNoMgmt.SEqpPrSNoListARToCnt 단말기매입매출전표현황AR전표총건수 */
+/* IO: 김상오,2015-12-23T16:16:23(김상오,2015-12-11T16:13:50) */
+SELECT /*+ FIRST_ROWS */ COUNT(*) AS TOTAL_CNT
+  FROM 
+        (/* ■■CASE AR  ■■ */  
+         SELECT B.CNSL_MGMT_NO                                                             /*상담관리번호*/
+          FROM   TB_EP_EQP_SALE A ,
+               TB_EP_SAL_GNRL_SALE D ,
+               TB_EP_SAL_EQUIPMENT_SALE B ,
+               (SELECT GNRL_SELL_NO,MAX(GNRL_SELL_CHG_SEQ) AS GNRL_SELL_CHG_SEQ FROM TB_EP_SAL_GNRL_SALE GROUP BY GNRL_SELL_NO) E ,
+               TB_EP_CST_CONSULT_MGMT CM
+               ,TB_EQP_MDL EM
+
+WHERE  A.GNRL_SELL_NO      = D.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = D.GNRL_SELL_CHG_SEQ
+        AND    A.GNRL_SELL_NO      = B.GNRL_SELL_NO
+        AND    A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+        AND    CM.CNSL_MGMT_NO     = B.CNSL_MGMT_NO
+        AND D.GNRL_SELL_NO = E.GNRL_SELL_NO
+        AND D.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    D.DEL_YN = 'N'
+        AND    CM.DEL_YN = 'N'
+        AND A.XCL_SLIP_NO IS NOT NULL
+           AND EM.EQP_MDL_CD(+) = CM.EQP_MDL_CD
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[           /*접수일*/
+              AND CM.CNSL_DT BETWEEN #FR_DT# AND #TO_DT#  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[           /*회수일*/ 
+              AND CM.CLCT_DT BETWEEN #FR_DT# AND #TO_DT# 
+]]></isEqual><![CDATA[
+
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+           AND CM.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND CM.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+
+]]><isEqual property="SKN_GB" compareValue="Y"><![CDATA[           /*현장*/
+     AND CM.SKN_CL = 'Y'  
+]]></isEqual><![CDATA[ 
+]]><isEqual property="SKN_GB" compareValue="N"><![CDATA[           /*일반*/
+     AND CM.SKN_CL = 'N'  
+]]></isEqual><![CDATA[     
+]]><isEqual property="RWD_GB" compareValue="01"><![CDATA[           /*선할인*/
+     AND CM.PRE_DC_CL = 'Y'  
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="02"><![CDATA[           /*계좌송금*/
+     AND NVL(CM.PRE_DC_CL, 'N') <> 'Y'         
+     AND NVL(CM.PAY_MTHD, '01') <> '02'      
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="03"><![CDATA[           /*요금선납*/
+     AND CM.PAY_MTHD = '02'  
+     AND CM.SCRB_MTHD <> 'T'
+]]></isEqual><![CDATA[
+]]><isEqual property="RWD_GB" compareValue="T"><![CDATA[           
+     AND CM.SCRB_MTHD = 'T'/*클럽T*/
+]]></isEqual><![CDATA[
+       ) A
+       ,(/* ■■CASE 미착 (검색년월에 해당하는 미착전표) ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+          FROM  TB_EP_INVE_XCL A 
+               ,TB_EP_INVE_XCL_DTL B
+         WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND A.INVE_TYP_CD = '20'
+           AND A.CNCL_SLIP_YN = 'N'
+           AND A.INVE_SLIP_NO IS NOT NULL  
+
+      ) C
+       ,(/* ■■CASE 확정 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+           FROM TB_EP_INVE_XCL A 
+                ,TB_EP_INVE_XCL_DTL B
+
+            WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+              
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND A.INVE_TYP_CD  = '10'  /*확정재고*/
+              AND A.CNCL_SLIP_YN = 'N' /*취소전표여부*/
+              AND A.INVE_SLIP_NO IS NOT NULL  
+
+      ) D
+      ,(/* ■■CASE 반제 AP  ■■ */  
+         SELECT /*+ ORDERED */
+                B.CNSL_MGMT_NO
+         FROM TB_EP_INVE_XCL A 
+              ,TB_EP_INVE_XCL_DTL B
+
+        WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = B.INVE_CNCL_SLIP_NO
+ 
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.CNCL_SLIP_YN = 'Y'   /*취소전표여부*/
+          AND B.INVE_CNCL_SLIP_NO IS NOT NULL  
+
+      ) E
+
+      ,(
+SELECT  /*+ ORDERED */
+        D.CNSL_MGMT_NO
+  FROM TB_EP_DCINAD_XCL A
+       ,TB_EP_DCINAD_XCL_DTL D 
+
+ WHERE A.DCINAD_XCL_NO = D.DCINAD_XCL_NO
+    AND D.DEDC_TYP_CD = '02'
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+    
+    AND A.DCINAD_SLIP_NO IS NOT NULL  
+
+UNION ALL
+SELECT /*+ ORDERED */
+       D.CNSL_MGMT_NO
+ FROM TB_EP_ACCO_RMT_XCL A
+     ,TB_EP_ACCO_RMT_XCL_DTL D 
+     ,(SELECT DD.CNSL_MGMT_NO 
+             ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+             ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+        FROM TB_EP_ACCO_RMT_XCL AA
+            ,TB_EP_ACCO_RMT_XCL_DTL DD 
+      WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+        AND AA.DEL_YN = 'N' 
+        AND DD.DEL_YN = 'N' 
+        AND AA.CNCL_SLIP_YN = 'Y'      
+      ) E
+
+ WHERE A.ACCO_RMT_XCL_NO = D.ACCO_RMT_XCL_NO
+
+    AND A.ACCO_RMT_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+
+    AND A.CNCL_SLIP_YN = 'N'
+    AND A.ACCO_RMT_SLIP_NO IS NOT NULL  
+
+UNION ALL    
+SELECT /*+ ORDERED */
+       D.CNSL_MGMT_NO
+ FROM TB_EP_FEE_PPAY_XCL A
+     ,TB_EP_FEE_PPAY_XCL_DTL D 
+     ,(SELECT DD.CNSL_MGMT_NO 
+             ,DD.ACCO_RMT_CNCL_SLIP_NO   /*취소전표번호*/
+             ,DD.ACCO_RMT_CNCL_SLIP_DT   /*전표번호*/    
+        FROM TB_EP_ACCO_RMT_XCL AA
+            ,TB_EP_ACCO_RMT_XCL_DTL DD 
+      WHERE AA.ACCO_RMT_XCL_NO = DD.ACCO_RMT_XCL_NO
+        AND AA.DEL_YN = 'N' 
+        AND DD.DEL_YN = 'N' 
+        AND AA.CNCL_SLIP_YN = 'Y'      
+      ) E
+
+ WHERE A.FEE_PPAY_XCL_NO = D.FEE_PPAY_XCL_NO
+
+    AND A.FEE_PPAY_SLIP_NO = E.ACCO_RMT_CNCL_SLIP_NO(+)
+    AND A.DEL_YN = 'N' 
+    AND D.DEL_YN = 'N' 
+
+    AND A.FEE_PPAY_SLIP_NO IS NOT NULL  
+ 
+ )G
+   WHERE 1=1
+     AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+) 
+     AND A.CNSL_MGMT_NO = D.CNSL_MGMT_NO(+)
+     AND A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)  
+     AND A.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.DBP007">
+	<select id="SEqpJdg" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP007.SEqpJdg 단말기평가정보조회 */
+/* IO: 김용진,2015-09-08T20:19:53(김윤환,2015-08-11T09:31:08) */
+SELECT 
+		A.ASSET_NO 						/* 자산번호 */
+		,A.EQP_JDG_SEQ 					/* 단말기감정순번 */
+		,B.EQP_MDL_CD					/* 단말기모델코드 */
+		,B.EQP_SER_NO					/* 단말기일련번호 */
+		,(SELECT          
+        SUM(EQP_INDF_AMT) AS EQP_INDF_AMT
+	  FROM 
+        (SELECT INSP_DTL_ITM_CD,EQP_INDF_AMT,ASSET_NO,EQP_JDG_SEQ FROM TB_EQP_JDG_DTL 
+         WHERE  DEL_YN = 'N'
+        ) X
+		   ,(SELECT CM_CD_ID,MGMT_ITEM_CD10 FROM TB_CM_CD 
+       WHERE  CM_GRP_CD_ID = 'DMS107' 
+	   AND MGMT_ITEM_CD2 = 'Y'     
+       AND USE_YN = 'Y'       AND MGMT_ITEM_CD10 > '0' ) Y
+	 WHERE
+       Y.CM_CD_ID = X.INSP_DTL_ITM_CD(+)
+       AND X.ASSET_NO = A.ASSET_NO
+       AND X.EQP_JDG_SEQ = A.EQP_JDG_SEQ) AS CONS_ITM_CMP_RTN_AMT 	/* 구성품변상반환금액 */
+		,A.EQP_CMP_AMT_TOT				/* 단말기배상금액합계 */
+		,G.SVC_MGMT_NO  				/* 서비스관리번호 */
+		,A.JDG_APRV_DT					/* 감정승인일자 */
+  FROM TB_EQP_JDG A
+	   ,TB_EQP_ASSET B
+	   ,TB_EQP_CNTRT C
+	   ,TB_RENTAL_CNTRT D
+	   ,TB_EQP_IN F
+       ,TB_EQP_CLCT_OBJ G
+ WHERE A.ASSET_NO = B.ASSET_NO
+   AND B.ASSET_NO = C.ASSET_NO
+   AND C.CNTRT_NO = D.CNTRT_NO
+   AND A.ASSET_NO = F.ASSET_NO
+   AND F.EQP_MDL_CD = G.EQP_MDL_CD
+   AND F.EQP_SER_NO = G.EQP_SER_NO 
+   AND A.EQP_IN_DT = F.EQP_IN_DT
+   AND F.EQP_IN_DT = G.EQP_IN_DT
+   AND (A.DEL_YN = 'N' AND B.DEL_YN = 'N' AND C.DEL_YN = 'N' AND D.DEL_YN = 'N' AND F.DEL_YN = 'N' AND G.DEL_YN = 'N')
+   AND B.OP_CL_CD = 'PR'
+   AND G.IN_OBJ_DTL_CD != '40'	/* 입고대상 습득반납(40) 인 경우 송신안함*/
+   AND A.EQP_JDG_DT = #PROC_DT#]]>
+	</select>
+	<select id="SDmgRsn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP007.SDmgRsn 단말기평가파손사유조회 */
+/* IO: 김용진,2015-09-08T19:14:06(김윤환,2015-08-11T09:35:30) */
+WITH TMP_CMP_POLY_DTL_ITM AS (
+	SELECT 
+		   B.INSP_DTL_ITM_CD    /* 점검세부항목코드 */
+		   ,B.DCP_ITM_USE_YN    /* 손해배상금정책항목사용여부 */
+	  FROM TB_EQP_JDG_DTL A
+		   ,TB_DMG_CMP_POLY_DTL_ITM B
+	 WHERE A.DCP_NO = B.DCP_NO
+       AND A.INSP_DTL_ITM_CD = B.INSP_DTL_ITM_CD
+       AND A.DEL_YN='N'
+       AND B.DCP_ITM_CMPT_USE_YN = 'N'
+       AND A.ASSET_NO = #ASSET_NO#
+       AND A.EQP_JDG_SEQ = #EQP_JDG_SEQ#
+     ORDER BY A.INSP_DTL_ITM_CD
+), TMP_DMS107 AS (
+	SELECT 
+	       CM_GRP_CD_ID
+           ,CM_CD_ID
+           ,CM_CD_NM FROM TB_CM_CD 
+     WHERE CM_GRP_CD_ID = 'DMS107' 
+	   AND MGMT_ITEM_CD2 = 'Y'     
+       AND USE_YN = 'Y'
+     ORDER BY CM_CD_ID
+)
+SELECT 
+       RPAD(REPLACE(SYS_CONNECT_BY_PATH(DCPDI_USE_YN, '§'),'§',''),30,0) AS DSM_RSN
+  FROM (
+         SELECT 
+                ROW_NUMBER() OVER(PARTITION BY IA.CM_GRP_CD_ID ORDER BY IA.CM_CD_ID) AS RN
+	       		,COUNT(*) OVER (PARTITION BY IA.CM_GRP_CD_ID ) AS CNT
+       			,DECODE(IB.DCP_ITM_USE_YN,'Y','1','0') AS DCPDI_USE_YN
+       			,IA.CM_GRP_CD_ID
+		   FROM TMP_DMS107 IA
+				,TMP_CMP_POLY_DTL_ITM IB
+		  WHERE IA.CM_CD_ID = IB.INSP_DTL_ITM_CD(+)
+		  ORDER BY IA.CM_CD_ID
+  	   )
+ WHERE level = CNT
+ START WITH RN = 1
+CONNECT BY PRIOR CM_GRP_CD_ID = CM_GRP_CD_ID AND PRIOR RN = RN -1]]>
+	</select>
+	<insert id="ITfPrEqpEvalInfoReG" parameterClass="map" ><![CDATA[/* Biz: dms.pr.DBP007.ITfPrEqpEvalInfoReG IF단말기평가정보등록 */
+/* IO: 김윤환,2015-08-28T14:40:31(김윤환,2015-08-11T10:21:17) */
+INSERT 
+  INTO TF_PR_EQP_EVAL_INFO_REG
+  (
+	IF_PROC_DT				/* IF처리일자 */
+	,IF_FILE_NM				/* IF파일명 */
+	,IF_SEQ					/* IF순번 */
+	,EQP_MDL_CD				/* 단말기모델코드 */
+	,EQP_SER_NO				/* 단말기일련번호 */
+	,SVC_MGMT_NO			/* 서비스관리번호 */
+	,CMPT_INDF_BACK_AMT		/* 구성품변상반환금액 */
+	,EQP_BKAG_INDF_AMT		/* 단말기파손변상금액 */
+	,EQP_BKAG_RSN			/* 단말기파손사유 */
+	,CMPT_INFO				/* 구성품정보 */	
+	,PROC_ST_CD				/* 처리상태코드 */
+	,FS_REG_USER_ID			/* 최초등록사용자ID */
+	,FS_REG_DTM				/* 최초등록일시 */
+	,LS_CHG_USER_ID			/* 최종변경사용자ID */
+	,LS_CHG_DTM				/* 최종변경일시 */
+  )VALUES(
+	#IF_PROC_DT#
+	,#IF_FILE_NM#
+	,#IF_SEQ#
+	,#EQP_MDL_CD#			/* 단말기모델코드 */
+	,#EQP_SER_NO#			/* 단말기일련번호 */
+	,#SVC_MGMT_NO#			/* 서비스관리번호 */
+	,#CMPT_INDF_BACK_AMT#	/* 구성품변상반환금액 */
+	,#EQP_BKAG_INDF_AMT#	/* 단말기파손변상금액 */
+	,#EQP_BKAG_RSN#			/* 단말기파손사유 */
+	,#CMPT_INFO#			/* 구성품정보 */	
+	,'09'		
+	,'BAT'	
+	,SYSDATE		
+	,'BAT'	
+	,SYSDATE  
+  )]]>
+	</insert>
+	<select id="SCmptInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.DBP007.SCmptInfo 단말기구성품정보 */
+/* IO: 김윤환,2015-09-08T20:36:59(김윤환,2015-08-28T14:29:09) */
+SELECT 
+	   RPAD(REPLACE(SYS_CONNECT_BY_PATH(RPAD(CMPT_CD,2,' ')||''||RPAD(RTN_YN,1,' '), '§'),'§',''),60,' ') AS CMPT_INFO
+ FROM (
+		SELECT 
+               ROW_NUMBER() OVER(PARTITION BY B.CM_GRP_CD_ID ORDER BY B.CM_CD_ID) AS RN
+			   ,COUNT(*) OVER (PARTITION BY B.CM_GRP_CD_ID ) AS CNT  
+		       ,B.MGMT_ITEM_CD10 AS CMPT_CD
+               ,DECODE(A.INSP_DTL_ITM_CD,NULL,'N','Y') AS RTN_YN
+               , '1' AS EQP_JDG_SEQ
+	  FROM 
+        (SELECT INSP_DTL_ITM_CD FROM TB_EQP_JDG_DTL 
+         WHERE ASSET_NO = #ASSET_NO#
+       	   AND EQP_JDG_SEQ = #EQP_JDG_SEQ#
+           AND DEL_YN = 'N'
+        )A
+		   ,TB_CM_CD B
+	 WHERE
+       B.CM_CD_ID = A.INSP_DTL_ITM_CD(+)
+     AND  B.CM_GRP_CD_ID = 'DMS107' 
+	   AND B.MGMT_ITEM_CD2 = 'Y'     
+       AND B.USE_YN = 'Y'
+       AND B.MGMT_ITEM_CD10 > '0'
+     ORDER BY B.MGMT_ITEM_CD10
+   	   )
+ WHERE level = CNT
+ START WITH RN = 1
+CONNECT BY PRIOR EQP_JDG_SEQ = EQP_JDG_SEQ AND PRIOR RN = RN -1]]>
+	</select>
+</sqlMap>

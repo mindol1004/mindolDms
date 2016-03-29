@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCSysLogMgmt">
+	<select id="SSysTLogLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.fw.fwsbase.db.DSCSysLogMgmt.SSysTLogLstPaging 거래로그목록조회 */
+/* IO: admin,2015-09-14T16:52:59(심상준,2014-09-16T14:53:20) */
+SELECT  
+        *                                                                                
+  FROM (                                                                                 
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY LOG_BZOP_DT ASC) AS ROWNO                    
+               ,LOG_BZOP_DT            /* 로그영업일자  */        
+               ,GLOB_ID                /* 글로벌ID */        
+               ,SEQ_NO                 /* 시퀀스NO */        
+               ,PRGS_SRNO              /* 진행일련번호 */        
+               ,ENV_DVCD               /* 환경구분코드 */        
+               ,TRTM_RSLT_CD           /* 처리결과코드  */        
+               ,TRN_CD                 /* 거래코드 */        
+               ,SCRN_NO                /* 화면번호 */        
+               ,TRN_PTRN_DVCD          /* 거래유형구분코드 */                      
+               ,BZWR_SVR_CD            /* 업무서버코드 */               
+               ,CHNL_MSG_CD            /* 채널메시지코드  */
+
+               ,IPAD                   /*  IP주소              */    
+               ,PRCM_MAC               /*  PC MAC주소          */    
+               ,SSO_SESN_KEY           /*  SSO 세션 KEY        */    
+               ,FRST_TRNM_CHNL_CD      /*  최초전송채널코드    */    
+               ,TRNM_CHNL_CD           /*  전송채널코드        */    
+               ,TRNM_NODE_NO           /*  전송노드번호        */    
+               ,MCI_TRNM_NODE_NO       /*  MCI전송노드번호     */    
+               ,TRN_TRNM_NO            /*  거래단말번호        */    
+               ,ITLK_DPTH              /*  연동깊이            */    
+               ,FRST_TRN_CD            /*  최초거래코드        */    
+               ,MV_TRN_CD              /*  기동거래코드        */    
+               ,SYNC_DV                /*  Sync/Async구분      */       
+               ,TRN_DT                 /*  거래일자            */    
+               ,SVC_STRN_DTTM          /*  서비스시작일시      */    
+               ,SVC_END_DTTM           /*  서비스종료일시      */       
+               ,USER_NO                /*  사용자번호          */       
+               ,USER_LOCALE            /*  사용자 로케일       */  
+                      
+               ,NULL  AS MSG_CCNT               /* 메시지컬럼갯수 */        
+               ,NULL  AS MSG_CD1                /*  메시지코드 1        */  
+               ,NULL  AS MSG_CNTN1              /*  메시지내용 1        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE1   /*  오류발생 LINE 1     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM1     /*  오류발생 APP명 1    */  
+               ,NULL  AS MSG_CD2                /*  메시지코드 2        */  
+               ,NULL  AS MSG_CNTN2              /*  메시지내용 2        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE2   /*  오류발생 LINE 2     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM2     /*  오류발생 APP명 2    */  
+               ,NULL  AS MSG_CD3                /*  메시지코드 3        */  
+               ,NULL  AS MSG_CNTN3              /*  메시지내용 3        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE3   /*  오류발생 LINE 3     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM3     /*  오류발생 APP명 3    */  
+               ,NULL  AS MSG_CD4                /*  메시지코드 4        */  
+               ,NULL  AS MSG_CNTN4              /*  메시지내용 4        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE4   /*  오류발생 LINE 4     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM4     /*  오류발생 APP명 4    */  
+               ,NULL  AS MSG_CD5                /*  메시지코드 5        */  
+               ,NULL  AS MSG_CNTN5              /*  메시지내용 5        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE5   /*  오류발생 LINE 5     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM5     /*  오류발생 APP명 5    */  
+               ,NULL  AS MSG_CD6                /*  메시지코드 6        */  
+               ,NULL  AS MSG_CNTN6              /*  메시지내용 6        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE6   /*  오류발생 LINE 6     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM6     /*  오류발생 APP명 6    */  
+               ,NULL  AS MSG_CD7                /*  메시지코드 7        */  
+               ,NULL  AS MSG_CNTN7              /*  메시지내용 7        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE7   /*  오류발생 LINE 7     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM7     /*  오류발생 APP명 7    */  
+               ,NULL  AS MSG_CD8                /*  메시지코드 8        */  
+               ,NULL  AS MSG_CNTN8              /*  메시지내용 8        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE8   /*  오류발생 LINE 8     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM8     /*  오류발생 APP명 8    */  
+               ,NULL  AS MSG_CD9                /*  메시지코드 9        */  
+               ,NULL  AS MSG_CNTN9              /*  메시지내용 9        */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE9   /*  오류발생 LINE 9     */  
+               ,NULL  AS EROR_OCRN_PRRM_NM9     /*  오류발생 APP명 9    */  
+               ,NULL  AS MSG_CD10               /*  메시지코드 10       */  
+               ,NULL  AS MSG_CNTN10             /*  메시지내용 10       */  
+               ,NULL  AS EROR_OCRN_PRRM_LINE10  /*  오류발생 LINE 10    */  
+               ,NULL  AS EROR_OCRN_PRRM_NM10    /*  오류발생 APP명 10   */  
+               
+               ,SVC_DUR_TM             /*  거래의 Elapse시간   */    
+               ,WAS_INSTANCE_ID        /*  WAS인스턴스         */    
+               ,RGSTRN_DT              /*  로그등록일          */                
+               ,REQ_CHNL_CD             /*  UI요청채널코드      */           
+
+          FROM  TL_DMS_FWK_TRLOG
+         ]]><dynamic prepend="WHERE"><![CDATA[                                                                                                                                                       
+         ]]><isNotEmpty prepend="AND" property="LOG_BZOP_DT"><![CDATA[                                                                                                         
+                LOG_BZOP_DT = #LOG_BZOP_DT#                                                                                               
+         ]]></isNotEmpty><![CDATA[
+         ]]><isNotEmpty prepend="AND" property="TRN_CD"><![CDATA[                                                                                                          
+                TRN_CD = #TRN_CD#
+         ]]></isNotEmpty><![CDATA[                                                                                                                                                                                                                                                                                
+         ]]><isNotEmpty prepend="AND" property="SCRN_NO"><![CDATA[                                                                                                         
+                SCRN_NO = #SCRN_NO#
+         ]]></isNotEmpty><![CDATA[                                                                                                                                                   
+]]></dynamic><![CDATA[ 
+      ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSysTLogLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.fw.fwsbase.db.DSCSysLogMgmt.SSysTLogLstTotCnt 거래로그전체건수조회 */
+/* IO: admin,2015-09-14T16:53:14(심상준,2014-09-16T14:53:35) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TL_DMS_FWK_TRLOG 
+]]><dynamic prepend="WHERE"><![CDATA[                                                                                                                                                       
+]]><isNotEmpty prepend="AND" property="LOG_BZOP_DT"><![CDATA[                                                                                                         
+        LOG_BZOP_DT = #LOG_BZOP_DT#                                                                                               
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="TRN_CD"><![CDATA[                                                                                                          
+        TRN_CD = #TRN_CD#
+]]></isNotEmpty><![CDATA[                                                                                                                                                                                                                                                                                  
+]]><isNotEmpty prepend="AND" property="SCRN_NO"><![CDATA[                                                                                                         
+        SCRN_NO = #SCRN_NO#                                                                                                       
+]]></isNotEmpty><![CDATA[                                                                                                                                         
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SSysELogLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.fw.fwsbase.db.DSCSysLogMgmt.SSysELogLstPaging 에러로그목록조회 */
+/* IO: admin,2015-09-14T16:52:23(심상준,2014-09-16T14:54:43) */
+SELECT  
+        *                                                                
+  FROM (                                                                 
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY LOG_BZOP_DT ASC) AS ROWNO   
+               ,LOG_BZOP_DT            /* 로그영업일자  */        
+               ,GLOB_ID                /* 글로벌ID */        
+               ,SEQ_NO                 /* 시퀀스NO */        
+               ,PRGS_SRNO              /* 진행일련번호 */        
+               ,ENV_DVCD               /* 환경구분코드 */        
+               ,TRTM_RSLT_CD           /* 처리결과코드  */        
+               ,TRN_CD                 /* 거래코드 */        
+               ,SCRN_NO                /* 화면번호 */        
+               ,TRN_PTRN_DVCD          /* 거래유형구분코드 */                      
+               ,BZWR_SVR_CD            /* 업무서버코드 */               
+               ,CHNL_MSG_CD            /* 채널메시지코드  */
+
+               ,IPAD                   /*  IP주소              */    
+               ,PRCM_MAC               /*  PC MAC주소          */    
+               ,SSO_SESN_KEY           /*  SSO 세션 KEY        */    
+               ,FRST_TRNM_CHNL_CD      /*  최초전송채널코드    */    
+               ,TRNM_CHNL_CD           /*  전송채널코드        */    
+               ,TRNM_NODE_NO           /*  전송노드번호        */    
+               ,MCI_TRNM_NODE_NO       /*  MCI전송노드번호     */    
+               ,TRN_TRNM_NO            /*  거래단말번호        */    
+               ,ITLK_DPTH              /*  연동깊이            */    
+               ,FRST_TRN_CD            /*  최초거래코드        */    
+               ,MV_TRN_CD              /*  기동거래코드        */    
+               ,SYNC_DV                /*  Sync/Async구분      */       
+               ,TRN_DT                 /*  거래일자            */    
+               ,SVC_STRN_DTTM          /*  서비스시작일시      */    
+               ,SVC_END_DTTM           /*  서비스종료일시      */       
+               ,USER_NO                /*  사용자번호          */       
+               ,USER_LOCALE            /*  사용자 로케일       */  
+                                            
+               ,MSG_CCNT               /* 메시지컬럼갯수 */                               
+               ,MSG_CD1                /*  메시지코드 1        */           
+               ,MSG_CNTN1              /*  메시지내용 1        */           
+               ,EROR_OCRN_PRRM_LINE1   /*  오류발생 LINE 1     */           
+               ,EROR_OCRN_PRRM_NM1     /*  오류발생 APP명 1    */           
+               ,MSG_CD2                /*  메시지코드 2        */           
+               ,MSG_CNTN2              /*  메시지내용 2        */           
+               ,EROR_OCRN_PRRM_LINE2   /*  오류발생 LINE 2     */           
+               ,EROR_OCRN_PRRM_NM2     /*  오류발생 APP명 2    */           
+               ,MSG_CD3                /*  메시지코드 3        */           
+               ,MSG_CNTN3              /*  메시지내용 3        */           
+               ,EROR_OCRN_PRRM_LINE3   /*  오류발생 LINE 3     */           
+               ,EROR_OCRN_PRRM_NM3     /*  오류발생 APP명 3    */           
+               ,MSG_CD4                /*  메시지코드 4        */           
+               ,MSG_CNTN4              /*  메시지내용 4        */           
+               ,EROR_OCRN_PRRM_LINE4   /*  오류발생 LINE 4     */           
+               ,EROR_OCRN_PRRM_NM4     /*  오류발생 APP명 4    */           
+               ,MSG_CD5                /*  메시지코드 5        */           
+               ,MSG_CNTN5              /*  메시지내용 5        */           
+               ,EROR_OCRN_PRRM_LINE5   /*  오류발생 LINE 5     */           
+               ,EROR_OCRN_PRRM_NM5     /*  오류발생 APP명 5    */           
+               ,MSG_CD6                /*  메시지코드 6        */           
+               ,MSG_CNTN6              /*  메시지내용 6        */           
+               ,EROR_OCRN_PRRM_LINE6   /*  오류발생 LINE 6     */           
+               ,EROR_OCRN_PRRM_NM6     /*  오류발생 APP명 6    */           
+               ,MSG_CD7                /*  메시지코드 7        */           
+               ,MSG_CNTN7              /*  메시지내용 7        */           
+               ,EROR_OCRN_PRRM_LINE7   /*  오류발생 LINE 7     */           
+               ,EROR_OCRN_PRRM_NM7     /*  오류발생 APP명 7    */           
+               ,MSG_CD8                /*  메시지코드 8        */           
+               ,MSG_CNTN8              /*  메시지내용 8        */           
+               ,EROR_OCRN_PRRM_LINE8   /*  오류발생 LINE 8     */           
+               ,EROR_OCRN_PRRM_NM8     /*  오류발생 APP명 8    */           
+               ,MSG_CD9                /*  메시지코드 9        */           
+               ,MSG_CNTN9              /*  메시지내용 9        */           
+               ,EROR_OCRN_PRRM_LINE9   /*  오류발생 LINE 9     */           
+               ,EROR_OCRN_PRRM_NM9     /*  오류발생 APP명 9    */           
+               ,MSG_CD10               /*  메시지코드 10       */           
+               ,MSG_CNTN10             /*  메시지내용 10       */           
+               ,EROR_OCRN_PRRM_LINE10  /*  오류발생 LINE 10    */    
+               ,EROR_OCRN_PRRM_NM10    /*  오류발생 APP명 10   */    
+
+               ,SVC_DUR_TM             /*  거래의 Elapse시간   */    
+               ,WAS_INSTANCE_ID        /*  WAS인스턴스         */    
+               ,RGSTRN_DT              /*  로그등록일          */                
+               ,REQ_CHNL_CD             /*  UI요청채널코드      */    
+          FROM  TL_DMS_FWK_ERLOG 
+         ]]><dynamic prepend="WHERE"><![CDATA[                                                                                                                                                       
+         ]]><isNotEmpty prepend="AND" property="LOG_BZOP_DT"><![CDATA[                                                                                                         
+                LOG_BZOP_DT = #LOG_BZOP_DT#                                                                                               
+         ]]></isNotEmpty><![CDATA[
+         ]]><isNotEmpty prepend="AND" property="TRN_CD"><![CDATA[                                                                                                          
+                TRN_CD = #TRN_CD#
+         ]]></isNotEmpty><![CDATA[                                                                                                                                                                                                                                                                                
+         ]]><isNotEmpty prepend="AND" property="SCRN_NO"><![CDATA[                                                                                                         
+                SCRN_NO = #SCRN_NO#
+         ]]></isNotEmpty><![CDATA[                                                                                                                                                                                                                                                                                     	      	      	                                                                                                               
+]]></dynamic><![CDATA[
+         ORDER  BY LOG_BZOP_DT DESC
+                  ,GLOB_ID DESC                                                                                                                                                  
+      ) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSysELogLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.fw.fwsbase.db.DSCSysLogMgmt.SSysELogLstTotCnt 에러로그전체건수조회 */
+/* IO: admin,2015-09-14T16:52:30(심상준,2014-09-16T14:55:04) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TL_DMS_FWK_ERLOG 
+]]><dynamic prepend="WHERE"><![CDATA[                                                                                                                                                     
+]]><isNotEmpty prepend="AND" property="LOG_BZOP_DT"><![CDATA[                                                                                                         
+        LOG_BZOP_DT = #LOG_BZOP_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="TRN_CD"><![CDATA[                                                                                                          
+        TRN_CD = #TRN_CD#
+]]></isNotEmpty><![CDATA[                                                                                                                                                                                                                                                                                
+]]><isNotEmpty prepend="AND" property="SCRN_NO"><![CDATA[                                                                                                         
+        SCRN_NO = #SCRN_NO#
+]]></isNotEmpty><![CDATA[                                                                                                                                         
+]]></dynamic><![CDATA[]]>
+	</select>
+</sqlMap>

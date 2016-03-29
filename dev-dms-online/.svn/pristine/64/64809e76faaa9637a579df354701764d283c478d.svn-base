@@ -1,0 +1,336 @@
+package dms.ep.epscsbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]입금관리</li>
+ * <li>설  명 : <pre>입금관리</pre></li>
+ * <li>작성일 : 2015-09-15 18:48:39</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class FEPDpstMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPDpstMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>송금대상조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-15 18:48:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회시작일자]
+	 *	- field : IN_TO_DT [조회종료일자]
+	 *	- field : AFFIL_AGN [대리점거래처코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR_ENPT [예금주_암호화]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : DT_GB_CD [일자구분]
+	 *	- field : ECO_FU_YN [에코4U여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : SEND_AMT_OBJ_LIST
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : PRCH_DT [매입 일자]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : HEADQ_NM [본부 명]
+	 *		- field : MKT_TEAM_CD [마케팅 팀 코드]
+	 *		- field : MKT_TEAM_NM [마케팅 팀 명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : UKEY_SUB_CD [UKEY 서브 코드]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주]
+	 *		- field : AMT_RMT_YN [금액 송금 여부]
+	 *		- field : RMT_DT [송금 일자]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : AFFIL_AGN [소속 대리점]
+	 *		- field : PRE_DC_CL [선 할인 구분]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : CUST_GRP [고객 그룹]
+	 *		- field : CHECKED [CHECKED]
+	 *		- field : ACCO_NO_ENPT [계좌번호_암호화]
+	 *		- field : DPSTR_ENPT [예금주_암호화]
+	 * </pre>
+	 */
+	public IDataSet fInqSendAmtObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet responseRegData = new DataSet();
+        IDataSet responseDtlData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        IRecordSet rsList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPDpstMgmt dEPDpstMgmt = (DEPDpstMgmt) lookupDataUnit(DEPDpstMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPDpstMgmt.dSInqSendAmtObjPrchListTotCnt(reqDs, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseRegData = dEPDpstMgmt.dSInqSendAmtObjPrchListPaging(reqDs, onlineCtx);
+
+            rsList = responseRegData.getRecordSet("SEND_AMT_OBJ_LIST");
+            if(intTotalCnt > 0){
+                // 4. 상세LISTDM호출
+                responseDtlData = dEPDpstMgmt.dSInqSendAmtObjPrchDtlList(reqDs, onlineCtx);
+                if(responseDtlData != null && 
+                    responseDtlData.getRecordSetCount() > 0 && responseDtlData.getRecordSet("SEND_AMT_OBJ_DTL_LIST") != null){
+                    IRecordSet rsTemp = responseDtlData.getRecordSet("SEND_AMT_OBJ_DTL_LIST");
+                    for(int i = rsTemp.getRecordCount()-1; i >= 0 ; i--){
+                        for(int j = 0; j < rsList.getRecordCount(); j++){
+                            if(rsList.get(j, "PRCH_MGMT_NO").equals(rsTemp.get(i, "PRCH_MGMT_NO"))){
+                                break;
+                            }else if(j == (rsList.getRecordCount() - 1)){
+                                rsTemp.removeRecord(i);
+                            }
+                        }
+                    }
+                    if(rsTemp != null && rsTemp.getRecordCount() > 0){
+                        responseData.putRecordSet("SEND_AMT_OBJ_DTL_LIST", rsTemp);
+                    }
+                }
+                responseData.putRecordSet("SEND_AMT_OBJ_LIST", rsList);
+            }else{
+                responseData.putRecordSet("SEND_AMT_OBJ_LIST", responseRegData.getRecordSet("SEND_AMT_OBJ_LIST"));
+            }
+            rsPagingList = responseData.getRecordSet("SEND_AMT_OBJ_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>송금대상목록에러체크조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-16 17:46:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_SEND_AMT_OBJ_EQP_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : DPSTR [고객명]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CON_PLC_NM [상담처명]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : EQP_ST [단말기등급]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : LOSS_EQP_YN [분실단말기여부]
+	 *		- field : RWD_RTN_OBJ_YN [보상반납대상여부]
+	 *		- field : RENTP_YN [임대폰여부]
+	 *		- field : USIM_EQPCHG_YN [USIM기변여부]
+	 *		- field : OTHRCO_FORGN_EQP_YN [타사/해외단말기여부]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : FEE_DEDC_YN [요금공제여부]
+	 *		- field : SKN_JDG_AMT [매입금액]
+	 *		- field : PRCH_CL [검수구분]
+	 *		- field : CHECK_DT [검수일자]
+	 *		- field : CUST_YN [고객의사]
+	 *		- field : CUST_DT [고객확인일자]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : ACC_NM [예금주]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : BANK_NM [은행명]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : ZIPCD_1 [우편번호1]
+	 *		- field : ZIPCD_2 [우편번호2]
+	 *		- field : ADDR [주소]
+	 *		- field : ETC_ADDR [기타주소]
+	 *		- field : SUGG [의견]
+	 *		- field : T_MGMT_NO [T_관리번호]
+	 *		- field : BATTERY [배터리]
+	 *		- field : CHARGER [충전기]
+	 *		- field : ZENDER [젠더]
+	 *		- field : EARPHONES [이어폰]
+	 *		- field : CASE [충전 Case]
+	 *		- field : USB [USB CABLE]
+	 *		- field : MEMORY [메모리카드]
+	 *		- field : DTL_1 [구성품_1]
+	 *		- field : DTL_2 [구성품_2]
+	 *		- field : DTL_3 [구성품_3]
+	 *		- field : OTHER [기타구성품]
+	 *		- field : SELL_GRADE [판매등급]
+	 *		- field : ERR_DESC [ERROR]
+	 *		- field : SKN_CL [SKN구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SEND_AMT_OBJ_EQP_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : DPSTR [고객명]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CON_PLC_NM [상담처명]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : EQP_ST [단말기등급]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : LOSS_EQP_YN [분실단말기여부]
+	 *		- field : RWD_RTN_OBJ_YN [보상반납대상여부]
+	 *		- field : RENTP_YN [임대폰여부]
+	 *		- field : USIM_EQPCHG_YN [USIM기변여부]
+	 *		- field : OTHRCO_FORGN_EQP_YN [타사/해외단말기여부]
+	 *		- field : SVC_NO [서비스번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : IMEI [IMEI]
+	 *		- field : FEE_DEDC_YN [요금공제여부]
+	 *		- field : SKN_JDG_AMT [매입금액]
+	 *		- field : PRCH_CL [검수구분]
+	 *		- field : CHECK_DT [검수일자]
+	 *		- field : CUST_YN [고객의사]
+	 *		- field : CUST_DT [고객확인일자]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : ACC_NM [예금주]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : BANK_NM [은행명]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : ZIPCD_1 [우편번호1]
+	 *		- field : ZIPCD_2 [우편번호2]
+	 *		- field : ADDR [주소]
+	 *		- field : ETC_ADDR [기타주소]
+	 *		- field : SUGG [의견]
+	 *		- field : T_MGMT_NO [T_관리번호]
+	 *		- field : BATTERY [배터리]
+	 *		- field : CHARGER [충전기]
+	 *		- field : ZENDER [젠더]
+	 *		- field : EARPHONES [이어폰]
+	 *		- field : CASE [충전 Case]
+	 *		- field : USB [USB CABLE]
+	 *		- field : MEMORY [메모리카드]
+	 *		- field : DTL_1 [구성품_1]
+	 *		- field : DTL_2 [구성품_2]
+	 *		- field : DTL_3 [구성품_3]
+	 *		- field : OTHER [기타구성품]
+	 *		- field : SELL_GRADE [판매등급]
+	 *		- field : ERR_DESC [ERROR]
+	 *		- field : SKN_CL [SKN구분]
+	 * </pre>
+	 */
+	public IDataSet fInqSendAmtObjErrChkList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet responseTemp = new DataSet();
+        IDataSet reqDate = new DataSet();
+        reqDate.putFieldMap(requestData.getFieldMap());
+        IRecordSet rs = requestData.getRecordSet("RQ_SEND_AMT_OBJ_EQP_LIST");
+        
+        try {
+            // 1. DU lookup
+            DEPDpstMgmt dEPDpstMgmt = (DEPDpstMgmt) lookupDataUnit(DEPDpstMgmt.class);
+            // 2.
+            String strMsg = "";
+            for(int i = 0; i < rs.getRecordCount(); i++){
+                reqDate.putFieldMap(rs.getRecordMap(i));
+                //reqDate.putField("EQP_MDL_CD", reqDate.getField("EQP_MDL_CD"));
+                //reqDate.putField("EQP_SER_NO", reqDate.getField("EQP_SER_NO"));
+                //reqDate.putField("EQP_COLOR_CD", reqDate.getField("EQP_COLOR_CD"));
+                reqDate.putField("CNSL_DEALCO_CD", reqDate.getField("CNSL_DEALCO_CD"));
+
+                reqDate.putField("EQP_MDL_NM", reqDate.getField("PROD_NM"));
+                reqDate.putField("CON_PLC_NM", reqDate.getField("CON_PLC_NM"));
+
+                responseTemp = dEPDpstMgmt.dSInqSendAmtObjErrChkList(reqDate, onlineCtx);
+                
+                strMsg = "";
+                if(responseTemp == null || responseTemp.getRecordSetCount() <= 0 
+                    || responseTemp.getRecordSet("EQP_ERR_CHK_LIST") == null || responseTemp.getRecordSet("EQP_ERR_CHK_LIST").getRecordCount() <= 0){
+                    strMsg = "미존재단말기,미존재상담처";
+                }else {
+                    IRecordSet rsTemp = responseTemp.getRecordSet("EQP_ERR_CHK_LIST");
+                    //모델체크
+                    if(rsTemp.getRecord(0).get("EQP_MDL_NM") == null ||
+                        "".equals(rsTemp.getRecord(0).get("EQP_MDL_NM").toString())){
+                        strMsg = "미존재단말기";
+                    }else if(!rsTemp.getRecord(0).get("EQP_MDL_NM").toString().equals(reqDate.getField("EQP_MDL_NM"))){
+                        strMsg = "단말기명비동일";
+                    }
+                    //상담처체크
+                    if(rsTemp.getRecord(0).get("DEALCO_NM") == null ||
+                        "".equals(rsTemp.getRecord(0).get("DEALCO_NM").toString())){
+                        if(strMsg != null && !"".equals(strMsg)){
+                            strMsg += ",";
+                        }
+                        strMsg = strMsg + "미존재상담처";
+                    }else if(!rsTemp.getRecord(0).get("DEALCO_NM").toString().equals(reqDate.getField("CON_PLC_NM"))){
+                        if(strMsg != null && !"".equals(strMsg)){
+                            strMsg += ",";
+                        }
+                        strMsg = strMsg + "상담처명비동일";
+                    }
+                    //if(responseTemp.getRecordSet("EQP_ERR_CHK_LIST").getRecord(0).get("REG_CNT"))
+                    if(strMsg != null && !"".equals(strMsg)){
+                        if(reqDate.getField("ERR_DESC") != null && !"".equals(reqDate.getField("ERR_DESC"))){
+                            strMsg = "," + strMsg;
+                        }
+                        rs.getRecord(i).put("ERR_DESC", strMsg);
+                    }
+                }
+            }
+            responseData.putRecordSet("RS_SEND_AMT_OBJ_EQP_LIST", rs);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+  
+}

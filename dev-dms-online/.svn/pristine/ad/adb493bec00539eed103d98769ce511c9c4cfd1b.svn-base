@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCBrdMgmt">
+	<select id="SBrdTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCBrdMgmt.SBrdTotCnt 일반게시판 총건수 조회 */
+/* IO: 박홍서,2015-07-03T15:52:48(개발자,2015-06-29T13:23:06) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_BLTN_BRD A
+       ,TB_USER B
+ WHERE  A.BLTN_BRD_ID = #BLTN_BRD_ID#
+   AND  A.USE_YN = 'Y'
+   AND  A.FS_REG_USER_ID = B.USER_NO
+]]><isNotEqual property="BLTN_BRD_TYPE" compareValue="%"><![CDATA[
+   AND  A.BLTN_BRD_TYP = #BLTN_BRD_TYPE#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="TITL"><![CDATA[
+   AND  A.BLTN_TITL like '%'||#TITL#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CTT"><![CDATA[
+   AND  A.BLTN_CTT like '%'||#CTT#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="FS_REG_USER_ID"><![CDATA[
+   AND  A.FS_REG_USER_ID = #FS_REG_USER_ID#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="FS_REG_USER_NM"><![CDATA[
+   AND  B.USER_NM = #FS_REG_USER_NM#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SBrdPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCBrdMgmt.SBrdPaging 일반게시판 페이징 조회 */
+/* IO: 박홍서,2015-07-08T13:51:33(개발자,2015-06-29T13:47:04) */
+SELECT  *
+  FROM (SELECT  ROWNUM AS ROWNO
+               ,A.BLTN_BRD_ID
+               ,A.BLTN_BRD_NUM
+               ,A.BLTN_BRD_TYP AS BLTN_BRD_TYPE
+               ,A.BLTN_TITL AS TITL
+               ,A.BLTN_CTT AS CTT
+               ,A.BLTN_BRD_LVL
+               ,A.BLTN_BRWS_CNT AS BRWS_CNT
+               ,A.ORG_BLTN_BRD_NUM
+               ,A.SUP_BLTN_BRD_NUM
+               ,A.UPLD_FILE_NO
+               ,A.USE_YN
+               ,A.BLTN_LVL_SORT_SEQ AS LVL_SORT_SEQ
+               ,A.FS_REG_USER_ID
+               ,A.FS_REG_DTM
+               ,A.LS_CHG_USER_ID
+               ,A.LS_CHG_DTM
+               ,B.USER_NM AS FS_REG_USER_NM
+          FROM  TB_BLTN_BRD A
+               ,TB_USER B
+         WHERE  A.BLTN_BRD_ID = #BLTN_BRD_ID#
+           AND  A.USE_YN = 'Y'
+           AND  A.FS_REG_USER_ID = B.USER_NO
+]]><isNotEqual property="BLTN_BRD_TYPE" compareValue="%"><![CDATA[
+           AND  A.BLTN_BRD_TYP = #BLTN_BRD_TYPE#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="TITL"><![CDATA[
+           AND  A.BLTN_TITL like '%'||#TITL#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CTT"><![CDATA[
+           AND  A.BLTN_CTT like '%'||#CTT#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="FS_REG_USER_ID"><![CDATA[
+           AND  A.FS_REG_USER_ID = #FS_REG_USER_ID#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="FS_REG_USER_NM"><![CDATA[
+           AND  B.USER_NM = #FS_REG_USER_NM#
+]]></isNotEmpty><![CDATA[
+         START  WITH A.BLTN_BRD_LVL = 0        
+       CONNECT  BY PRIOR A.BLTN_BRD_NUM = A.SUP_BLTN_BRD_NUM
+         ORDER  SIBLINGS BY A.BLTN_BRD_TYP ASC, A.BLTN_BRD_NUM DESC
+        )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IBrd" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCBrdMgmt.IBrd 일반게시판 입력 */
+/* IO: 박홍서,2015-07-09T09:23:39(개발자,2015-06-29T16:58:17) */
+INSERT
+  INTO  TB_BLTN_BRD
+       (
+        BLTN_BRD_ID
+       ,BLTN_BRD_NUM
+       ,BLTN_BRD_TYP
+       ,BLTN_TITL
+       ,BLTN_CTT
+       ,BLTN_BRD_LVL
+       ,BLTN_BRWS_CNT
+       ,ORG_BLTN_BRD_NUM
+       ,SUP_BLTN_BRD_NUM
+       ,UPLD_FILE_NO
+       ,USE_YN
+       ,BLTN_LVL_SORT_SEQ
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+        #BLTN_BRD_ID#
+       ,#BLTN_BRD_NUM#
+       ,#BLTN_BRD_TYPE#
+       ,#TITL#
+       ,#CTT#
+       ,#BLTN_BRD_LVL#
+       ,0
+       ,#ORG_BLTN_BRD_NUM#
+       ,#SUP_BLTN_BRD_NUM#
+       ,#UPLD_FILE_NO#
+       ,#USE_YN#
+]]><isNotEmpty property="LVL_SORT_SEQ"><![CDATA[
+       ,#LVL_SORT_SEQ#
+]]></isNotEmpty><![CDATA[
+]]><isEmpty property="LVL_SORT_SEQ"><![CDATA[
+       ,(SELECT  MAX(BLTN_LVL_SORT_SEQ) + 1 
+           FROM  TB_BLTN_BRD
+          WHERE  BLTN_BRD_ID = #BLTN_BRD_ID#
+            AND  ORG_BLTN_BRD_NUM = #ORG_BLTN_BRD_NUM#)
+]]></isEmpty><![CDATA[
+       ,#USER_NO#
+       ,SYSDATE
+       ,#USER_NO#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<update id="UBrd" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCBrdMgmt.UBrd 일반게시판 수정 */
+/* IO: 박홍서,2015-07-08T13:52:56(개발자,2015-06-29T17:04:42) */
+UPDATE  TB_BLTN_BRD
+   SET  BLTN_BRD_TYP  = #BLTN_BRD_TYPE#
+       ,BLTN_TITL      = #TITL#
+       ,BLTN_CTT       = #CTT#
+       ,UPLD_FILE_NO   = #UPLD_FILE_NO#
+       ,USE_YN         = #USE_YN#
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM     = SYSDATE
+ WHERE  BLTN_BRD_ID = #BLTN_BRD_ID#
+   AND  BLTN_BRD_NUM = #BLTN_BRD_NUM#]]>
+	</update>
+	<update id="UBrdIncreBrwsCnt" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCBrdMgmt.UBrdIncreBrwsCnt 일반게시판 조회수 증가 */
+/* IO: 박홍서,2015-07-08T13:53:07(박홍서,2015-06-30T17:38:38) */
+UPDATE  TB_BLTN_BRD
+   SET  BLTN_BRWS_CNT = BLTN_BRWS_CNT + 1
+ WHERE  BLTN_BRD_ID = #BLTN_BRD_ID#
+   AND  BLTN_BRD_NUM = #BLTN_BRD_NUM#]]>
+	</update>
+	<select id="SBrdSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCBrdMgmt.SBrdSeq 일반게시판 번호 채번 */
+/* IO: 박홍서,2015-07-02T17:25:45(박홍서,2015-07-02T09:10:16) */
+SELECT  SQ01_TB_BLTN_BRD.NEXTVAL AS BLTN_BRD_NUM
+  FROM  DUAL]]>
+	</select>
+</sqlMap>

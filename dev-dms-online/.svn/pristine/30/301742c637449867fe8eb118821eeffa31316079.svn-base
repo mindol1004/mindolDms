@@ -1,0 +1,476 @@
+package dms.sc.scbbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+
+import org.apache.commons.lang.StringUtils;
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: PSCFrmAutrRolMgmt</li>
+ * <li>설  명 : 화면권한역할관리</li>
+ * <li>작성일 : 2014-07-21 15:36:04</li>
+ * <li>작성자 : 심상준 (simair)</li>
+ * </ul>
+ *
+ * @author 심상준 (simair)
+ */
+public class PSCFrmAutrRolMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PSCFrmAutrRolMgmt() {
+		super();
+	}
+
+	/**
+	 * 화면권한역할목록조회
+	 *
+	 * @author 심상준 (simair)
+	 * @since 2014-07-21 15:36:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : AUTR_ROL_ID [권한역할ID]
+	 *	- field : AUTR_ROL_NM [권한역할명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FRM_ROL_LIST_Y
+	 *		- field : FRM_NM [화면명]
+	 *		- field : FRM_ID [필드1]
+	 *		- field : AUTR_ROL_ID [권한역할ID]
+	 *		- field : AUTR_ROL_NM [권한역할명]
+	 *		- field : FRM_ITEM_GRP_ID [화면항목그룹]
+	 *		- field : INQ_AUTR_YN [조회권한여부]
+	 *		- field : SAVE_AUTR_YN [저장권한여부]
+	 *		- field : UPD_AUTR_YN [수정권한여부]
+	 *		- field : DEL_AUTR_YN [삭제권한여부]
+	 *		- field : OPUT_AUTR_YN [출력권한여부]
+	 *		- field : EXL_AUTR_YN [엑셀권한여부]
+	 *		- field : PRN_INFO_INQ_AUTR_YN [개인정보조회권한여부]
+	 *		- field : USE_YN [사용여부]
+	 *	- record : RS_FRM_ROL_LIST_N
+	 *		- field : FRM_ID [화면 ID]
+	 *		- field : FRM_NM [화면명]
+	 * </pre>
+	 */
+	public IDataSet pInqFrmAutrRolLst(IDataSet requestData, IOnlineContext onlineCtx) {
+
+		IDataSet responseData = new DataSet();
+
+		try {
+			// 1. FU lookup
+			FSCFrmAutrRolMgmt fSCFrmAutrRolMgmt = (FSCFrmAutrRolMgmt) lookupFunctionUnit(FSCFrmAutrRolMgmt.class);
+			// 2. FM 호출
+			responseData = fSCFrmAutrRolMgmt.fInqFrmAutrRolLst(requestData, onlineCtx);
+
+			responseData.putRecordSet("RS_FRM_ROL_LIST_Y", responseData.getRecordSet("RS_FRM_ROL_LIST_Y"));
+			responseData.putRecordSet("RS_FRM_ROL_LIST_N", responseData.getRecordSet("RS_FRM_ROL_LIST_N"));
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+
+	}
+
+	/**
+	 * 화면권한역할저장
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FRM_ROL_LIST_Y
+	 *		- field : FRM_NM [화면명]
+	 *		- field : AUTR_ROL_ID [권한역할ID]
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : AUTR_ROL_NM [권한역할명]
+	 *		- field : FRM_ITEM_GRP_ID [화면항목그룹]
+	 *		- field : INQ_AUTR_YN [조회권한여부]
+	 *		- field : SAVE_AUTR_YN [저장권한여부]
+	 *		- field : UPD_AUTR_YN [수정권한여부]
+	 *		- field : DEL_AUTR_YN [삭제권한여부]
+	 *		- field : OPUT_AUTR_YN [출력권한여부]
+	 *		- field : EXL_AUTR_YN [엑셀권한여부]
+	 *		- field : PRN_INFO_INQ_AUTR_YN [개인정보조회권한여부]
+	 *		- field : USE_YN [사용여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveFrmAutrRol(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. FU lookup
+			FSCFrmAutrRolMgmt fSCFrmAutrRolMgmt = (FSCFrmAutrRolMgmt) lookupFunctionUnit(FSCFrmAutrRolMgmt.class);
+			// 2. 입력 RS설정
+			IRecordSet rs_Y = requestData.getRecordSet("RS_FRM_ROL_LIST_Y"); //update
+			//IRecordSet rs_N = requestData.getRecordSet("RS_FRM_ROL_LIST_N"); //update
+
+			int rsY_Cnt = rs_Y.getRecordCount();
+			//int rsN_Cnt = rs_N.getRecordCount();
+			Map<String, Object> recordMap = null;
+			Map<String, Object> recordMap2 = null;
+			IDataSet reqDataSet = new DataSet();
+
+			reqDataSet.putFieldMap(requestData.getFieldMap());
+
+			for ( int i = 0 ; i < rsY_Cnt ; i++ ) {
+				recordMap = rs_Y.getRecordMap(i);
+				reqDataSet.putFieldMap(rs_Y.getRecordMap(i));
+				reqDataSet.putField("userNo", ca.getUserNo());
+				// 3. 레코드셋 상태에 따른 분기
+				if ( DmsConstants.STATUS_INSERTED.equals(recordMap.get(DmsConstants.RECORD_STATUS)) ) { // INSERT	
+					fSCFrmAutrRolMgmt.fRegFrmAutrRol(reqDataSet, onlineCtx);
+				} else if ( DmsConstants.STATUS_UPDATED.equals(recordMap.get(DmsConstants.RECORD_STATUS)) ) { // UPDATE	
+					fSCFrmAutrRolMgmt.fRegFrmAutrRol(reqDataSet, onlineCtx);
+				} else if ( DmsConstants.STATUS_DELETED.equals(recordMap.get(DmsConstants.RECORD_STATUS)) ) { // UPDATE
+					fSCFrmAutrRolMgmt.fDelFrmAutrRoldtl(reqDataSet, onlineCtx);
+				}
+			}
+			// 4. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.		    
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 심상준 (simair)
+	 * @since 2014-07-21 15:36:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : USER_NO [사용자번호]
+	 *	- field : FRM_ID [화면ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FRM_AUTR
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : FRM_ITEM_GRP_ID [화면항목그룹]
+	 *		- field : INQ_AUTR_YN [조회권한여부]
+	 *		- field : SAVE_AUTR_YN [저장권한여부]
+	 *		- field : UPD_AUTR_YN [수정권한여부]
+	 *		- field : DEL_AUTR_YN [삭제권한여부]
+	 *		- field : OPUT_AUTR_YN [출력권한여부]
+	 *		- field : EXL_AUTR_YN [엑셀권한여부]
+	 *		- field : PRN_INFO_INQ_AUTR_YN [개인정보조회권한여부]
+	 * </pre>
+	 */
+	public IDataSet pInqFrmAutrRol(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			requestData.putField("USER_NO", ca.getUserNo());
+			// 1. FU lookup
+			FSCFrmAutrRolMgmt fSCFrmAutrRolMgmt = (FSCFrmAutrRolMgmt) lookupFunctionUnit(FSCFrmAutrRolMgmt.class);
+			// 2. FM 호출
+			responseData = fSCFrmAutrRolMgmt.fInqFrmAutrRol(requestData, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 심상준 (simair)
+	 * @since 2014-07-21 15:36:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SUP_MENU_ID [최상위메뉴]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SUB_MENU
+	 *		- field : MENU_ID [메뉴ID]
+	 *		- field : MENU_NM [메뉴명]
+	 *		- field : MENU_DESC [메뉴설명]
+	 *		- field : MENU_LV [메뉴레벨]
+	 *		- field : MENU_SORT_ORD [메뉴정렬순서]
+	 *		- field : FULL_PATH_NM [메뉴경로]
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : FRM_NM [화면명]
+	 *		- field : FRM_URL [화면URL]
+	 *		- field : FRM_CL_CD [화면구분코드]
+	 *		- field : SUP_MENU_ID [상위메뉴ID]
+	 * </pre>
+	 */
+	public IDataSet pInqMenuRolLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		//CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			//TODO 임시
+			//requestData.putField("USER_NO", ca.getUserNo());
+			requestData.putField("USER_NO", "USR0000");
+			// 1. FU lookup
+			FSCFrmAutrRolMgmt fSCFrmAutrRolMgmt = (FSCFrmAutrRolMgmt) lookupFunctionUnit(FSCFrmAutrRolMgmt.class);
+			// 2. FM 호출
+			responseData = fSCFrmAutrRolMgmt.fInqMenuRolLst(requestData, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 권한있는 메뉴 및 권한없는 메뉴 리스트를 조회한다.
+	 *
+	 * @author 임지후 (jihooyim)
+	 * @since 2014-07-21 15:36:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : AUTR_ROL_ID [권한ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FRM_ROL_LIST_P
+	 *		- field : MENU_ID [메뉴ID]
+	 *		- field : AUTR_ROL_ID [권한ID]
+	 *		- field : MENU_NM [메뉴명]
+	 *		- field : MENU_DESC [메뉴설명]
+	 *		- field : MENU_LV [메뉴레벨]
+	 *		- field : MENU_SORT_ORD [메뉴정렬순서]
+	 *		- field : FRM_ID [화면 ID]
+	 *		- field : FRM_NM [화면명]
+	 *		- field : SUP_MENU_ID [상위메뉴ID]
+	 *		- field : CHK [체크컬럼]
+	 *		- field : AUTR_YN [권한여부]
+	 *	- record : RS_FRM_ROL_LIST_Y
+	 *		- field : MENU_ID [메뉴ID]
+	 *		- field : AUTR_ROL_ID [권한ID]
+	 *		- field : MENU_NM [메뉴명]
+	 *		- field : MENU_DESC [메뉴설명]
+	 *		- field : MENU_LV [메뉴레벨]
+	 *		- field : MENU_SORT_ORD [메뉴정렬순서]
+	 *		- field : FRM_ID [화면 ID]
+	 *		- field : FRM_NM [화면명]
+	 *		- field : SUP_MENU_ID [상위메뉴ID]
+	 *		- field : CHK [체크컬럼]
+	 *		- field : AUTR_YN [권한여부]
+	 * </pre>
+	 */
+	public IDataSet pInqAutrRolMenuLst(IDataSet requestData, IOnlineContext onlineCtx) {
+
+		IDataSet responseData = new DataSet();
+
+		try {
+			// 1. FU lookup
+			FSCFrmAutrRolMgmt fSCFrmAutrRolMgmt = (FSCFrmAutrRolMgmt) lookupFunctionUnit(FSCFrmAutrRolMgmt.class);
+			// 2. FM 호출
+			responseData = fSCFrmAutrRolMgmt.fInqAutrRolMenuLst(requestData, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 선택한 화면의 상세권한을 조회한다.
+	 *
+	 * @author 임지후 (jihooyim)
+	 * @since 2014-07-21 15:36:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : AUTR_ROL_ID [권한역할ID]
+	 *	- field : FRM_ID [화면ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FRM_ROL_LIST
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : AUTR_ROL_ID [권한역할ID]
+	 *		- field : FRM_ITEM_GRP_ID [화면항목그룹]
+	 *		- field : INQ_AUTR_YN [조회권한여부]
+	 *		- field : SAVE_AUTR_YN [저장권한여부]
+	 *		- field : UPD_AUTR_YN [수정권한여부]
+	 *		- field : DEL_AUTR_YN [삭제권한여부]
+	 *		- field : OPUT_AUTR_YN [출력권한여부]
+	 *		- field : EXL_AUTR_YN [엑셀권한여부]
+	 *		- field : PRN_INFO_INQ_AUTR_YN [개인정보조회권한여부]
+	 *		- field : USE_YN [사용여부]
+	 *		- field : FRM_ITEM_GRP_ID_NUM [화면항목그룹ID_숫자만 분리]
+	 * </pre>
+	 */
+	public IDataSet pInqFrmDtlAutr(IDataSet requestData, IOnlineContext onlineCtx) {
+
+		IDataSet responseData = new DataSet();
+
+		try {
+			// 1. FU lookup
+			FSCFrmAutrRolMgmt fSCFrmAutrRolMgmt = (FSCFrmAutrRolMgmt) lookupFunctionUnit(FSCFrmAutrRolMgmt.class);
+			// 2. FM 호출
+			responseData = fSCFrmAutrRolMgmt.fInqFrmDtlAutr(requestData, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 화면권한저장
+	 *
+	 * @author 임지후 (jihooyim)
+	 * @since 2014-07-21 15:36:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FRM_ROL_LIST
+	 *		- field : FRM_ID [화면ID]
+	 *		- field : AUTR_ROL_ID [권한역할ID]
+	 *		- field : FRM_ITEM_GRP_ID [화면항목그룹]
+	 *		- field : INQ_AUTR_YN [조회권한여부]
+	 *		- field : SAVE_AUTR_YN [저장권한여부]
+	 *		- field : UPD_AUTR_YN [수정권한여부]
+	 *		- field : DEL_AUTR_YN [삭제권한여부]
+	 *		- field : OPUT_AUTR_YN [출력권한여부]
+	 *		- field : EXL_AUTR_YN [엑셀권한여부]
+	 *		- field : PRN_INFO_INQ_AUTR_YN [개인정보조회권한여부]
+	 *		- field : USE_YN [사용여부]
+	 *	- record : RS_FRM_ROL_LIST_Y
+	 *		- field : MENU_ID [메뉴ID]
+	 *		- field : MENU_NM [메뉴명]
+	 *		- field : MENU_DESC [필드3]
+	 *		- field : MENU_LV [필드4]
+	 *		- field : MENU_SORT_ORD [필드5]
+	 *		- field : FRM_ID [필드6]
+	 *		- field : FRM_NM [필드7]
+	 *		- field : SUP_MENU_ID [상위메뉴ID]
+	 *		- field : CHK [체크컬럼]
+	 *		- field : AUTR_YN [권한여부]
+	 *		- field : AUTR_ROL_ID [권한역할ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveFrmAutr(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. FU lookup
+			FSCFrmAutrRolMgmt fSCFrmAutrRolMgmt = (FSCFrmAutrRolMgmt) lookupFunctionUnit(FSCFrmAutrRolMgmt.class);
+			// 2. 입력 RS설정 (화면에서 업데이트된 리스트만 넘겨짐)
+			IRecordSet rsY = requestData.getRecordSet("RS_FRM_ROL_LIST_Y"); //권한있는 화면 목록
+			IRecordSet rsDetail = requestData.getRecordSet("RS_FRM_ROL_LIST"); //특정화면의 상세권한리스트 
+			
+			int rsDetailCnt = rsDetail.getRecordCount();
+			int rsY_Cnt = rsY.getRecordCount();
+			Map<String, Object> recordMap = null;
+			IDataSet reqDataSet = new DataSet();
+			//IDataSet reqDataSet2 = new DataSet();
+			String frmId = new String("");
+			//특정화면의 상세권한리스트 저장
+			for ( int i = 0 ; i < rsDetailCnt ; i++ ) {
+				recordMap = rsDetail.getRecordMap(i);
+				reqDataSet.putFieldMap(recordMap);
+				reqDataSet.putField("userNo", ca.getUserNo());
+				// 3. 레코드셋 상태에 따른 분기
+				if ( StringUtils.equals(DmsConstants.STATUS_INSERTED, recordMap.get(DmsConstants.RECORD_STATUS).toString()) ) { // INSERT	
+					fSCFrmAutrRolMgmt.fRegFrmAutrRol(reqDataSet, onlineCtx);
+				} else if ( StringUtils.equals(DmsConstants.STATUS_UPDATED, recordMap.get(DmsConstants.RECORD_STATUS).toString()) ) { // UPDATE	
+					fSCFrmAutrRolMgmt.fRegFrmAutrRol(reqDataSet, onlineCtx);
+				} else if ( StringUtils.equals(DmsConstants.STATUS_DELETED, recordMap.get(DmsConstants.RECORD_STATUS).toString()) ) { // UPDATE
+					fSCFrmAutrRolMgmt.fDelFrmAutrRoldtl(reqDataSet, onlineCtx);
+				}
+				if(i==0){
+					frmId = (String) recordMap.get("FRM_ID");
+				}
+			}
+			
+			reqDataSet = new DataSet();
+			
+			//권한별 화면목록 저장
+			for ( int i = 0 ; i < rsY_Cnt ; i++ ) {
+				recordMap = rsY.getRecordMap(i);
+				reqDataSet.putFieldMap(recordMap);
+				reqDataSet.putField("userNo", ca.getUserNo());
+				// 3. 권한여부에 따른 분기처리 
+				
+				//화면id가 없는 경우(상위 메뉴인경우 skip) 
+				if( StringUtils.isEmpty( (String) recordMap.get("FRM_ID")) || ( !StringUtils.isEmpty(frmId) && frmId.equals(recordMap.get("FRM_ID")))){
+					continue;
+				}
+					
+				if ( "1".equals(recordMap.get("AUTR_YN")) ) {  
+					//권한추가 (기본데이터설정) 
+					reqDataSet.putField("FRM_ITEM_GRP_ID", "GRP1");
+					reqDataSet.putField("INQ_AUTR_YN", "1");
+					reqDataSet.putField("SAVE_AUTR_YN", "1");
+					reqDataSet.putField("UPD_AUTR_YN", "1");
+					reqDataSet.putField("DEL_AUTR_YN","1");
+					reqDataSet.putField("OPUT_AUTR_YN", "1");
+					reqDataSet.putField("EXL_AUTR_YN","1");
+					reqDataSet.putField("PRN_INFO_INQ_AUTR_YN","1");
+					reqDataSet.putField("USE_YN", "1");
+					//fm호출
+					fSCFrmAutrRolMgmt.fRegFrmAutrRol(reqDataSet, onlineCtx);
+				} else { 
+					//권한삭제
+					//fm호출				
+					fSCFrmAutrRolMgmt.fDelFrmAutrRol(reqDataSet, onlineCtx);
+				} 
+			}
+			// 4. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.		    
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+}

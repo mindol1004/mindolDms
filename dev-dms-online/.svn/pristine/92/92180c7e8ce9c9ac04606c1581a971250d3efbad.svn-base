@@ -1,0 +1,80 @@
+package dms.pr.prsimbase.biz;
+
+import java.util.Map;
+
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [FU]회수대상임대폰조회</li>
+ * <li>설  명 : <pre>회수대상임대폰조회</pre></li>
+ * <li>작성일 : 2015-07-14 20:47:57</li>
+ * <li>작성자 : 이준우 (elmsliw)</li>
+ * </ul>
+ *
+ * @author 이준우 (elmsliw)
+ */
+public class FPRReqpClctInRgst extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FPRReqpClctInRgst(){
+		super();
+	}
+
+	/**
+	 * <pre>회수대상임대폰조회</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-07-14 20:47:57
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqReqpClctLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet dsCnt = new DataSet();
+	//	IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet rsPagingList = null;
+		int intTotalCnt = 0;
+		try {
+			// 1. DU lookup
+			DPRReqpClctInRgst dPRReqpClctInRgst = (DPRReqpClctInRgst) lookupDataUnit(DPRReqpClctInRgst.class);
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dPRReqpClctInRgst.dSReqpClctLstTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(requestData);
+			//PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+			// 3. LISTDM호출
+			responseData = dPRReqpClctInRgst.dSReqpClctLstPaging(requestData, onlineCtx);
+
+			rsPagingList = responseData.getRecordSet("RS_EQP_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);
+			
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}		
+	    return responseData;
+	}
+  
+}

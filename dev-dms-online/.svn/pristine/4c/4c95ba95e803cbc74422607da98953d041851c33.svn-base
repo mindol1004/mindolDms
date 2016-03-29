@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRReqpInveInfoSend">
+	<select id="SReqpInveLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpInveInfoSend.SReqpInveLstTotCnt 임대폰재고조회총건수 */
+/* IO: 박민정,2015-07-24T18:33:29(박민정,2015-07-24T14:10:42) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_EQP_ASSET A /* 단말기자산*/
+      ,TB_EQP_IN B /*단말기입고*/
+      ,TB_EQP_MDL C /*단말기모델*/
+      ,(SELECT CM_CD_ID,CM_CD_NM 
+          FROM TB_CM_CD
+         WHERE CM_GRP_CD_ID ='DMS108'
+           AND USE_YN='Y') D    /*재고상태코드*/
+ WHERE A.ASSET_NO= B.ASSET_NO
+   AND A.EQP_MDL_CD = C.EQP_MDL_CD
+   AND A.INVE_ST_CD = D.CM_CD_ID
+   AND A.DEL_YN = 'N'
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+   AND B.IN_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+   AND B.IN_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_NM"><![CDATA[
+   AND C.EQP_MDL_NM LIKE #EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+   AND  A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+   AND  A.BOX_NO <= #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SReqpInveLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpInveInfoSend.SReqpInveLstPaging 임대폰재고조회페이징 */
+/* IO: 박민정,2015-07-24T18:49:28(박민정,2015-07-24T14:13:38) */
+SELECT  *  
+  FROM  (SELECT ROW_NUMBER() OVER(ORDER BY A.ASSET_NO ASC) AS ROWNO
+               ,A.EQP_MDL_CD	            /*단말기모델코드*/
+               ,A.EQP_SER_NUM	            /*단말기일련번호*/
+               ,A.EQP_IMEI_NUM	            /*단말기IMEI번호*/
+               ,A.EQP_COLOR_CD	            /*단말기색상코드*/
+               ,A.OP_CL_CD	                /*업무구분코드*/
+               ,A.INVE_ST_CD	            /*재고상태코드*/
+               ,A.PRCH_AMT	                /*매입금액*/
+               ,A.FST_IN_DT	                /*최초입고일자*/
+               ,A.PRCH_DT                   /*매입일자*/
+               ,A.LAST_EXPART_DT	        /*최종교품일자*/
+               ,A.IN_OUT_GUBUN_CD	        /*입출고구분코드*/
+               ,A.LAST_IN_OUT_NO	        /*최종입출고번호*/
+               ,A.LOSS_DT 	                /*분실일자*/
+               ,A.BOX_NO	                /*BOX NO*/
+               ,B.EQP_IN_NO	                /*단말기입고번호*/
+               ,B.ASSET_NO		            /*자산번호*/
+               ,B.IN_DT		                /*입고일자*/
+               ,B.IN_DTL_CD		            /*입고상세코드*/
+               ,B.IN_PLC_CD		            /*입고처코드*/
+               ,B.CHRG_DEPT_CD		        /*담당부서코드*/
+               ,C.EQP_MDL_NM                /*단말기모델명*/
+               ,D.CM_CD_NM                  /*재고상태 코드명*/
+         FROM TB_EQP_ASSET A                /* 단말기자산*/
+             ,TB_EQP_IN B                   /*단말기입고*/
+             ,TB_EQP_MDL C                  /*단말기모델*/
+             ,(SELECT CM_CD_ID,CM_CD_NM 
+                 FROM TB_CM_CD
+                WHERE CM_GRP_CD_ID ='DMS108'
+                  AND USE_YN='Y') D    /*재고상태코드*/
+        WHERE A.ASSET_NO = B.ASSET_NO
+          AND A.EQP_MDL_CD = C.EQP_MDL_CD
+          AND A.INVE_ST_CD = D.CM_CD_ID
+          AND A.DEL_YN = 'N'
+]]><isNotEmpty property="STA_IN_DT"><![CDATA[
+          AND B.IN_DT >= #STA_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="END_IN_DT"><![CDATA[
+          AND B.IN_DT <= #END_IN_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_NM"><![CDATA[
+          AND C.EQP_MDL_NM LIKE #EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+          AND A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+          AND A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+        )PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+</sqlMap>

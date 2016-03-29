@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpMdlPriceMgmt">
+	<select id="SfInqEqpMdlPriceLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMdlPriceMgmt.SfInqEqpMdlPriceLstTotCnt 단말기별단가조회총건수 */
+/* IO: 박민정,2015-08-24T09:18:41(박민정,2015-08-20T14:31:19) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  (SELECT EQP_MDL_CD          
+           FROM TB_EP_BAS_PROD_FIX_PRICE 
+          WHERE DEL_YN = 'N'
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+            AND FRDT <= #APLY_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+            AND TODT >= #APLY_DT#  
+]]></isNotEmpty><![CDATA[
+            GROUP BY EQP_MDL_CD) A   /*상품고정가격*/
+       ,TB_EQP_MDL B  /*단말기모델*/
+WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+  AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SfInqEqpMdlPriceLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMdlPriceMgmt.SfInqEqpMdlPriceLstPaging 단말기별단가조회목록 */
+/* IO: 박민정,2015-08-21T18:33:22(박민정,2015-08-20T14:32:06) */
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD ASC) AS ROWNO
+                ,A.EQP_MDL_CD	                  /*단말기 모델코드*/
+                ,B.EQP_MDL_NM                     /*단말기 모델명*/                       
+                ,SUM(A.N_GR_PRCE) AS N_GR_PRCE
+                ,SUM(A.A_GR_PRCE) AS A_GR_PRCE
+                ,SUM(A.B_GR_PRCE) AS B_GR_PRCE 
+                ,SUM(A.C_GR_PRCE) AS C_GR_PRCE 
+                ,SUM(A.D_GR_PRCE) AS D_GR_PRCE 
+                ,SUM(A.E_GR_PRCE) AS E_GR_PRCE
+                ,MAX(A.FRDT) AS FRDT	          /*시작일*/
+                ,MAX(A.TODT) AS TODT              /*종료일*/
+           FROM  (SELECT EQP_MDL_CD
+                        ,SEQ
+                        ,DECODE(GRADE,'N',UPRC,0) AS N_GR_PRCE
+                        ,DECODE(GRADE,'A',UPRC,0) AS A_GR_PRCE 
+                        ,DECODE(GRADE,'B',UPRC,0) AS B_GR_PRCE 
+                        ,DECODE(GRADE,'C',UPRC,0) AS C_GR_PRCE 
+                        ,DECODE(GRADE,'D',UPRC,0) AS D_GR_PRCE 
+                        ,DECODE(GRADE,'E',UPRC,0) AS E_GR_PRCE
+                        ,UPRC              
+                        ,FRDT
+                        ,TODT  
+                        ,PRCLST_MGMT_NO	  
+                        ,STRD_INCEN	
+                        ,RMK   
+                        ,UPDATE_COUNT	                
+                   FROM TB_EP_BAS_PROD_FIX_PRICE 
+                  WHERE DEL_YN = 'N'
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+                    AND FRDT <= #APLY_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+                    AND TODT >= #APLY_DT#  
+]]></isNotEmpty><![CDATA[
+                 )A   /*상품고정가격*/
+                ,TB_EQP_MDL B  /*단말기모델*/
+          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+         GROUP BY A.EQP_MDL_CD
+                 ,B.EQP_MDL_NM )PA
+WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SfInqCmptPriceLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMdlPriceMgmt.SfInqCmptPriceLst 구성품단가조회 */
+/* IO: 박민정,2015-08-25T17:13:23(박민정,2015-08-21T10:44:21) */
+SELECT  A.EQP_MDL_CD	    /*단말기 모델 코드*/
+       ,A.SEQ	            /*순번*/
+       ,A.OUTS_MCN_CL	    /*주변 기기 구분*/
+       ,A.BYGRD		        /*등급별*/
+       ,A.QTY		        /*수량*/
+       ,A.UPRC		        /*단가*/
+       ,A.SALE_UPRC		    /*매출 단가*/
+       ,A.NECES_CMPT_YN		/*필수 구성품 여부*/
+       ,A.BATR_CD 	        /*배터리 코드*/
+       ,A.FRDT		        /*시작일*/
+       ,A.TODT		        /*종료일*/
+       ,A.RMK		        /*비고*/
+ FROM  TB_EP_BAS_PROD_DTL A   /*EP_상품관리상세*/
+WHERE  A.DEL_YN = 'N'
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+  AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+  AND  A.FRDT <= #APLY_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="APLY_DT"><![CDATA[
+  AND  A.TODT >= #APLY_DT#  
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

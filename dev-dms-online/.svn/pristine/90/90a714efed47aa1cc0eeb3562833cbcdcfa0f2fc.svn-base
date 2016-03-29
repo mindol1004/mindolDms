@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPFPAEqpMgmt">
+	<insert id="IFPAEqpRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsfebase.db.DEPFPAEqpMgmt.IFPAEqpRgst FPA단말기등록 */
+/* IO: 양재석,2016-02-17T16:47:00(양재석,2016-02-16T10:10:54) */
+INSERT 
+  INTO TB_EP_FPA_EQP_MGMT
+       (
+       CNSL_MGMT_NO            /* 상담 관리 번호      */
+       ,EQP_MDL_CD             /* 단말기 모델 코드    */
+       ,EQP_SER_NO             /* 단말기 일련 번호    */
+       ,EQP_COLOR_CD           /* 단말기 색상 코드    */
+       ,IMEI                   /* IMEI      */
+       ,PRCH_AMT               /* 매입 금액           */
+       ,SELL_GRADE             /* 판매 등급           */
+       ,SELL_PRC               /* 판매 가격           */
+       ,IN_CONF_DT             /* 입고 확정 일자      */
+       ,IN_PROC_CHRGR_ID       /* 입고 처리 담당자 ID */
+       ,INPT                   /* 검수자              */
+       ,TLY_DT                 /* 검수 일자           */
+       ,MID_TERM_YN            /* 중도 해지 여부      */
+       ,PRCH_CONF_YN           /* 매입 확정 여부      */
+       ,PRCH_CONF_DT           /* 매입 확정 일자      */
+       ,PROGR_ST               /* 진행 상태           */
+       ,SELL_YN                /* 판매 여부           */
+       ,PROD_SER_NO	           /* 상품 일련 번호    */
+       ,MQ_YN	               /* MQ 여부 */
+       ,DEL_YN                 /* 삭제 여부           */
+       ,UPDATE_COUNT           /* UPDATE COUNT  */
+       ,FS_REG_USER_ID         /* 최초등록사용자ID    */
+       ,FS_REG_DTM             /* 최초등록일시        */
+       ,LS_CHG_USER_ID         /* 최종변경사용자ID    */
+       ,LS_CHG_DTM             /* 최종변경일시        */
+       )
+VALUES  
+       (
+       #CNSL_MGMT_NO#
+       ,#EQP_MDL_CD#
+       ,#EQP_SER_NO#
+       ,#EQP_COLOR_CD#
+       ,#IMEI#
+       ,#PRCH_AMT#
+       ,#SELL_GRADE#
+       ,#SELL_PRC#
+       ,#IN_CONF_DT#
+       ,#IN_PROC_CHRGR_ID#
+       ,#INPT#
+       ,#TLY_DT#
+       ,NVL(#MID_TERM_YN#,'N')
+       ,NVL(#PRCH_CONF_YN#,'N')
+       ,#PRCH_CONF_DT#
+       ,'13'
+       ,'N'
+       ,#PROD_SER_NO#
+       ,NVL(#MQ_YN#,'N')
+       ,'N'
+       ,1
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<select id="SInqFPAEqpCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfebase.db.DEPFPAEqpMgmt.SInqFPAEqpCnt FPA단말기건수조회 */
+/* IO: 양재석,2016-02-16T10:40:51(양재석,2016-02-16T10:34:48) */
+SELECT COUNT(*) TOT_CNT
+  FROM TB_EP_FPA_EQP_MGMT
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</select>
+	<update id="UFPAEqpInfoUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsfebase.db.DEPFPAEqpMgmt.UFPAEqpInfoUpd FPA단말기정보수정 */
+/* IO: 양재석,2016-02-16T17:10:56(양재석,2016-02-16T13:29:18) */
+UPDATE TB_EP_FPA_EQP_MGMT
+   SET PRCH_AMT           = #PRCH_AMT#          /* 매입 금액 */
+       ,SELL_GRADE         = #SELL_GRADE#       /* 판매 등급 */
+       ,SELL_PRC           = #SELL_PRC#         /* 판매 가격 */
+       ,PRCH_CONF_YN       = NVL(#PRCH_CONF_YN#,'N')     /* 매입 확정 여부 */
+       ,PRCH_CONF_DT       = #PRCH_CONF_DT#     /* 매입 확정 일자 */
+       ,UPDATE_COUNT       = UPDATE_COUNT+1     /* UPDATE COUNT */
+       ,LS_CHG_USER_ID     = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM         = SYSDATE
+ WHERE CNSL_MGMT_NO        = #CNSL_MGMT_NO#]]>
+	</update>
+	<select id="SInqFPAEqpSellAvgAmtList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfebase.db.DEPFPAEqpMgmt.SInqFPAEqpSellAvgAmtList FPA단말기판매평균금액목록조회 */
+/* IO: 양재석,2016-02-16T16:42:35(양재석,2016-02-16T16:30:48) */
+SELECT A.EQP_MDL_CD
+       ,MAX(TO_CHAR(SYSDATE,'YYYYMMDD')) AS APPLY_DT   /* 적용일자 */
+       ,MAX(TO_CHAR(SYSDATE-27,'YYYYMMDD')) AS SELL_STA_DT /* 판매시작일자 */
+       ,CASE WHEN SUM(A.A_SELL_CNT) = 0 OR SUM(A.B_SELL_CNT) = 0 THEN 0
+             ELSE ((SUM(A.A_SELL_PRC)/SUM(A.A_SELL_CNT)) - (SUM(A.B_SELL_PRC)/SUM(A.B_SELL_CNT)))/MAX(SELL_FREQ) 
+         END AS EQP_BKAG_AMT   /* 단말기파손금액 */
+       ,MAX(TO_CHAR(SYSDATE,'YYYYMMDD')) AS SELL_END_DT  /* 판매종료일자 */
+       ,SUM(A.A_SELL_PRC) AS NORM_SELL_TOT_AMT /* 정상판매합계금액 */
+       ,SUM(A.A_SELL_CNT) AS NORM_SELL_QTY     /* 정상판매수량 */
+       ,SUM(A.B_SELL_PRC) AS BKAG_SELL_TOT_AMT /* 파손판매합계금액 */
+       ,SUM(A.B_SELL_CNT) AS BKAG_SELL_QTY     /* 파손판매수량 */
+       ,MAX(SELL_FREQ) AS SELL_FREQ  /* 판매횟수 */
+  FROM (/* 정상판매합계 */
+       SELECT IB.EQP_MDL_CD
+              ,SUM(IB.SELL_PRC) AS A_SELL_PRC
+              ,COUNT(IB.SELL_PRC) AS A_SELL_CNT
+              ,0 AS B_SELL_PRC
+              ,0 AS B_SELL_CNT
+              ,0 AS SELL_FREQ
+         FROM TB_EP_FPA_EQP_MGMT IA
+              ,TB_EP_FPA_EQUIPMENT_SALE_PROXY IB
+              ,TB_EP_FPA_SALE_PROXY IC
+        WHERE IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+          AND IB.SELL_PROXY_NO = IC.SELL_PROXY_NO
+          AND IB.SELL_PROXY_CHG_SEQ = IC.SELL_PROXY_CHG_SEQ
+          AND IA.DEL_YN = 'N'
+          AND IB.DEL_YN = 'N'
+          AND IC.DEL_YN = 'N'
+          AND NVL(IB.SELL_CNCL_YN,'N') = 'N'
+          AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+          AND IA.SELL_GRADE = 'A'
+          AND SUBSTR(IC.SELL_CHG_DTM,1,8) BETWEEN TO_CHAR(SYSDATE-27,'YYYYMMDD') AND TO_CHAR(SYSDATE,'YYYYMMDD')
+        GROUP BY IB.EQP_MDL_CD
+        UNION ALL /* 파손판매합계 */
+       SELECT IB.EQP_MDL_CD
+              ,0 AS A_SELL_PRC
+              ,0 AS A_SELL_CNT
+              ,SUM(IB.SELL_PRC) AS B_SELL_PRC
+              ,COUNT(IB.SELL_PRC) AS B_SELL_CNT
+              ,0 AS SELL_FREQ
+         FROM TB_EP_FPA_EQP_MGMT IA
+              ,TB_EP_FPA_EQUIPMENT_SALE_PROXY IB
+              ,TB_EP_FPA_SALE_PROXY IC
+        WHERE IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+          AND IB.SELL_PROXY_NO = IC.SELL_PROXY_NO
+          AND IB.SELL_PROXY_CHG_SEQ = IC.SELL_PROXY_CHG_SEQ
+          AND IA.DEL_YN = 'N'
+          AND IB.DEL_YN = 'N'
+          AND IC.DEL_YN = 'N'
+          AND NVL(IB.SELL_CNCL_YN,'N') = 'N'
+          AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+          AND IA.SELL_GRADE = 'B'
+          AND SUBSTR(IC.SELL_CHG_DTM,1,8) BETWEEN TO_CHAR(SYSDATE-27,'YYYYMMDD') AND TO_CHAR(SYSDATE,'YYYYMMDD')
+        GROUP BY IB.EQP_MDL_CD
+        UNION ALL /* 판매횟수 */
+       SELECT IB.EQP_MDL_CD
+              ,0 AS A_SELL_PRC
+              ,0 AS A_SELL_CNT
+              ,0 AS B_SELL_PRC
+              ,0 AS B_SELL_CNT
+              ,COUNT(IB.SELL_PROXY_NO) AS SELL_FREQ
+         FROM TB_EP_FPA_EQP_MGMT IA
+              ,TB_EP_FPA_EQUIPMENT_SALE_PROXY IB
+              ,TB_EP_FPA_SALE_PROXY IC
+        WHERE IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+          AND IB.SELL_PROXY_NO = IC.SELL_PROXY_NO
+          AND IB.SELL_PROXY_CHG_SEQ = IC.SELL_PROXY_CHG_SEQ
+          AND IA.DEL_YN = 'N'
+          AND IB.DEL_YN = 'N'
+          AND IC.DEL_YN = 'N'
+          AND NVL(IB.SELL_CNCL_YN,'N') = 'N'
+          AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+          AND IA.SELL_GRADE IN ('A','B')
+          AND SUBSTR(IC.SELL_CHG_DTM,1,8) BETWEEN TO_CHAR(SYSDATE-27,'YYYYMMDD') AND TO_CHAR(SYSDATE,'YYYYMMDD')
+        GROUP BY IB.EQP_MDL_CD, IB.SELL_PROXY_NO
+       ) A
+ GROUP BY A.EQP_MDL_CD]]>
+	</select>
+</sqlMap>

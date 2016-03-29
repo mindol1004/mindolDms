@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCntrtCmpMgmt">
+	<select id="SCntrtCmpLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtCmpMgmt.SCntrtCmpLstPaging 계약손해배상금조회 */
+/* IO: 안진갑,2015-09-03T12:43:44(이민재,2015-07-17T11:27:23) */
+SELECT  *
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY IA.CNTRT_NO DESC) AS ROWNO 
+               ,IA.*
+          FROM ( 
+                SELECT  C.CNTRT_NO
+                       ,A.ASSET_NO             
+                       ,A.EQP_JDG_SEQ       
+                       ,A.EQP_JDG_DT                
+                       ,A.JDG_CHRGR_NO                
+                       ,G.USER_NM AS JDG_CHRGR_NM                       
+                       ,A.EQP_IN_DT                                         
+                       ,C.SVC_MGMT_NO                
+                       ,C.NEW_CNTRTR_NM                
+                       ,C.SVC_NO                
+                       ,A.EQP_CMP_AMT_TOT                
+                       ,A.EQP_JDG_RSLT_CD                
+                       ,H.EQP_MDL_CD                
+                       ,E.EQP_MDL_NM                             
+                       ,D.CNTRT_PRD                
+                       ,H.RENTAL_CNTRT_STA_DT                
+                       ,H.RENTAL_CNTRT_END_DT                
+                       ,C.AGN_CD                
+                       ,F.ORG_NM AS AGN_NM                
+                       ,C.OP_TYP_CD                
+                       ,C.OP_PROC_DT
+                       ,E.PET_NM
+                  FROM  TB_EQP_JDG A                
+                       ,TB_EQP_CNTRT B
+                       ,TB_RENTAL_CNTRT H                
+                       ,TB_NR_CNTRT C  
+                       ,TB_RENTAL_POLY D
+                       ,TB_EQP_MDL E                
+                       ,TB_DEALCO F                
+                       ,TB_USER G     
+                       ,TB_EQP_ASSET I      
+                 WHERE  A.ASSET_NO = B.ASSET_NO            
+                   AND  B.CNTRT_NO = H.CNTRT_NO
+                   AND  C.CNTRT_NO = H.CNTRT_NO
+                   AND  D.RENTAL_POLY_NO = H.RENTAL_POLY_NO
+                   AND  H.EQP_MDL_CD = E.EQP_MDL_CD           
+                   AND  C.AGN_CD = F.AGN_ORG_CD     
+                   AND  B.ASSET_NO = I.ASSET_NO        
+                   AND  A.JDG_CHRGR_NO = G.USER_NO                            
+                   AND  H.OP_CL_CD='NR'
+                   AND  I.INVE_ST_CD = '40'
+]]><isNotEmpty property="OP_PROC_STA_DT" prepend="AND"><![CDATA[
+		                C.OP_PROC_DT BETWEEN #OP_PROC_STA_DT# AND #OP_PROC_END_DT# 
+                   AND  C.OP_TYP_CD IN ('02', '07') 		           
+]]></isNotEmpty><![CDATA[            
+]]><isNotEmpty property="NEW_CNTRTR_NM" prepend="AND"><![CDATA[
+                        C.NEW_CNTRTR_NM LIKE '%'||#NEW_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[                  
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                        C.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[                
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+                        C.SVC_NO_ENPT = #SVC_NO#
+]]></isNotEmpty><![CDATA[                      
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+                        C.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual property="EQP_JDG_RSLT_CD" prepend="AND" compareValue="%"><![CDATA[
+                        A.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                        H.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[                    
+                 UNION  ALL
+                SELECT  A.CNTRT_NO
+                       ,C.ASSET_NO             
+                       ,NULL AS EQP_JDG_SEQ       
+               		   ,NULL AS EQP_JDG_DT                
+               		   ,NULL AS JDG_CHRGR_NO                
+               		   ,NULL AS JDG_CHRGR_NM                       
+               		   ,NULL AS EQP_IN_DT                                         
+               		   ,B.SVC_MGMT_NO                
+               		   ,B.NEW_CNTRTR_NM                
+               		   ,B.SVC_NO                
+               		   ,B.UNRTN_AMT AS EQP_CMP_AMT_TOT                
+               		   ,'02' AS EQP_JDG_RSLT_CD                
+               		   ,A.EQP_MDL_CD                
+               		   ,E.EQP_MDL_NM                             
+               		   ,D.CNTRT_PRD                
+               		   ,A.RENTAL_CNTRT_STA_DT                
+               		   ,A.RENTAL_CNTRT_END_DT                
+               		   ,B.AGN_CD                
+               		   ,F.ORG_NM AS AGN_NM                
+               		   ,B.OP_TYP_CD                
+               		   ,B.OP_PROC_DT
+               		   ,E.PET_NM
+          		  FROM  TB_RENTAL_CNTRT A
+               		   ,TB_NR_CNTRT B
+               		   ,TB_EQP_CNTRT C
+               		   ,TB_RENTAL_POLY D
+               		   ,TB_EQP_MDL E
+               		   ,TB_DEALCO F
+                 WHERE  A.CNTRT_NO = B.CNTRT_NO
+           		   AND  A.CNTRT_NO = C.CNTRT_NO
+           	       AND  A.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+           		   AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+           		   AND  B.AGN_CD = F.AGN_ORG_CD
+           	       AND  NVL(B.UNRTN_AMT,0) > 0           
+                   AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty property="OP_PROC_STA_DT" prepend="AND"><![CDATA[
+		                B.OP_PROC_DT BETWEEN #OP_PROC_STA_DT# AND #OP_PROC_END_DT# 
+                   AND  B.OP_TYP_CD IN ('02', '07') 		                
+]]></isNotEmpty><![CDATA[            
+]]><isNotEmpty property="NEW_CNTRTR_NM" prepend="AND"><![CDATA[
+                        B.NEW_CNTRTR_NM LIKE '%'||#NEW_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[                  
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                        B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[                
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+                        B.SVC_NO_ENPT = #SVC_NO#
+]]></isNotEmpty><![CDATA[                      
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+                        B.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual property="EQP_JDG_RSLT_CD" compareValue="%"><![CDATA[
+	]]><isNotEqual property="EQP_JDG_RSLT_CD" prepend="AND" compareValue="02"><![CDATA[
+                        NVL(B.UNRTN_AMT,0) = 0 
+    ]]></isNotEqual><![CDATA[                    
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[ 
+			  ) IA
+        ) PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCntrtCmpTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtCmpMgmt.SCntrtCmpTotCnt 계약손해배상금총건수 */
+/* IO: 안진갑,2015-09-03T12:44:06(이민재,2015-07-17T11:27:48) */
+SELECT  COUNT(1) AS TOTAL_CNT
+          FROM (
+                SELECT  C.CNTRT_NO
+                       ,A.ASSET_NO             
+                       ,A.EQP_JDG_SEQ       
+                       ,A.EQP_JDG_DT                
+                       ,A.JDG_CHRGR_NO                
+                       ,G.USER_NM AS JDG_CHRGR_NM                       
+                       ,A.EQP_IN_DT                                         
+                       ,C.SVC_MGMT_NO                
+                       ,C.NEW_CNTRTR_NM                
+                       ,C.SVC_NO                
+                       ,A.EQP_CMP_AMT_TOT                
+                       ,A.EQP_JDG_RSLT_CD                
+                       ,H.EQP_MDL_CD                
+                       ,E.EQP_MDL_NM                             
+                       ,D.CNTRT_PRD                
+                       ,H.RENTAL_CNTRT_STA_DT                
+                       ,H.RENTAL_CNTRT_END_DT                
+                       ,C.AGN_CD                
+                       ,F.ORG_NM AS AGN_NM                
+                       ,C.OP_TYP_CD                
+                       ,C.OP_PROC_DT
+                       ,E.PET_NM
+                  FROM  TB_EQP_JDG A                
+                       ,TB_EQP_CNTRT B
+                       ,TB_RENTAL_CNTRT H                
+                       ,TB_NR_CNTRT C  
+                       ,TB_RENTAL_POLY D
+                       ,TB_EQP_MDL E                
+                       ,TB_DEALCO F                
+                       ,TB_USER G
+                       ,TB_EQP_ASSET I          
+                 WHERE  A.ASSET_NO = B.ASSET_NO            
+                   AND  B.CNTRT_NO = H.CNTRT_NO
+                   AND  C.CNTRT_NO = H.CNTRT_NO
+                   AND  D.RENTAL_POLY_NO = H.RENTAL_POLY_NO
+                   AND  H.EQP_MDL_CD = E.EQP_MDL_CD           
+                   AND  C.AGN_CD = F.AGN_ORG_CD         
+                   AND  B.ASSET_NO = I.ASSET_NO   
+                   AND  A.JDG_CHRGR_NO = G.USER_NO                            
+                   AND  H.OP_CL_CD='NR'
+                   AND  I.INVE_ST_CD = '40'
+]]><isNotEmpty property="OP_PROC_STA_DT" prepend="AND"><![CDATA[
+		                C.OP_PROC_DT BETWEEN #OP_PROC_STA_DT# AND #OP_PROC_END_DT# 
+		           AND  C.OP_TYP_CD IN ('02', '07') 	
+]]></isNotEmpty><![CDATA[            
+]]><isNotEmpty property="NEW_CNTRTR_NM" prepend="AND"><![CDATA[
+                        C.NEW_CNTRTR_NM LIKE '%'||#NEW_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[                  
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                        C.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[                
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+                        C.SVC_NO_ENPT = #SVC_NO#
+]]></isNotEmpty><![CDATA[                      
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+                        C.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual property="EQP_JDG_RSLT_CD" prepend="AND" compareValue="%"><![CDATA[
+                        A.EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                        H.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[                    
+                 UNION  ALL
+                SELECT  A.CNTRT_NO
+                       ,C.ASSET_NO             
+                       ,NULL AS EQP_JDG_SEQ       
+               		   ,NULL AS EQP_JDG_DT                
+               		   ,NULL AS JDG_CHRGR_NO                
+               		   ,NULL AS JDG_CHRGR_NM                       
+               		   ,NULL AS EQP_IN_DT                                         
+               		   ,B.SVC_MGMT_NO                
+               		   ,B.NEW_CNTRTR_NM                
+               		   ,B.SVC_NO                
+               		   ,B.UNRTN_AMT AS EQP_CMP_AMT_TOT                
+               		   ,'02' AS EQP_JDG_RSLT_CD                
+               		   ,A.EQP_MDL_CD                
+               		   ,E.EQP_MDL_NM                             
+               		   ,D.CNTRT_PRD                
+               		   ,A.RENTAL_CNTRT_STA_DT                
+               		   ,A.RENTAL_CNTRT_END_DT                
+               		   ,B.AGN_CD                
+               		   ,F.ORG_NM AS AGN_NM                
+               		   ,B.OP_TYP_CD                
+               		   ,B.OP_PROC_DT
+               		   ,E.PET_NM
+          		  FROM  TB_RENTAL_CNTRT A
+               		   ,TB_NR_CNTRT B
+               		   ,TB_EQP_CNTRT C
+               		   ,TB_RENTAL_POLY D
+               		   ,TB_EQP_MDL E
+               		   ,TB_DEALCO F
+                 WHERE  A.CNTRT_NO = B.CNTRT_NO
+           		   AND  A.CNTRT_NO = C.CNTRT_NO
+           	       AND  A.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+           		   AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+           		   AND  B.AGN_CD = F.AGN_ORG_CD
+           	       AND  NVL(B.UNRTN_AMT,0) > 0           
+                   AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty property="OP_PROC_STA_DT" prepend="AND"><![CDATA[
+		                B.OP_PROC_DT BETWEEN #OP_PROC_STA_DT# AND #OP_PROC_END_DT# 
+                   AND  B.OP_TYP_CD IN ('02', '07') 		                
+]]></isNotEmpty><![CDATA[            
+]]><isNotEmpty property="NEW_CNTRTR_NM" prepend="AND"><![CDATA[
+                        B.NEW_CNTRTR_NM LIKE '%'||#NEW_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[                  
+]]><isNotEmpty property="SVC_MGMT_NO" prepend="AND"><![CDATA[
+                        B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[                
+]]><isNotEmpty property="SVC_NO" prepend="AND"><![CDATA[
+                        B.SVC_NO_ENPT = #SVC_NO#
+]]></isNotEmpty><![CDATA[                      
+]]><isNotEmpty property="AGN_CD" prepend="AND"><![CDATA[
+                        B.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual property="EQP_JDG_RSLT_CD" compareValue="%"><![CDATA[
+	]]><isNotEqual property="EQP_JDG_RSLT_CD" prepend="AND" compareValue="02"><![CDATA[
+                        NVL(B.UNRTN_AMT,0) = 0 
+    ]]></isNotEqual><![CDATA[                    
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[ 
+				)]]>
+	</select>
+	<select id="SCntrtCmpDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsscbase.db.DNRCntrtCmpMgmt.SCntrtCmpDtl 계약손해배상금상세조회 */
+/* IO: 안진갑,2015-08-25T12:29:48(이민재,2015-07-17T11:28:12) */
+WITH INSP AS (
+                 SELECT  * 
+                   FROM (
+                         SELECT  (SELECT  SUP_CM_CD_ID 
+                                    FROM  TB_CM_CD 
+                                   WHERE  CM_GRP_CD_ID = A.SUP_CM_GRP_CD_ID 
+                                     AND  CM_CD_ID = A.SUP_CM_CD_ID 
+                                     AND  ROWNUM = 1) AS INSP_CL_CD
+                                ,SUP_CM_CD_ID AS INSP_ITM_CD                                                                                           
+                                ,CM_CD_ID     AS INSP_DTL_ITM_CD
+                           FROM  TB_CM_CD A
+                          WHERE  A.MGMT_ITEM_CD1 = 'Y'                          
+                          START  WITH CM_GRP_CD_ID = 'DMS105'
+                        CONNECT  BY PRIOR CM_GRP_CD_ID = SUP_CM_GRP_CD_ID
+                            AND  PRIOR CM_CD_ID = SUP_CM_CD_ID
+                  ORDER  BY  CM_GRP_CD_ID,CM_CD_ID
+                        ) CD
+                  WHERE  INSP_CL_CD IS NOT NULL
+             )
+SELECT  A.DCP_NO
+       ,B.INSP_CL_CD
+       ,B.INSP_ITM_CD
+       ,A.INSP_DTL_ITM_CD
+       ,A.EQP_INDF_AMT
+  FROM  TB_EQP_JDG_DTL A
+       ,INSP B
+ WHERE  A.INSP_DTL_ITM_CD = B.INSP_DTL_ITM_CD
+   AND  A.ASSET_NO = #ASSET_NO#
+   AND  A.EQP_JDG_SEQ = #EQP_JDG_SEQ#
+   AND  A.DEL_YN = 'N'
+ ORDER  BY INSP_DTL_ITM_CD]]>
+	</select>
+</sqlMap>

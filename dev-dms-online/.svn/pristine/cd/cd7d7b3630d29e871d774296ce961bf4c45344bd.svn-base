@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCOcpyAuthMgmt">
+	<insert id="IOcpyAuthNo" parameterClass="map" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCOcpyAuthMgmt.IOcpyAuthNo 점유인증번호등록 */
+/* IO: 이유미,2015-01-30T17:32:22(김석영,2014-08-27T11:41:48) */
+INSERT
+  INTO  TH_OCPY_AUTH_HST
+       (
+        OCPY_AUTH_NO           /* 점유인증일련번호 */
+       ,AUTH_NO_REQ_DTM        /* 인증번호요청일시 */
+       ,MBR_NO                 /* 회원번호         */
+       ,RETN_TEL_NO            /* 수신전화번호     */
+       ,RETN_TEL_NO_ENPT       /* 수신전화번호암호 */
+       ,AUTH_NO                /* 인증번호         */
+       ,AUTH_SUCC_DTM          /* 인증성공일시     */
+       ,AUTH_SUCC_YN           /* 인증성공여부     */
+       ,OCPY_AUTH_REQ_CHNL_CD  /* 점유인증요청채널 */
+       ,AUTH_ERR_CNT           /* 인증오류횟수      */
+       ,FS_REG_USER_ID         /* 최초등록사용자ID */
+       ,FS_REG_DTM             /* 최초등록일시     */
+       ,LS_CHG_USER_ID         /* 최종변경사용자ID */
+       ,LS_CHG_DTM             /* 최종변경일시     */
+        )
+VALUES
+       (
+        SQ01_TH_OCPY_AUTH_HST.NEXTVAL  /* 점유인증일련번호 */
+       ,SYSDATE                        /* 인증번호요청일시 */
+       ,#MBR_NO#                       /* 회원번호         */
+       ,#RETN_TEL_NO#                  /* 수신전화번호     */
+       ,#RETN_TEL_NO_ENPT#             /* 수신전화번호암호 */
+       ,#AUTH_NO#                      /* 인증번호         */
+       ,#AUTH_SUCC_DTM#                /* 인증성공일시     */
+       ,'N'                            /* 인증성공여부     */
+       ,#OCPY_AUTH_REQ_CHNL_CD#        /* 점유인증요청채널 */
+       ,0                              /* 인증오류횟수      */     
+       ,#USER_NO#                      /* 최초등록사용자ID */
+       ,SYSDATE                        /* 최초등록일시     */
+       ,#USER_NO#                      /* 최종변경사용자ID */
+       ,SYSDATE                        /* 최종변경일시     */
+        )]]>
+	</insert>
+	<select id="SOcpyAuthNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCOcpyAuthMgmt.SOcpyAuthNo 인증번호확인 */
+/* IO: 이유미,2015-01-30T19:40:42(김석영,2014-08-27T15:50:56) */
+SELECT 
+        OCPY_AUTH_NO           /* 점유인증번호         */
+       ,TO_CHAR(AUTH_NO_REQ_DTM, 'YYYYMMDDHH24MISS') AS AUTH_NO_REQ_DTM      /* 인증번호요청일시    */
+       ,MBR_NO                 /* 회원번호              */
+       ,RETN_TEL_NO            /* 수신전화번호         */
+       ,RETN_TEL_NO_ENPT       /* 수신전화번호암호화  */
+       ,AUTH_NO                /* 인증번호               */
+       ,AUTH_SUCC_DTM          /* 인증성공일시          */
+       ,AUTH_SUCC_YN           /* 인증성공여부          */
+       ,OCPY_AUTH_REQ_CHNL_CD  /* 점유인증요청채널코드 */
+       ,AUTH_ERR_CNT           /* 인증오류횟수           */
+  FROM  TH_OCPY_AUTH_HST A
+ WHERE  A.MBR_NO = #MBR_NO#
+   AND  A.OCPY_AUTH_REQ_CHNL_CD = #OCPY_AUTH_REQ_CHNL_CD#
+   AND  A.RETN_TEL_NO_ENPT = #RETN_TEL_NO_ENPT#
+   AND  A.AUTH_SUCC_YN = 'N'
+   AND  SYSDATE BETWEEN AUTH_NO_REQ_DTM AND AUTH_NO_REQ_DTM + (#OCPY_AUTH_CHK_MM#/24/60)
+ORDER BY AUTH_NO_REQ_DTM DESC]]>
+	</select>
+	<update id="UOcpyAuthSt" parameterClass="map" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCOcpyAuthMgmt.UOcpyAuthSt 인증상태업데이트 */
+/* IO: 이유미,2015-01-30T19:39:56(김석영,2014-08-27T15:51:14) */
+UPDATE 
+        TH_OCPY_AUTH_HST               /* 점유인증이력 */
+   SET  AUTH_SUCC_YN = #AUTH_SUCC_YN#  /* 인증성공여부 */
+       ,AUTH_ERR_CNT = #AUTH_ERR_CNT#  /* 인증오류횟수 */
+       ,AUTH_SUCC_DTM = SYSDATE        /* 인증성공일시 */
+       ,LS_CHG_USER_ID = #USER_NO#     /* 최종변경사용자ID */
+       ,LS_CHG_DTM = SYSDATE           /* 최종변경일시 */
+ WHERE  MBR_NO = #MBR_NO#
+   AND  OCPY_AUTH_REQ_CHNL_CD = #OCPY_AUTH_REQ_CHNL_CD#
+   AND  AUTH_NO_REQ_DTM = TO_DATE(#AUTH_NO_REQ_DTM#, 'YYYYMMDDHH24MISS')
+   AND  RETN_TEL_NO_ENPT = #RETN_TEL_NO_ENPT#
+   AND  AUTH_SUCC_YN = 'N'
+   AND  SYSDATE BETWEEN AUTH_NO_REQ_DTM AND AUTH_NO_REQ_DTM + (#OCPY_AUTH_CHK_MM#/24/60)]]>
+	</update>
+</sqlMap>

@@ -1,0 +1,271 @@
+package dms.ep.epbbibase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]가격표관리</li>
+ * <li>설  명 : <pre>[PU]가격표관리</pre></li>
+ * <li>작성일 : 2015-08-19 14:14:45</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class PEPPriceListMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPPriceListMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>가격표관리목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-19 14:14:45
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_DT [적용년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PRICE_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : PRCLST_MGMT_NO [가격표관리번호]
+	 *		- field : STA_DT [시작일자]
+	 *		- field : PRCLST_QTY [가격표수량]
+	 *		- field : RMK [비고]
+	 * </pre>
+	 */
+	public IDataSet pSPriceListMgmtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSBIBase", "fSPriceListMgmtLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+		return responseData;
+	}
+
+	/**
+	 * <pre>[PM]가격표오류검사</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-19 14:14:45
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_ERR_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : GRADE_N [등급N]
+	 *		- field : GRADE_A [등급A]
+	 *		- field : GRADE_B [등급B]
+	 *		- field : GRADE_E [등급E]
+	 *		- field : ERR_DESC [오류내용]
+	 *		- field : STRD_DT [기준일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_RETRUN_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : GRADE_N [등급N]
+	 *		- field : GRADE_A [등급A]
+	 *		- field : GRADE_B [등급B]
+	 *		- field : GRADE_E [등급E]
+	 *		- field : ERR_DESC [오류내용]
+	 *		- field : STRD_DT [기준일자]
+	 * </pre>
+	 */
+	public IDataSet pSPriceErrExmn(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IRecordSet rs = requestData.getRecordSet("RS_ERR_LIST");
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    /*Log logger = LogManager.getFwkLog();*/
+	    
+	    try {	    	
+	    	requestData.putRecordSet(rs);	// RS_ERR_LIST 레코드셋을 requestData 담아 FU 전송 후 처리(FU_n건처리)
+	    	
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSBIBase", "fSPriceErrExmn", requestData, onlineCtx);
+									
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	    
+	    
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[PM]가격표등록</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-19 14:14:45
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FIX_PRICE_LST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기명]
+	 *		- field : GRADE_N [등급N]
+	 *		- field : GRADE_A [등급A]
+	 *		- field : GRADE_B [등급B]
+	 *		- field : GRADE_E [등급E]
+	 *		- field : ERR_DESC [오류내용]
+	 *		- field : STRD_DT [기준일자]
+	 *	- record : RS_PRICE_MST_LST
+	 *		- field : STRD_DT [기준일자]
+	 *		- field : RMK [비고]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pRegPriceList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IRecordSet rsMst = requestData.getRecordSet("RS_PRICE_MST_LST");
+	    IRecordSet rsPrice = requestData.getRecordSet("RS_FIX_PRICE_LST");
+	    CommonArea ca = getCommonArea(onlineCtx);
+	   /* Log logger = LogManager.getFwkLog();*/
+	    
+	    try {	    	
+	    	requestData.putRecordSet(rsMst);	// RS_PRICE_MST_LST 레코드셋을 requestData 담아 FU 전송 후 처리(FU_n건처리)
+	    	requestData.putRecordSet(rsPrice);  // RS_FIX_PRICE_LST 레코드셋을 requestData 담아 FU 전송 후 처리(FU_n건처리)
+	    	
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSBIBase", "fRegPriceList", requestData, onlineCtx);
+									
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+		
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[PM]상품가격표금액조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-19 14:14:45
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : PRCLST_MGMT_NO [가격표관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PRICE_AMT_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : N_GRADE [N등급가격]
+	 *		- field : A_GRADE [A등급가격]
+	 *		- field : B_GRADE [B등급가격]
+	 *		- field : C_GRADE [C등급가격]
+	 *		- field : D_GRADE [D등급가격]
+	 *		- field : E_GRADE [E등급가격]
+	 *		- field : FRDT [시작일자]
+	 *		- field : TODT [종료일자]
+	 * </pre>
+	 */
+	public IDataSet pSProdPriceAmtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSBIBase", "fSProdPriceAmtLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+		return responseData;
+	}
+
+	/**
+	 * <pre>[PM]상품고정가격관리삭제</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-19 14:14:45
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_MNGT_LIST
+	 *		- field : PRCLST_MGMT_NO [가격표관리번호]
+	 *		- field : STA_DT [기준일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pDProdFixPriceMst(IDataSet requestData, IOnlineContext onlineCtx) {
+		/*Log logger = LogManager.getFwkLog();*/
+		
+	    IDataSet responseData = new DataSet();
+	    IRecordSet rsMngt = requestData.getRecordSet("RS_MNGT_LIST");	    
+	    
+	    try {	    	
+	    	requestData.putRecordSet(rsMngt);	// RS_MNGT_LIST 레코드셋을 requestData 담아 FU 전송 후 처리(FU_n건처리)	    	
+	    	
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("ep.EPSBIBase", "fDProdFixPriceMst", requestData, onlineCtx);
+									
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+	
+	    return responseData;
+	}
+  
+}

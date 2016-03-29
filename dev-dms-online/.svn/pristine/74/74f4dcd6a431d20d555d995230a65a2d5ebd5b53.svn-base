@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRRentalSaleFixMgnt">
+	<select id="SRentalSaleLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalSaleFixMgnt.SRentalSaleLstPaging 렌탈매출확정조회 */
+/* IO: 김혁범,2015-08-11T10:50:07(김혁범,2015-08-07T13:17:00) */
+SELECT  *
+  FROM(SELECT  ROW_NUMBER() OVER(ORDER BY SALE_CL_CD ASC) AS ROWNO 
+              ,A.SALE_ASMPT_FIX_CL
+              ,A.SALE_ASMPT_YM
+              ,A.SALE_ASMPT_YM_TS
+              ,A.SALE_CL_CD
+              ,A.EQP_MDL_CD
+              ,B.EQP_MDL_NM
+              ,A.OP_TYP_CD
+              ,COUNT(*) AS AS_CNT
+              ,SUM(SALE_AMT) AS AS_AMT
+              ,(SELECT  COUNT(*) 
+                  FROM  TB_SALE_ASMPT 
+                 WHERE  SALE_ASMPT_FIX_CL = 'FX' 
+                   AND  SALE_ASMPT_YM = A.SALE_ASMPT_YM 
+                   AND  SALE_ASMPT_YM_TS = A.SALE_ASMPT_YM_TS 
+                   AND  SALE_CL_CD=A.SALE_CL_CD 
+                   AND  EQP_MDL_CD=A.EQP_MDL_CD 
+                   AND  OP_TYP_CD=A.OP_TYP_CD) AS FX_CNT
+              ,(SELECT  SUM(SALE_AMT) 
+                  FROM  TB_SALE_ASMPT 
+                 WHERE  SALE_ASMPT_FIX_CL = 'FX' 
+                   AND  SALE_ASMPT_YM = A.SALE_ASMPT_YM 
+                   AND  SALE_ASMPT_YM_TS = A.SALE_ASMPT_YM_TS 
+                   AND  SALE_CL_CD=A.SALE_CL_CD 
+                   AND  EQP_MDL_CD=A.EQP_MDL_CD 
+                   AND  OP_TYP_CD=A.OP_TYP_CD) AS FX_AMT
+         FROM  TB_SALE_ASMPT A
+              ,TB_EQP_MDL B
+        WHERE  A.EQP_MDL_CD =  B.EQP_MDL_CD(+)
+          AND  A.SALE_ASMPT_FIX_CL = 'AS'
+  
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+               A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="SALE_CL_CD" compareValue="%"><![CDATA[
+               A.SALE_CL_CD = #SALE_CL_CD#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+               A.SALE_ASMPT_YM LIKE '%'||#YDATE#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+               A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+GROUP BY  A.SALE_ASMPT_FIX_CL
+         ,A.SALE_ASMPT_YM
+         ,A.SALE_ASMPT_YM_TS
+         ,A.SALE_CL_CD
+         ,A.EQP_MDL_CD
+         ,B.EQP_MDL_NM
+         ,A.OP_TYP_CD          
+ORDER BY  A.SALE_ASMPT_YM
+         ,A.SALE_ASMPT_YM_TS
+         ,A.SALE_CL_CD
+         ,A.EQP_MDL_CD
+         ,A.OP_TYP_CD  
+    )PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SRentalSaleTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalSaleFixMgnt.SRentalSaleTotCnt 렌탈매출확정총건수 */
+/* IO: 김혁범,2015-08-10T18:53:28(김혁범,2015-08-07T13:17:22) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM(SELECT COUNT(1)AS CNT 
+         FROM  TB_SALE_ASMPT A
+              ,TB_EQP_MDL B
+        WHERE  A.EQP_MDL_CD =  B.EQP_MDL_CD(+)
+          AND  A.SALE_ASMPT_FIX_CL = 'AS'
+GROUP BY A.SALE_ASMPT_FIX_CL
+          ,A.SALE_ASMPT_YM
+          ,A.SALE_ASMPT_YM_TS
+          ,A.SALE_CL_CD
+          ,A.EQP_MDL_CD
+          ,B.EQP_MDL_NM
+          ,A.OP_TYP_CD          
+ )PA]]>
+	</select>
+	<select id="SRentalSaleDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalSaleFixMgnt.SRentalSaleDtlLst 렌탈매출확정상세 */
+/* IO: 김혁범,2015-08-11T10:50:44(김혁범,2015-08-07T14:42:07) */
+SELECT  A.SALE_CL_CD/*계정*/
+       ,A.EQP_MDL_CD
+       ,B.EQP_MDL_NM /*모델명*/
+       ,A.SVC_MGMT_NO/*서비스번호*/
+       ,C.NR_CNTRTR_NM/*고객명*/
+       /*전화번호*/
+       ,D.DEAL_CO_NM/*대리점명*/
+       ,A.CNTRT_STA_DT/*가입일*/
+       ,A.RENTAL_TS/*렌탈회차*/
+       ,A.OP_TYP_CD/*계약상태*/
+       ,A.SALE_AMT/*렌탈료*/
+       ,CASE WHEN A.OP_TYP_CD = '02' THEN (SELECT  E.OP_PROC_DT 
+                                             FROM  TB_NR_CNTRT E
+                                                  ,TB_SALE_ASMPT F 
+                                            WHERE  E.CNTRT_NO = F.CNTRT_NO 
+                                              AND  E.OP_TYP_CD = '02') 
+        ELSE ''
+        END AS OP_PROC_DT /*해지일*/
+  FROM  TB_SALE_ASMPT A
+       ,TB_EQP_MDL B
+       ,TB_NR_CNTRT C
+       ,TB_DEAL_CO D
+ WHERE  A.EQP_MDL_CD =  B.EQP_MDL_CD(+)
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  A.AGN_CD = D.DEAL_CO_CD(+)
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+        A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="SALE_CL_CD" compareValue="%"><![CDATA[
+        A.SALE_CL_CD = #SALE_CL_CD#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        A.SALE_ASMPT_YM LIKE '%'||#YDATE#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

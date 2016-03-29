@@ -1,0 +1,1399 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  comUtil.xjs
+ * 03. js 설명 : Utlility관련 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+
+/************************************************************************************************
+ * gfn_isNull                           : Null 여부 확인                                         
+ * gfn_isEmpty                          : Null 여부 확인                                         
+ * gfn_nvl                              : 입력 값을 체크하여 Null인경우 지정한 값 리턴           
+ * gfn_emptyVal                         : 입력값을 체크하여 Null이거나 빈값이면 지정한 값을 리턴
+ * gfn_getNullToEmpty                   : NULL 일 경우 빈 값을 리턴한다.                         
+ * gfn_appendDelimiter                  : 문자열에서 구분자를 추가                               
+ * gfn_removeDelimiter                  : 구분자를 제거                                          
+ * gfn_replace                          : String에 포함된 문자열을 다른 문자열로 치환            
+ * gfn_appendHyphen                     : 문자열에서 하이픈(-)을 추가                            
+ * gfn_removeHyphen                     : 하이픈(-)을 제거                                       
+ * gfn_appendSpace                      : 문자열에서 스페이스( )을 추가                          
+ * gfn_removeSpace                      : 스페이스을 제거                                        
+ * gfn_removeSpecialChar                : 특수문자를 제거                                        
+ * gfn_toFixedLocaleString              : 입력받은 Number에 컴마를 추가한다.
+ * gfn_removeComma                      : 컴마를 제거 
+ * gfn_getLength                        : 입력된 문자열 길이 반환하는 함수
+ * gfn_getLengthB                       : 입력받은 전체 길이를 계산 결과를 Number Type으로 반환
+ * gfn_getLengthB2                      : 입력받은 전체 길이를 계산 결과를 Number Type으로 반환
+ * gfn_padRightB                        : 오른쪽 채우기 함수 (length를 byte로 계산)
+ * gfn_padLeftB                         : 왼쪽 채우기 함수 (length를 byte로 계산)
+ * gfn_appendString                     : 두 문자열이 모두 존재시 구분자를 더해서 리턴.
+ * gfn_getDigit                         : 입력 문자열중 숫자 값만 리턴.
+ * gfn_10To16                           : 입력된 10진수를 16진수로 변환하는 함수
+ * gfn_16To10                           : 입력된 16진수를 10진수로 변환하는 함수
+ * gfn_existSpecialChar                 : 특수문자가 있는지 Check.
+ * gfn_existSpecialChar2                : 특수문자가 있는지 Check.
+ * gfn_isChosungChar                    : 문자열이 초성입력인지 완성 글자인지 확인.
+ * gfn_right                            : 문자열의 오른쪽부분을 지정한 길이만큼 Return.
+ * gfn_left                             : 문자열의 왼쪽부분을 지정한 길이만큼 Return.
+ * gfn_trimLeft                         : 왼쪽 해당 값을 제거한다.
+ * gfn_trim                             : 입력된 문자열의 좌우측 공백을 제거한 문자열을 반환
+ * gfn_encBase64                        : 해당 데이터를 Base64로 암호화 처리
+ * gfn_decBase64                        : Base64로 암호화된 데이터를 복호화 처리
+ * gfn_getAge                           : 생년 월일 또는 주민 번호로 법적연령-만나이를 구한다.
+ * gfn_getFormat                        : 문자 포맷 형식 변환 ( 해당 문자는 포맷에서 @ 사용)
+ * gfn_getChosungChar                   : 한글의 초성을 알아낸다.
+ * gfn_getChosungStr                    : 한글의 초성을 알아낸다.
+ * gfn_checkChosungStr                  : 문자열이 초성입력인지 완성 글자인지 확인.
+ * gfn_getIpAddr                        : 컴퓨터의 IP Address를 조회한다.
+ * gfn_getMacAddr                       : 컴퓨터의 MAC Address를 조회한다.
+ * gfn_existInArray                     : 배열에 해당 값이 존재하는지 확인.
+ * gfn_getPrefixUrl                     : Type Definition 에 정의된 Prefix 의 Url 얻어오기
+ * gfn_getCharLC                        : 줄바꿈(개행) 문자얻어오기
+ * gfn_getExtFilterString               : File_Dialog 에서 사용되는 확장자 Filter String을 반환.
+ * gfn_readFile                         : File을 읽어온다.
+ * gfn_saveFile                         : File을 저장한다..
+ * gfn_copyFile                         : File을 복사한다.
+ * gfn_moveFile                         : File을 이동한다.
+ * gfn_getBirthYear                     : 주민번호 뒷 첫번째 자리로 년대를 반환 하는 함수
+ * gfn_getTextSize                      : TextSize 반환하는 함수
+ * gfn_getObjFont                       : Font Object 생성 반환하는 함수
+ * gfn_makeXML                          : 인수로 넘어온 DataSet List를 XML로 변환한다.
+ * gfn_getDataSet                       : DataSet이 존재한다면 그대로 들고 오고 없다면 생성
+ * gfn_getRound                         : 부동소수점 오류 정정한 round
+ * gfn_length                           : String Length확인
+ * gfn_fullNameItem                     : Object Full Name 구하기(Form까지)
+ * gfn_clearObject                      : arguments에 해당하는 Object clear
+ * gfn_getTabIndex                      : 탭이름으로 인덱스찾기
+ * gfn_tel_onkillfocus				    : 전화번호 masking 처리 onkillfocus Event
+ * gfn_tel_onsetfocus  				    : 전화번호 masking 처리 onsetfocus Event
+ * gfn_isValidObject			     	: 특정 오브젝트가 FORM 내에 존재하는지 여부확인
+ * gfn_initOrderMaskEdit				:  MaskEdit 값이 빈값인 경우 커서 앞으로 위치 
+ * gfn_cardNo_onkillfocus				: 카드번호  masking 처리 killfocus Event
+ * gfn_cardNo_onsetfocus				: 카드번호 masking 처리 setfocus Event
+************************************************************************************************/
+
+/************************************************************************************************
+ * Function : Null 여부 확인
+ * @param   : sValue - Null 여부 확인 값
+ * @param   : e - GridClickEventInfo
+ * Return   : boolean
+************************************************************************************************/
+function gfn_isNull(sValue)
+{
+	if(new String(sValue).valueOf() == "undefined" || new String(sValue).valueOf() == "[Undefined]") return true;
+	if(sValue == null) return true;
+	if(("x"+sValue == "xNaN") && (String(sValue.length).valueOf() == "undefined"))
+		return true;
+	if(String(sValue).length == 0) return true;
+  
+    //Trim 기능 추가  
+    var sArg = new String(sValue);
+	if (sArg.replace(/(^\s*)|(\s*$)/g, "").length == 0 ) return true;
+	
+ 	return false;
+}
+
+/************************************************************************************************
+ * Function : Null 여부 확인
+ * @param   : sValue - Null 여부 확인 값
+ * Return   : Null 여부
+************************************************************************************************/
+function gfn_isEmpty(inVal)
+{
+	return gfn_isNull(String(inVal).trim());
+}
+
+/************************************************************************************************
+ * Function : 입력 값을 체크하여 Null인경우 지정한 값 리턴
+              Null이 아니면 입력 값 리턴
+ * @param   : sValue   - 문자열 값
+              sNullVal - Null인 경우 대치값
+ * Return   : 입력 값이 Null인 경우 지정한 값
+              Null이 아닌 경우 입력 값
+************************************************************************************************/
+function gfn_nvl(sValue, sNullVal)
+{
+	return gfn_isNull(sValue) ? sNullVal : sValue;
+}
+
+/************************************************************************************************
+ * Function : 입력값을 체크하여 Null이거나 빈값이면 지정한 값을 리턴
+               아니면 입력값을 리턴한다.
+ * @param   : inVal 	: 문자열 값
+              emptyVal 	: 대치값
+ * Return   : 입력 값이 Null이거나 공백인 경우 지정한 값
+              Null이거나 공백이 아닌경우 입력 값
+************************************************************************************************/
+function gfn_emptyVal(inVal, emptyVal)
+{
+	return gfn_isEmpty(inVal) ? emptyVal : inVal;
+}
+
+/************************************************************************************************
+ * Function : NULL 일 경우 빈 값을 리턴한다.
+ * @param   : 문자열
+ * Return   : 입력값이 Null = ""
+               Not Null = 원래의 값
+************************************************************************************************/
+function gfn_getNullToEmpty(sValue)
+{
+	return gfn_nvl(sValue, "");
+}
+
+/************************************************************************************************
+ * Function : 문자열에서 구분자를 추가
+ * @param   : sValue     - 문자열
+              sTokenSize - 스페이스로 구분된 숫자
+              sDelimiter - 구분 문자
+ * Return   : 구분 문자가 추가된 문자열 반환 ("@" 사용 불가)
+              EX) gfn_appendDelimiter("010123456789", "3,4,4", "-");
+************************************************************************************************/
+function gfn_appendDelimiter(sValue, sTokenSize, sDelimiter)
+{
+	if(gfn_isNull(sValue)) return sValue;
+	if(gfn_isNull(sTokenSize)) return sValue;
+	if(gfn_isNull(sDelimiter)) sDelimiter = " ";
+
+	var sRetVal = "";
+	var sFormat = "";
+	var sEmpty = "";
+
+	if(isNumeric(gfn_removeComma(sTokenSize))){
+		var arrToken = sTokenSize.split(",");
+		var nTokenCnt = arrToken.length;
+
+		if(nTokenCnt > 0){
+			sFormat = sEmpty.padLeft(arrToken[0], "@");
+			for (var i=1; i<nTokenCnt; i++)
+				sFormat += (sDelimiter + sEmpty.padLeft(toNumber(arrToken[i]), "@"));
+		}
+	}
+
+	if(sFormat.length < 1)
+		sRetVal = sValue;
+	else{
+		var nIndex  = 0;
+		var arrTemp = sFormat.split(sDelimiter);
+
+		for(var i=0; i<arrTemp.length; i++){
+			if(i == 0)
+				sRetVal += sValue.substr(nIndex, arrTemp[i].length);
+			else
+				sRetVal += sDelimiter + sValue.substr(nIndex, arrTemp[i].length);
+
+			nIndex = nIndex + arrTemp[i].length;
+		}
+	}
+
+	return sRetVal;
+}
+
+/************************************************************************************************
+ * Function : 구분자를 제거
+ * @param   : sValue     - 구분자가 포함된 스트링
+              sDelimiter - 구분자
+ * Return   : 구분자가 제거된 String
+************************************************************************************************/
+function gfn_removeDelimiter(sValue, sDelimiter)
+{
+	if(gfn_isNull(sValue)) return "";
+
+	return String(sValue).replace(sDelimiter, "");
+}
+
+/************************************************************************************************
+ * Function : String에 포함된 문자열을 다른 문자열로 치환
+ * @param   : sText     - 스트링 문자열
+              sValue1   - 변경전 문자
+              sValue2   - 변경후 문자
+ * Return   : 변경된 String
+************************************************************************************************/
+function gfn_replace(sText, sValue1, sValue2)
+{
+	if(gfn_isNull(sText)) return sText;
+
+	return String(sText).replace(sValue1, sValue2);
+}
+
+/************************************************************************************************
+ * Function : 문자열에서 하이픈(-)을 추가
+ * @param   : sValue     - 하이픈이 없는 문자열
+              sTokenSize - 스페이스로 구분된 숫자
+ * Return   : 하이픈이 추가된 String
+************************************************************************************************/
+function gfn_appendHyphen(sValue, sTokenSize)
+{
+	return gfn_appendDelimiter(sValue, sTokenSize, "-");
+}
+
+/************************************************************************************************
+ * Function : 하이픈(-)을 제거
+ * @param   : sValue - 하이픈이 포함된 스트링
+ * Return   : 하이픈이 제거된 String
+************************************************************************************************/
+function gfn_removeHyphen(sValue)
+{
+	return gfn_removeDelimiter(sValue, "-");
+}
+
+/************************************************************************************************
+ * Function : 문자열에서 스페이스( )을 추가
+ * @param   : sValue     - 스페이스가 없는 문자열
+              sTokenSize - 스페이스로 구분된 숫자
+ * Return   : 스페이스이 추가된 String
+************************************************************************************************/
+function gfn_appendSpace(sValue, sTokenSize)
+{
+	return gfn_appendDelimiter(sValue, sTokenSize, " ");
+}
+
+/************************************************************************************************
+ * Function : 스페이스을 제거
+ * @param   : sValue - 스페이스가 포함된 스트링
+ * Return   : 스페이스가 제거된 String
+************************************************************************************************/
+function gfn_removeSpace(sValue)
+{
+	return gfn_removeDelimiter(sValue, " ");
+}
+
+/************************************************************************************************
+ * Function : 특수문자를 제거
+ * @param   : sValue - 특수문자를 제거할 String
+ * Return   : 특수문자를 제거한 String
+************************************************************************************************/
+function gfn_removeSpecialChar(sValue)
+{
+	if(gfn_isNull(sValue)) return "";
+
+	var sSpecial = "~!@#$%^&*-+:;,./=_`{|}()[]\\?<>'";
+	var sRetValue = "";
+
+	for(i=0; i<sValue.length; i++){
+		if(sSpecial.indexOf(sValue.charAt(i)) == -1)
+			sRetValue += sValue.charAt(i);
+	}
+
+	return sRetValue;
+}
+
+/************************************************************************************************
+ * Function : 입력받은 Number에 컴마를 추가한다.
+ * @param   : nNumber 숫자
+              iFractionDigit 출력시 소숫점 이하의 자릿수(반올림함)
+ * Return   : String(Comma를 포함하고 있는 숫자)
+************************************************************************************************/
+function gfn_toFixedLocaleString(nNumber, iFractionDigit)
+{
+	if(gfn_isNull(nNumber)) return "";
+	if(gfn_isNull(iFractionDigit)) iFractionDigit = 0;
+
+	nNumber = Math.round(Number(nNumber), iFractionDigit);
+
+	var sNumber = String(nNumber);
+	var aNumber = sNumber.split(".");
+
+	return Number(aNumber[0]).toLocaleString() + (aNumber.length > 1 ? ("." + aNumber[1]) : "");
+}
+
+/************************************************************************************************
+ * Function : 컴마를 제거
+ * @param   : sValue - 컴마가 포함된 String
+ * Return   : 컴마가 제거된 String
+************************************************************************************************/
+function gfn_removeComma(sValue)
+{
+	return gfn_removeDelimiter(sValue, ",");
+}
+
+/************************************************************************************************
+ * Function : 입력된 문자열 길이 반환하는 함수
+ * @param   : 1. sValue - String
+ * Return   : return int
+************************************************************************************************/
+function gfn_getLength(sValue)
+{
+    if (new String(sValue).valueOf() == "undefined") return 0;
+    if (sValue == null) return 0;
+    
+    var v_ChkStr = new String(gfn_trim(sValue));
+  
+    if (v_ChkStr == null) return 0;
+    if (v_ChkStr.toString().length == 0 ) return 0;
+    
+    return v_ChkStr.toString().length;
+}
+
+/************************************************************************************************
+ * Function : 입력받은 전체 길이를 계산 결과를 Number Type으로 반환
+              문자, 숫자, 특수문자 : 1 로 Count
+              그 외 한글/한자 : 3 로 count
+ * @param   : 대상문자열
+ * Return   : number - length
+************************************************************************************************/
+function gfn_getLengthB(sValue)
+{
+	if(gfn_isNull(sValue)) return 0;
+
+	var sChk = sValue.toString();
+	var iCnt = 0;
+
+	for(var i=0; i<sChk.length; i++)
+		(sChk.charCodeAt(i) > 127) ? iCnt += 3 : iCnt++;
+
+	return iCnt;
+}
+
+/************************************************************************************************
+ * Function : 입력받은 전체 길이를 계산 결과를 Number Type으로 반환
+              문자, 숫자, 특수문자 : 1 로 Count
+              그 외 한글/한자 : 2 로 count
+ * @param   : 대상문자열
+ * Return   : number - length
+************************************************************************************************/
+function gfn_getLengthB2(sValue)
+{
+	if(gfn_isNull(sValue)) return 0;
+
+	var sChk = sValue.toString();
+	var iCnt = 0;
+
+	for(var i=0; i<sChk.length; i++)
+		(sChk.charCodeAt(i) > 127) ? iCnt += 2 : iCnt++;
+
+	return iCnt;
+}
+
+/************************************************************************************************
+ * Function : 오른쪽 채우기 함수 (length를 byte로 계산)
+ * @param   : sValue  - 대상문자열
+              nLength - 자리수
+              sChar    - 채울 문자
+ * Return   : 컴마가 제거된 String
+************************************************************************************************/
+function gfn_padRightB(sValue, nLength, sChar)
+{
+    if(gfn_isNull(sValue)) return sValue;
+    if(gfn_isNull(sChar)) sChar = " ";
+
+    var sRetVal  = new String(sValue);
+    var nIteration = nLength - gfn_getLengthB(sRetVal);
+    var sPadChar = (sChar.length > 1) ? sChar.charAt(0) : sChar;
+
+    for(var i=0; i<nIteration; i++)
+        sRetVal += sPadChar;
+
+    return sRetVal;
+}
+
+/************************************************************************************************
+ * Function : 왼쪽 채우기 함수 (length를 byte로 계산)
+ * @param   : sValue  - 대상문자열
+              nLength - 자리수
+              sChar    - 채울 문자
+ * Return   : String - length
+************************************************************************************************/
+function gfn_padLeftB(sValue, nLength, sChar) 
+{
+    if(gfn_isNull(sValue)) return sValue;
+    if(gfn_isNull(sChar)) sChar = " ";
+
+    var sRetVal = new String(sValue);
+    var nIteration 	= nLength - gfn_getLengthB(sRetVal);
+    var sPadChar = (sChar.length > 1) ? sChar.charAt(0) : sChar;
+
+    for(var i=0; i<nIteration; i++)
+        sRetVal = sPadChar + sRetVal;
+
+    return sRetVal;
+}
+
+/************************************************************************************************
+ * Function : 두 문자열이 모두 존재시 구분자를 더해서 리턴.
+ * @param   : sValue1	- 문자1
+              sValus2 	- 문자2
+              sDelimiter - 구분자
+ * Return   : sValue1 + sDelimiter + sValus2
+************************************************************************************************/
+function gfn_appendString(sValue1, sValue2, sDelimiter)
+{
+	if(gfn_isNull(sValue1) || gfn_isNull(sValus2)) return "";
+
+	return sValue1 + sDelimiter + sValus2;
+}
+
+/************************************************************************************************
+ * Function : 입력 문자열중 숫자 값만 리턴.
+ * @param   : 문자열
+ * Return   : 숫자 값 문자열
+************************************************************************************************/
+function gfn_getDigit(sValue)
+{
+	if(gfn_isNull(sValue)) return sValue;
+
+	return String(sValue).replace(new RegExp("\\D", "g"), "");
+}
+
+/************************************************************************************************
+ * Function : 입력된 10진수를 16진수로 변환하는 함수
+ * @param   : 10진수
+ * Return   : 16진수
+************************************************************************************************/
+function gfn_10To16(nValue)
+{
+	if(gfn_isNull(nValue)) return nValue;
+	if(!isNumeric(nValue)) return nValue;
+
+	return Number(nValue).toString(16);
+}
+
+/************************************************************************************************
+ * Function : 입력된 16진수를 10진수로 변환하는 함수
+ * @param   : 16진수
+ * Return   : 10진수
+************************************************************************************************/
+function gfn_16To10(nValue)
+{
+	if(gfn_isNull(nValue)) return nValue;
+	if(!isNumeric(nValue)) return nValue;
+
+	return Number(nValue).toString(10);
+}
+
+/************************************************************************************************
+ * Function : 특수문자가 있는지 Check.
+ * @param   : 문자열
+ * Return   : 특수문자 있음 true
+              특수문자 없음 false
+************************************************************************************************/
+function gfn_existSpecialChar(sValue)
+{
+	if(gfn_isNull(sValue)) return false;
+
+	var sSpecial = "~!@#$%^&*-+:;,./=_`{|}()[]\\?<>";
+	var sRetValue = "";
+
+	for(i=0; i<sValue.length; i++){
+		if(sSpecial.indexOf(sValue.charAt(i)) == -1) {
+			continue;
+		} else {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/************************************************************************************************
+ * Function : 특수문자가 있는지 Check.
+ * @param   : 문자열
+ * Return   : 특수문자 있음 true
+              특수문자 없음 false
+************************************************************************************************/
+function gfn_existSpecialChar2(sValue)
+{
+	if(gfn_isNull(sValue)) return false;
+
+	var objRegExp = new RegExp("\\W|\\s", "g");
+
+	if(String(sValue).search(objRegExp) > -1) return true;
+
+	return false;
+}
+
+/************************************************************************************************
+ * Function : 문자열이 초성입력인지 완성 글자인지 확인.
+ * @param   : sValue - 문자열
+ * Return   : 1 - 초성 입력
+              0 - 완성 글자 입력
+************************************************************************************************/
+function gfn_isChosungChar(sValue)
+{
+	var iIdx = parseInt(((sValue.charCodeAt(0) - 0xAC00)/28)/21);
+
+	return iIdx < 0 ? "1" : "0";
+}
+
+/************************************************************************************************
+ * Function : 문자열의 오른쪽부분을 지정한 길이만큼 Return.
+ * @param   : sValue - 대상 문자열
+              iSize  - 얻어올 크기. [Default Value = 0]
+ * Return   : 오른쪽 부분이 얻어진 문자열.
+************************************************************************************************/
+function gfn_right(sValue, iSize)
+{
+	if(gfn_isNull(sValue) || gfn_isNull(iSize)) return "";
+
+    var iStart = sValue.length;
+    var iEnd = Number(iStart) - Number(iSize);
+
+    return sValue.substring(iStart, iEnd);
+}
+
+/************************************************************************************************
+ * Function : 문자열의 왼쪽부분을 지정한 길이만큼 Return.
+ * @param   : sValue - 대상 문자열
+              iSize  - 얻어올 크기. [Default Value = 0]
+ * Return   : 왼쪽 부분이 얻어진 문자열.
+************************************************************************************************/
+function gfn_left(sValue, iSize)
+{
+	if(gfn_isNull(sValue) || gfn_isNull(iSize)) return "";
+
+    return String(sValue).substr(0, iSize);
+}
+
+/************************************************************************************************
+ * Function : 왼쪽 해당 값을 제거한다.
+ * @param   : sValue - 대상 문자열
+              sTrim  - trim할 문자열
+ * Return   : trim된 문자열
+************************************************************************************************/
+function gfn_trimLeft(sValue, sTrim)
+{
+	if(gfn_isNull(sValue) || gfn_isNull(sTrim)) return sValue;
+
+	var nPos;
+    var sOrg = new String(sValue);
+
+	for(nPos=0; nPos<sOrg.length; nPos+=sTrim.length)
+		if(sOrg.substr(nPos, sTrim.length) != sTrim) break;
+
+	return sOrg.substr(nPos);
+}
+
+/************************************************************************************************
+ * Function : 입력된 문자열의 좌우측 공백을 제거한 문자열을 반환
+ * @param   : arg(String)
+ * Return   : trim된 문자열
+************************************************************************************************/
+function gfn_trim(arg)
+{
+	if (gfn_isNull(arg)) 
+	    return "";
+	    
+	//var sArg = arg.toString();
+	var sArg = new String(arg);
+	
+	return sArg.trim();
+}
+
+/************************************************************************************************
+ * Function : 해당 데이터를 Base64로 암호화 처리
+ * @param   : sValue - 대상 문자열
+ * Return   : 암호화된 문자열
+************************************************************************************************/
+function gfn_encBase64(sValue)
+{
+	if(gfn_isNull(sValue)) return "";
+
+	var objExt = new ExtCommon();
+
+	return objExt.encodeBase64(sValue);
+}
+
+/************************************************************************************************
+ * Function : Base64로 암호화된 데이터를 복호화 처리
+ * @param   : sValue - 대상 문자열
+ * Return   : 복호화된 문자열
+************************************************************************************************/
+function gfn_decBase64(sValue)
+{
+	if(gfn_isNull(sValue)) return "";
+
+	var objExt = new ExtCommon();
+
+	return (objExt.decodeBase64(sValue, "OBJ")).getText(0);
+}
+
+/************************************************************************************************
+ * Function : 생년 월일 또는 주민 번호로 법적연령-만나이를 구한다.
+ * @param   : strRsrno - 입력문자열(주민번호 13자리)
+              sDate    - 나이를 계산할 기준 일자
+ * Return   : 만 나이
+************************************************************************************************/
+function gfn_getAge(sBirthDay, sDate)
+{
+    var iYear;
+    var iMonth;
+    var iDay;
+
+	if(gfn_isNull(sBirthDay)) return "";
+	if(gfn_isNull(sDate)) sDate = gfn_today();
+
+	iYear 	= parseInt(sBirthDay.substr(0, 4), 10);
+	iMonth 	= parseInt(sBirthDay.substr(4, 2), 10);
+	iDay 	= parseInt(sBirthDay.substr(6, 2), 10);
+
+    var sCurrentSystemDate;
+
+    if(gfn_isDate(sDate))
+        sCurrentSystemDate = sDate;
+
+    var iCurrentSystemYear 	= parseInt(vCurrentSystemDate.substr(0, 4));
+    var iCurrentSystemMonth = parseInt(vCurrentSystemDate.substr(4, 2));
+    var iCurrentSystemDay 	= parseInt(vCurrentSystemDate.substr(6, 2));
+    var iAge = iCurrentSystemYear - iYear;
+
+    if(iMonth > iCurrentSystemMonth)
+        iAge = iAge - 1;
+    else if(iMonth == iCurrentSystemMonth){
+        if(iDay > iCurrentSystemDay)
+            iAge = iAge - 1;
+    }
+
+    if(iAge < 0) iAge = 0;
+
+    return iAge;
+}
+
+/************************************************************************************************
+ * Function : 문자 포맷 형식 변환 ( 해당 문자는 포맷에서 @ 사용)
+ * @param   : sValue - 문자열
+              sMask - 문자열 포맷, (@:문자, 포맷스트링("-", ",", ".")등
+ * Return   : 포맷된 문자
+************************************************************************************************/
+function gfn_getFormat(sValue, sMask) 
+{
+	var sRetVal = "";
+	var sUnit;
+
+	if(gfn_isNull(sValue)) return "";
+
+	sValue = String(sValue);
+
+	for(var i=0; i<sMask.length; i++){
+		sUnit = sMask.charAt(i);
+		if(sUnit == "@"){
+			sRetVal += sValue.charAt(0);
+			sValue = sValue.substr(1);
+		}
+		else
+		    sRetVal += sUnit;
+    }
+
+    return sRetVal;
+}
+
+/************************************************************************************************
+ * Function : 한글의 초성을 알아낸다.
+ * @param   : sValue - 문자열
+ * Return   : 한글의 초성
+************************************************************************************************/
+function gfn_getChosungChar(sValue)
+{
+	var iIdx = parseInt(((sValue.charCodeAt(0) - 0xAC00)/28)/21);
+
+	return iIdx < 0 ? sValue : arrChosung[nIdx];
+}
+
+/************************************************************************************************
+ * Function : 한글의 초성을 알아낸다.
+ * @param   : sValue - 문자열
+              sCode - 완성형인지 초성인지 여부
+ * Return   : 한글의 초성
+************************************************************************************************/
+function gfn_getChosungStr(sValue, sCode)
+{
+	var sRtn = "";
+
+	for(var i=0; i<sValue.length; i++){
+		if(sCode.charAt(i) == "0") sRtn += sValue.charAt(i);
+		else sRtn += gfn_getChosungChar(sValue.charAt(i));
+	}
+
+	return sRtn;
+}
+
+/************************************************************************************************
+ * Function : 문자열이 초성입력인지 완성 글자인지 확인.
+ * @param   : sValue - 문자열
+ * Return   : 1 - 초성 입력
+              0 - 완성 글자 입력
+************************************************************************************************/
+function gfn_checkChosungStr(sValue)
+{
+	var sRtn = "";
+
+	for(var i=0; i<sValue.length; i++)
+		sRtn += gfn_isChosungChar(sValue.charAt(i));
+
+	return sRtn;
+}
+
+/************************************************************************************************
+ * Function : 컴퓨터의 IP Address를 조회한다.
+              (IP가 여러개 존재시 첫번째 IP를 리턴한다.)
+ * @param   : void
+ * Return   : IP Address
+************************************************************************************************/
+function gfn_getIpAddr()
+{
+	var arrIpAddr = (new ExtCommon()).getIPAddress();
+
+	if(arrIpAddr.length > 0)
+		return arrIpAddr[0];
+
+	return "";
+}
+
+/************************************************************************************************
+ * Function : 해당 IP Address의 MAC Address를 조회한다.
+ * @param   : IP Address
+ * Return   : MAC Address
+************************************************************************************************/
+function gfn_getMacAddr(sIpAddr)
+{
+	var sRetVal = "";
+
+	if(gfn_isNull(sIpAddr)) sIpAddr = gfn_getIpAddr();
+
+	var arrIpMacAddr = (new ExtCommon()).getIPAdapterInfo();
+	var arrIpMac;
+
+	for(var i=0; i<arrIpMacAddr.length; i++){
+		arrIpMac = arrIpMacAddr[i].split(":");
+
+		if(arrIpMac[0] == sIpAddr)
+			sRetVal = arrIpMac[1];
+	}
+
+	return sRetVal.toUpperCase();
+}
+
+/************************************************************************************************
+ * Function : 배열에 해당 값이 존재하는지 확인.
+ * @param   : arrVal : 배열
+              varVal : 값
+ * Return   : 존재여부
+************************************************************************************************/
+function gfn_existInArray(arrValue, varValue) 
+{
+	var strArray = "|" + arrValue.join("||") + "|";
+
+	if(strArray.indexOf("|" + varValue + "|") == -1)
+		return false;
+	else
+		return true;
+} 
+
+/************************************************************************************************
+ * Function : Type Definition 에 정의된 Prefix 의 Url 얻어오기
+ * @param   : prefixId
+ * Return   : url
+************************************************************************************************/
+function gfn_getPrefixUrl(sPrefixId)
+{
+    for(var i=0; i<application.services.length; i++){
+        var objServices = application.services[i];
+
+        if(objServices["prefixid"] == sPrefixId)
+			return objServices["url"];
+    }
+
+	return "";
+}
+
+/************************************************************************************************
+ * Function : 줄바꿈(개행) 문자얻어오기
+ * @param   : 
+ * Return   : 개행문자
+************************************************************************************************/
+function gfn_getCharLC()
+{
+    return String.fromCharCode(13) + String.fromCharCode(10);
+}
+
+/************************************************************************************************
+ * Function : File_Dialog 에서 사용되는 확장자 Filter String을 반환.
+ * @param   : strFilterFlag  확장자
+ * Return   : 해당 확장자 설명
+************************************************************************************************/
+function gfn_getExtFilterString(sFilterFlag)
+{
+	switch(sFilterFlag){
+		case FILE_TYPE_CSV:
+			return "Comma Separated Values(*.csv)|*.csv|";
+		case FILE_TYPE_TXT:
+			return "Another Separated Values(*.txt)|*.txt|";
+		case FILE_TYPE_XLS:
+			return "Excel (*.xlsx)|*.xlsx|Excel 97 - 2003 (*.xls)|*.xls|";
+		case FILE_TYPE_DOC:
+			return "Word (*.docx)|*.docx|Word 97 - 2003 (*.doc)|*.doc|";
+		case FILE_TYPE_PPT:
+			return "PowerPoint (*.pptx)|*.pptx|PowerPoint 97 - 2003 (*.ppt)|*.ppt|";
+		case FILE_TYPE_GIGR:
+			return "eml files (*.eml)|*.eml|Excel (*.xlsx)|*.xlsx|Excel 97 - 2003 (*.xls)|*.xls|";
+		case FILE_TYPE_IMAGE:
+			return "image files (*.bmp;*.jpg;*.jpeg;*.gif;*.png;*.tif)|*.bmp;*.jpg;*.jpeg;*.gif;*.png;*.tif|";
+		case FILE_TYPE_BOARD:
+			return "All (*.jpg;*.gif;*.txt;*.bep;*.ppt;*.doc;*.xls;*.pptx;*.docx;*.xlsx;*.pdf;*.rar;*.zip;*.asf;*.mov;*.avi;*.wmv)|*.jpg;*.gif;*.txt;*.bep;*.ppt;*.doc;*.xls;*.pptx;*.docx;*.xlsx;*.pdf;*.rar;*.zip;*.asf;*.mov;*.avi;*.wmv|";
+		default:
+			return "All (*.*)|*.*|";
+	}
+}
+
+/************************************************************************************************
+ * Function : File을 읽어온다.
+ * @param   : sFilePath - 읽을 파일의 경로
+                  sFileName - 읽을 파일 이름
+ * Return   : 파일 내용
+************************************************************************************************/
+function gfn_readFile(sFileName)
+{
+	var objExtCommon = new ExtCommon();
+
+	var sContents = objExtCommon.readFile(sFileName);
+
+	objExtCommon = null;
+
+	return sContents;
+}
+
+/************************************************************************************************
+ * Function : File을 저장한다..
+ * @param   : sFilePath - 저장할 파일의 경로
+                  sFileName - 저장할 파일 이름
+                  objContents - 저장할 내용
+ * Return   : N/A
+************************************************************************************************/
+function gfn_saveFile(sFilePath, sFileName, objContents)
+{
+	var objExtCommon = new ExtCommon();
+	objExtCommon.checkDirectory(sFilePath, 1);
+	objExtCommon.writeFile(sFilePath+sFileName, objContents);
+
+	objExtCommon = null;
+}
+
+/************************************************************************************************
+ * Function : File을 복사한다.
+ * @param   : sSrcFileName - 복사 대상 파일
+                  sFilePath - 생성할 파일의 경로
+                  sFileName - 생성할 파일 이름
+ * Return   : N/A
+************************************************************************************************/
+function gfn_copyFile(sSrcFileName, sFilePath, sFileName)
+{
+	var objExtCommon = new ExtCommon();
+	objExtCommon.checkDirectory(sFilePath, 1);
+	objExtCommon.CopyFile(sSrcFileName, sFilePath+sFileName, false);
+
+	objExtCommon = null;
+}
+
+/************************************************************************************************
+ * Function : File을 이동한다.
+ * @param   : sSrcFileName - 이동 대상 파일
+                  sFilePath - 이동 할 파일의 경로
+                  sFileName - 이동 할 파일 이름
+ * Return   : N/A
+************************************************************************************************/
+function gfn_moveFile(sSrcFileName, sFilePath, sFileName)
+{
+	var objExtCommon = new ExtCommon();
+	objExtCommon.checkDirectory(sFilePath, 1);
+	objExtCommon.CopyFile(sSrcFileName, sFilePath+sFileName, false);
+
+	objExtCommon.DeleteFile(sSrcFileName);
+
+	objExtCommon = null;
+}
+
+/************************************************************************************************
+ * Function : 주민번호 뒷 첫번째 자리로 년대를 반환 하는 함수
+ * @param   : sJuminNo - 주민번호
+ * Return   : return true/false
+************************************************************************************************/
+function gfn_getBirthYear(sJuminNo)
+{
+	if (sJuminNo.toString().length != 13){
+		return "N";
+	}
+	
+	if (!(sJuminNo).match(/^\d{6}\d{7}$/)){
+		return "N";
+	}
+
+	var vGb = sJuminNo.substr(6,1);
+
+	if (vGb == '1' || vGb == '2' || vGb == '5' || vGb == '6') {
+		return '19';
+	} else if (vGb == '3' || vGb == '4' || vGb == '7' || vGb == '8') {
+		return '20';
+	}
+}
+
+/************************************************************************************************
+ * Function : TextSize 반환하는 함수
+ * @param   : sText 				: 길이 산정을 위한 기본 텍스트
+              objFont				: 폰트 오브젝트
+              iLimitWidth			: 최소사이즈
+              sConstWordWrapOption	: WordWrapOption
+ * Return   : return true/false
+************************************************************************************************/
+function gfn_getTextSize(sText, objFont, iLimitWidth, sConstWordWrapOption)
+{
+	var objPainter = this.canvas.getPainter();
+	if(gfn_isNull(objPainter)==false)
+	{
+		var objTextSize = objPainter.getTextSize(sText, objFont);
+		return objTextSize;
+	} else {
+		return false;
+	}
+}
+
+/************************************************************************************************
+ * Function : Font Object 생성 반환하는 함수
+ * @param   : iFontSize : 폰트 사이즈
+              sFontName : 폰트 명
+ * Return   : Font Object
+************************************************************************************************/
+function gfn_getObjFont(iFontSize, sFontName)
+{
+	var objFont = new Font;
+	objFont.size = iFontSize;
+	objFont.name = sFontName;
+	objFont.bold = true;
+	return objFont;
+}
+
+/************************************************************************************************
+ * Function : 인수로 넘어온 DataSet List를 XML로 변환한다.
+ * @param   : sDsList - Dataset List(String, Dataset List 구분자 : ",")
+ * Return   : 변환된 XML
+************************************************************************************************/
+function gfn_makeXML(sDsList)
+{
+	if( gfn_isNull(sDsList)) return;
+
+	var sTemp  = "";
+	var sDsObj = sDsList.split(",");
+	var sDsCnt = sDsObj.length;
+	var objDs;
+	var sColNm, sColVal;
+
+	sTemp += '<?xml version="1.0" encoding="euc-kr"?>' + "\n";
+	sTemp += '<root>' + "\n";
+
+	for (i=0; i<toNumber(sDsCnt); i++)
+	{
+		objDs = eval(sDsObj[i]);
+
+		if (objDs == null ) {
+			//alert("DataSet is null!");
+			return;
+		}
+		
+		//sTemp += '<dataset id="' + sDsObj[i] + '">' + "\n";
+		sTemp += '<' + objDs.name + '>' + "\n";
+		//trace(objDs.saveXML());
+		nRowCnt = objDs.getRowCount();
+		nColCnt = objDs.getColCount();
+		
+		for (j=0; j<toNumber(nRowCnt); j++) {
+			sTemp += '<record>' + "\n";
+			for (k=0; k<toNumber(nColCnt); k++) {
+				sColNm = objDs.getColID(k);
+				sColVal = gfn_nvl(objDs.getColumn(j, k),"");
+				//sTemp += '<' + sColNm + '>' + sColVal + '</' + sColNm + '>' + "\n";
+				sTemp += '<' + sColNm + '><![CDATA[' + sColVal + ']]]]><![CDATA[></' + sColNm + '>' + "\n";
+			}
+			sTemp += '</record>' + "\n";
+		}
+	
+		//sTemp += '</dataset>' + "\n";
+		sTemp += '</' + objDs.name + '>'+ "\n";
+	}
+
+	sTemp += '</root>';
+
+	return sTemp;
+}
+
+/************************************************************************************************
+ * Function : DataSet이 존재한다면 그대로 들고 오고 없다면 생성
+ * @param   : sDsNm - DataSet Name
+ * Return   : 생성된 DataSet
+************************************************************************************************/
+function gfn_getDataSet(sDsNm ) 
+{
+	//trace("this.name===="+this.name);
+	var oDS;
+	if( !this.isValidObject( sDsNm ) ) { 
+		oDS = new Dataset(sDsNm);
+		oDS.name = sDsNm;
+		this.addChild(sDsNm, oDS);
+	} else {  
+		oDS = eval(sDsNm);
+	}
+	
+	return oDS;
+}
+
+/************************************************************************************************
+ * Function : 부동소수점 오류 정정한 round
+ * @param   : n : parseFloat(123456.2345)
+              digits : 소숫점 라운드 할 자릿수 
+ * Return   : 
+************************************************************************************************/
+function gfn_getRound(n, digits)
+{
+	if (digits >= 0) 
+	{
+		return parseFloat(n.toFixed(digits)); 
+	} else {
+		digits = Math.pow(10, digits); 
+		var t = Math.round(n * digits); // digits;
+		return parseFloat(t.toFixed(0));
+	}
+}
+
+/************************************************************************************************
+ * Function : String Length확인
+ * @param   : sValue - 확인 값
+ * Return   : length값
+************************************************************************************************/
+function gfn_length(sValue)
+{
+	if (gfn_isNull(sValue)) {
+		return 0;
+	} else {
+		var sArg = new String(sValue);
+		return  sArg.length;
+	}
+}
+
+/************************************************************************************************
+ * Function : Object Full Name 구하기(Form까지)
+ * @param   : objItem - 대상 Object
+ * Return   : Object Full Name
+************************************************************************************************/
+function gfn_fullNameItem(obj,sFullName)
+{
+	if ( obj.parent.toString().toUpperCase() == "[OBJECT FORM]" ) return sFullName;
+		
+	var sParentObjNm = obj.parent.name;
+	if ( gfn_isNull(sParentObjNm) ) {
+		return sFullName;
+	} else {
+		sFullName = sParentObjNm + "." + sFullName;
+		sFullName = gfn_fullNameItem(obj.parent,sFullName);
+	}
+	
+	return sFullName;
+}
+
+/************************************************************************************************
+ * Function : 해당 펑션을 가지고 있는 부모찾기
+ * @param   : functionName - Function Name
+ * Return   : Parent String
+************************************************************************************************/
+function gfn_searchParent(functionName)
+{
+	var idx = 1;
+	var parentStr = "parent";
+
+	while(idx < 20)
+	{		
+		if(  eval("this." + parentStr) ) {
+			if( gfn_isNull(eval("this." + parentStr)[functionName])==false ) {
+				break;
+			} else {
+				if( eval("this.parent." + parentStr) ) {
+					parentStr = "parent." + parentStr;
+				} else {
+					exit;
+				}
+			}
+		} else {
+			exit;
+		}
+		
+		idx++;
+	}
+	
+	return parentStr;
+}
+
+/************************************************************************************************
+ * Function : arguments에 해당하는 Object clear
+ * @param   : object(콤마로 구분)
+ * Return   : void
+************************************************************************************************/
+function gfn_clearObject()
+{
+	var nObjCnt = arguments.length;
+	for ( i=0; i<nObjCnt; i++ ) {
+		if ( arguments[i] instanceof Static ) {
+			arguments[i].text = "";
+		} else if ( arguments[i] instanceof Dataset ) {
+			arguments[i].clearData();
+		} else {
+			arguments[i].value = "";
+		}
+	}
+}
+
+/************************************************************************************************
+ * Function : 탭이름으로 인덱스찾기
+ * @param   : objTab - tab Name
+ * @param   : objTabPageName - TabPage Name 
+ * Return   : tabindex
+************************************************************************************************/
+function gfn_getTabIndex(objTab,objTabPageName)
+{
+	for(i=0 ; i<objTab.getTabpageCount() ; i++)
+	{
+		if (objTabPageName == Tab00.tabpages[i].name)
+		{
+			return i;
+		}
+	}	
+	return -1;
+}
+
+/************************************************************************************************
+ * Function : 전화번호 masking 처리 killfocus Event
+ * param   : object
+ * return  : void
+************************************************************************************************/
+function gfn_tel_onkillfocus(obj)
+{	
+	//mask 형식 초기화 
+	obj.mask = "".padLeft(13,"@"); // 하이픈(-)포함 13자리 000-0000-0000 
+	
+	var objText = obj.text;
+	var objMaskChar = obj.maskchar;
+	
+	obj.mask = gfn_tel_mask(objText,objMaskChar);
+	
+	
+}
+/************************************************************************************************
+ * Function : 전화번호 masking 처리
+ * param   : objText : 마스킹대상 text
+ *				objMaskChar : 마스킹문자
+ * return  : void
+************************************************************************************************/
+function gfn_tel_mask(objText,objMaskChar)
+{	
+	var rsValue = "";
+	objText = objText.toString();
+	var objCnt = objText.length;
+	
+	if(gfn_isNull(objMaskChar)){
+		objMaskChar="_";
+	}
+	
+	var numText= gfn_removeDelimiter(objText,objMaskChar); //maskchar "_" 제외
+		numText = gfn_removeHyphen(numText); //초기데이터 조회시 입력된 하이픈"-" 제거 
+	var numCnt =numText.length;
+	var maskValue = "";
+	//마스크 속성 설정(암호문자*, 숫자 판단)
+	for(var i =0; i<numText.length; i++ ){
+		if(numText.substr(i,1)=="*"){
+			maskValue += "@";
+		} else {
+			maskValue += "#";
+		}
+	}
+	maskValue = maskValue.padRight(11,"#"); //mask 11자리로 오른쪽 padding처리
+	
+	//입력한 length별 마스킹처리 
+	//if( (numCnt == 9 && objText.substr(0,2) =="02" ) && (objText.substr(objCnt-2,2) == (objMaskChar+objMaskChar) ||  numText== objText) ) { 
+	if( (numCnt == 9 && objText.substr(0,2) !="01" ) && (objText.substr(objCnt-2,2) == (objMaskChar+objMaskChar) ||  numText== objText) ) { 
+		if( objText.substr(0,2) =="02"){
+			rsValue= maskValue.substr(0,2)+"-"+maskValue.substr(2,3)+"-"+maskValue.substr(5,4); //9자리 00-000-0000 (02 서울 지역 전화번호를 입력하는 경우)
+		} else {
+			rsValue= maskValue.substr(0,3)+"-"+maskValue.substr(3,3)+"-"+maskValue.substr(6,3); //9자리 000-000-000 (다른지역 전화번호를 입력하는 경우)
+		}
+		
+	} else if( numCnt == 10 && (objText.substr(objCnt-1,1) == objMaskChar || numText== objText) ) {
+	
+		if(objText.substr(0,2) =="02"){
+			rsValue= maskValue.substr(0,2)+"-"+maskValue.substr(2,4)+"-"+maskValue.substr(6,4); //10자리 00-0000-0000 (02 서울 지역 전화번호를 입력하는 경우)	
+		} else {
+			rsValue= maskValue.substr(0,3)+"-"+maskValue.substr(3,3)+"-"+maskValue.substr(6,4); //10자리 000-000-0000
+		}
+	} else if( numCnt == 11) {
+	
+		rsValue= maskValue.substr(0,3)+"-"+maskValue.substr(3,4)+"-"+maskValue.substr(7,4); //11자리 000-0000-0000		
+
+	} else {
+		//default 
+		rsValue= maskValue.substr(0,3)+"-"+maskValue.substr(3,4)+"-"+maskValue.substr(7,4); //11자리 000-0000-0000
+	} 
+	
+	return rsValue;
+}
+
+/************************************************************************************************
+ * Function : 전화번호 형식 처리
+ * param   : objText : 전화번호
+ * return  : void
+************************************************************************************************/
+function gfn_tel_format(objText)
+{	
+	var rsValue = "";
+	objText = objText.toString();
+	var objCnt = objText.length;
+	var numText = gfn_removeHyphen(objText); //초기데이터 조회시 입력된 하이픈"-" 제거 
+	var numCnt =numText.length;
+	//입력한 length별 형식지정 
+	if( numCnt == 9 && objText.substr(0,2) !="01" ) { 
+		if( objText.substr(0,2) =="02"){
+			rsValue= numText.substr(0,2)+"-"+numText.substr(2,3)+"-"+numText.substr(5,4); //9자리 00-000-0000 (02 서울 지역 전화번호를 입력하는 경우)
+		} else {
+			rsValue= numText.substr(0,3)+"-"+numText.substr(3,3)+"-"+numText.substr(6,4); //9자리 000-000-000 (다른지역 전화번호를 입력하는 경우)
+		}
+	} else if( numCnt == 10 ) {
+		if(objText.substr(0,2) =="02"){
+			rsValue= numText.substr(0,2)+"-"+numText.substr(2,4)+"-"+numText.substr(6,4); //10자리 00-0000-0000 (02 서울 지역 전화번호를 입력하는 경우)	
+		} else {
+			rsValue= numText.substr(0,3)+"-"+numText.substr(3,3)+"-"+numText.substr(6,4); //10자리 000-000-0000
+		}
+		
+	} else if( numCnt == 11) {
+	
+		rsValue= numText.substr(0,3)+"-"+numText.substr(3,4)+"-"+numText.substr(7,4); //11자리 000-0000-0000		
+
+	} else {
+		//default 
+		rsValue= numText; //11자리 000-0000-0000
+	} 
+	return rsValue;
+}
+
+/************************************************************************************************
+ * Function : 전화번호 masking 처리 setfocus Event
+ * param   : object
+ * return  : void
+************************************************************************************************/
+function gfn_tel_onsetfocus(obj)
+{
+	var objText = obj.text;
+	var objCnt = objText.length;
+	var objMaskChar = obj.maskchar;
+	
+	var numText= gfn_removeDelimiter(objText,objMaskChar);//maskchar "_" 제외
+	numText = gfn_removeHyphen(numText); //초기데이터 조회시 입력된 하이픈"-" 제거 
+	var numCnt =numText.length;
+	
+	var maskValue = "";
+	//마스크 속성 설정(암호문자*, 숫자 판단)
+	for(var i =0; i<numText.length; i++ ){
+		if(numText.substr(i,1)=="*"){
+			maskValue += "@";
+		} else {
+			maskValue += "#";
+		}
+	}
+	obj.mask = maskValue.padRight(11, "#"); 
+	
+	//마스크에디트 클릭시 빈값인 경우 커서 위치 초기화
+    if (obj.oneditclick.length == 0 ) {
+		obj.oneditclick.addHandler(gfn_initOrderMaskEdit);
+    }
+	
+	//2015.02.04 커서 0번째로 이동
+	obj.setSelect(0,0);
+	
+}
+/************************************************************************************************
+ * Function : MaskEdit 값이 빈값인 경우 커서 앞으로 위치 
+ * param    :  MaskEdit
+				 EditClickEventInfo
+ * return    :  void
+************************************************************************************************/
+function gfn_initOrderMaskEdit(obj:MaskEdit)
+{
+	if(gfn_isEmpty(obj.value)){
+		//2015.02.04 커서 0번째로 이동
+		obj.setSelect(0,0);		
+	}
+}
+/************************************************************************************************
+ * Function : 해당컴포넌트가 form에 생성되었는지 확인
+ * param    :  string ("div.btn01" 와 같이 full path 입력)
+ * return    :   true / false
+************************************************************************************************/
+function gfn_isValidObject(chkObj){
+	var bVaild; 
+	var objArr = chkObj.split(".");
+	var parentObj = "";
+	for(var i=0; i< objArr.length; i++){
+		
+		if(i==0) {
+			if(!this.isValidObject(objArr[i])){
+				return false;
+			}
+		} else {
+			if(!eval(parentObj).isValidObject(objArr[i])){
+				return false;
+			}
+		}
+		
+		if(parentObj=="") parentObj = objArr[i]; 
+		else parentObj = parentObj+"."+objArr[i]; 
+		
+	} //loop end
+	
+	return true;	
+}	
+/************************************************************************************************
+ * Function : 카드번호  masking 처리 killfocus Event
+ * param   : object
+ * return  : void
+************************************************************************************************/
+function gfn_cardNo_onkillfocus(obj)
+{	
+	obj.mask = "####-####-####-####";
+}
+/************************************************************************************************
+ * Function : 카드번호 masking 처리 setfocus Event
+ * param   : object
+ * return  : void
+************************************************************************************************/
+function gfn_cardNo_onsetfocus(obj)
+{	
+	obj.mask =  "".padLeft(16,"#"); 
+		
+	//마스크에디트 클릭시 빈값인 경우 커서 위치 초기화
+    if (obj.oneditclick.length == 0 ) {
+		obj.oneditclick.addHandler(gfn_initOrderMaskEdit);
+    }
+	
+	//2015.02.04 커서 0번째로 이동
+	obj.setSelect(0,0);
+}
+/************************************************************************************************
+ * Function : 카드번호 masking 처리 setfocus Event
+ * param   : pDiv - 조회조건이 위치한 div id String "div_search"
+ * return  : void
+************************************************************************************************/
+function gfn_initSearchDiv(pDiv)
+{
+	var aComponents =eval(pDiv).components;
+	for(var i=0; i<aComponents.length; i++){	
+		if(aComponents[i] instanceof Edit || aComponents[i] instanceof MaskEdit ) {
+			aComponents[i].value = "";
+		} else if(aComponents[i] instanceof Combo || aComponents[i] instanceof Radio ) {
+			aComponents[i].index = 0;
+		} else if(aComponents[i]  == "CommCalendarPred" || aComponents[i]  =="CommMonthCalendar"){
+			aComponents[i].setReload(); 
+		} else if(aComponents[i] instanceof Calendar){
+			aComponents[i].value = gfn_addDate(gfn_today(),-1);
+		}
+	}
+	
+}]]></Script>

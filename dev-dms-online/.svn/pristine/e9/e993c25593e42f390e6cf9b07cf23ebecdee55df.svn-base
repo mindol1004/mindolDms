@@ -1,0 +1,179 @@
+package dms.nr.nrbxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]매출추정정보조회</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-03 10:12:12</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class PNRSaleAsmptMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRSaleAsmptMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-03 10:12:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : YDATE [년+월]
+	 *	- field : OP_TYP_CD [계약상태]
+	 *	- field : SALE_CL_CD [계정코드]
+	 *	- field : CUST_TYP [고객유형]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_ASMPT_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : OP_TYP_CD [계약상태]
+	 *		- field : SALE_CL_CD [계정코드]
+	 *		- field : BF_RENTAL_QTY [전월매출건수]
+	 *		- field : BF_MTH_RENTAL_FEE [전월매출액]
+	 *		- field : RENTAL_QTY [매출건수]
+	 *		- field : MTH_RENTAL_FEE [매출액]
+	 *		- field : CUST_TYP [고객유형]
+	 *		- field : SALE_ASMPT_YM [매출추정년월]
+	 *	- record : RS_SALE_SUM
+	 *		- field : SALE_ASMPT_STRD_DT [기준일자]
+	 *		- field : BF_YY_RENTAL_QTY [전년당월건수]
+	 *		- field : BF_YY_MTH_RENTAL_FEE [전년당월금액]
+	 *		- field : BF_DD_RENTAL_QTY [전월건수]
+	 *		- field : BF_DD_MTH_RENTAL_FEE [전월금액]
+	 *		- field : TOT_RENTAL_QTY [총건수]
+	 *		- field : TOT_MTH_RENTAL_FEE [총액]
+	 * </pre>
+	 */
+	public IDataSet pInqSaleAsmptLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqSaleAsmptLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-03 10:12:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : YDATE [년+월]
+	 *	- field : OP_TYP_CD [계약상태]
+	 *	- field : SALE_CL_CD [계정]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : DEAL_CO_NM [대리점명]
+	 *	- field : CUST_TYP [필드1]
+	 *	- field : SALE_ASMPT_YM [매출추정년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_ASMPT_DTL_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : OP_TYP_CD [계약상태]
+	 *		- field : SALE_CL_CD [계정]
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : CNTRT_STA_DT [계약시작일자]
+	 *		- field : CNTRT_END_DT [계약종료일자]
+	 *		- field : RENTAL_TS [렌탈회차]
+	 *		- field : SALE_AMT [매출액]
+	 *		- field : SVC_NO [이동전화번호]
+	 *		- field : SCRBR_NM [고객명]
+	 *		- field : CUST_TYP [고객유형]
+	 *	- record : RS_SALE_SUM
+	 *		- field : BF_YY_RENTAL_QTY [전년당월건]
+	 *		- field : BF_YY_MTH_RENTAL_FEE [전년당월금액]
+	 *		- field : BF_DD_RENTAL_QTY [전월건]
+	 *		- field : BF_DD_MTH_RENTAL_FEE [전월금액]
+	 *		- field : TOT_RENTAL_QTY [총건수]
+	 *		- field : TOT_MTH_RENTAL_FEE [총금액]
+	 *		- field : SALE_ASMPT_STRD_DT [기준일자]
+	 * </pre>
+	 */
+	public IDataSet pInqSaleAsmptDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqSaleAsmptDtlLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-03 10:12:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqSaleSlipOpen(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			//responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqSaleSlipOpen", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+  
+}

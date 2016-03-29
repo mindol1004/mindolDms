@@ -1,0 +1,534 @@
+package dms.ep.epssxbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [DU]재고정산관리</li>
+ * <li>설  명 : <pre>[DU]재고정산관리</pre></li>
+ * <li>작성일 : 2015-10-14 10:15:02</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class DEPInveXclMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DEPInveXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>중고단말기재고정산조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:16:44
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqEpEqpInveXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqEpEqpInveXclList", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_INVE_XCL_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산일련번호채번</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-15 15:51:51
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : INVE_XCL_NO [재고 정산 번호]
+	 * </pre>
+	 */
+	public IDataSet dSInqEpEqpInveXclSeq(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출     
+        IRecord record = dbSelectSingle("SInqEpEqpInveXclSeq", requestData, onlineCtx);
+        
+        responseData.putFieldMap(record);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기미착선할인재고등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:15:02
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpNotArrivPreDcInveRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpNotArrivPreDcInveRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산합계조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-15 16:38:19
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqEpEqpInveXclSumList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqEpEqpInveXclSumList", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("INVE_XCL_SUM_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-15 17:51:00
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpInveXclRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpInveXclRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기미착재고정산조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:15:02
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqEpEqpNotArrivInveXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqEpEqpNotArrivInveXclList", requestData, onlineCtx);
+        
+        // 2.결과값 셋팅
+        responseData.putRecordSet("INVE_XCL_DTL_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산상세삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-19 15:43:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDEpEqpInveXclDtlDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("DEpEqpInveXclDtlDel", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산삭제상세수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-19 15:46:43
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUEpEqpInveXclDelDtlUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("UEpEqpInveXclDelDtlUpd", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산합계수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-19 16:07:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUEpEqpInveXclSumUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("UEpEqpInveXclSumUpd", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기미착송금재고등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-19 18:30:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpNotArrivSendAmtInveRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpNotArrivSendAmtInveRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기미착요금선납재고등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-19 18:52:45
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpNotArrivFreeDedcInveRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpNotArrivFreeDedcInveRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산전표상태수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-20 08:54:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUEpEqpInveXclSlipStUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("UEpEqpInveXclSlipStUpd", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기확정선할인재고등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-20 11:21:29
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpArrivPreDcInveRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpArrivPreDcInveRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기확정송금재고등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-20 13:15:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpArrivSendAmtInveRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpArrivSendAmtInveRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기확정요금선납재고등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-20 13:19:54
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpArrivFreeDedcInveRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpArrivFreeDedcInveRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기일반감정확정재고등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:15:02
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpStdJdgArrivInveRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpStdJdgArrivInveRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기확정재고정산조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-20 15:49:31
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqEpEqpArrivInveXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqEpEqpArrivInveXclList", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_INVE_XCL_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재고정산단말기상태조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-26 10:13:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqInveXclEqpSts(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqInveXclEqpSts", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_INVE_XCL_EQP_STS", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산상세등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-26 17:04:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpInveXclDtlRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpInveXclDtlRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]중고단말기재고정산삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-11-03 12:59:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDEpEqpInveXclDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("DEpEqpInveXclDel", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산정보조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-11-17 14:00:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInqEpEqpInveXclInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SInqEpEqpInveXclInfo", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_INVE_XCL_EQP_INFO", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기확정클럽T재고등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-11-19 10:59:18
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpArrivClubTInveRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpArrivClubTInveRgst", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산상세등록엑셀업로드</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-12-18 10:01:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEpEqpInveXclDtlRgstExcelUp(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEpEqpInveXclDtlRgstExcelUp", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산임시엑셀업로드수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-10-14 10:15:02
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUEpEqpInveXclTempExcelUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("UEpEqpInveXclTempExcelUpd", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>중고단말기재고정산상세임시정보삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-12-18 13:02:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDEpEqpInveXclDtlTempInfoDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("DEpEqpInveXclDtlTempInfoDel", requestData, onlineCtx);
+    
+        return responseData;
+    }
+  
+}

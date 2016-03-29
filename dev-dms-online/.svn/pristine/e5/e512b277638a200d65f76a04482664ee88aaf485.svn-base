@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCUserMgmt">
+	<select id="SUserListInq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCUserMgmt.SUserListInq 사용자목록조회 */
+/* IO: 박홍서,2015-10-07T15:46:36(심상준,2014-07-31T09:11:21) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY A.USER_NO ASC) AS ROWNO              /* ROWNUM */
+               ,A.USER_NO                                                        /* 사용자번호 */
+               ,A.USER_NM                                                        /* 사용자명 */
+               ,A.USER_CL_CD                                                     /* 사용자구분코드 */
+               ,A.USER_ST_CD                                                     /* 사용자상태코드 */ 
+               ,A.LGIN_ID                                                        /* 로그인 ID */
+               ,A.PWD                                                            /* 비밀번호 */   
+               ,A.PWD_ERR_CNT                                                    /* 비밀번호오류횟수 */
+               ,TO_CHAR(A.LS_LGIN_DTM, 'YYYY-MM-DD HH24:MI:SS') AS LS_LGIN_DTM   /* 최종로그인일시 */
+               ,A.EML_ADDR                                                       /* 이메일주소 */
+               ,A.HP_NO                                                          /* 핸드폰번호 */
+               ,A.GRPC_CO_CD                                                     /* 회사코드 */ 
+               ,A.DEALCO_CD                                                      /* 대리점코드*/ 
+               ,B.DEALCO_NM                                                      /* 대리점코드명*/                
+               ,A.GRPC_DEPT_CD                                                   /* 조직코드 */
+               ,A.GRPC_JOBR_CD                                                   /* 직위코드 */
+               ,A.GRPC_JTIL_CD                                                   /* 직책코드 */
+               ,A.EMP_NO                                                         /* 사원번호 */
+               ,A.FS_REG_USER_ID                                                 /* 최초등록사용자ID */
+               ,TO_CHAR(A.FS_REG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS FS_REG_DTM     /* 최초등록일시 */
+               ,A.LS_CHG_USER_ID                                                 /* 최종변경사용자ID */
+               ,TO_CHAR(A.LS_CHG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS LS_CHG_DTM     /* 최종변경일시 */
+               ,A.DUTYP_CD														 /* 근무지코드 */
+               ,C.DEALCO_NM AS DUTYP_NM 										 /* 근무지코드명 */             
+          FROM  TB_USER A                                                        /* SC_사용자 */
+               ,TB_DEALCO B                                                     /* 거래처_대리점코드조회용 */
+               ,TB_DEALCO C                                                     /* 거래처_근무지코드조회용 */
+         WHERE  A.DEALCO_CD = B.DEALCO_CD(+)
+           AND  A.DUTYP_CD  = C.DEALCO_CD(+)
+]]><isNotEmpty property="LGIN_ID" prepend="AND"><![CDATA[
+                A.LGIN_ID LIKE '%'||#LGIN_ID#||'%'
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="EML_ADDR_ENPT" prepend="AND"><![CDATA[
+                A.EML_ADDR_ENPT = #EML_ADDR_ENPT#
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="USER_NM" prepend="AND"><![CDATA[
+                A.USER_NM LIKE  '%'||#USER_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="DEALCO_CD" prepend="AND"><![CDATA[
+                A.DEALCO_CD = #DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HP_NO_ENPT" prepend="AND"><![CDATA[
+                A.HP_NO_ENPT = #HP_NO_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="USER_CL_CD" prepend="AND" compareValue="%"><![CDATA[
+                A.USER_CL_CD = #USER_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="GRPC_DEPT_CD" prepend="AND"><![CDATA[
+                A.GRPC_DEPT_CD = #GRPC_DEPT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="USER_NO" prepend="AND"><![CDATA[
+                A.USER_NO = #USER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="USER_ST_CD" prepend="AND" compareValue="%"><![CDATA[
+                A.USER_ST_CD = #USER_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="GRPC_CO_CD" prepend="AND" compareValue="%"><![CDATA[
+                A.GRPC_CO_CD = #GRPC_CO_CD#
+]]></isNotEqual><![CDATA[
+         ORDER  BY A.USER_NO ASC
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<update id="IUserReg" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCUserMgmt.IUserReg 사용자등록 */
+/* IO: 박홍서,2015-10-07T15:24:22(심상준,2014-08-05T14:32:47) */
+INSERT
+  INTO  TB_USER        /* SC_사용자 */
+       (
+        USER_NO        /* 사용자번호*/
+       ,USER_NM        /* 사용자명*/
+       ,USER_CL_CD     /* 사용자구분코드*/
+       ,USER_ST_CD     /* 사용자상태코드*/
+       ,LGIN_ID        /* 로그인ID */
+       ,PWD            /* 비밀번호*/
+       ,PWD_ERR_CNT    /* 비밀번호오류횟수*/
+       ,LS_PWD_CHG_DT  /* 최종비밀번호변경일자*/
+       ,LS_LGIN_DTM    /* 로그일일시*/
+       ,EML_ADDR       /* 이메일주소*/ 
+       ,HP_NO          /* 휴대폰번호*/    
+       ,GRPC_JOBR_CD   /* 그룹사직급코드*/    
+       ,GRPC_JTIL_CD   /* 그롭사직책코드*/    
+       ,GRPC_DEPT_CD   /* 그룹사부서코드*/   
+       ,DEALCO_CD        /* 대리점코드*/
+       ,EMP_NO         /* 사원번호*/      
+       ,GRPC_CO_CD     /* 그룹회사코드*/
+       ,FS_REG_USER_ID /* 최초등록자사용자ID*/
+       ,FS_REG_DTM     /* 최초등록일시 */
+       ,LS_CHG_USER_ID /* 최종등록자사용자ID*/  
+       ,LS_CHG_DTM     /* 최종등록일시*/
+       ,EML_ADDR_ENPT  /* 이메일암호화*/
+       ,HP_NO_ENPT     /* 휴대폰번호암호화 */
+       ,DUTYP_CD       /* 근무지코드 */ 
+        )
+VALUES 
+       (
+        #USER_NO#       /* 사용자번호*/         
+       ,#USER_NM#       /* 사용자명*/           
+       ,#USER_CL_CD#    /* 사용자구분코드*/     
+       ,#USER_ST_CD#    /* 사용자상태코드*/     
+       ,#LGIN_ID#       /* 로그인ID */          
+       ,#PWD#           /* 비밀번호*/           
+       ,'0'                         /* 비밀번호오류횟수*/   
+       ,TO_CHAR(SYSDATE,'YYYYMMDD') /* 최종비밀번호변경일자*/   
+       ,NULL                        /* 로그인일시*/         
+       ,#EMIL_ADDR_MASK#            /* 이메일주소*/         
+       ,#HP_NO_MASK#                /* 휴대폰번호*/            
+       ,NVL(#GRPC_JOBR_CD#,' ')     /* 그룹사직급코드*/
+       ,NVL(#GRPC_JTIL_CD#,' ')     /* 그룹사직책코드*/  
+       ,NVL(#GRPC_DEPT_CD#,' ')     /* 그룹사부서코드*/
+       ,NVL(#DEALCO_CD#,' ')          /* 대리점코드 */
+       ,#EMP_NO#                    /* 사원번호*/        
+       ,NVL(#GRPC_CO_CD#,' ')       /* 그룹회사코드*/
+       ,#userNo#                    /* 최초등록자사용자ID*/
+       ,SYSDATE                     /* 최초등록일시 */     
+       ,#userNo#                    /* 최종등록자사용자ID*/
+       ,SYSDATE                     /* 최종등록일시*/       
+       ,#EML_ADDR_ENPT#             /* 이메일암호화*/     
+       ,#HP_NO_ENPT#                /* 휴대폰번호암호화 */
+       ,#DUTYP_CD#			        /* 근무지코드 */ 
+        )]]>
+	</update>
+	<update id="UUserUpd" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCUserMgmt.UUserUpd 사용자수정 */
+/* IO: 박홍서,2015-10-07T15:52:50(심상준,2014-08-05T17:29:48) */
+UPDATE  
+        TB_USER                           /* SC_사용자 */
+   SET  
+        LS_CHG_USER_ID = #userNo#         /* 최종등록자ID */
+       ,LS_CHG_DTM = SYSDATE              /* 최종등록일시 */
+]]><isNotEmpty property="USER_CL_CD"><![CDATA[       
+       ,USER_CL_CD = #USER_CL_CD#         /* 사용자구분코드 */
+]]></isNotEmpty><![CDATA[       
+]]><isNotEmpty property="USER_ST_CD"><![CDATA[       
+       ,USER_ST_CD = #USER_ST_CD#         /* 사용자상태코드 */
+]]></isNotEmpty><![CDATA[       
+]]><isNotEmpty property="PWD"><![CDATA[       
+       ,PWD = #PWD#                       /* 비밀번호 */
+]]></isNotEmpty><![CDATA[       
+]]><isNotEmpty property="PWD_ERR_CNT"><![CDATA[       
+       ,PWD_ERR_CNT = #PWD_ERR_CNT#       /* 비밀번호오류횟수 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="USER_NM"><![CDATA[        
+       ,USER_NM = #USER_NM#          /* 사용자명 */
+]]></isNotEmpty><![CDATA[              
+]]><isNotEmpty property="EMIL_ADDR_MASK"><![CDATA[       
+       ,EML_ADDR = #EMIL_ADDR_MASK#       /* 이메일주소 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HP_NO_MASK"><![CDATA[      
+       ,HP_NO = #HP_NO_MASK#              /* 핸드폰번호 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="GRPC_JOBR_CD"><![CDATA[
+       ,GRPC_JOBR_CD = #GRPC_JOBR_CD#     /* 직위코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="GRPC_JTIL_CD"><![CDATA[       
+       ,GRPC_JTIL_CD = #GRPC_JTIL_CD#     /* 직책코드 */
+]]></isNotEmpty><![CDATA[   
+]]><isNotEmpty property="GRPC_DEPT_CD"><![CDATA[       
+       ,GRPC_DEPT_CD = #GRPC_DEPT_CD#     /* 조직코드 */
+]]></isNotEmpty><![CDATA[       
+]]><isNotEmpty property="DEALCO_CD"><![CDATA[       
+       ,DEALCO_CD = #DEALCO_CD#           /* 대리점코드 */
+]]></isNotEmpty><![CDATA[       
+]]><isNotEmpty property="EMP_NO"><![CDATA[       
+       ,EMP_NO = #EMP_NO#                 /* 직원코드 */
+]]></isNotEmpty><![CDATA[       
+]]><isNotEmpty property="GRPC_CO_CD"><![CDATA[       
+       ,GRPC_CO_CD = #GRPC_CO_CD#         /* 회사코드 */
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="EML_ADDR_ENPT"><![CDATA[
+       ,EML_ADDR_ENPT = #EML_ADDR_ENPT#   /* 이메일암호화 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HP_NO_ENPT"><![CDATA[       
+       ,HP_NO_ENPT = #HP_NO_ENPT#         /* 휴대폰번호암호화 */
+]]></isNotEmpty><![CDATA[    
+]]><isNotEmpty property="DUTYP_CD"><![CDATA[       
+       ,DUTYP_CD = #DUTYP_CD#           /* 근무지코드 */
+]]></isNotEmpty><![CDATA[    
+ WHERE  USER_NO = #USER_NO#
+]]><isNotEmpty property="LGIN_ID"><![CDATA[ 
+   AND  LGIN_ID = #LGIN_ID#
+]]></isNotEmpty><![CDATA[]]>
+	</update>
+	<select id="SUserCntInq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserMgmt.SUserCntInq 사용자전체건수조회 */
+/* IO: 임지후,2015-03-11T10:26:38(심상준,2014-08-22T18:02:22) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_USER /* SC_사용자 */
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="LGIN_ID" prepend="AND"><![CDATA[
+                LGIN_ID LIKE '%'||#LGIN_ID#||'%'
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="DEALCO_CD" prepend="AND"><![CDATA[
+                DEALCO_CD = #DEALCO_CD#
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="EML_ADDR_ENPT" prepend="AND"><![CDATA[
+                EML_ADDR_ENPT = #EML_ADDR_ENPT#
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="USER_NM" prepend="AND"><![CDATA[
+                USER_NM LIKE '%'||#USER_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HP_NO_ENPT" prepend="AND"><![CDATA[
+                HP_NO_ENPT = #HP_NO_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="USER_CL_CD" prepend="AND" compareValue="%"><![CDATA[
+                USER_CL_CD = #USER_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="GRPC_DEPT_CD" prepend="AND"><![CDATA[
+                GRPC_DEPT_CD = #GRPC_DEPT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="USER_NO" prepend="AND"><![CDATA[
+                USER_NO = #USER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="USER_ST_CD" prepend="AND" compareValue="%"><![CDATA[
+                USER_ST_CD = #USER_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="GRPC_CO_CD" prepend="AND" compareValue="%"><![CDATA[
+                GRPC_CO_CD = #GRPC_CO_CD#
+]]></isNotEqual><![CDATA[
+
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SUserChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserMgmt.SUserChk 사용자저장사전체크 */
+/* IO: 심상준,2014-10-10T09:15:18(심상준,2014-08-22T18:04:19) */
+SELECT 
+        COUNT(1) AS ROW_CNT
+  FROM  TB_USER   /* SC_사용자 */         
+ WHERE  USER_NO = #USER_NO#]]>
+	</select>
+	<select id="SLgidChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserMgmt.SLgidChk 로그인ID중복체크 */
+/* IO: 심상준,2015-04-16T18:13:35(심상준,2014-08-25T13:51:28) */
+SELECT  
+        COUNT(1) AS LGIN_ID_CNT   /*  로그인ID중복체크  */
+  FROM  TB_USER    /* SC_사용자 */
+ WHERE  LGIN_ID = #LGIN_ID#]]>
+	</select>
+	<update id="UPwdChg" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserMgmt.UPwdChg 비밀번호변경 */
+/* IO: 심상준,2015-04-16T18:16:11(심상준,2014-08-25T17:45:59) */
+UPDATE  
+        TB_USER             /* SC_사용자 */
+   SET  PWD = #PWD_ENPT_NEW#
+       ,USER_ST_CD = '10' 
+       ,LS_PWD_CHG_DT = TO_CHAR(SYSDATE,'YYYYMMDD') 
+ WHERE  LGIN_ID = #LGIN_ID#]]>
+	</update>
+	<update id="UChgMyInfo" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserMgmt.UChgMyInfo 내정보변경 */
+/* IO: 심상준,2014-10-13T19:40:16(심상준,2014-10-01T17:28:14) */
+UPDATE  
+        TB_USER                           /* SC_사용자 */
+   SET  LS_PWD_CHG_DT = TO_CHAR(SYSDATE,'YYYYMMDD')  /* 최종비밀번호변경일자 */
+]]><isNotEmpty property="PWD_ENPT_NEW"><![CDATA[
+       ,PWD = #PWD_ENPT_NEW#                       /* 비밀번호 */
+ ]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EMIL_ADDR_MASK"><![CDATA[       
+       ,EML_ADDR = #EMIL_ADDR_MASK#       /* 이메일주소 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HP_NO_MASK"><![CDATA[      
+       ,HP_NO = #HP_NO_MASK#              /* 핸드폰번호 */
+]]></isNotEmpty><![CDATA[       
+       ,LS_CHG_USER_ID = #userNo#         /* 최종등록자ID */
+       ,LS_CHG_DTM = SYSDATE              /* 최종등록일시 */
+]]><isNotEmpty property="EML_ADDR_ENPT"><![CDATA[
+       ,EML_ADDR_ENPT = #EML_ADDR_ENPT#   /* 이메일암호화 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HP_NO_ENPT"><![CDATA[       
+       ,HP_NO_ENPT = #HP_NO_ENPT#         /* 휴대폰번호암호화 */
+]]></isNotEmpty><![CDATA[        
+ WHERE  USER_NO = #USER_NO#
+   AND  LGIN_ID = #LGIN_ID#]]>
+	</update>
+	<select id="SUserListbyLgId" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserMgmt.SUserListbyLgId 사용자조회 */
+/* IO: 심상준,2015-04-16T18:12:36(심상준,2014-10-10T15:01:08) */
+SELECT  
+        USER_NO                                                        /* 사용자번호 */
+       ,USER_CL_CD                                                     /* 사용자구분코드 */ 
+       ,LGIN_ID                                                        /* 로그인 ID */
+       ,PWD                                                            /* 비밀번호 */   
+       ,EML_ADDR                                                       /* 이메일주소 */
+       ,HP_NO                                                          /* 핸드폰번호 */
+       ,LS_CHG_USER_ID                                                 /* 최종변경사용자ID */
+       ,TO_CHAR(LS_CHG_DTM, 'YYYY-MM-DD HH24:MI:SS') AS LS_CHG_DTM     /* 최종변경일시 */
+  FROM  TB_USER                                                        /* SC_사용자 */
+ WHERE  LGIN_ID = #LGIN_ID#
+]]><isNotEmpty property="USER_NO" prepend="AND"><![CDATA[
+        USER_NO = #USER_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SUSERSecure" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCUserMgmt.SUSERSecure 사용자암호컬럼조회 */
+/* IO: 임지후,2015-01-06T15:02:19(임지후,2015-01-06T15:01:01) */
+SELECT  
+        USER_NO                                                        /* 사용자번호 */			   
+       ,EML_ADDR_ENPT												   /* 이메일주소암호화 */
+	   ,HP_NO_ENPT													   /* 핸드폰번호암호화 */
+  FROM  TB_USER                                                        /* SC_사용자 */
+ WHERE  USER_NO = #USER_NO#]]>
+	</select>
+</sqlMap>

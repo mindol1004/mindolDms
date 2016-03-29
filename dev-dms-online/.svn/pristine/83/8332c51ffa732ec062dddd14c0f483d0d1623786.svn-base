@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpPolyMgmt">
+	<select id="SEqpPolyLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpPolyMgmt.SEqpPolyLstPaging 단말정책정보조회 */
+/* IO: 장미진,2015-08-06T16:46:27(장미진,2015-07-10T10:57:54) */
+SELECT
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY RENTAL_POLY_NO ASC) AS ROWNO 
+               ,RENTAL_POLY_NO 										    /* 렌탈정책번호 */
+               ,EQP_MDL_CD                                              /* 모델코드 */
+               ,POLY_NM											 		/* 정책명 */
+               ,EQP_MDL_NM                                        	    /* 단말기모델명 */
+               ,OUT_PRC													/* 출고가*/
+               ,EXPT_DSPSL_PRC											/* 예상매각가 */
+               ,RENTAL_PRN												/* 렌탈원금 */
+               ,RENTAL_FEE												/* 렌탈요금 */
+               ,CNTRT_PRD												/* 계약기간코드 */
+               ,RP_EFF_PRD_FR_DT										/* 유효기간시작일 */
+               ,RP_EFF_PRD_TO_DT										/* 유효기간종료일 */
+               ,OP_CL_CD												/* 업무구분코드 */
+               ,CAPA_CD													/* 저장용량코드 */
+               ,FS_REG_USER_ID                                          /* 최초등록사용자ID */  
+               ,TO_CHAR(FS_REG_DTM,'YYYYMMDD') AS FS_REG_DTM  			/* 최초등록일시 */
+               ,LS_CHG_USER_ID                                        	/* 최종등록사용자ID */
+               ,TO_CHAR(LS_CHG_DTM,'YYYYMMDD') AS LS_CHG_DTM  			/* 최종등록일시 */ 
+          FROM  TB_RENTAL_POLY	                    				
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="POLY_NM"><![CDATA[
+                POLY_NM  LIKE '%'||#POLY_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RP_EFF_PRD_FR_DT"><![CDATA[
+                RP_EFF_PRD_FR_DT  BETWEEN #RP_EFF_PRD_FR_DT# AND #RP_EFF_PRD_TO_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="RENTAL_CNTRT_STA_DT" prepend="AND"><![CDATA[
+		        #RENTAL_CNTRT_STA_DT# BETWEEN RP_EFF_PRD_FR_DT AND RP_EFF_PRD_TO_DT 
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="RENTAL_CNTRT_END_DT" prepend="AND"><![CDATA[
+		        #RENTAL_CNTRT_END_DT# BETWEEN RP_EFF_PRD_FR_DT AND RP_EFF_PRD_TO_DT 
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[ ) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpPolyTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpPolyMgmt.SEqpPolyTotCnt 단말정책정보총건수 */
+/* IO: 장미진,2015-08-03T13:09:43(장미진,2015-07-10T10:59:42) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_RENTAL_POLY       /* 단말기정책 */ 
+]]><dynamic prepend="WHERE"><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+        EQP_MDL_NM LIKE '%'||#EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="POLY_NM"><![CDATA[
+        POLY_NM  LIKE '%'||#POLY_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RP_EFF_PRD_FR_DT"><![CDATA[
+        RP_EFF_PRD_FR_DT  BETWEEN #RP_EFF_PRD_FR_DT# AND #RP_EFF_PRD_TO_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_CNTRT_FR_DT" prepend="AND"><![CDATA[
+		        #EQP_CNTRT_FR_DT# BETWEEN A.EFF_PRD_FR_DT AND A.EFF_PRD_TO_DT 
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="EQP_CNTRT_TO_DT" prepend="AND"><![CDATA[
+		        #EQP_CNTRT_TO_DT# BETWEEN A.EFF_PRD_FR_DT AND A.EFF_PRD_TO_DT 
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<insert id="IEqpPoly" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpPolyMgmt.IEqpPoly 단말정책정보등록 */
+/* IO: 장미진,2015-08-03T13:12:35(장미진,2015-07-10T11:01:12) */
+INSERT
+  INTO  TB_RENTAL_POLY                          /* 단말기정책관리 */ 
+       (
+        RENTAL_POLY_NO							/* 렌탈정책번호 */
+       ,EQP_MDL_CD                              /* 단말기모델코드 */
+       ,EQP_MDL_NM                              /* 단말기모델명 */ 
+       ,POLY_NM                               	/* 정책명 */  
+       ,OUT_PRC                              	/* 출고가 */ 
+       ,EXPT_DSPSL_PRC                          /* 예상매각가 */
+       ,RENTAL_PRN                              /* 렌탈원금 */
+       ,RENTAL_FEE                              /* 렌탈요금 */
+       ,CNTRT_PRD                               /* 계약기간 */
+       ,RP_EFF_PRD_FR_DT						/* 유효기간시작일 */
+       ,RP_EFF_PRD_TO_DT						/* 유효기간종료일 */
+       ,FS_REG_USER_ID                          /* 최초등록사용자ID */
+       ,FS_REG_DTM                              /* 최초등록일시 */
+       ,LS_CHG_USER_ID                          /* 최종변경사용ID */
+       ,LS_CHG_DTM                              /* 최종변경일시 */ 
+       ,OP_CL_CD								/* 업무구분코드 */
+       ,CAPA_CD									/* 용량코드 */
+        )
+VALUES
+       (
+        #RENTAL_POLY_NO#						/* 단말기정책번호 */
+       ,#EQP_MDL_CD#                            /* 단말기모델코드 */
+       ,#EQP_MDL_NM#                            /* 단말기모델명 */
+       ,#POLY_NM#                              	/* 정책명 */  
+       ,#OUT_PRC#                              	/* 출고가 */ 
+       ,#EXPT_DSPSL_PRC#                        /* 예상매각가 */
+       ,#RENTAL_PRN#                            /* 렌탈원금 */
+       ,#RENTAL_FEE#                            /* 렌탈요금 */
+       ,#CNTRT_PRD#                             /* 계약기간 */
+       ,#RP_EFF_PRD_FR_DT#						/* 유효기간시작일 */
+       ,#RP_EFF_PRD_TO_DT#						/* 유효기간종료일 */
+       ,#USERNO#                          		/* 최초등록사용자ID */
+       ,SYSDATE                              	/* 최초등록일시 */
+       ,#USERNO#    		                    /* 최종변경사용ID */
+       ,SYSDATE             	                /* 최종변경일시 */ 
+       ,#OP_CL_CD#								/* 업무구분코드 */
+       ,#CAPA_CD#								/* 용량코드 */
+        )]]>
+	</insert>
+	<update id="UEqpPoly" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpPolyMgmt.UEqpPoly 단말기정책정보수정 */
+/* IO: 장미진,2015-08-03T13:12:01(장미진,2015-07-10T11:01:34) */
+UPDATE 
+        TB_RENTAL_POLY             		              /* 수정화면 */
+   SET  OUT_PRC=#OUT_PRC#                             /* 출고가 */   
+       ,EXPT_DSPSL_PRC=#EXPT_DSPSL_PRC#               /* 예상매각가 */ 
+       ,RENTAL_PRN=#RENTAL_PRN#                       /* 렌탈원금 */  
+       ,RENTAL_FEE=#RENTAL_FEE#                       /* 렌탈요금 */  
+       ,CNTRT_PRD=#CNTRT_PRD#				          /* 계약기간 */ 
+       ,RP_EFF_PRD_FR_DT=#RP_EFF_PRD_FR_DT#			  /* 유효기간시작일 */ 
+       ,RP_EFF_PRD_TO_DT=#RP_EFF_PRD_TO_DT#	    	  /* 유효기간종료일 */ 
+       ,LS_CHG_DTM=SYSDATE                            /* 최종변경일시 */
+       ,LS_CHG_USER_ID=#USERNO#                       /* 최종변경사용자ID */  
+ WHERE  RENTAL_POLY_NO= #RENTAL_POLY_NO#              /* 렌탈정책번호 */]]>
+	</update>
+	<select id="SEqpPolySeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpPolyMgmt.SEqpPolySeq 단말기정책정보SEQ */
+/* IO: 장미진,2015-08-03T13:09:34(장미진,2015-07-16T10:25:15) */
+SELECT 'RP'||LPAD(SQ01_TB_RENTAL_POLY.NEXTVAL,10,0) AS RENTAL_POLY_NO
+  FROM DUAL]]>
+	</select>
+	<update id="UEqpPolyDate" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpPolyMgmt.UEqpPolyDate 단말기정책종료일수정 */
+/* IO: 장미진,2015-08-03T13:12:18(장미진,2015-07-17T11:28:58) */
+UPDATE  TB_RENTAL_POLY                    				  /* 수정화면 */
+   SET  RP_EFF_PRD_TO_DT= TO_CHAR(TO_DATE(#RP_EFF_PRD_FR_DT#, 'YYYYMMDD')-1, 'YYYYMMDD')  /* 유효기간종료일  = 정책시작일 전날*/ 
+ WHERE  RENTAL_POLY_NO= (SELECT  MAX(RENTAL_POLY_NO)
+                           FROM  TB_RENTAL_POLY    	  /* 렌탈정책번호 */
+                          WHERE  EQP_MDL_CD = #EQP_MDL_CD# 
+                            AND  RENTAL_POLY_NO <#RENTAL_POLY_NO#)]]>
+	</update>
+	<select id="SEqpPolyDateIChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpPolyMgmt.SEqpPolyDateIChk 단말기정책기간유효성검사_신규 */
+/* IO: 장미진,2015-08-03T13:09:16(장미진,2015-07-20T13:28:39) */
+SELECT  COUNT(1) AS RENTAL_DT_CNT
+  FROM  TB_RENTAL_POLY
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  RP_EFF_PRD_FR_DT >= #RP_EFF_PRD_FR_DT#]]>
+	</select>
+	<select id="SEqpPolyDateUChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpPolyMgmt.SEqpPolyDateUChk 단말기정책기간유효성검사_수정 */
+/* IO: 장미진,2015-08-03T13:10:09(장미진,2015-07-20T14:08:29) */
+SELECT  COUNT(1) AS RENTAL_DT_CNT
+  FROM  TB_RENTAL_POLY
+ WHERE  RENTAL_POLY_NO < #RENTAL_POLY_NO#
+   AND  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  RP_EFF_PRD_FR_DT >= #RP_EFF_PRD_FR_DT#]]>
+	</select>
+</sqlMap>

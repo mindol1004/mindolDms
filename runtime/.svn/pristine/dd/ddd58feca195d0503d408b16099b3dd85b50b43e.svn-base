@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 프레임워크 COREEXT POJO 관련 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+    <bean id="nc.coreext.pojo.ServiceResolverFactory"
+        class="nexcore.framework.coreext.pojo.resolver.ServiceResolverFactory"
+        init-method="init">
+        <description>POJO Component Model Service Resolver</description>
+        <property name="DBAccessableResolver">
+        	<bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultDBAccessableResolver">
+        		<property name="sqlManagerFactory" ref="nc.db.ISqlManagerFactory"/>
+        		<property name="contextedSqlLog"   ref="nc.core.IContextedSqlLog"/>
+        		<property name="mergeUnitName"     value="true"/>
+        	</bean>
+        </property>
+        <property name="bizComponentResolver">
+        	<bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultBizComponentResolver">
+        		<description>응용 컴포넌트 선/후/예외 처리 담당.</description>
+        		<property name="processUnitParentClassName"               value="${online.processUnit.parentClass}"/>
+        		<property name="ignoreResultMessage"                      value="${online.processUnit.resultMessage.ignoreInspection}"/>
+        		<property name="defaultOkResultMessageId"                 value="${online.processUnit.resultMessage.defaultMessageId}"/>
+        		<property name="callableDataUnitFromProcessUnit"          value="${online.dataUnit.callableFromProcessUnit}"/>
+        		<property name="sharedDataUnitParentClassName"            value="${shared.dataUnit.parentClass}"/>
+        		<property name="callableSharedDataUnitFromOtherComponent" value="${shared.dataUnit.callableFromExternalComponent}"/>
+        	</bean>
+        </property>
+        <property name="onlineContextResolver">
+        	<bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultOnlineContextResolver" />
+        </property>
+        <property name="identityGenerator" ref="nc.core.IdentityGenerator" />
+        <property name="flatTransformResolver">
+        	<bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultFlatTransformResolver">
+        		<property name="componentMetaDataRegistry" ref="nc.core.IBizComponentMetaDataRegistry"/>
+        		<property name="byteArrayMemoryPool"       ref="nc.core.IByteArrayMemoryPool"/>
+        		<property name="encoding"                  value="${flat.encoding}"/>
+        		<property name="lengthAbout"               value="1000"/>
+        	</bean>
+        </property>
+        <property name="asyncServiceResolver">
+        	<bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultAsyncServiceResolver">
+        		<!-- <property name="asyncQueueManager"         ref="nc.core.AsyncQueueManager"/> nexcore-core-asyncqueue.xml 파일을 미사용 처리 한 경우를 위해서 주석 처리함. 필요시 내부적으로 lookup함. -->
+        		<property name="xaQueueName"               value="${online.internal.async.queuename.xa}"/>
+        		<property name="nonXaQueueName"            value="${online.internal.async.queuename.nonxa}"/>
+        	</bean>
+        </property>
+        <property name="delayAsyncServiceResolver">
+        	<bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultDelayAsyncServiceResolver">
+        		<!-- <property name="delayAsyncManager"         ref="nc.core.DelayAsyncManager"/>  --> <!-- nexcore-core-delayasync.xml 파일을 미사용 처리 한 경우를 위해서 주석 처리함. 필요시 내부적으로 lookup함. -->
+        	</bean>
+        </property>
+        <property name="batchResolver">
+        	<bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultBatchResolver" init-method="init">
+        		<property name="schedulerAddress" value="${nexcore.ondemand.batch.scheduler.${system.id}}"/>
+        	</bean>
+        	<!-- by JMX 
+        	<bean class="nexcore.framework.coreext.pojo.resolver.impl.DefaultJmxBasedBatchResolver" init-method="init">
+        		<property name="schedulerMbeanName" value="${nexcore.ondemand.batch.schedulerMbean}"/>
+        		<property name="schedulerAddress"   value="${nexcore.ondemand.batch.scheduler.${system.id}}"/>
+        	</bean>
+        	-->
+        </property>		
+    </bean>
+
+    <bean id="nc.core.IContextedSqlLog"
+        class="nexcore.framework.coreext.pojo.biz.base.BaseContextedSqlLog"
+        init-method="init" 
+        destroy-method="destroy">
+        <description>
+            <![CDATA[ ContextedSqlLog ]]>
+        </description>
+		<property name="enabled"  			value="true"/>
+		<property name="singleLine"    	    value="false"/>
+		<property name="skipStatementsMap"> <!-- 기록 제외대상 쿼리아이디를 정규표현식으로 등록한다. Map(was instance id, List(정규표현식 쿼리 아이디))-->
+			<map>
+				<entry key="localhost">     
+					<list>
+						<!-- 
+						<value>DTB_CBS_FWK_TRLOG_H_00\..*</value>
+						<value>DTB_CBS_FWK_ERLOG_H_00\..*</value>
+						 -->
+					</list>
+				</entry>
+			</map>
+		</property>
+    </bean>
+
+    <bean id="nc.coreext.LongRunningNotification"
+        class="nexcore.framework.coreext.pojo.filter.DefaultLongRunningNotificationProcessor"
+        init-method="init" 
+        destroy-method="destroy">
+        <description>
+            <![CDATA[ 장시간 수행중인 거래 통지 처리 ]]>
+        </description>
+		<property name="threadManager"  			ref="nc.core.monitor.IThreadManager"/>
+		<property name="notificationConfigManager"  ref="nc.core.NotificationConfigManager"/>
+		<property name="componentFqId"  			value="fwk.FWKSBase"/>
+		<property name="methodName"  			    value="fFWK09LongRunningNotification"/>
+    </bean>
+
+</beans>

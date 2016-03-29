@@ -1,0 +1,92 @@
+package dms.nr.nrbxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]ERP_IF</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-07-22 10:28:12</li>
+ * <li>작성자 : 진병수 (greatjin)</li>
+ * </ul>
+ *
+ * @author 진병수 (greatjin)
+ */
+public class PNRErpIf extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRErpIf(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 진병수 (greatjin)
+	 * @since 2015-07-22 10:28:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqErpIFPing(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqErpIFPing", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-07-22 10:28:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqErpDealCoSt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		
+	    try {
+	           // 1. FM 호출
+	           responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqErpDealCoSt", requestData, onlineCtx);
+	       } catch ( BizRuntimeException e ) {
+	           throw e;
+	       } catch ( Exception e ) {
+	           throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	       }
+	       // 3. 결과값 리턴
+	       responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+  
+}

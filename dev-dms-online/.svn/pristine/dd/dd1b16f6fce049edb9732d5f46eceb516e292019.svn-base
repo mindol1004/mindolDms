@@ -1,0 +1,380 @@
+package dms.ep.epbsxbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]단말기대금선할인정산관리</li>
+ * <li>설  명 : <pre>단말기대금선할인정산관리 PU</pre></li>
+ * <li>작성일 : 2015-10-23 09:46:46</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PEPEqpPreDcXclMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPEqpPreDcXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]단말기대금선할인재집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:46:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DCINAD_STRD_YM [선할인 정산기준년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSavePreDcXclRpetCalc(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();       
+        CommonArea ca = getCommonArea(onlineCtx);
+        Log logger = LogManager.getFwkLog();
+        String jobExecutionId = ""; // 실행 JOB_ID        
+        try {
+            
+            IDataSet reqDS = new DataSet();
+            reqDS.putField("TASK_ID", "XCE001");
+            reqDS.putField("TASK_DT", DateUtils.getCurrentDate());      
+            
+            IDataSet resDS = callSharedBizComponentByDirect("sc.SCSBase", "fInqTaskSTCD", reqDS, onlineCtx);
+            
+            if(null != resDS && "B".equals(resDS.getField("BAT_TASK_PROC_ST_CD"))){
+                throw new BizRuntimeException("DMS00159", new String[] {"재집계"}); // {0} 진행상태 입니다. 재집계가 불가합니다.
+            }
+            
+            // 1.해당연월에 해당되는 전표발행 진행 상태 있는지 검사
+            String preDcsSlipYn = callSharedBizComponentByDirect("ep.EPSSXBase", "fSEqpPreDcSlipYn", requestData, onlineCtx).getField("CHK_CNT");            
+            if(!"0".equals(preDcsSlipYn)){                
+                throw new BizRuntimeException("DMS00149", new String[] {"해당연월 기준","전표발행 진행"}); // {0} 전표는 {1} 상태 입니다. 재집계가 불가합니다.                
+            }         
+            
+            HashMap params = new HashMap<String,String>(); // 배치 파라미터 값 정보.
+            params.put("TASK_ID", "XCE001");
+            params.put("TASK_NM", "단말기대금-선할인");                
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.ep.XCE001");            
+            params.put("DCINAD_STRD_YM", StringUtils.nvlObject(requestData.getField("DCINAD_STRD_YM"),""));
+            params.put("USER_ID", ca.getUserNo());            
+            
+            jobExecutionId = callBatchJob("XCE001", params, onlineCtx);
+                                                                                
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]단말기대금선할인정산목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:46:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DCINAD_STRD_YM [선할인 기준 년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_DCINAD_LIST
+	 *		- field : DCINAD_XCL_NO [선할인 정산 번호]
+	 *		- field : DCINAD_STRD_YM [선할인 기준 년월]
+	 *		- field : REPV_AGN_ORG_CD [대표 대리점 조직 코드]
+	 *		- field : DEALCO_NM [상호명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : DCINAD_AMT [선할인 금액]
+	 *		- field : SURTAX_AMT [부가세금액]
+	 *		- field : SPLY_PRC [공급가격]
+	 *		- field : DCINAD_XCL_CNT [선할인 정산 건수]
+	 *		- field : DCINAD_SLIP_DT [선할인 전표 일자]
+	 *		- field : DCINAD_SLIP_NO [선할인 전표 번호]
+	 *		- field : DCINAD_SLIP_ST [선할인 전표 상태]
+	 *		- field : DCINAD_CNCL_SLIP_DT [선할인 취소 전표 일자]
+	 *		- field : DCINAD_CNCL_SLIP_NO [선할인 취소 전표 번호]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 *		- field : SLIP_DT [전표일자]
+	 * </pre>
+	 */
+	public IDataSet pSEqpDcinadXclLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출            
+            responseData.putRecordSet(callSharedBizComponentByDirect("ep.EPSSXBase", "fSEqpDcinadXcl", requestData, onlineCtx).getRecordSet("RS_EQP_DCINAD_LIST"));  // 단말기대금선할인목록조회          
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]단말기대금선할인정산상세엑셀목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:46:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : UKEY_AGN_CD [대표대리점코드]
+	 *	- field : DCINAD_STRD_YM [정산기준년월]
+	 *	- field : EXCEL_FIRST [첫번째순번]
+	 *	- field : EXCEL_LAST [마지막번째순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_DCINAD_EXCEL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [대표리점별총건수]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : CLCT_DT [회수 일자(반영일자)]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : SCRB_MTHD [가입방법]
+	 *		- field : SCRB_NM [가입명]
+	 *		- field : SKN_CL [SKN 구분]
+	 *		- field : PRE_DC_CL [선할인 구분]
+	 *		- field : FEE_DEDC_YN [공제처리여부]
+	 *		- field : AMT_RMT_YN [계좌송금여부]
+	 *		- field : DEDC_TYP_CD [공제유형코드]
+	 *		- field : DPSTR [예금주]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : JDG_EQP_ST [단말기 상태(재감정 등급)]
+	 *		- field : JDG_PRCH_AMT [매입 금액(재감정 금액)]
+	 *		- field : JDG_DTL [감정상세]
+	 *		- field : ERR_JDG_YN [오감정 여부]
+	 *		- field : ASSET_AMT [자산가액]
+	 *		- field : SKN_SMPL_JDG_DAMT [대리점오류금액]
+	 *		- field : AGN_DDCT_AMT [대리점 차감금액]
+	 *		- field : AGN_EXPNS_CONF_AMT [대리점 비용 확정 금액]
+	 *		- field : XCL_AMT [총정산액]
+	 *		- field : SC_DT [현장감정일]
+	 *		- field : FST_RGSTR_NM [최초 등록자명]
+	 *		- field : FST_RGSTR [최초 등록자]
+	 *		- field : SVC_MGMT_NO [서비스 관리 번호]
+	 *		- field : SVC_CHG_DT [변경일자]
+	 *		- field : SVC_CHG [서비스변경]
+	 *		- field : SVC_CHG_DTL [서비스변경사유]
+	 *		- field : HEADQ_NM [본부명]
+	 *		- field : MKT_TEAM_NM [마케팅 팀 명]
+	 *		- field : AGN_ORG_CD [대리점코드]
+	 *		- field : AGN_ORG_NM [대리점명]
+	 *		- field : UKEY_AGN_CD [대리점코드2]
+	 *		- field : UKEY_AGN_NM [대리점명2]
+	 *		- field : UKEY_AGN_BLICENS_NO [대리점명2_사업자번호]
+	 * </pre>
+	 */
+	public IDataSet pSEqpDcinadXclDtlExcelLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출            
+            responseData.putRecordSet(callSharedBizComponentByDirect("ep.EPSSXBase", "fSEqpDcinadXclDtlExcelLst", requestData, onlineCtx).getRecordSet("RS_EQP_DCINAD_EXCEL_LIST"));  // 단말기대금선할인정산상세엑셀목록조회          
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]단말기대금선할인전표등록</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:46:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DCINAD_STRD_YM [정산기준년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveEqpPreDcXclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    Log logger = LogManager.getFwkLog();
+        IDataSet responseData = new DataSet();        
+        CommonArea ca = getCommonArea(onlineCtx);                  
+        String jobExecutionId = ""; // 실행 JOB_ID
+        
+        try {            
+            
+            HashMap params = new HashMap<String,String>(); // 배치 파라미터 값 정보.                        
+            params.put("SLIP_TYPE", "EP_XD");   // 중고폰_단말기대금-선할인(공통코드: DMS145)
+            params.put("YYYYMM", StringUtils.nvlObject(requestData.getField("DCINAD_STRD_YM"),""));   // 년월 (인센티브 기준)
+            params.put("YYYY", StringUtils.nvlObject(requestData.getField("DCINAD_STRD_YM"),"").substring(0, 4));   // 년 (인센티브 기준)
+            params.put("USER_NO", ca.getUserNo());           
+            // C: 전표발행.                
+            params.put("TASK_ID", "EPR010");
+            params.put("TASK_NM", "전표발행");                
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");
+            jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+            
+            /*
+            else if("D".equals(ca.getTrnPtrnDvcd())){
+                // D: 전표취소.
+                params.put("TASK_ID", "EPR011");
+                params.put("TASK_NM", "전표삭제");                
+                params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");
+                params.put("CNCL_SLIP_NO", StringUtils.nvlObject(requestData.getField("DCINAD_SLIP_NO"),""));
+                jobExecutionId = callBatchJob("EPR011", params, onlineCtx);                                
+            }    
+            */
+            waitBatchJobEnd(jobExecutionId, 10000);
+            
+            int result = getJobReturnCode(jobExecutionId);
+            
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.             
+                              
+            if (logger.isDebugEnabled()) {                
+                logger.debug("#### result #### =======>> "+result);
+                logger.debug("#### params.toString #### =======>> "+params.toString());                                
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+         
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PU]단말기대금선할인전표취소</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:46:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DCINAD_STRD_YM [정산기준년월]
+	 *	- record : RS_SLIP_LIST
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : YYYY [회계년도]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pCnclEqpPreDcXclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    Log logger = LogManager.getFwkLog();
+        IDataSet responseData = new DataSet();        
+        CommonArea ca = getCommonArea(onlineCtx);                  
+        String jobExecutionId = ""; // 실행 JOB_ID
+        
+        try {                        
+            
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+            
+            HashMap params = new HashMap<String,String>(); // 배치 파라미터 값 정보.                        
+            params.put("SLIP_TYPE", "EP_XD");   // 중고폰_단말기대금-선할인(공통코드: DMS145)
+            params.put("YYYYMM", StringUtils.nvlObject(requestData.getField("DCINAD_STRD_YM"),""));   // 년월 (인센티브 기준)
+            params.put("YYYY", StringUtils.nvlObject(requestData.getField("DCINAD_STRD_YM"),"").substring(0, 4));   // 년 (인센티브 기준)
+            params.put("USER_NO", ca.getUserNo());                       
+            // D: 전표취소.
+            params.put("TASK_ID", "EPR011");
+            params.put("TASK_NM", "전표삭제");                
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");            
+            params.put("POST_SLIP_DATASET", dsXml);
+            
+            jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+            
+            waitBatchJobEnd(jobExecutionId, 10000);
+            
+            int result = getJobReturnCode(jobExecutionId);
+            
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.             
+                              
+            if (logger.isDebugEnabled()) {                
+                logger.debug("#### result #### =======>> "+result);
+                logger.debug("#### params.toString #### =======>> "+params.toString());                                
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+         
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]단말기대금선할인전표상태재조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:46:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YYYYMM [연월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqEqpPreDcXclSlipReSearh(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();	
+	    
+        try {            
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fSlipInfoSynchronization", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,233 @@
+package dms.ep.epbcsbase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]검수관리</li>
+ * <li>설  명 : <pre>[PU]검수관리</pre></li>
+ * <li>작성일 : 2015-08-18 17:12:02</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class PEPTlyMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPTlyMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]감정검수대상목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-18 17:12:02
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : AFFIL_AGN_NM [대리점명]
+	 *	- field : CNSL_DEALCO_CD [상당처코드]
+	 *	- field : CNSL_DEALCO_NM [상당처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : JDC_CL [감정구분]
+	 *	- field : TLY_CL [검수구분]
+	 *	- field : STDR_CL [기준일자구분]
+	 *	- field : STDR_SDT [기준시작일자]
+	 *	- field : STDR_EDT [기준종료일자]
+	 *	- field : SER_NO [일련번호]
+	 *	- field : MGMT_NO [접수관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : CUST_NM [고객명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_JDG_TLY_LIST
+	 *		- field : CHECKED [체크]
+	 *		- field : CNSL_MGMT_NO [상담관리 일련번호]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : EQP_SER_NO [모델 일련 번호]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : EQP_COLOR_CD [색상 코드]
+	 *		- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *		- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *		- field : AGN_ORG_CD [대리점조직코드(Ukey 코드)]
+	 *		- field : AFFIL_AGN [소속 대리점코드(팀코드)]
+	 *		- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *		- field : CNSL_DEALCO_CD [상담 거래처코드(상담처코드)]
+	 *		- field : CNSL_DEALCO_NM [상담 거래처명(상담처명)]
+	 *		- field : DPSTR [예금주]
+	 *		- field : DPSTR_ENPT [예금주 암호화]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : SCRB_MTHD [가입 방법]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : INPT_NM [검수자]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : TEL_NO_ENPT [연락처 암호화]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : BOX_NO [박스 번호]
+	 *		- field : HEADQ_NM [본부 명]
+	 *		- field : SKN_CL [SKN 구분]
+	 * </pre>
+	 */
+	public IDataSet pSJdgTlyObjMgmtLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    Log logger = LogManager.getFwkLog();
+        IDataSet responseData = new DataSet();
+            
+        try {
+            
+            if (logger.isDebugEnabled()) {                
+                logger.debug("***** 감정구분 =>> " +StringUtils.nvlObject(requestData.getField("JDC_CL"),"")+"\n");    
+                logger.debug("***** 검수구분 =>> " +StringUtils.nvlObject(requestData.getField("TLY_CL"),"")+"\n");
+                logger.debug("***** 기준일자구분 =>> " +StringUtils.nvlObject(requestData.getField("STDR_CL"),"")+"\n");
+            }
+            /*
+             * 감정구분 : NO (일반감정) , RE (재감정)  
+             * 검수구분 : JO (검수대상) , JR (검수등록)
+             * 기준일자 구분 : 01 (접수일자) , 02 (검수일자)
+             */
+            /*
+            // 1. FM 호출
+            if("NO".equals(StringUtils.nvlObject(requestData.getField("JDC_CL"),"")) && "JO".equals(StringUtils.nvlObject(requestData.getField("TLY_CL"),""))){
+                // 감정구분이 NO(일반감정) 이고 검수구분이 JO(검수대상) 일 경우 => 일반감정검수대상목록조회  
+                responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fSGnrlJdgTlyObjLst", requestData, onlineCtx);    
+                
+            }else if(("NO".equals(StringUtils.nvlObject(requestData.getField("JDC_CL"),"")) 
+            || "RE".equals(StringUtils.nvlObject(requestData.getField("JDC_CL"),""))) 
+            && "JR".equals(StringUtils.nvlObject(requestData.getField("TLY_CL"),""))){
+                // (감정구분이 NO(일반감정) 또는 감정구분이 RE(재감정)) 이고 검수구분이 JR(검수등록) 일 경우
+                
+                responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fSJdgTlyRegLst", requestData, onlineCtx);
+            }else if("RE".equals(StringUtils.nvlObject(requestData.getField("JDC_CL"),"")) && "JO".equals(StringUtils.nvlObject(requestData.getField("TLY_CL"),""))){
+                // 감정구분이 RE(재감정) 이고 검수구분이 JO(검수대상) 일 경우 => 재감정검수대상목록조회 
+                responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fSRpetJdgTlyObjLst", requestData, onlineCtx);                
+            }
+            */
+            // 1. FM 호출
+            if("JO".equals(StringUtils.nvlObject(requestData.getField("TLY_CL"),""))){
+                // 검수대상 목록 조회  
+                responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fSJdgTlyObjLst", requestData, onlineCtx);                    
+            }else if("JR".equals(StringUtils.nvlObject(requestData.getField("TLY_CL"),""))){
+                // 검수등록대상 목록 조회                
+                responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fSJdgTlyRegLst", requestData, onlineCtx);
+            }            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴        
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다. 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]재감정검수취소</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-18 17:12:02
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CNCL_LIST
+	 *		- field : CHECKED [체크]
+	 *		- field : CNSL_MGMT_NO [상담관리 일련번호]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : EQP_SER_NO [모델 일련 번호]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : EQP_COLOR_CD [색상 코드]
+	 *		- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *		- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *		- field : AGN_ORG_CD [대리점조직코드(Ukey 코드)]
+	 *		- field : AFFIL_AGN [소속 대리점코드(팀코드)]
+	 *		- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *		- field : CNSL_DEALCO_CD [상담 거래처코드(상담처코드)]
+	 *		- field : CNSL_DEALCO_NM [상담 거래처명(상담처명)]
+	 *		- field : DPSTR [예금주]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : SCRB_MTHD [가입 방법]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : INPT_NM [검수자]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : BOX_NO [박스 번호]
+	 *		- field : SKN_CL [SKN 구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pURpetJdgTlyCncl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    Log logger = LogManager.getFwkLog();
+        IDataSet responseData = new DataSet();
+        IRecordSet rs = requestData.getRecordSet("RS_CNCL_LIST");
+        CommonArea ca = getCommonArea(onlineCtx);        
+        IDataSet rowDs = new DataSet();
+        
+        /*
+         * ncRecStatus : inserted , updated , deleted
+         */        
+        try {                        
+            for (int i = 0; i < rs.getRecordCount(); i++) {                       
+                if("updated".equals(rs.getRecordMap(i).get("ncRecStatus"))){
+                       
+                    rowDs.putFieldMap(rs.getRecordMap(i));
+                    if (logger.isDebugEnabled()) {                
+                        logger.debug("***** toString =>> " +rowDs.toString()+"\n");
+                        logger.debug("***** SKN_CL =>> " +rowDs.getField("SKN_CL")+"\n");
+                    }
+                    if("Y".equals(rowDs.getField("SKN_CL"))){
+                        rowDs.putField("LAST_CHG_USER_ID", ca.getUserNo());                                        
+                        responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fDTbEpCstPrchsMgmt", rowDs, onlineCtx);
+                        responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fDTbEpCstPrchsDtl", rowDs, onlineCtx);
+                        responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUTbEpCstConsultMgmtProgrSt", rowDs, onlineCtx);                                                                                                                                      
+                    }else if("N".equals(rowDs.getField("SKN_CL"))){
+                        rowDs.putField("USER_ID", ca.getUserNo());
+                        responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fUGnrlTlyProgrConsultSt", rowDs, onlineCtx);
+                    }                                                                                
+                }                                                                
+            }            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+  
+}

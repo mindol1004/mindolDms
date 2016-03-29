@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpInMgmt">
+	<select id="SInqEqpInObjList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.SInqEqpInObjList 입고대상목록 */
+/* IO: 김상오,2015-08-20T16:35:26(김상오,2015-08-20T16:10:40) */
+SELECT 
+      CNSL_MGMT_NO          
+     ,EQP_MDL_CD            
+     ,CNSL_MGMT_SER_NO      
+     ,CNSL_DT               
+     ,EQP_COLOR_CD          
+     ,'deal.ORG_ID' ORG_ID  
+     ,(   select ORG_NM from TB_EP_BAS_ORG_MGMT where org_id = deal.FS_REG_USER_ID)  ORG_NM
+     ,deal.UKEY_CHNL_CD 
+     ,DEALCO_NM AGENCY_NM
+     ,DEALCO_NM CON_PLC_NM
+     ,CNSL_DEALCO_CD        
+     ,'FBAS_GET_PROD_NM(con.EQP_MDL_CD)' PROD_NM
+     ,'FBAS_GET_COMMCDNM_VAL(ZBAS_C_00040 con.EQP_COLOR_CD)' COLOR_NM
+     ,'' PRC_CHECK
+     ,IN_PROC_RSN           
+     ,DPSTR                 
+     ,CTZ_NO                
+     ,BOX_NO                
+  FROM TB_EP_CST_CONSULT_MGMT con   
+  	 , TB_DEALCO deal
+ WHERE con.CNSL_DEALCO_CD = deal.DEALCO_CD
+   AND deal.EFF_STA_DT <= con.CNSL_DT
+   AND deal.EFF_END_DT >= con.CNSL_DT
+   AND con.CNSL_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+   AND con.DEL_YN = 'N'
+   AND deal.DEL_YN = 'N'
+   AND con.MOV_YN = 'Y'
+   AND con.PRCH_CL = 'C'
+   AND con.IN_CONF_YN = 'C'   
+   AND con.SKN_CL = 'N'
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+	   deal.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       con.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_SER_NO"><![CDATA[      
+       con.CNSL_MGMT_SER_NO = #CNSL_MGMT_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       con.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR"><![CDATA[      
+       con.DPSTR LIKE '%'||#DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       con.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+       con.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqEqpInObjListCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.SInqEqpInObjListCnt 입고대상조회카운트 */
+/* IO: 김상오,2015-08-20T17:03:28(김상오,2015-08-20T16:10:40) */
+SELECT 
+   count(con.*) AS TOTAL_CNT
+  FROM TB_EP_CST_CONSULT_MGMT con   
+  	 , TB_DEALCO deal
+ WHERE con.CNSL_DEALCO_CD = deal.DEALCO_CD
+   AND deal.EFF_STA_DT <= con.CNSL_DT
+   AND deal.EFF_END_DT >= con.CNSL_DT
+   AND con.CNSL_DT BETWEEN #STA_CNSL_DT# AND #END_CNSL_DT# 						    
+   AND con.DEL_YN = 'N'
+   AND deal.DEL_YN = 'N'
+   AND con.MOV_YN = 'Y'
+   AND con.PRCH_CL = 'C'
+   AND con.IN_CONF_YN = 'C'   
+   AND con.SKN_CL = 'N'
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+	   deal.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       con.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_SER_NO"><![CDATA[      
+       con.CNSL_MGMT_SER_NO = #CNSL_MGMT_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       con.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR"><![CDATA[      
+       con.DPSTR LIKE '%'||#DPSTR#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       con.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+       con.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

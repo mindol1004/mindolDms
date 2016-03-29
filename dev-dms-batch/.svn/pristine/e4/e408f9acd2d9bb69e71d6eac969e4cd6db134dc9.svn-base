@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.DBE001">
+	<select id="SIFConsultMgmt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE001.SIFConsultMgmt IF상담관리정보조회 */
+/* IO: 이준우,2015-10-14T16:36:27(이준우,2015-08-11T14:15:42) */
+  SELECT  A.IF_PROC_DT                                   /*IF처리일자   */
+         ,A.IF_FILE_NM                                   /*IF파일명     */
+         ,A.IF_SEQ                                       /*IF순번       */
+         ,A.CNSL_MGMT_NO                                 /*상담관리번호 */
+         ,A.EQP_MDL_CD                                   /*단말기모델코드*/
+         ,A.EQP_SER_NO                                   /*단말기일련번호*/
+         ,A.CNSL_DT                                      /*상담일자     */
+         ,A.CNSL_ORG_CD                                  /*상담조직코드*/
+         ,A.COLOR_CD                                     /*색상코드 */
+         ,A.ONING_DT                                     /*개통일자 */
+         ,A.EQP_ST                                       /*단말기상태*/
+         ,A.LOSS_EQP_YN                                  /*분실단말여부*/
+         ,A.RWD_RTN_OBJ_YN                               /*보상 반납 대상 여부*/
+         ,A.RENTP_YN                                     /*임대폰여부*/
+         ,A.USIM_EQPCHG_YN                               /*USIM기변여부     */
+         ,A.OTHRCO_FORGN_EQP_YN                          /*타사해외단말기여부*/
+         ,A.SUGG                                         /*의견             */
+         ,A.CNSL_AMT                                     /*상담금액         */
+         ,A.DPSTR                                        /*예금주        */
+         ,A.DPSTR_ENPT                                   /*예금주암호화        */
+         ,A.BANK_CD                                      /*은행코드      */
+         ,A.ACCO_NO                                      /*계좌번호      */
+         ,A.ACCO_NO_ENPT                                 /*계좌번호암호화*/
+         ,A.TEL_NO                                       /*전화번호      */
+         ,A.TEL_NO_ENPT                                  /*전화번호암호화*/    
+         ,A.POST_NO1                                     /*우편번호1    */
+         ,A.POST_NO2                                     /*우편번호2    */
+         ,A.CUST_BAS_ADDR                                /*고객기본주소 */
+         ,A.CUST_DTL_ADDR                                /*고객상세주소 */
+         ,A.CUST_DTL_ADDR_ENPT                           /*고객상세주소암호화*/
+         ,A.MOV_YN                                       /*이동여부          */
+         ,A.DEL_YN                                       /*삭제여부          */
+         ,A.UPDATE_CNT                                   /*UPDATE COUNT      */
+         ,A.UKEYREG_DTM                                  /*UKEY등록일시      */
+         ,A.UKEYREG_USER_ID                              /*UKEY등록사용자ID  */
+         ,A.UKEYCHG_DTM                                  /*UKEY최초등록사용자ID*/
+         ,A.UKEYCHG_USER_ID                              /*UKEY변경일시        */
+         ,A.UKEY_FS_REG_USER_ID                          /*UKEY변경사용자ID    */
+         ,A.FEE_DEDC_YN                                  /*요금공제여부        */
+         ,A.SVC_NO                                       /*서비스번호          */
+         ,A.SVC_NO_ENPT                                  /*서비스번호암호화    */
+         ,A.SVC_MGMT_NO
+         ,A.IMEI
+         ,A.ETC_CMPT
+         ,A.POLY_OBJ_YN
+         ,A.PROGR_ST
+         ,A.UKEY_XCL_ORG_ID
+         ,A.UKEY_XCL_ORG_ID2
+         ,NVL(B.DEALCO_CD, A.CNSL_ORG_CD) DEALCO_CD                    /* 상담처or상담조직 코드 */
+         ,A.DCINAD_GUBUN
+         ,A.STRD_INCEN
+         ,A.STRD_INCEN_SCOP_AMT
+         ,A.ASIANA_CARD_NO
+         ,A.SCRB_MTHD
+         ,A.PMTH_USE_EQIP_YN
+         ,A.PROC_ST_CD
+         
+    FROM  TF_CNRL_MGMT_GNRL A
+         ,TB_DEALCO B
+   WHERE  A.PROC_ST_CD = '09'
+     AND  A.IF_PROC_DT   = #PROC_DT#		/*전문송신일자  iv_op_dt*/
+     AND  B.UKEY_AGN_CD = SUBSTR(A.CNSL_ORG_CD,0,6)
+     AND  B.UKEY_SUB_CD = SUBSTR(A.CNSL_ORG_CD,7,4)
+     AND  B.DEAL_END_DT = '99991231'
+ORDER BY  A.IF_SEQ]]>
+	</select>
+	<insert id="IConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE001.IConsultMgmt 상담관리정보등록 */
+/* IO: 이준우,2015-10-01T17:27:10(이준우,2015-07-29T10:19:57) */
+INSERT INTO  TB_EP_CST_CONSULT_MGMT (
+             CNSL_MGMT_NO                 /*상담 관리 번호*/
+            ,EQP_MDL_CD                   /*단말기 모델 코드*/
+            ,EQP_SER_NO                   /*단말기 일련 번호*/
+            ,CNSL_DT                      /*상담 일자*/
+            ,CNSL_DEALCO_CD               /*상담 거래처 코드*/
+            ,EQP_COLOR_CD                 /*색상          */
+            ,ONING_DT                     /*개통 일자     */
+            ,EQP_ST                       /*단말기 상태   */
+            ,USE_PRD_DDCT_AMT             /*사용기간차감금액*/
+            ,INR_CORR_YN                  /*내부부식여부*/
+            ,PWR_SYS                      /*전원시스템*/
+            ,CALL_QULT_TEST               /*통화품질테스트*/
+            ,DATA_PRFM                    /*DATA성능*/
+            ,SCRN_TEST                    /*화면테스트*/
+            ,FUNC_TEST                    /*기능테스트*/
+            ,LOSS_EQP_YN                  /*분실 단말기 여부    */
+            ,RWD_RTN_OBJ_YN               /*보상 반납 대상 여부 */
+            ,RENTP_YN                     /*임대폰 여부         */
+            ,WET_YN                       /*침수 여부          x */
+            ,USIM_EQPCHG_YN               /*USIM 기변 여부      */
+            ,OTHRCO_FORGN_EQP_YN          /*타사 해외 단말기 여부*/
+            ,SUGG                         /*의견                 */
+            ,EVALCNSLR_AUTCT_YN           /*평가원 인증 여부    x */
+            ,CNSL_AMT                     /*상담 금액*/
+            ,PRCH_CL                      /*매입 구분*/
+            ,DPSTR                        /*예금주   */
+            ,DPSTR_ENPT                   /*예금주암호화   */
+            ,BANK_CD                      /*은행 코드*/
+            ,ACCO_NO                      /*계좌 번호*/
+            ,ACCO_NO_ENPT                 /*계좌 번호암호화*/
+            ,TEL_NO                       /*전화 번호*/
+            ,TEL_NO_ENPT                  /*전화 번호암호화*/
+            ,ZIPCD_1                      /*우편번호 1 */
+            ,ZIPCD_2                      /*우편번호 2 */
+            ,ADDR                         /*주소       */
+            ,ETC_ADDR                     /*기타 주소  */
+            ,ETC_ADDR_ENPT                /*기타 주소암호화  */
+            ,MOV_YN                       /*이동 여부  */
+            ,DEL_YN
+            ,UPDATE_COUNT
+            ,FEE_DEDC_YN                  /*요금 공제 여부   */
+            ,SVC_NO                       /*서비스 번호*/
+            ,SVC_NO_ENPT                  /*서비스 번호암호화*/
+            ,SVC_MGMT_NO                  /*서비스 관리 번호*/
+            ,IMEI                         /*IMEI*/
+            ,IN_CONF_YN                   /*입고 확정 여부*/
+            ,IN_CONF_DT                   /*입고 확정 일자*/
+            ,IN_PROC_RSN                  /*입고 처리 사유*/
+            ,ETC_CMPT                     /*기타 구성품*/
+            ,POLY_OBJ_YN                  /*정책 대상 여부*/
+            ,POLY_OBJ_CD                  /*정책 대상 코드*/
+            ,PROGR_ST                     /*진행 상태*/
+            ,UKEY_XCL_DEALCO_ORG_ID       /*UKEY 정산 거래처 조직 ID*/
+            ,UKEY_XCL_DEALCO_ORG_ID_2     /*UKEY 정산 거래처 조직 ID 2*/
+            ,PRE_DC_CL                    /*선 할인 구분*/
+            ,STRD_INCEN                   /*기준 인센티브*/
+            ,STRD_INCEN_SCOP_AMT          /*기준 인센티브 범위 금액*/
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM
+            ,FST_RGSTR
+            ,ASIANA_CARD_NO
+            ,SCRB_MTHD
+            ,PMTH_USE_EQIP_YN
+            ,SKN_CL                       /*감정구분*/
+             )                            
+           VALUES                         
+             (                            
+             #CNSL_MGMT_NO#
+            ,#EQP_MDL_CD#
+            ,#EQP_SER_NO#
+            ,#CNSL_DT#
+            ,#CNSL_DEALCO_CD#
+            ,#COLOR#
+            ,#ONING_DT#
+            ,#EQP_ST#
+            ,#USE_PRD_DDCT_AMT#
+            ,#INR_CORR_YN#
+            ,#PWR_SYS#
+            ,#CALL_QULT_TEST#
+            ,#DATA_PRFM#
+            ,#SCRN_TEST#
+            ,#FUNC_TEST#
+            ,#LOSS_EQP_YN#
+            ,#RWD_RTN_OBJ_YN#
+            ,#RENTP_YN#
+            ,#WET_YN#
+            ,#USIM_EQPCHG_YN#
+            ,#OTHRCO_FORGN_EQP_YN#
+            ,#SUGG#
+            ,#EVALCNSLR_AUTCT_YN#
+            ,#CNSL_AMT#
+            ,'C'
+            ,#DPSTR#
+            ,#DPSTR_ENPT#
+            ,#BANK_CD#
+            ,#ACCO_NO#
+            ,#ACCO_NO_ENPT#
+            ,#TEL_NO#
+            ,#TEL_NO_ENPT#
+            ,#ZIPCD_1#
+            ,#ZIPCD_2#
+            ,#ADDR#
+            ,#ETC_ADDR#
+            ,#CUST_DTL_ADDR_ENPT#
+            ,'Y'
+            ,#DEL_YN#
+            ,NVL(#UPDATE_COUNT#, 1)
+            ,DECODE(#FEE_DEDC_YN#,'Y','1','N','0', #FEE_DEDC_YN#)
+            ,#SVC_NO#
+            ,#SVC_NO_ENPT#
+            ,#SVC_MGMT_NO#
+            ,#IMEI#
+            ,'C'
+            ,#IN_CONF_DT#
+            ,#IN_PROC_RSN#
+            ,#ETC_CMPT#
+            ,DECODE(#POLY_OBJ_YN#,'Y','1','N','0',#POLY_OBJ_YN#)
+            ,#POLY_OBJ_CD#
+            ,#PROGR_ST#
+            ,#UKEY_XCL_DEALCO_ORG_ID#
+            ,#UKEY_XCL_DEALCO_ORG_ID_2#
+            ,#PRE_DC_CL#
+            ,#STRD_INCEN#
+            ,#STRD_INCEN_SCOP_AMT#
+            ,'BAT'
+            ,SYSDATE
+            ,'BAT'
+            ,SYSDATE
+            ,#FST_REG_CHRGR#
+            ,#ASIANA_CARD_NO#
+            ,#SCRB_MTHD#
+            ,#PMTH_USE_EQIP_YN#
+            ,'N'
+            
+             )]]>
+	</insert>
+	<select id="SConsultMgmtCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE001.SConsultMgmtCnt 상담관리카운트 */
+/* IO: 이준우,2015-09-30T13:09:13(이준우,2015-09-30T13:09:13) */
+SELECT  COUNT(*) AS CNT
+  FROM  TB_EP_CST_CONSULT_MGMT
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND  DEL_YN = 'N']]>
+	</select>
+	<select id="SPrchsMgmtCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE001.SPrchsMgmtCnt 매입관리카운트 */
+/* IO: 이준우,2015-09-30T13:17:19(이준우,2015-09-30T13:15:09) */
+SELECT  COUNT(*) AS CNT
+  FROM  TB_EP_CST_PRCHS_MGMT
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND  DEL_YN = 'N']]>
+	</select>
+	<update id="UConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE001.UConsultMgmt 상담관리수정 */
+/* IO: 이준우,2015-10-01T17:39:36(이준우,2015-09-30T13:19:22) */
+UPDATE  TB_EP_CST_CONSULT_MGMT
+   SET  EQP_MDL_CD           =  #EQP_MDL_CD#
+       ,EQP_SER_NO           =  #EQP_SER_NO#
+       ,CNSL_DT              =  #CNSL_DT#
+       ,EQP_COLOR_CD         =  #COLOR#
+       ,ONING_DT             =  #ONING_DT#
+       ,EQP_ST               =  #EQP_ST#
+       ,USE_PRD_DDCT_AMT     =  #USE_PRD_DDCT_AMT#
+       ,INR_CORR_YN          =  #INR_CORR_YN#
+       ,PWR_SYS              =  #PWR_SYS#
+       ,CALL_QULT_TEST       =  #CALL_QULT_TEST#
+       ,DATA_PRFM            =  #DATA_PRFM#
+       ,SCRN_TEST            =  #SCRN_TEST#
+       ,FUNC_TEST            =  #FUNC_TEST#
+       ,LOSS_EQP_YN          =  #LOSS_EQP_YN#
+       ,RWD_RTN_OBJ_YN       =  #RWD_RTN_OBJ_YN#
+       ,RENTP_YN             =  #RENTP_YN#
+       ,WET_YN               =  #WET_YN#
+       ,USIM_EQPCHG_YN       =  #USIM_EQPCHG_YN#
+       ,OTHRCO_FORGN_EQP_YN  =  #OTHRCO_FORGN_EQP_YN#
+       ,SUGG                 =  #SUGG#
+       ,EVALCNSLR_AUTCT_YN   =  #EVALCNSLR_AUTCT_YN#
+       ,FULLSET_YN           =  #FULLSET_YN#
+       ,CNSL_AMT             =  #CNSL_AMT#
+       ,DPSTR                =  #DPSTR#
+       ,BANK_CD              =  #BANK_CD#
+       ,ACCO_NO              =  #ACCO_NO#
+       ,TEL_NO               =  #TEL_NO#
+       ,ZIPCD_1              =  #ZIPCD_1#
+       ,ZIPCD_2              =  #ZIPCD_2#
+       ,ADDR                 =  #ADDR#
+       ,ETC_ADDR             =  #ETC_ADDR#
+       ,MOV_YN               =  'Y'
+       ,DEL_YN               =  #DEL_YN#
+       ,UPDATE_COUNT         =  #UPDATE_COUNT# + 1
+       ,LS_CHG_DTM           =  SYSDATE
+       ,LS_CHG_USER_ID       =  'BAT'
+       ,FEE_DEDC_PROC_YN     =  DECODE(#FEE_DEDC_PROC_YN#,'Y','1','0')
+       ,SVC_NO               =  #SVC_NO#
+       ,SVC_MGMT_NO          =  #SVC_MGMT_NO#
+       ,IMEI                 =  #IMEI#
+       ,ETC_CMPT             =  #ETC_CMPT#
+       ,POLY_OBJ_YN          =  DECODE(#POLY_OBJ_YN#,'Y','1','N','0',#POLY_OBJ_YN#)
+       ,POLY_OBJ_CD          =  #POLY_OBJ_CD#
+       ,UKEY_XCL_DEALCO_ORG_ID   =  #UKEY_XCL_DEALCO_ORG_ID#
+       ,UKEY_XCL_DEALCO_ORG_ID_2 =  #UKEY_XCL_DEALCO_ORG_ID_2#
+       ,RETUR_SUGG           =  'update'
+       ,PRE_DC_CL            =  #PRE_DC_CL#
+       ,STRD_INCEN           =  #STRD_INCEN#
+       ,STRD_INCEN_SCOP_AMT  =  #STRD_INCEN_SCOP_AMT#
+       ,FST_RGSTR            =  #FST_RGSTR#
+       ,ASIANA_CARD_NO       =  #ASIANA_CARD_NO#
+       ,SCRB_MTHD            =  #SCRB_MTHD#
+       ,PMTH_USE_EQIP_YN     =  #PMTH_USE_EQIP_YN#
+ WHERE  CNSL_MGMT_NO          =  #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UIfConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE001.UIfConsultMgmt IF상담관리수정 */
+/* IO: 이준우,2015-10-01T20:26:31(이준우,2015-09-30T13:24:28) */
+UPDATE  TF_CNRL_MGMT_GNRL
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) Y,N*/
+       ,UKEYCHG_DTM  = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_PROC_DT   = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ    = #IF_SEQ#]]>
+	</update>
+	<select id="SDealcoMgmt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE001.SDealcoMgmt 거래처카운트 */
+/* IO: 이준우,2015-09-30T13:26:32(이준우,2015-09-30T13:26:32) */
+SELECT  COUNT(DEALCO_CD) AS CNT
+  FROM  TB_DEALCO
+ WHERE  UKEY_AGN_CD = SUBSTR(#CNSL_DEALCO_CD#,0,6)
+   AND  UKEY_SUB_CD = SUBSTR(#CNSL_DEALCO_CD#,7,4)
+   AND  EFF_END_DT = '99991231'
+   AND  DEL_YN = 'N']]>
+	</select>
+</sqlMap>

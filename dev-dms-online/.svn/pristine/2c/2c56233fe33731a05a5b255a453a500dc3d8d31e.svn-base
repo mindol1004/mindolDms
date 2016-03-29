@@ -1,0 +1,807 @@
+package dms.ep.epscsbase.biz;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]재감정품질검사대상조회목록</li>
+ * <li>설  명 : <pre>재감정품질검사대상조회목록</pre></li>
+ * <li>작성일 : 2015-08-28 15:49:14</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class FEPRJdgQltyJdgMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPRJdgQltyJdgMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]재감정품질검사대상조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-28 15:49:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회검수시작일자]
+	 *	- field : IN_TO_DT [조회검수종료일자]
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR_ENPT [예금주(고객명)]
+	 *	- field : CNSL_MGMT_NO [접수관리번호]
+	 *	- field : BOX_NO [BOX_NO]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : QLTY_JDG_OBJ_LIST
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호(접수 관리 번호)]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : AFFIL_ORG_ID [소속 조직 ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주(고객명)]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : CUST_IDEA [고객의사]
+	 *		- field : AFFIL_AGN [소속대리점]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : EQP_ST [단말기 상태(등급)]
+	 *		- field : SKN_EQP_ST [SKN단말기상태]
+	 *		- field : SKN_JDG_CL [SKN감정구분]
+	 *		- field : SKN_JDG_AMT [SKN감정금액]
+	 *		- field : SKN_SMPL_JDG_DAMT [SKN샘플강정차액]
+	 *		- field : SKN_PROC_YN [SKN처리유무]
+	 *		- field : SKN_PROC_DT [SKN처리일자]
+	 *		- field : CHECK_USER_NM [검수자]
+	 *		- field : SKN_DTL_SUGG [SKN상세의견]
+	 *		- field : AGN_DDCT_YN [대리점차감여부]
+	 *		- field : BOX_NO [BOX_NO]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : DIS_YN [구성품확인여부]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : CHECKED [CHECKED]
+	 *		- field : ACCO_NO_ENPT [계좌번호_암호화]
+	 *		- field : DPSTR_ENPT [예금주(고객명)_암호화]
+	 *		- field : TEL_NO_ENPT [연락처_암호화]
+	 *	- record : QLTY_JDG_OBJ_DTL_LIST
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_CL [상품 구분]
+	 *		- field : IN_QTY [입고 수량]
+	 *		- field : IN_AMT [입고 금액]
+	 * </pre>
+	 */
+	public IDataSet fInqRJdgQltyJdgObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet responseObjData = new DataSet();
+        IDataSet responseDtlData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        IRecordSet rsList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPRJdgQltyJdgMgmt dEPRJdgQltyJdgMgmt = (DEPRJdgQltyJdgMgmt) lookupDataUnit(DEPRJdgQltyJdgMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgObjListTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseObjData = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgObjListPaging(reqDs, onlineCtx);
+
+            rsList = responseObjData.getRecordSet("QLTY_JDG_OBJ_LIST");
+            if(intTotalCnt > 0){
+                // 4. 상세LISTDM호출
+                responseDtlData = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgObjDtlList(requestData, onlineCtx);
+                if(responseDtlData != null && 
+                    responseDtlData.getRecordSetCount() > 0 && responseDtlData.getRecordSet("QLTY_JDG_OBJ_DTL_LIST") != null){
+                    IRecordSet rsTemp = responseDtlData.getRecordSet("QLTY_JDG_OBJ_DTL_LIST");
+                    for(int i = rsTemp.getRecordCount()-1; i >= 0 ; i--){
+                        for(int j = 0; j < rsList.getRecordCount(); j++){
+                            if(rsList.get(j, "PRCH_MGMT_NO").equals(rsTemp.get(i, "PRCH_MGMT_NO"))){
+                                break;
+                            }else if(j == (rsList.getRecordCount() - 1)){
+                                rsTemp.removeRecord(i);
+                            }
+                        }
+                    }
+                    if(rsTemp != null && rsTemp.getRecordCount() > 0){
+                        responseData.putRecordSet("QLTY_JDG_OBJ_DTL_LIST", rsTemp);
+                    }
+                }
+                responseData.putRecordSet("QLTY_JDG_OBJ_LIST", rsList);
+            }
+            else{
+                responseData.putRecordSet("QLTY_JDG_OBJ_LIST", responseObjData.getRecordSet("QLTY_JDG_OBJ_LIST"));
+            }
+            rsPagingList = responseData.getRecordSet("QLTY_JDG_OBJ_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]재감정품질검사확인조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-28 15:49:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [조회검수시작일자]
+	 *	- field : IN_TO_DT [조회검수종료일자]
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DPSTR_ENPT [예금주(고객명)]
+	 *	- field : CNSL_MGMT_NO [접수관리번호]
+	 *	- field : BOX_NO [BOX_NO]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : QLTY_JDG_REG_LIST
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호(접수 관리 번호)]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : AFFIL_ORG_ID [소속 조직 ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주(고객명)]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : CUST_IDEA [고객의사]
+	 *		- field : AFFIL_AGN [소속대리점]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : EQP_ST [단말기 상태(등급)]
+	 *		- field : SKN_EQP_ST [SKN단말기상태]
+	 *		- field : SKN_JDG_CL [SKN감정구분]
+	 *		- field : SKN_JDG_AMT [SKN감정금액]
+	 *		- field : SKN_SMPL_JDG_DAMT [SKN샘플강정차액]
+	 *		- field : SKN_PROC_YN [SKN처리유무]
+	 *		- field : SKN_PROC_DT [SKN처리일자]
+	 *		- field : CHECK_USER_NM [검수자]
+	 *		- field : SKN_DTL_SUGG [SKN상세의견]
+	 *		- field : AGN_DDCT_YN [대리점차감여부]
+	 *		- field : BOX_NO [BOX_NO]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : DIS_YN [구성품확인여부]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : CHECKED [CHECKED]
+	 *		- field : ACCO_NO_ENPT [계좌번호_암호화]
+	 *		- field : DPSTR_ENPT [예금주(고객명)_암호화]
+	 *		- field : TEL_NO_ENPT [연락처_암호화]
+	 *	- record : QLTY_JDG_REG_DTL_LIST
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_CL [상품 구분]
+	 *		- field : IN_QTY [입고 수량]
+	 *		- field : IN_AMT [입고 금액]
+	 * </pre>
+	 */
+	public IDataSet fInqRJdgQltyJdgRegList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet responseRegData = new DataSet();
+        IDataSet responseDtlData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        IRecordSet rsList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPRJdgQltyJdgMgmt dEPRJdgQltyJdgMgmt = (DEPRJdgQltyJdgMgmt) lookupDataUnit(DEPRJdgQltyJdgMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgRegListTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseRegData = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgRegListPaging(reqDs, onlineCtx);
+
+            rsList = responseRegData.getRecordSet("QLTY_JDG_REG_LIST");
+            if(intTotalCnt > 0){
+                // 4. 상세LISTDM호출
+                responseDtlData = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgRegDtlList(requestData, onlineCtx);
+                if(responseDtlData != null && 
+                    responseDtlData.getRecordSetCount() > 0 && responseDtlData.getRecordSet("QLTY_JDG_REG_DTL_LIST") != null){
+                    IRecordSet rsTemp = responseDtlData.getRecordSet("QLTY_JDG_REG_DTL_LIST");
+                    for(int i = rsTemp.getRecordCount()-1; i >= 0 ; i--){
+                        for(int j = 0; j < rsList.getRecordCount(); j++){
+                            if(rsList.get(j, "PRCH_MGMT_NO").equals(rsTemp.get(i, "PRCH_MGMT_NO"))){
+                                break;
+                            }else if(j == (rsList.getRecordCount() - 1)){
+                                rsTemp.removeRecord(i);
+                            }
+                        }
+                    }
+                    if(rsTemp != null && rsTemp.getRecordCount() > 0){
+                        responseData.putRecordSet("QLTY_JDG_REG_DTL_LIST", rsTemp);
+                    }
+                }
+                responseData.putRecordSet("QLTY_JDG_REG_LIST", rsList);
+            }
+            else{
+                responseData.putRecordSet("QLTY_JDG_REG_LIST", responseRegData.getRecordSet("QLTY_JDG_REG_LIST"));
+            }
+            rsPagingList = responseData.getRecordSet("QLTY_JDG_REG_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>재감정품질검사대상검수확인수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-28 15:49:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : QLTY_JDG_OBJ_LIST
+	 *		- field : PRCH_MGMT_NO [매입 관리 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호(접수 관리 번호)]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : AFFIL_ORG_ID [소속 조직 ID]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_CD [대리점 조직 코드]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : BANK_CD [은행코드]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주(고객명)]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : CUST_IDEA [고객의사]
+	 *		- field : AFFIL_AGN [소속대리점]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : EQP_ST [단말기 상태(등급)]
+	 *		- field : SKN_EQP_ST [SKN단말기상태]
+	 *		- field : SKN_JDG_CL [SKN감정구분]
+	 *		- field : SKN_JDG_AMT [SKN감정금액]
+	 *		- field : SKN_SMPL_JDG_DAMT [SKN샘플강정차액]
+	 *		- field : SKN_PROC_YN [SKN처리유무]
+	 *		- field : SKN_PROC_DT [SKN처리일자]
+	 *		- field : CHECK_USER_NM [검수자]
+	 *		- field : SKN_DTL_SUGG [SKN상세의견]
+	 *		- field : AGN_DDCT_YN [대리점차감여부]
+	 *		- field : BOX_NO [BOX_NO]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : DIS_YN [구성품확인여부]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : CHECKED [CHECKED]
+	 *	- record : QLTY_JDG_OBJ_DTL_LIST
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_CL [상품 구분]
+	 *		- field : IN_QTY [입고 수량]
+	 *		- field : IN_AMT [입고 금액]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fURJdgQltyJdgRegUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqData = new DataSet();
+        reqData.putFieldMap(requestData.getFieldMap());
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        IRecordSet rsList = requestData.getRecordSet("QLTY_JDG_OBJ_LIST");
+        IRecordSet rsDtlList = null;
+        IRecordSet rsMasterList = null;
+        IRecordSet rsEqpSerNoList = null;
+        IRecordSet rsConsultList = null;
+        
+        String sDate = DateUtils.getCurrentDate();
+        
+        try {
+            // 1. DU lookup
+            DEPRJdgQltyJdgMgmt dEPRJdgQltyJdgMgmt = (DEPRJdgQltyJdgMgmt) lookupDataUnit(DEPRJdgQltyJdgMgmt.class);
+            FEPEpEqpDisMgmt fEPEpEqpDisMgmt = (FEPEpEqpDisMgmt) lookupFunctionUnit(FEPEpEqpDisMgmt.class);
+
+            if(requestData != null && requestData.getRecordSetCount() > 0){
+                if(requestData.getRecordSet("QLTY_JDG_OBJ_LIST") != null){
+                    rsDtlList = requestData.getRecordSet("QLTY_JDG_OBJ_DTL_LIST");
+                    IRecord rMaster = null;
+                    IRecord rEqp = null;
+                    IRecord rCon = null;
+                    for(int  i = 0; i < rsList.getRecordCount(); i++){
+                        if("1".equals(rsList.get(i, "CHECKED"))){
+                            rsMasterList = new RecordSet("QLTY_JDG_MASTER", new String[]{"IN_SCHD_DT","AFFIL_ORG_ID","PRCHCO_ID","IN_CL","IN_CONF_QTY","PRCH_MGMT_NO"});
+                            rMaster = rsMasterList.newRecord();
+                            rMaster.set("IN_SCHD_DT", sDate);
+                            rMaster.set("AFFIL_ORG_ID", rsList.get(i, "AFFIL_ORG_ID").toString());
+                            rMaster.set("PRCHCO_ID", rsList.get(i, "CNSL_DEALCO_CD").toString());
+                            rMaster.set("IN_CL", "114");
+                            rMaster.set("IN_CONF_QTY", "1");
+                            rMaster.set("PRCH_MGMT_NO", rsList.get(i, "PRCH_MGMT_NO"));
+                            
+                            rsEqpSerNoList = new RecordSet("QLTY_JDG_EQP", new String[]{"EQP_SER_NO","EQP_COLOR_CD","EQP_MDL_CD","PROD_CL","IN_QTY","IN_AMT","EQP_ST","PRCH_MGMT_NO","CNSL_MGMT_NO","CNSL_DT","NC_REC_STATUS"});
+                            rsConsultList = new RecordSet("QLTY_JDG_CONSULT", new String[]{"EQP_SER_NO","EQP_COLOR_CD","EQP_MDL_CD","PROD_CL","IN_QTY","IN_AMT","EQP_ST","PRCH_MGMT_NO","CNSL_MGMT_NO","CNSL_DT","NC_REC_STATUS"});
+                            rEqp = rsEqpSerNoList.newRecord();
+                            rEqp.set("EQP_SER_NO", rsList.get(i, "EQP_SER_NO").toString());
+                            rEqp.set("EQP_COLOR_CD", rsList.get(i, "EQP_COLOR_CD").toString());
+                            rEqp.set("EQP_MDL_CD", rsList.get(i, "EQP_MDL_CD").toString());
+                            rEqp.set("PROD_CL", "1");
+                            rEqp.set("IN_QTY", "1");
+                            if("11050".equals(rsList.get(i, "CNSL_DEALCO_CD"))){
+                                rEqp.set("IN_AMT", rsList.get(i, "SKN_JDG_AMT").toString());
+                            }else{
+                                rEqp.set("IN_AMT", rsList.get(i, "PRCH_AMT").toString());
+                            }
+                            rEqp.set("EQP_ST", rsList.get(i, "EQP_ST").toString());
+                            rEqp.set("PRCH_MGMT_NO", rsList.get(i, "PRCH_MGMT_NO").toString());
+                            rEqp.set("CNSL_MGMT_NO", rsList.get(i, "CNSL_MGMT_NO").toString());
+                            rEqp.set("CNSL_DT", rsList.get(i, "CNSL_DT").toString());
+                            rEqp.set("NC_REC_STATUS", "insert");
+                            
+                            rCon = rsConsultList.newRecord();
+                            rCon = rEqp;
+                            rsConsultList.setRecord(0, rCon);
+                            
+                            requestData.putRecordSet("QLTY_JDG_CONSULT", rsConsultList);
+                            
+                            for(int j = 0; j < rsDtlList.getRecordCount(); j++){
+                                if(rsList.get(i, "PRCH_MGMT_NO").equals(rsDtlList.get(j, "PRCH_MGMT_NO").toString())){
+                                    rsEqpSerNoList.addRecord(rsDtlList.getRecord(j));
+                                }
+                            }
+                            
+                            requestData.putRecordSet("QLTY_JDG_MASTER", rsMasterList);
+                            requestData.putRecordSet("QLTY_JDG_EQP", rsEqpSerNoList);
+                            requestData.putRecordSet("SEND_AMT_MASTER", rsMasterList);
+                            requestData.putRecordSet("SEND_AMT_EQP", rsEqpSerNoList);
+                            
+                            reqData = new DataSet();
+                            reqData.putFieldMap(rsList.getRecordMap(i));
+                            reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                            //SKN처리여부
+                            dEPRJdgQltyJdgMgmt.dURJdgQltyJdgRegUpd(reqData, onlineCtx);
+                            
+                            if("N".equals(rsList.get(i,"SKN_PROC_YN").toString())){
+                                //입고처리
+                                this.fIRJdgQltyJdgInProc(requestData, onlineCtx);
+                                //구성품출고,상품입고처리
+                                fEPEpEqpDisMgmt.fIEpEqpCmptDisProc(requestData, onlineCtx);
+                            }
+                            else {
+                                //구성품출고취소,상품입고취소
+                                fEPEpEqpDisMgmt.fIEpEqpCmptDisCnclProc(requestData, onlineCtx);
+                                //입고취소처리
+                                this.fURJdgQltyJdgCnclProc(requestData, onlineCtx);
+                            }
+                            
+                        }
+                    }
+                }
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]재감정품질검사대상입고처리</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-09-08 10:37:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fIRJdgQltyJdgInProc(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet resData = new DataSet();
+        IDataSet reqData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+
+        reqData.putFieldMap(requestData.getFieldMap());
+        CommonArea ca = getCommonArea(onlineCtx);
+    
+        String sInMgmtNo = ""; //입고관리번호
+        String sPrchsMgmtNo = "";
+        String sInSeq = ""; // 입고순번
+        
+        int iCount = 0;
+
+        //QLTY_JDG_OBJ_LIST
+        //QLTY_JDG_OBJ_DTL_LIST
+        //QLTY_JDG_MASTER
+        //QLTY_JDG_EQP
+        //QLTY_JDG_CONSULT
+        
+        // 발주,매입에 대한 입고 처리
+        // 1. 입고관리번호 생성
+        // 2. 입고  처리 (입고 상태를 입고확정으로 처리함)
+        // 2-1. 입고 tabel insert
+        // 2-2. 입고상세 tabel insert
+        // 2-3. 입고구성품 tabel insert
+        // 3. 재고  처리
+        // 3-1. 재고 tabel insert
+        // 3-2. 재고금액 tabel insert
+        // 3-3. 재고입출고이력 tabel insert
+        // 3-4. 재고이력 tabel insert
+        // 3-5. 기타재고 tabel insert
+        // 3-6. 기타재고입출고이력 tabel insert
+        // 3-7. 기타재고이력 tabel insert
+
+        try {
+            // 1. DU lookup
+            DEPRJdgQltyJdgMgmt dEPRJdgQltyJdgMgmt = (DEPRJdgQltyJdgMgmt) lookupDataUnit(DEPRJdgQltyJdgMgmt.class);
+            // 입고 MASTER. 
+            IRecordSet rsInMst = requestData.getRecordSet("QLTY_JDG_MASTER");
+    
+            // 입고  상품 리스트. 
+            IRecordSet rsProdList = requestData.getRecordSet("QLTY_JDG_EQP");
+            reqData.putFieldMap(rsProdList.getRecordMap(0));
+            
+            // 1. 입고관리번호 생성
+            // 신규인 경우에 입고관리번호를 생성한다.
+            // 매입재고확인
+            dsCnt = dEPRJdgQltyJdgMgmt.dSRJdgQJdgInqEqpDisList(reqData, onlineCtx);
+            int intDisCnt = Integer.parseInt(dsCnt.getField("DIS_CNT"));
+            if(intDisCnt > 0){
+                throw new BizRuntimeException("DMS00110");  //구성품이 매입 되어있는 상품입니다. 확인 하시기 바랍니다.
+            }
+            // 상품재고확인
+            dsCnt = dEPRJdgQltyJdgMgmt.dSRJdgQJdgInqEqpProdDisList(reqData, onlineCtx);
+            intDisCnt = Integer.parseInt(dsCnt.getField("PROD_DIS_CNT"));
+            if(intDisCnt > 0){
+                throw new BizRuntimeException("DMS00003");  //중복 된 데이터가 존재합니다.
+            }
+
+            // 입고예정등록 확인
+            reqData.putFieldMap(rsInMst.getRecordMap(0));
+            dsCnt = dEPRJdgQltyJdgMgmt.dSRJdgQJdgInqEqpInOrdListCnt(reqData, onlineCtx);
+            intDisCnt = Integer.parseInt(dsCnt.getField("ORD_CNT"));
+            if(intDisCnt > 0){
+                throw new BizRuntimeException("DMS00003");  //중복 된 데이터가 존재합니다.
+            }
+            
+            // 입고관리번호 얻기.
+            resData = dEPRJdgQltyJdgMgmt.dSInqDisInMgmtNo(reqData, onlineCtx);
+            sInMgmtNo = resData.getField("IN_MGMT_NO").toString();
+            
+            if(rsProdList != null){
+                String sProcFlag = null;
+                String sInCd = "100"; // 입고구분
+                String sInDtlCd = ""; // 입고상세구분
+                String sDisSt = "01"; // 재고상태 : 01 가용, 02 비가용
+                String sInSt = "03"; // 입고상태 : 01 미입고, 02 부분입고, 03 입고완료
+                String sCurrDt = DateUtils.getCurrentDate(); // 현재일자
+                String sInPlcId = ""; // 입고처
+
+                sInCd = rsInMst.getRecordMap(0).get("IN_CL").toString();
+                if("114".equals(sInCd)){
+                    //sInCd = "100";
+                    sInDtlCd = "114"; //매입입고
+
+                    sPrchsMgmtNo = requestData.getField("PRCH_MGMT_NO") == null ? rsInMst.getRecordMap(0).get("PRCH_MGMT_NO").toString() : requestData.getField("PRCH_MGMT_NO");
+                }else{
+                    //sInCd = "100";
+                    sInDtlCd = "101"; //구매입고
+                }
+                sInCd = "100";
+                
+                //입고처 
+                sInPlcId = (String) rsInMst.getRecordMap(0).get("CNSL_DEALCO_CD");
+                if(sInPlcId == null || "".equals(sInPlcId)){
+                    sInPlcId = "11010"; // 본사창고..
+                }
+
+                // 2. 입고  처리 (입고상태를 입고완료로 처리함)
+                // 2-1. 입고 tabel insert
+                reqData = new DataSet();
+                reqData.putFieldMap(rsInMst.getRecordMap(0));
+                reqData.putField("IN_MGMT_NO", sInMgmtNo); //입고관리번호 셋팅           
+                reqData.putField("IN_CL", sInDtlCd); //입고구분  
+                reqData.putField("IN_CONF_DT", sCurrDt); //입고확정일자 
+                reqData.putField("IN_ST", sInSt); //입고상태 
+                reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                
+                dEPRJdgQltyJdgMgmt.dIRjdgQltyJdgInRgst(reqData, onlineCtx);
+                // **** 입고마스터 생성완료
+                
+                if ("114".equals(sInDtlCd)) {
+                    // 매입입고
+                    iCount = 1;
+                } else {
+                    //구매입고
+                    iCount = rsProdList.getRecordCount();
+                }
+                
+                // 2-2. 입고상세 tabel insert
+                for (int i = 0; i < iCount; i++) {
+                    IDataSet reqProdData = new DataSet();
+                    reqProdData.putFieldMap(rsProdList.getRecordMap(i));
+                    
+                    reqData = new DataSet();
+                    reqData.putFieldMap(rsInMst.getRecordMap(0));
+                    reqData.putFieldMap(rsProdList.getRecordMap(i));
+                    
+                    // 입고순번 얻기
+                    resData = dEPRJdgQltyJdgMgmt.dSInqDisInDtlSeq(reqData, onlineCtx);
+                    sInSeq = resData.getField("IN_SEQ").toString();
+                    
+                    reqData.putField("IN_SEQ",sInSeq);  // 기타재고순번  셋팅.
+                    reqData.putField("IN_MGMT_NO",sInMgmtNo);
+                    reqData.putField("PRCH_MGMT_NO",sPrchsMgmtNo);
+                    BigDecimal nQtyTemp = new BigDecimal(0);
+                    nQtyTemp = new BigDecimal(reqProdData.getLongField("IN_QTY"));
+                    reqData.putField("IN_QTY",nQtyTemp);  //입고확정수량    
+                    reqData.putField("IN_CONF_DT",sCurrDt);  //입고확정일자   
+                    reqData.putField("IN_CONF_YN","Y");  //입고확정여부
+                    nQtyTemp = new BigDecimal(reqProdData.getLongField("IN_QTY"));
+                    reqData.putField("IN_CONF_QTY",nQtyTemp);
+                    nQtyTemp = new BigDecimal(reqProdData.getLongField("IN_AMT"));
+                    reqData.putField("IN_AMT",nQtyTemp);  //입고금
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    //입고상세 생성
+                    dEPRJdgQltyJdgMgmt.dIRjdgQltyJdgInDtlRgst(reqData, onlineCtx);
+                    // **** 입고상세 생성완료
+                    
+                    // 2-3. 입고구성품 tabel insert
+                    // 매입일경우만 구성품을 생성시켜줌
+                    if ("114".equals(sInDtlCd)) {
+                        dEPRJdgQltyJdgMgmt.dIRjdgQltyJdgInCpntRgst(reqData, onlineCtx);
+                    }
+                    // 입고구성품 생성완료
+
+                    // 3. 재고  처리
+                    // 3-1. 재고 tabel insert
+                    reqData = new DataSet();
+                    reqData.putFieldMap(rsInMst.getRecordMap(0));
+                    reqData.putFieldMap(rsProdList.getRecordMap(i));
+                    reqData.putField("IN_MGMT_NO",sInMgmtNo);
+                    nQtyTemp = new BigDecimal(0);
+                    nQtyTemp = new BigDecimal(reqProdData.getLongField("IN_QTY"));
+                    reqData.putField("IN_QTY",nQtyTemp);  //입고확정수량    
+                    reqData.putField("IN_CONF_DT",sCurrDt);  //입고확정일자   
+                    reqData.putField("IN_CONF_YN","Y");  //입고확정여부
+                    nQtyTemp = new BigDecimal(reqProdData.getLongField("IN_QTY"));
+                    reqData.putField("IN_CONF_QTY",nQtyTemp);
+                    nQtyTemp = new BigDecimal(reqProdData.getLongField("IN_AMT"));
+                    reqData.putField("IN_AMT",nQtyTemp);  //입고금
+                    reqData.putField("FS_REG_USER_ID", ca.getUserNo());
+                    reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    
+                    reqData.putField("HLD_DEALCO_ID", sInPlcId); //입고처 -> 보유처  
+                    reqData.putField("INVE_ST", sDisSt); //재고상태  
+                    //reqData.putField("EQP_ST", mProdData.get("eqp_st")); //단말기상태
+                    reqData.putField("LAST_IN_OUT_DT", sCurrDt); //최종입출고일자
+                    reqData.putField("IN_OUT_CL", sInCd); //최종입출고구분 
+                    reqData.putField("IN_OUT_DTL_CL", sInDtlCd); //최종일출고상세구분    
+                    reqData.putField("FST_IN_CONF_DT", sCurrDt); //최초 입고확정일자
+                    //reqData.putField("FST_IN_DEALCO_ID", rsInMst.getRecordMap(0).get("")); //최초입고처 
+                    reqData.putField("FST_IN_DEALCO_ID","");
+                    reqData.putField("PRCHCO_ID", rsInMst.getRecordMap(0).get("PRCHCO_ID")); //최초매입처  
+                    reqData.putField("LAST_MOV_IN_DT", sCurrDt); //마지막이동입고일자
+                    reqData.putField("USED_CL", "1"); //중고구분 
+                    reqData.putField("INVE_AMT", rsProdList.getRecordMap(i).get("IN_AMT")); //재고금액
+                    
+                    nQtyTemp = new BigDecimal(reqProdData.getLongField("IN_QTY"));
+                    reqData.putField("QTY",nQtyTemp);  //입고수량 ->수량
+                    reqData.putField("UPRC", rsProdList.getRecordMap(i).get("IN_AMT")); //입고단가 ->금액
+                    reqData.putField("AMT", rsProdList.getRecordMap(i).get("IN_AMT")); //입고단가 ->금액
+                    
+                    if("1".equals(rsProdList.getRecordMap(i).get("PROD_CL").toString())){
+                        // 단말기 재고 추가(매입 단말기)
+                        dEPRJdgQltyJdgMgmt.dIRJdgQltyJdgEqpDisRgst(reqData, onlineCtx);
+                        // 단말기 재고 금액 추가
+                        reqData.putField("OCCR_CL", "01"); //발생구분
+                        reqData.putField("OCCR_DT", sCurrDt); //발생일자
+                        dEPRJdgQltyJdgMgmt.dIRjdgQltyJdgDisAmtRgst(reqData, onlineCtx);
+                        
+                        // 단말기 재고 입출고 이력
+                        reqData.putField("IN_MGMT_NO", sInMgmtNo); //입고관리번호
+                        reqData.putField("IN_SEQ", sInSeq); //입고관리순번
+                        reqData.putField("OUT_MGMT_NO", ""); //출고관리번호
+                        reqData.putField("OUT_SEQ", ""); //출고관리순번
+                        reqData.putField("IN_OUT_DT", sCurrDt); //입출고일자
+                        reqData.putField("IN_OUT_CL", sInCd); //입출고구분
+                        reqData.putField("IN_OUT_DTL_CL", sInDtlCd); //입출고상세구분
+                        reqData.putField("PRCH_DEALCO_ID", rsInMst.getRecordMap(0).get("PRCHCO_ID")); // 매입처
+                        reqData.putField("OUT_DEALCO_ID", rsInMst.getRecordMap(0).get("PRCHCO_ID")); //출고처
+                        reqData.putField("IN_DEALCO_ID", rsInMst.getRecordMap(0).get("IN_DEALCO_ID")); //입고처
+                        
+                        dEPRJdgQltyJdgMgmt.dIRJdgQltyJdgDisInoutHstRgst(reqData, onlineCtx);
+                        
+                        // 단말기 재고 이력
+                        //시퀀스추가필요
+                        reqData.putField("INOUT_MGMT_NO", sInMgmtNo); //입출고관리번호
+                        
+                        dEPRJdgQltyJdgMgmt.dIRJdgQltyJdgDisHstRgst(reqData, onlineCtx);
+
+                    }
+                }
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+
+        return responseData;
+    }
+
+    /**
+	 * <pre>재감정품질검사대상입고취소처리</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-28 15:49:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fURJdgQltyJdgCnclProc(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet resData = new DataSet();
+        IDataSet reqData = new DataSet();
+        
+        IRecordSet rsList = null;
+        
+        CommonArea ca = getCommonArea(onlineCtx);
+    
+        // 매입에 대한 입고 취소 처리
+        // 1. 입고  취소 처리 ( 판매관리번호로 입고정보 조회) 
+        // 1-1. 입고          tabel delete
+        // 1-2. 입고상세    tabel delete
+        // 1-3. 입고구성품 tabel delete
+        // 2. 재고  취소 처리
+        // 2-1. 재고                 tabel delete
+        // 2-2. 재고금액           tabel delete
+        // 2-3. 재고입출고이력 tabel delete
+        // 2-4. 재고이력           tabel delete
+    
+        String sInMgmtNo    = "";  // 입고관리번호
+        String sPrchsMgmtNo = "";  // 매입관리번호
+        String sInoutCl     = "";  // 입출고구분
+
+        try {
+            IRecordSet rsInMst = requestData.getRecordSet("QLTY_JDG_CONSULT");
+            reqData.putFieldMap(rsInMst.getRecordMap(0));
+            sPrchsMgmtNo = reqData.getField("PRCH_MGMT_NO");        
+            
+            if (sPrchsMgmtNo == null || "".equals(sPrchsMgmtNo)) {
+                throw new BizRuntimeException("DMS00112"); //입고취소 처리중 판매관리번호 에러가 발생하였습니다. 담당자에게 문의하세요
+            }
+            
+            // 1. DU lookup
+            DEPRJdgQltyJdgMgmt dEPRJdgQltyJdgMgmt = (DEPRJdgQltyJdgMgmt) lookupDataUnit(DEPRJdgQltyJdgMgmt.class);
+            // 입고관리번호 조회 및 상태 check
+            resData = dEPRJdgQltyJdgMgmt.dSInqRJdgQltyJdgInInfo(reqData, onlineCtx);
+            if(resData != null && resData.getRecordSetCount() > 0){
+                rsList = resData.getRecordSet("QLTY_JDG_IN_INFO_LIST");
+                if(rsList != null && rsList.getRecordCount() > 0){
+                    sInMgmtNo = rsList.get(0, "IN_MGMT_NO");
+                }
+                else{
+                    throw new BizRuntimeException("DMS00113"); //입고정보가 없습니다. 담당자에게 문의하세요.
+                }
+            }
+            else{
+                throw new BizRuntimeException("DMS00113"); //입고정보가 없습니다. 담당자에게 문의하세요.
+            }
+            
+            if(sInMgmtNo == null || "".equals(sInMgmtNo)){
+                throw new BizRuntimeException("DMS00113"); //입고정보가 없습니다. 담당자에게 문의하세요.
+            }
+            
+            // 입출고구분 check
+            sInoutCl = rsList.get(0, "IN_OUT_CL");
+            if(sInoutCl == null || "".equals(sInoutCl)){
+                throw new BizRuntimeException("DMS00114");  //입출고상태 정보가 없습니다. 담당자에게 문의하세요.
+            }else if("3".equals(sInoutCl.substring(1, 1))){
+                throw new BizRuntimeException("DMS00115");  //매입 단말기가 출고되어 처리할수 없습니다. 담당자에게 문의하세요.
+            }
+            
+            // 1. 입고  취소 처리 ( 판매관리번호로 입고정보 조회) 
+            // 1-1. 입고          tabel delete
+            // 1-2. 입고상세    tabel delete
+            // 1-3. 입고구성품 tabel delete
+            reqData.putFieldMap(rsList.getRecordMap(0));
+            reqData.putField("LS_CHG_USER_ID", ca.getUserNo());
+            //reqData.putField("IN_MGMT_NO", sInMgmtNo);
+            //reqData.putField("IN_SEQ", rsList.get(0, "IN_SEQ"));
+            
+            dEPRJdgQltyJdgMgmt.dDRJdgQltyJdgInDel(reqData, onlineCtx);
+            
+            dEPRJdgQltyJdgMgmt.dDRJdgQltyJdgInDtlDel(reqData, onlineCtx);
+            
+            dEPRJdgQltyJdgMgmt.dDRJdgQltyJdgInCpntDel(reqData, onlineCtx);
+            
+            // 2. 재고  취소 처리
+            // 2-1. 재고                 tabel delete
+            // 2-2. 재고금액           tabel delete
+            // 2-3. 재고입출고이력 tabel delete
+            // 2-4. 재고이력           tabel delete
+            
+            dEPRJdgQltyJdgMgmt.dDRJdgQltyJdgDisDel(reqData, onlineCtx);
+            
+            dEPRJdgQltyJdgMgmt.dDRJdgQltyJdgDisAmtDel(reqData, onlineCtx);
+            
+            dEPRJdgQltyJdgMgmt.dDRJdgQltyJdgDisInoutHstDel(reqData, onlineCtx);
+            
+            dEPRJdgQltyJdgMgmt.dDRJdgQltyJdgDisHstDel(reqData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        
+        return responseData;
+    }
+  
+}

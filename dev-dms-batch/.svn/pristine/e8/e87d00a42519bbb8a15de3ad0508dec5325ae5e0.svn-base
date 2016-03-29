@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.DBE006">
+	<update id="UConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE006.UConsultMgmt 상담관리수정 */
+/* IO: 이준우,2015-10-20T18:32:19(이준우,2015-09-30T13:24:28) */
+UPDATE  TB_EP_CST_CONSULT_MGMT
+   SET  PAY_MTHD_TRMS_YN = 'Y'
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  'CON' != SUBSTR(CNSL_MGMT_NO, 1, 3) 
+   AND  DEL_YN = 'N'
+   AND  PAY_DT is not null
+   AND  TO_CHAR(LS_CHG_DTM,'YYYYMMDD') = #IF_PROC_DT#]]>
+	</update>
+	<select id="SProcStTrms" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE006.SProcStTrms 처리상태전송정보조회 */
+/* IO: 이준우,2015-10-20T14:55:22(김윤환,2015-08-11T14:15:42) */
+SELECT CNSL_MGMT_NO 
+      ,EQP_MDL_CD 
+      ,EQP_SER_NO 
+      ,NVL(PROGR_ST,'') AS PROGR_ST
+      ,NVL(PAY_MTHD,' ') AS PAY_MTHD
+      ,NVL(PAY_DT,' ') AS PAY_DT
+      ,CNSL_AMT
+      ,NVL(EQP_ST,' ') AS EQP_ST
+      ,NVL(ADJ_AMT,0) AS ADJ_AMT   
+FROM  (
+        SELECT /* 입금*/
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,a.PROGR_ST
+               ,a.PAY_MTHD
+               ,a.PAY_DT
+               ,a.CNSL_AMT
+               ,a.EQP_ST
+               ,0 ADJ_AMT                                 
+        FROM    TB_EP_CST_CONSULT_MGMT a
+        WHERE   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3) 
+        AND     a.DEL_YN = 'N'
+        AND     a.PAY_DT is not null
+        AND     TO_CHAR(LS_CHG_DTM,'YYYYMMDD') = #IF_PROC_DT#
+        and     a.PAY_MTHD_TRMS_YN IS null
+        AND     a.PAY_MTHD = '01'
+        UNION ALL  
+        SELECT /* 입고*/
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,a.PROGR_ST
+               ,a.PAY_MTHD
+               ,a.PAY_DT
+               ,a.CNSL_AMT
+               ,a.EQP_ST
+               ,0 ADJ_AMT                                 
+        FROM    TB_EP_CST_CONSULT_MGMT a
+        WHERE   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3) 
+        AND     a.DEL_YN = 'N'
+        AND     a.PROGR_ST in ('11','12')
+        AND     a.IN_CONF_DT = #IF_PROC_DT#
+        UNION ALL                    
+        SELECT  /* 검수*/
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,b.PROGR_ST
+               ,a.PAY_MTHD
+               ,a.PAY_DT
+               ,b.PRCH_AMT  as CNSL_AMT
+               ,b.EQP_ST
+               ,b.ADJ_AMT                                 
+         FROM TB_EP_CST_CONSULT_MGMT a
+             ,TB_EP_CST_PRCHS_MGMT b
+        WHERE b.PROGR_ST in ('13','14')
+        AND   b.TLY_DT = #IF_PROC_DT#
+        AND   b.DEL_YN = 'N'
+        AND   b.CNSL_MGMT_NO = a.CNSL_MGMT_NO
+        AND   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3)
+        AND   'CON' != SUBSTR(b.CNSL_MGMT_NO,1,3)
+        AND   a.DEL_YN = 'N'    
+        UNION all  
+        SELECT  /* 고객확인*/
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,b.PROGR_ST
+               ,a.PAY_MTHD
+               ,a.PAY_DT
+               ,b.PRCH_AMT  as CNSL_AMT
+               ,b.EQP_ST
+               ,b.ADJ_AMT                                 
+         FROM TB_EP_CST_CONSULT_MGMT a
+             ,TB_EP_CST_PRCHS_MGMT b
+        WHERE b.PROGR_ST = '21'
+        AND   b.CUST_CHK_DT = #IF_PROC_DT#
+        AND   b.DEL_YN = 'N'
+        AND   b.CNSL_MGMT_NO = a.CNSL_MGMT_NO
+        AND   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3)
+        AND   'CON' != SUBSTR(b.CNSL_MGMT_NO,1,3)
+        AND   a.DEL_YN = 'N'        
+        UNION all               
+        SELECT  /* 31 송금완료     rmt_dt */
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,b.PROGR_ST
+               ,'01' as PAY_MTHD
+               ,b.RMT_DT as PAY_DT
+               ,b.PRCH_AMT  as CNSL_AMT
+               ,b.EQP_ST
+               ,b.ADJ_AMT               
+         FROM TB_EP_CST_CONSULT_MGMT a
+             ,TB_EP_CST_PRCHS_MGMT b
+        WHERE b.PROGR_ST = '31'
+        AND   b.RMT_DT = #IF_PROC_DT#
+        AND   b.DEL_YN = 'N'
+        AND   b.CNSL_MGMT_NO = a.CNSL_MGMT_NO
+        AND   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3)
+        AND   'CON' != SUBSTR(b.CNSL_MGMT_NO,1,3)
+        AND   a.DEL_YN = 'N'
+        UNION ALL
+        SELECT  /* 32 요금공제완료 FEE_DEDC_PROC_DT */
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,b.PROGR_ST
+               ,'02' as PAY_MTHD
+               ,b.FEE_DEDC_PROC_DT as PAY_DT
+               ,b.PRCH_AMT as CNSL_AMT
+               ,b.EQP_ST
+               ,b.ADJ_AMT               
+        FROM  TB_EP_CST_CONSULT_MGMT a
+             ,TB_EP_CST_PRCHS_MGMT b
+        WHERE b.PROGR_ST = '32'
+        AND   b.FEE_DEDC_PROC_DT = #IF_PROC_DT#
+        AND   b.DEL_YN = 'N'
+        AND   b.CNSL_MGMT_NO = a.CNSL_MGMT_NO
+        AND   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3)
+        AND   'CON' != SUBSTR(b.CNSL_MGMT_NO,1,3)
+        AND   a.DEL_YN = 'N'   
+        UNION ALL
+        SELECT  /* 33 정책대상완료 POLY_PROC_DT */
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,b.PROGR_ST
+               ,a.PAY_MTHD
+               ,a.PAY_DT
+               ,b.PRCH_AMT  as CNSL_AMT
+               ,b.EQP_ST
+               ,b.ADJ_AMT                                 
+        FROM TB_EP_CST_CONSULT_MGMT a
+             ,TB_EP_CST_PRCHS_MGMT b
+        WHERE b.PROGR_ST = '33'
+        AND   b.POLY_PROC_DT = #IF_PROC_DT#
+        AND   b.DEL_YN = 'N'
+        AND   b.CNSL_MGMT_NO = a.CNSL_MGMT_NO
+        AND   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3)
+        AND   'CON' != SUBSTR(b.CNSL_MGMT_NO,1,3)
+        AND   a.DEL_YN = 'N'
+        UNION ALL
+        SELECT  /* 34 강제매입완료 FORCING_PRCH_PROC_DT */
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,b.PROGR_ST
+               ,a.PAY_MTHD
+               ,a.PAY_DT
+               ,b.PRCH_AMT  as CNSL_AMT
+               ,b.EQP_ST
+               ,b.ADJ_AMT                                 
+        FROM TB_EP_CST_CONSULT_MGMT a
+             ,TB_EP_CST_PRCHS_MGMT b
+        WHERE b.PROGR_ST = '34'
+        AND   b.FORCING_PRCH_PROC_DT = #IF_PROC_DT#
+        AND   b.DEL_YN = 'N'
+        AND   b.CNSL_MGMT_NO = a.CNSL_MGMT_NO
+        AND   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3)
+        AND   'CON' != SUBSTR(b.CNSL_MGMT_NO,1,3)
+        AND   a.DEL_YN = 'N'
+        UNION ALL   
+        SELECT  /* 35 현장감정매입완료 SKN_PROC_DT */
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,b.PROGR_ST
+               ,a.PAY_MTHD
+               ,a.PAY_DT
+               ,b.PRCH_AMT  as CNSL_AMT
+               ,b.EQP_ST
+               ,b.SKN_SMPL_JDG_DAMT AS ADJ_AMT                         /*샘플 감정 차액*/        
+        FROM TB_EP_CST_CONSULT_MGMT a
+             ,TB_EP_CST_PRCHS_MGMT b
+        WHERE b.PROGR_ST = '35'
+        AND   b.SKN_PROC_DT = #IF_PROC_DT#
+        AND   b.DEL_YN = 'N'
+        and   b.SKN_PROC_YN = 'Y'
+        AND   b.CNSL_MGMT_NO = a.CNSL_MGMT_NO
+        AND   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3)
+        AND   'CON' != SUBSTR(b.CNSL_MGMT_NO,1,3)
+        AND   a.DEL_YN = 'N'
+        UNION ALL              
+        SELECT  /* 24 고객거부반송, 27 정책대상반송, 28 검수제외반송, 29 검수제외폐기 PAY_DT*/
+                a.CNSL_MGMT_NO 
+               ,a.EQP_MDL_CD 
+               ,a.EQP_SER_NO 
+               ,b.PROGR_ST
+               ,a.PAY_MTHD
+               ,a.PAY_DT
+               ,b.PRCH_AMT  as CNSL_AMT
+               ,b.EQP_ST
+               ,b.ADJ_AMT                                 
+         FROM TB_EP_CST_CONSULT_MGMT a
+             ,TB_EP_CST_PRCHS_MGMT b
+        WHERE b.PROGR_ST IN ('22','23','24','26','27','28','29','2A','2B','2C','2D','2E','2F')
+        AND   substr(b.LS_CHG_DTM,0,8) = #IF_PROC_DT#
+        AND   b.DEL_YN = 'N'
+        AND   b.CNSL_MGMT_NO = a.CNSL_MGMT_NO
+        AND   'CON' != SUBSTR(a.CNSL_MGMT_NO,1,3)
+        AND   'CON' != SUBSTR(b.CNSL_MGMT_NO,1,3)
+        AND   a.DEL_YN = 'N'
+       ) sm
+WHERE  'T' != SUBSTR(CNSL_MGMT_NO,1,1)        
+ORDER by sm.CNSL_MGMT_NO]]>
+	</select>
+	<insert id="ITfProcStTrms" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE006.ITfProcStTrms IF처리상태등록 */
+/* IO: 이준우,2015-10-20T16:51:42(이준우,2015-07-29T10:19:57) */
+INSERT INTO  TF_PROC_ST_TRMS (
+             IF_PROC_DT
+            ,IF_FILE_NM
+            ,IF_SEQ
+            ,CNSL_MGMT_NO
+            ,EQP_MDL_CD
+            ,EQP_SER_NO
+            ,PROGR_ST
+            ,PAY_CL
+            ,PAY_DT
+            ,CNSL_AMT
+            ,EQP_ST
+            ,SKN_SMPL_JDG_DAMT
+            ,EQP_TLY_DT
+            ,EQP_TLY_CONT
+            ,PROC_ST_CD
+            ,FS_REG_DTM
+            ,FS_REG_USER_ID
+            ,LS_CHG_DTM
+            ,LS_CHG_USER_ID
+          ) VALUES (
+             #IF_PROC_DT#
+            ,#IF_FILE_NM#
+            ,#IF_SEQ#
+            ,#CNSL_MGMT_NO#
+            ,#EQP_MDL_CD#
+            ,#EQP_SER_NO#
+            ,#PROGR_ST#
+            ,#PAY_CL#
+            ,#PAY_DT#
+            ,#CNSL_AMT#
+            ,#EQP_ST#
+            ,#SKN_SMPL_JDG_DAMT#
+            ,#EQP_TLY_DT#
+            ,#EQP_TLY_CONT#
+            ,'09'
+            ,SYSDATE
+            ,'BAT'
+            ,SYSDATE
+            ,'BAT'
+             )]]>
+	</insert>
+	<select id="STfProcStTrmsCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE006.STfProcStTrmsCnt TF처리상태카운트 */
+/* IO: 이준우,2015-10-20T17:08:34(이준우,2015-09-30T13:15:09) */
+SELECT  COUNT(*) AS CNT
+  FROM  TF_PROC_ST_TRMS
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND  IF_PROC_DT   = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ    = #IF_SEQ#
+   ]]>
+	</select>
+	<delete id="DTfProcStTrms" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE006.DTfProcStTrms 처리상태삭제 */
+/* IO: 이준우,2015-10-20T17:08:41(이준우,2015-09-30T19:26:09) */
+DELETE  
+  FROM TF_PROC_ST_TRMS
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND  IF_PROC_DT   = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ    = #IF_SEQ#
+   ]]>
+	</delete>
+</sqlMap>

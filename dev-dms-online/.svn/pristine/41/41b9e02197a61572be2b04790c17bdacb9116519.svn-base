@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPCnslMgmt">
+	<select id="SInqCnslObListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnslMgmt.SInqCnslObListPaging 일반감정상담관리조회 */
+/* IO: 김상오,2015-08-31T11:11:47(김상오,2015-08-31T11:07:32) */
+SELECT  PA.*
+  FROM  (
+SELECT ROW_NUMBER() OVER(ORDER BY A.CNSL_DT ASC) AS ROWNO
+    ,  A.CNSL_DT /*상담일자*/
+    ,(SELECT ORG_NM FROM TB_EP_BAS_ORG_MGMT WHERE DEL_YN = 'N' AND DEALCO_CD = B.AFFIL_ORG_ID) affil_org_id /*조직*/
+    ,B.UKEY_CHNL_CD  /*ukey*/
+    ,( SELECT DEALCO_NM FROM TB_DEALCO WHERE DEALCO_CD = B.AFFIL_AGN AND DEL_YN = 'N') AFFIL_AGN  /*소속 대리점*/
+    ,B.DEALCO_NM /*상담처명*/
+    ,EQP_SER_NO    /*상담관리 일련번호*/
+    ,EQP_MDL_CD     /*모델*/       
+    ,EQP_COLOR_CD  /*색상*/        
+    ,DPSTR   /*고객명*/
+/*    ,(   select ORG_NM from TB_EP_BAS_ORG_MGMT where org_id = A.IN_PROC_CHRGR_ID ) IN_PROC_CHRGR_ID 입고처리자  */
+    ,CNSL_MGMT_NO   /*상담관리번호*/       
+    ,'' PRC_CHECK  /*체크박스용*/
+    ,A.CLCT_DT	 /*회수일자*/
+    ,A.EQP_ST    /*등급*/
+    ,DECODE(A.PAY_MTHD,'01',A.PAY_DT,'') as PAY_DT_1 /*송금일자*/
+    ,DECODE(A.PAY_MTHD,'02',A.PAY_DT,'') as PAY_DT_2 /*요금공제일자*/
+  FROM TB_EP_CST_PRCHS_MGMT A  
+  	 , TB_DEALCO B
+WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+  AND B.EFF_STA_DT <= A.CNSL_DT
+  AND B.EFF_END_DT >= A.CNSL_DT
+  AND A.DEL_YN = 'N'
+  AND B.DEL_YN = 'N'
+/*  AND A.PRCH_CL = 'C' 조회건수 없어서 주석처리  */
+  )PA
+WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInqCnslObjListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnslMgmt.SInqCnslObjListTotCnt 일반감정상담관리조회총건수 */
+/* IO: 김상오,2015-08-31T11:11:13(김상오,2015-08-31T11:10:45) */
+SELECT COUNT(*) TOT_CNT
+  FROM TB_EP_CST_PRCHS_MGMT A  
+  	 , TB_DEALCO B
+WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+  AND B.EFF_STA_DT <= A.CNSL_DT
+  AND B.EFF_END_DT >= A.CNSL_DT
+  AND A.DEL_YN = 'N'
+  AND B.DEL_YN = 'N']]>
+	</select>
+</sqlMap>

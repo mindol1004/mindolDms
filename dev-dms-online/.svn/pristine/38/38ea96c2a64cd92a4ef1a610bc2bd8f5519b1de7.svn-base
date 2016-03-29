@@ -1,0 +1,257 @@
+package dms.ep.epsfebase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]FPA단말기관리</li>
+ * <li>설  명 : <pre>FPA단말기관리</pre></li>
+ * <li>작성일 : 2016-02-16 10:09:52</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class FEPFPAEqpMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPFPAEqpMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>FPA단말기등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2016-02-16 10:09:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *	- field : EQP_MDL_CD [단말기 모델 코드]
+	 *	- field : EQP_SER_NO [단말기 일련 번호]
+	 *	- field : EQP_COLOR_CD [단말기 색상 코드]
+	 *	- field : IMEI [IMEI]
+	 *	- field : PRCH_AMT [매입 금액]
+	 *	- field : SELL_GRADE [판매 등급]
+	 *	- field : SELL_PRC [판매 가격]
+	 *	- field : IN_CONF_DT [입고 확정 일자]
+	 *	- field : IN_PROC_CHRGR_ID [입고 처리 담당자 ID]
+	 *	- field : INPT [검수자]
+	 *	- field : TLY_DT [검수 일자]
+	 *	- field : MID_TERM_YN [중도 해지 여부]
+	 *	- field : PRCH_CONF_YN [매입 확정 여부]
+	 *	- field : PRCH_CONF_DT [매입 확정 일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : RESULT [처리결과]
+	 * </pre>
+	 */
+	public IDataSet fIFPAEqpRgst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        int intTotalCnt = 0;
+    
+        try {
+            CommonArea ca = getCommonArea(onlineCtx);
+            DEPFPAEqpMgmt dEPFPAEqpMgmt = (DEPFPAEqpMgmt) lookupDataUnit(DEPFPAEqpMgmt.class);
+            if(requestData == null || requestData.getField("CNSL_MGMT_NO") == null || "".equals(requestData.getField("CNSL_MGMT_NO").toString())){
+                responseData.putField("RESULT", "ERR_관리번호없음");
+            }else{
+                responseData = dEPFPAEqpMgmt.dSInqFPAEqpList(requestData, onlineCtx);
+                intTotalCnt = responseData.getRecordSet("RS_FPA_EQP_LIST").getRecordCount();
+                //검수완료가 아니면 에러 처리
+                if(intTotalCnt > 0 && responseData.getRecordSet("RS_FPA_EQP_LIST").get(0, "PROGR_ST") != null && !"10".equals(responseData.getRecordSet("RS_FPA_EQP_LIST").get(0, "PROGR_ST").toString())){//기등록단말기존재
+                    responseData.putField("RESULT", "ERR_기등록단말기");
+                }else{
+                    //MQ대상 : 중도해지가 아니고 등급이 A또는B인경우
+                    if((requestData.getField("MID_TERM_YN") == null || "".equals(requestData.getField("MID_TERM_YN").toString()) || "N".equals(requestData.getField("MID_TERM_YN").toString()))
+                        && (requestData.getField("SELL_GRADE") != null && ("A".equals(requestData.getField("SELL_GRADE").toString()) || "B".equals(requestData.getField("SELL_GRADE").toString())))
+                    ){
+                        requestData.putField("MQ_YN", "Y");
+                    }else{
+                        requestData.putField("MQ_YN", "N");
+                    }
+                    if(intTotalCnt <= 0){
+                        //상품일련번호취득
+                        IDataSet resData = callSharedBizComponentByDirect("ep.EPSCSBase", "dSInqEpEqpProdDisSerNo", requestData, onlineCtx);
+                        String sProdSerNum = resData.getField("PROD_DIS_SER_NO").toString();
+                        //최초등록자,최종사용자
+                        requestData.putField("FS_REG_USER_ID", ca.getUserNo());
+                        requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                        requestData.putField("PROD_SER_NO", sProdSerNum);
+                        //단말기등록
+                        dEPFPAEqpMgmt.dIFPAEqpRgst(requestData, onlineCtx);
+                    }else{
+                        requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                        //단말기등록정보수정
+                        dEPFPAEqpMgmt.dUFPAEqpInfoUpdRgst(requestData, onlineCtx);
+                    }
+                    
+                    responseData.putField("RESULT", "");
+                }
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }    
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA단말기정보수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2016-02-16 10:09:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *	- field : PRCH_AMT [매입 금액]
+	 *	- field : SELL_GRADE [판매 등급]
+	 *	- field : SELL_PRC [판매 가격]
+	 *	- field : PRCH_CONF_YN [매입 확정 여부]
+	 *	- field : PRCH_CONF_DT [매입 확정 일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : RESULT [처리결과]
+	 * </pre>
+	 */
+	public IDataSet fUFPAEqpInfoUpd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        int intTotalCnt = 0;
+        
+        try {
+            CommonArea ca = getCommonArea(onlineCtx);
+            DEPFPAEqpMgmt dEPFPAEqpMgmt = (DEPFPAEqpMgmt) lookupDataUnit(DEPFPAEqpMgmt.class);
+            if(requestData == null || requestData.getField("CNSL_MGMT_NO") == null || "".equals(requestData.getField("CNSL_MGMT_NO").toString())){
+                responseData.putField("RESULT", "ERR_관리번호없음");
+            }else{
+                responseData = dEPFPAEqpMgmt.dSInqFPAEqpList(requestData, onlineCtx);
+                intTotalCnt = responseData.getRecordSet("RS_FPA_EQP_LIST").getRecordCount();
+                if(intTotalCnt <= 0){//미등록단말기
+                    responseData.putField("RESULT", "ERR_미등록단말기");
+                }else if(responseData.getRecordSet("RS_FPA_EQP_LIST").get(0, "PROGR_ST") != null && !"10".equals(responseData.getRecordSet("RS_FPA_EQP_LIST").get(0, "PROGR_ST").toString())){
+                    //진행상태체크
+                    responseData.putField("RESULT", "ERR_기매입완료단말기");
+                }else{
+                    //최초등록자,최종사용자
+                    requestData.putField("LS_CHG_USER_ID", "BAT");
+                    //단말기등록
+                    dEPFPAEqpMgmt.dUFPAEqpInfoUpdPrch(requestData, onlineCtx);
+                    
+                    responseData.putField("RESULT", "");
+                }
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }    
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA단말기판매평균금액목록조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2016-02-16 10:09:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_FR_DT [조회판매시작일자]
+	 *	- field : SELL_TO_DT [조회판매종료일자]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : SEND_YN [전송여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FPA_EQP_SELL_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : APPLY_DT [적용일자]
+	 *		- field : EQP_BKAG_AMT [단말기파손금액]
+	 *		- field : SELL_STA_DT [판매시작일자]
+	 *		- field : SELL_END_DT [판매종료일자]
+	 *		- field : NORM_SELL_TOT_AMT [정상판매합계금액]
+	 *		- field : NORM_SELL_QTY [정상판매수량]
+	 *		- field : BKAG_SELL_TOT_AMT [파손판매합계금액]
+	 *		- field : BKAG_SELL_QTY [파손판매수량]
+	 *		- field : SELL_FREQ [판매횟수]
+	 *		- field : NORM_SELL_AVG_AMT [정상판매평균금액]
+	 *		- field : BKAG_SELL_AVG_AMT [파손판매평균금액]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 * </pre>
+	 */
+	public IDataSet fSInqFPAEqpSellAvgAmtList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            DEPFPAEqpMgmt dEPFPAEqpMgmt = (DEPFPAEqpMgmt) lookupDataUnit(DEPFPAEqpMgmt.class);
+            //판매데이터조회
+            responseData = dEPFPAEqpMgmt.dSInqFPAEqpSellAvgAmtList(requestData, onlineCtx);
+
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }    
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2016-02-16 10:09:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_FPA_EQP_SELL_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : APPLY_DT [적용일자]
+	 *		- field : EQP_BKAG_AMT [단말기파손금액]
+	 *		- field : SELL_STA_DT [판매시작일자]
+	 *		- field : SELL_END_DT [판매종료일자]
+	 *		- field : NORM_SELL_TOT_AMT [정상판매합계금액]
+	 *		- field : NORM_SELL_QTY [정상판매수량]
+	 *		- field : BKAG_SELL_TOT_AMT [파손판매합계금액]
+	 *		- field : BKAG_SELL_QTY [파손판매수량]
+	 *		- field : SELL_FREQ [판매횟수]
+	 *		- field : NORM_SELL_AVG_AMT [정상판매평균금액]
+	 *		- field : BKAG_SELL_AVG_AMT [파손판매평균금액]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fIFPAEqpSellAvgAmtSaveSend(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        DEPFPAEqpMgmt dEPFPAEqpMgmt = (DEPFPAEqpMgmt) lookupDataUnit(DEPFPAEqpMgmt.class);
+        // 2. 업무 DM호출
+        responseData = dEPFPAEqpMgmt.dIFPAEqpSellAvgAmtSaveSend(requestData, onlineCtx);
+        
+        IDataSet resDS = callSharedBizComponentByDirect("nr.NRSFXBase", "fSaveEqpBkagAmt", requestData, onlineCtx);
+        
+     
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpClctInfoMgmt">
+	<select id="SEqpClctInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpClctInfoMgmt.SEqpClctInfoLstPaging 단말기회수정보조회 */
+/* IO: 장미진,2015-07-30T11:28:45(이민재,2015-07-17T17:07:33) */
+SELECT
+        *
+  FROM     
+        (SELECT 
+                 ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,A.SVC_MGMT_NO 							/*서비스관리번호*/
+                ,A.SCRBR_NM   							/*고객명*/
+                ,A.SVC_NO    							/*이동전화번호*/
+                ,B.EQP_MDL_CD 							/*모델코드*/
+                ,C.EQP_MDL_NM 							/*모델명*/
+                ,A.COLOR_CD 							/*색상코드*/
+                ,A.PET_NM 								/*펫네임*/
+                ,A.EQP_RTN_YN 							/*반납여부*/
+                ,A.CNTRT_DT 							/*계약일*/
+                ,B.RTN_REG_DT 							/*반납일*/
+                ,B.IN_DT 								/*회수일*/
+                ,D.PRCH_PRC  							/*매입가*/
+                ,D.REM_PRC 								/*잔존가*/
+                ,D.CNTRT_PRD 							/*계약기간*/
+                ,D.CNTRT_STA_DT
+                ,D.CNTRT_END_DT
+           FROM  TB_NR_CNTRT A
+                ,TB_EQP_CLCT_OBJ B
+                ,TB_EQP_MDL C
+                ,TB_RENTAL_CNTRT D
+          WHERE  A.EQP_SER_NUM = B.EQP_SER_NUM
+            AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+            AND  A.CNTRT_NO = D.CNTRT_NO
+            AND  B.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+       A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SCRBR_NM"><![CDATA[
+       A.SCRBR_NM LIKE '%'||#SCRBR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_NO"><![CDATA[
+       A.SVC_NO = #SVC_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_SDT"><![CDATA[
+       A.CNTRT_DT  BETWEEN #CNTRT_SDT# AND #CNTRT_EDT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RTN_STA_DT"><![CDATA[
+       B.RTN_REG_DT  BETWEEN #RTN_STA_DT# AND #RTN_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="IN_STA_DT"><![CDATA[
+       B.IN_DT  BETWEEN #IN_STA_DT# AND #IN_END_DT#
+]]></isNotEmpty><![CDATA[)PA
+  WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpClctInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpClctInfoMgmt.SEqpClctInfoTotCnt 단말기회수정보총건수 */
+/* IO: 장미진,2015-07-29T19:55:26(이민재,2015-07-17T17:07:54) */
+SELECT 
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_NR_CNTRT A
+       ,TB_EQP_CLCT_OBJ B
+       ,TB_EQP_MDL C
+       ,TB_RENTAL_CNTRT D
+ WHERE  A.EQP_SER_NUM = B.EQP_SER_NUM
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  B.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+       A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SCRBR_NM"><![CDATA[
+       A.SCRBR_NM LIKE '%'||#SCRBR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_NO"><![CDATA[
+       A.SVC_NO = #SVC_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_SDT"><![CDATA[
+       A.CNTRT_DT  BETWEEN #CNTRT_SDT# AND #CNTRT_EDT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RTN_STA_DT"><![CDATA[
+       B.RTN_REG_DT  BETWEEN #RTN_STA_DT# AND #RTN_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="IN_STA_DT"><![CDATA[
+       B.IN_DT  BETWEEN #IN_STA_DT# AND #IN_END_DT#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SEqpClctInfoDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpClctInfoMgmt.SEqpClctInfoDtl 단말기회수정보상세조회 */
+/* IO: 장미진,2015-07-29T11:23:33(이민재,2015-07-17T17:08:16) */
+SELECT 
+        ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+       ,B.SVC_MGMT_NO    				 	       /* 서비스관리번호 */
+       ,B.SCRBR_NM                   			   /* 고객명 */
+       ,B.SVC_NO                 			       /* 이동전화번호 */
+       ,D.EQP_MDL_NM   					      	   /* 모델명 */
+       ,A.EQP_MDL_CD   					      	   /* 모델코드 */
+       ,B.COLOR_CD							  	   /* 색상코드 */
+       ,B.PET_NM       					      	   /* 펫네임 */ 
+       ,C.CNTRT_PRD     			      		   /* 계약기간코드 */
+       ,B.CNTRT_DT						      	   /* 계약일 */
+       ,A.CNTRT_STA_DT 						       /* 계약시작일 */ 
+       ,A.CNTRT_END_DT 					    	   /* 계약종료일 */ 
+       ,A.PRCH_PRC     						       /* 매입가 */ 
+       ,A.REM_PRC      						       /* 잔존가 */  
+       ,B.EQP_RTN_DT                         	   /* 단말기반납일 */  
+       ,B.CLCT_APLY_DT							   /* 물류창고회수일 */	
+       ,B.EQP_RTN_YN                	   		   /* 단말기반납여부 */
+       ,C.CAPA_CD                 				   /* 용량코드 */
+  FROM  TB_RENTAL_CNTRT A
+       ,TB_NR_CNTRT B 
+       ,TB_RENTAL_SALE_POLY C
+       ,TB_EQP_MDL D
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  A.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+   AND  A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND  A.OP_CL_CD = 'NR'
+   AND  B.SVC_MGMT_NO = #SVC_MGMT_NO#]]>
+	</select>
+</sqlMap>

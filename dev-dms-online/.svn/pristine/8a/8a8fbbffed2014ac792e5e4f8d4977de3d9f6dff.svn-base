@@ -1,0 +1,193 @@
+package dms.pr.prspmbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [FU]매입교품관리</li>
+ * <li>설  명 : <pre>매입교품관리</pre></li>
+ * <li>작성일 : 2015-07-10 09:01:59</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class FPRExpartEqpMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FPRExpartEqpMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>매입교품조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:20:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_IN_DT [조회입고시작일]
+	 *	- field : END_IN_DT [조회입고종료일]
+	 *	- field : IN_PLC_CD [입고처코드]
+	 *	- field : IN_PLC_NM [입고처명]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : EQP_SER_NUM [단말기일련번호]
+	 *	- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *	- field : INVE_ST_CD [재고상태코드]
+	 *	- field : BOX_NO [BOX NO]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_LIST
+	 *		- field : IN_DT [입고일자]
+	 *		- field : IN_PLC_CD [입고처코드]
+	 *		- field : IN_PLC_NM [입고처명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : ASSET_NUM [자산번호]
+	 *		- field : LAST_EXPART_DT [최종교품일자]
+	 *		- field : EXPART_EQP_SER_NUM [교품단말기일련번호]
+	 *		- field : EXPART_EQP_IMEI_NUM [교품단말기IMEI번호]
+	 *		- field : EXPART_EQP_COLOR_CD [교품단말기색상코드]
+	 *		- field : EXPART_IN_DT [교품입고일자]
+	 * </pre>
+	 */
+	public IDataSet fInqExpartEqpLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet rsPagingList = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DPRExpartMgmt dPRExpartMgmt = (DPRExpartMgmt) lookupDataUnit(DPRExpartMgmt.class);
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dPRExpartMgmt.dSExpartEqpTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+			// 3. LISTDM호출
+			responseData = dPRExpartMgmt.dSExpartEqpPaging(reqDs, onlineCtx);
+
+			rsPagingList = responseData.getRecordSet("RS_EQP_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>매입교품등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-10 11:20:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_EQP_LIST
+	 *		- field : IN_DT [입고일자]
+	 *		- field : IN_PLC_CD [입고처코드]
+	 *		- field : IN_PLC_NM [입고처명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : ASSET_NUM [자산번호]
+	 *		- field : LAST_EXPART_DT [최종교품일자]
+	 *		- field : EXPART_EQP_SER_NUM [교품단말기일련번호]
+	 *		- field : EXPART_EQP_IMEI_NUM [교품단말기IMEI번호]
+	 *		- field : EXPART_EQP_COLOR_CD [교품단말기색상코드]
+	 *		- field : EXPART_IN_DT [교품입고일자]
+	 *		- field : IC_CHK [등록취소구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegExpartEqpReg(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet reqDataTemp = new DataSet();
+	    IDataSet dsRetTemp = new DataSet();
+	
+		try {
+			CommonArea ca = getCommonArea(onlineCtx);
+			IRecordSet reqSet = requestData.getRecordSet("RQ_EQP_LIST");
+			// 1. DU lookup
+			DPRExpartMgmt dPRExpartMgmt = (DPRExpartMgmt) lookupDataUnit(DPRExpartMgmt.class);
+			DPREqpReqpInMgmt dPREqpReqpInMgmt = (DPREqpReqpInMgmt) lookupDataUnit(DPREqpReqpInMgmt.class);
+			for(int i = 0; i < reqSet.getRecordCount(); i++){
+				requestData.putFieldMap(reqSet.getRecordMap(i));
+				// 2. 동일단말기 존재 여부 체크
+				// 기교품등록건중에 동일일련호+교품일자검
+				dsRetTemp = new DataSet();
+				dsRetTemp = dPRExpartMgmt.dSChkExpartEqp(requestData, onlineCtx);
+				if(Integer.parseInt(dsRetTemp.getField("ROW_CNT")) > 0){
+					throw new BizRuntimeException("DMS00003"); //중복입력 된 데이터가 존재합니다.
+				};
+				dsRetTemp = new DataSet();
+				//기자산건중에 신규로 입고된 단말기와 동일 단말기
+				dsRetTemp = dPRExpartMgmt.dSChkExpartEqpInve(requestData, onlineCtx);
+				if(Integer.parseInt(dsRetTemp.getField("ROW_CNT")) > 0){
+					throw new BizRuntimeException("DMS00003"); //중복입력 된 데이터가 존재합니다.
+				};
+				// 3. 최초등록사용자ID,최종변경사용자ID
+				requestData.putField("FS_REG_USER_ID", ca.getUserNo());
+				requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+/*				
+				// 4. 단말기출고일련번호채번
+				dsRetTemp = new DataSet();
+				dsRetTemp = dPRExpartMgmt.dSEqpOutNum(requestData, onlineCtx);
+				// 5. 교품단말기출고등록
+				requestData.putField("EQP_OUT_NUM", dsRetTemp.getField("EQP_OUT_NUM")); //출고일련번호세팅
+				dsRetTemp = dPRExpartMgmt.dIExpartEqpOutReg(requestData, onlineCtx);
+				// 6. 단말기입고일련번호채번
+				dsRetTemp = new DataSet();
+				dsRetTemp = dPREqpReqpInMgmt.dSEqpInNum(requestData, onlineCtx);
+				// 7. 교품단말기입고등록
+				requestData.putField("EQP_IN_NUM", dsRetTemp.getField("EQP_IN_NUM")); //입고일련번호세팅
+				requestData.putField("LAST_IN_OUT_NO", dsRetTemp.getField("EQP_IN_NUM")); //입고일련번호를 최종입출고번호에 세팅
+				dsRetTemp = dPRExpartMgmt.dIExpartEqpInReg(requestData, onlineCtx);
+*/				
+				// 8. 교품등록
+				dsRetTemp = dPRExpartMgmt.dIExpartEqpReg(requestData, onlineCtx);
+				// 9. 교품단말기자산정보수정
+				dsRetTemp = dPRExpartMgmt.dUExpartEqpAssetInfoUpd(requestData, onlineCtx);
+			}
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	
+	    return responseData;
+	}
+  
+}

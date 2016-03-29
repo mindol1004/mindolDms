@@ -1,0 +1,1080 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPB2BSaleMgmt">
+	<select id="SB2bSaleList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleList B2B상품판매관리조회 */
+/* IO: 이민재,2015-11-10T15:19:00(이민재,2015-09-03T11:33:11) */
+SELECT  A.GNRL_SELL_NO                                                                        /* 일반판매번호 */
+       ,A.GNRL_SELL_CHG_SEQ                                                                   /* 일반판매변경순번 */
+	   ,A.SELL_CHG_HST_CL                                                                     /* 판매변경이력구분 */
+       ,A.XCL_DEALCO_CD                                                                       /* 정산거래처코드 */
+       ,A.SELL_DTM                                                                            /* 판매일자 */
+	   ,A.SELL_CHG_DTM                                                                        /* 변경일자 */
+       ,A.SALEPLC                                                                             /* 매출처코드 */
+       ,E.DEALCO_NM AS SALEPLC_NM                                                             /* 매출처 */
+       ,E.DEALCO_BLICENS_NO AS SALEPLC_BLICENS_NO                                             /* 매출처사업자번호 */
+       ,E.UKEY_AGN_CD AS SALEPLC_UKEY                                                         /* 매출처U.KEY코드 */
+       ,D.DEALCO_NM  AS SELL_DEALCO_CD_NM                                                     /* 판매처 */
+       ,D.DEALCO_BLICENS_NO AS SELL_BLICENS_NO                                                /* 판매처사업자번호 */
+       ,D.UKEY_AGN_CD AS SELL_DEALCO_CD_UKEY                                                  /* 판매처U.KEY코드 */
+	   ,'1' AS PROD_CL                                                                        /* 상품구분 */
+       ,B.SELL_QTY AS SALE_QTY                                                                /* 수량 */
+	   ,B.SELL_PRC                                                                            /* 판매가 */
+	   ,B.SELL_PCOST                                                                          /* 매입가 */
+       ,C.SELL_PRC_CASH_RECV_AMT AS SELL_PRC_CASH_RECV_AMT                                    /* 현금금액 */
+	   ,NVL(C.SELL_PRC_CCARD_RECV_AMT_1, 0) AS SELL_PRC_CCARD_RECV_AMT_1                      /* 변경전신용카드수납금액1 */
+	   ,NVL(C.SELL_PRC_CCARD_RECV_AMT_2, 0) AS SELL_PRC_CCARD_RECV_AMT_2                      /* 변경전신용카드수납금액2 */ 
+	   ,NVL(C.SELL_PRC_CCARD_RECV_AMT_1, 0) AS CRDTCRD_PAY_AMT                                /* 카드금액 */
+	   ,NVL(C.SELL_PRC_CASH_RECV_AMT, 0) + NVL(C.SELL_PRC_CCARD_RECV_AMT_1, 0) AS TOT_PAY_AMT /* 수납계 */
+	   ,D.AFFIL_AGN                                                                           /* 소속대리점 */
+	   ,D.AFFIL_ORG_ID                                                                        /* 소속조직ID*/
+       ,(SELECT  ORG_NM 
+           FROM  TB_EP_BAS_ORG_MGMT 
+          WHERE  ORG_ID = D.AFFIL_ORG_ID) AS ORG_NM                                           /* 조직명 */
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = D.AGN_ORG_CD 
+            AND  DEALCO_CL_1 = 'A1') AS AGN_ORG_NM                                            /* U.KEY 대리점 */
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = D.AFFIL_AGN) AS AFFIL_AGN_NM                                     /* 팀(소속대리점) */
+       ,F.XCL_SLIP_DT AS SLIP_DT                                                              /* 전표일자 */
+       ,F.XCL_SLIP_NO AS SLIP_NO                                                              /* 전표번호 */
+       ,NVL(F.XCL_SLIP_ST,'00') AS SLIP_ST                                                    /* 전표상태 */
+       ,F.XCL_CNCL_SLIP_DT AS CNCL_SLIP_DT                                                    /* 취소전표일자 */
+       ,F.XCL_CNCL_SLIP_NO AS CNCL_SLIP_NO                                                    /* 취소전표번호 */ 
+       ,DECODE(A.SELL_CL_CD,'20','EP_YU','EP_YE') AS SLIP_TYPE                                /* 전표항목구분 */
+       ,A.SELL_CL_CD																	      /* 판매구분 */
+       ,G.CUR_CL_CD                                                                           /* 화폐 구분 코드 */
+       ,G.XRATE_APPLY_AMT                                                                     /* 환율 적용 금액 */
+       ,G.XRATE_APPLY_DT                                                                      /* 환율 적용 일자 */
+  FROM  TB_EP_SAL_GNRL_SALE A 
+       ,(SELECT  GNRL_SELL_NO 
+                ,GNRL_SELL_CHG_SEQ
+		        ,NVL(COUNT(GNRL_SELL_NO),0) AS SELL_QTY
+                ,NVL(SUM(SELL_PRC),0) AS SELL_PRC
+                ,NVL(SUM(SELL_PCOST),0) AS SELL_PCOST
+		       FROM  TB_EP_SAL_EQUIPMENT_SALE
+          WHERE  DEL_YN = 'N'
+          GROUP  BY GNRL_SELL_NO ,GNRL_SELL_CHG_SEQ) B
+       ,(SELECT  GNRL_SELL_NO
+		        ,NVL(SUM(SELL_PRC_CASH_RECV_AMT),0) AS SELL_PRC_CASH_RECV_AMT
+		        ,NVL(SUM(SELL_PRC_CCARD_RECV_AMT_1),0) - NVL(SUM(BCHG_CCARD_RECV_AMT_1),0) AS SELL_PRC_CCARD_RECV_AMT_1
+		        ,NVL(SUM(SELL_PRC_CCARD_RECV_AMT_2),0) - NVL(SUM(BCHG_CCARD_RECV_AMT_2),0) AS SELL_PRC_CCARD_RECV_AMT_2
+		       FROM  TB_EP_SAL_PAYMENT
+          WHERE  DEL_YN = 'N'
+          GROUP  BY GNRL_SELL_NO) C
+       ,TB_DEALCO D
+       ,TB_DEALCO E
+       ,TB_EP_EQP_SALE F
+       ,TB_EP_SAL_SALE_AMT G
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  A.GNRL_SELL_NO = C.GNRL_SELL_NO
+   AND  A.SELL_DEALCO_CD = D.DEALCO_CD
+   AND  A.SALEPLC = E.DEALCO_CD(+)
+   AND  A.GNRL_SELL_NO = F.GNRL_SELL_NO(+)
+   AND  A.GNRL_SELL_CHG_SEQ = F.GNRL_SELL_CHG_SEQ(+)
+   AND  A.GNRL_SELL_NO = G.GNRL_SELL_NO(+)
+   AND  A.GNRL_SELL_CHG_SEQ = G.GNRL_SELL_CHG_SEQ(+)
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+	                             FROM  TB_EP_SAL_GNRL_SALE
+		  					    WHERE  GNRL_SELL_NO = A.GNRL_SELL_NO)
+   AND  A.SELL_TYP IN ('01', '03')
+   AND  A.SELL_CHG_HST_CL NOT IN ('07','08')	
+   AND  A.DEL_YN = 'N'
+   AND  SUBSTR(A.SELL_DTM,0,8) BETWEEN #SELL_STA_DTM# AND #SELL_END_DTM#
+]]><isNotEmpty property="SELL_DEALCO_CD" prepend="AND"><![CDATA[
+        A.SELL_DEALCO_CD = #SELL_DEALCO_CD#  
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="AFFIL_AGN" prepend="AND"><![CDATA[
+        D.AFFIL_AGN = #AFFIL_AGN#      
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SALEPLC" prepend="AND"><![CDATA[
+        A.SALEPLC = #SALEPLC#      
+]]></isNotEmpty><![CDATA[
+ ORDER  BY SELL_DTM DESC 
+       ,SELL_CHG_DTM DESC]]>
+	</select>
+	<insert id="IB2bGnrlSale" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.IB2bGnrlSale B2B상품판매등록일반판매저장 */
+/* IO: 이민재,2015-10-20T09:34:41(이민재,2015-09-03T18:11:05) */
+INSERT 
+  INTO  TB_EP_SAL_GNRL_SALE 
+       (
+        GNRL_SELL_NO             /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ        /* 일반 판매 변경 순번 */
+       ,SELL_DTM                 /* 판매 일시 */
+       ,SELL_CHRGR_ID            /* 판매 담당자 ID */
+       ,SELL_CHG_HST_CL          /* 판매 변경 이력 구분 */
+       ,XCL_CHG_HST_CL           /* 정산 변경 이력 구분 */
+       ,SELL_CHG_DTM             /* 판매 변경 일시 */
+       ,SELL_CHGR_ID             /* 판매 변경자 ID */
+       ,XCL_DEALCO_CD            /* 정산 거래처 코드 */
+       ,INVE_HLD_DEALCO_CD       /* 재고 보유 거래처 코드 */
+       ,SELL_DEALCO_CD           /* 판매 거래처 코드 */
+       ,SELL_CHG_DEALCO_CD       /* 판매 변경 거래처 코드 */
+       ,CUST_CL                  /* 고객 구분 */
+       ,CUST_NM                  /* 고객 명 */
+       ,CUST_CTZ_REG_NO          /* 고객 주민 등록 번호 */
+       ,EQP_STTL_COND            /* 단말기 결제 조건 */
+       ,SELL_CMMS_CONF_YN        /* 판매 수수료 확정 여부 */
+       ,SELL_CNCL_YN             /* 판매 취소 여부 */
+       ,SELL_CNCL_DTM            /* 판매 취소 일시 */
+       ,SELL_CNCL_CL             /* 판매 취소 구분 */
+       ,DCLS_YN                  /* 일마감 여부 */
+       ,SELL_TYP                 /* 판매 유형 */
+       ,CUST_TEL_NO              /* 고객 전화 번호 */
+       ,CUST_ADDR                /* 고객 주소 */
+       ,CNTRTDOC_NO              /* 계약서 번호 */
+       ,SALEPLC                  /* 매출처 */
+       ,ATFIL_ID                 /* 첨부파일 ID */
+       ,RMK                      /* 비고 */
+       ,DEL_YN                   /* 삭제여부 */
+       ,UPDATE_COUNT             /* UPDATE COUNT */
+       ,FS_REG_USER_ID           /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM               /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID           /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM               /* 최종 변경 일시 */
+       ,SELL_CL_CD               /* 판매구분 */
+       )
+VALUES
+      (
+       #GNRL_SELL_NO#            /* 일반 판매 번호 */
+      ,#GNRL_SELL_CHG_SEQ#       /* 일반 판매 변경 순번 */
+      ,#SELL_DTM#                /* 판매 일시 */
+      ,#SELL_CHRGR_ID#           /* 판매 담당자 ID */
+      ,#SELL_CHG_HST_CL#         /* 판매 변경 이력 구분 */
+      ,#XCL_CHG_HST_CL#          /* 정산 변경 이력 구분 */
+      ,#SELL_CHG_DTM#            /* 판매 변경 일시 */
+      ,#SELL_CHGR_ID#            /* 판매 변경자 ID */
+      ,#XCL_DEALCO_CD#           /* 정산 거래처 코드 */
+      ,#INVE_HLD_DEALCO_CD#      /* 재고 보유 거래처 코드 */
+      ,#SELL_DEALCO_CD#          /* 판매 거래처 코드 */
+      ,#SELL_CHG_DEALCO_CD#      /* 판매 변경 거래처 코드 */
+      ,#CUST_CL#                 /* 고객 구분 */
+      ,#CUST_NM#                 /* 고객 명 */
+      ,#CUST_CTZ_REG_NO#         /* 고객 주민 등록 번호 */
+      ,#EQP_STTL_COND#           /* 단말기 결제 조건 */
+      ,#SELL_CMMS_CONF_YN#       /* 판매 수수료 확정 여부 */
+      ,#SELL_CNCL_YN#            /* 판매 취소 여부 */
+      ,#SELL_CNCL_DTM#           /* 판매 취소 일시 */
+      ,#SELL_CNCL_CL#            /* 판매 취소 구분 */
+      ,'N'                       /* 일마감 여부 */
+      ,#SELL_TYP#                /* 판매 유형 */
+      ,#CUST_TEL_NO#             /* 고객 전화 번호 */
+      ,#CUST_ADDR#               /* 고객 주소 */
+      ,#CNTRTDOC_NO#             /* 계약서 번호 */
+      ,#SALEPLC#                 /* 매출처 */
+      ,#ATFIL_ID#                /* 첨부파일 ID */
+      ,#RMK#                     /* 비고 */
+      ,'N'                       /* 삭제여부 */
+      ,1                         /* UPDATE COUNT */
+      ,#USERNO#                  /* 최초 등록 사용자 ID */
+      ,SYSDATE                   /* 최초 등록 일시 */
+      ,#USERNO#                  /* 최종 변경 사용자 ID */
+      ,SYSDATE                   /* 최종 변경 일시 */
+      ,#SELL_CL_CD#              /* 판매구분 */
+      )]]>
+	</insert>
+	<insert id="IB2bSaleAmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.IB2bSaleAmt B2B상품판매등록현금매출저장 */
+/* IO: 이민재,2015-11-10T13:03:30(이민재,2015-09-04T09:46:08) */
+INSERT 
+  INTO  TB_EP_SAL_SALE_AMT
+       (
+        GNRL_SELL_NO          /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ     /* 일반 판매 변경 순번 */
+       ,BCHG_INVE_AMT         /* 변경전 재고 금액 */
+       ,BCHG_MRGN_AMT         /* 변경전 마진 금액 */
+       ,BCHG_CMMS_AMT         /* 변경전 수수료 금액 */
+       ,BCHG_SURTAX_AMT       /* 변경전 부가세 금액 */
+       ,BCHG_SELL_AMT         /* 변경전 판매 금액 */
+       ,INVE_AMT              /* 재고 금액 */
+       ,MRGN_AMT              /* 마진 금액 */
+       ,CMMS_AMT              /* 수수료 금액 */
+       ,SURTAX_AMT            /* 부가세 금액 */
+       ,SELL_AMT              /* 판매 금액 */
+       ,CUR_CL_CD             /* 화폐 구분 코드 */
+       ,XRATE_APPLY_AMT       /* 환율 적용 금액 */
+       ,XRATE_APPLY_DT        /* 환율 적용 일자 */
+       ,DEL_YN                /* 삭제여부 */
+       ,UPDATE_COUNT          /* UPDATE COUNT */
+       ,FS_REG_USER_ID        /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM            /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID        /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM            /* 최종 변경 일시 */
+       )
+VALUES
+      (
+       #GNRL_SELL_NO#         /* 일반 판매 번호 */
+      ,#GNRL_SELL_CHG_SEQ#    /* 일반 판매 변경 순번 */
+      ,#BCHG_INVE_AMT#        /* 변경전 재고 금액 */
+      ,#BCHG_MRGN_AMT#        /* 변경전 마진 금액 */
+      ,#BCHG_CMMS_AMT#        /* 변경전 수수료 금액 */
+      ,#BCHG_SURTAX_AMT#      /* 변경전 부가세 금액 */
+      ,#BCHG_SELL_AMT#        /* 변경전 판매 금액 */
+      ,#CHG_INVE_AMT#         /* 재고 금액 */
+      ,#CHG_MRGN_AMT#         /* 마진 금액 */
+      ,#CHG_CMMS_AMT#         /* 수수료 금액 */
+      ,#CHG_SURTAX_AMT#       /* 부가세 금액 */
+      ,#CHG_SELL_AMT#         /* 판매 금액 */
+      ,#CUR_CL_CD#            /* 화폐 구분 코드 */
+      ,#XRATE_APPLY_AMT#      /* 환율 적용 금액 */
+      ,#XRATE_APPLY_DT#       /* 환율 적용 일자 */
+      ,'N'                    /* 삭제여부 */
+      ,1                      /* UPDATE COUNT */
+      ,#USERNO#               /* 최초 등록 사용자 ID */
+      ,SYSDATE                /* 최초 등록 일시 */
+      ,#USERNO#               /* 최종 변경 사용자 ID */
+      ,SYSDATE                /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<insert id="IB2bPayment" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.IB2bPayment B2B상품판매등록수납저장 */
+/* IO: 이민재,2015-09-21T14:02:52(이민재,2015-09-04T09:59:22) */
+INSERT 
+  INTO  TB_EP_SAL_PAYMENT
+       (
+        GNRL_SELL_NO                         /* 일반 판매 번호  */
+       ,GNRL_SELL_CHG_SEQ                    /* 일반 판매 변경 순번 */
+       ,BCHG_CASH_RECV_AMT                   /* 변경전 현금 수납 금액 */
+       ,BCHG_CCARD_CO_1                      /* 변경전 신용카드 회사 1 */
+       ,BCHG_CCARD_RECV_AMT_1                /* 변경전 신용카드 수납 금액 1 */
+       ,BCHG_CCARD_CO_2                      /* 변경전 신용카드 회사 2 */
+       ,BCHG_CCARD_RECV_AMT_2                /* 변경전 신용카드 수납 금액 2 */
+       ,SELL_PRC_CASH_RECV_AMT               /* 판매 가격 현금 수납 금액  */
+       ,SELL_PRC_CCARD_CO_1                  /* 판매 가격 신용카드 회사 1 */
+       ,SELL_PRC_CCARD_RECV_AMT_1            /* 판매 가격 신용카드 수납 금액 1 */
+       ,SELL_PRC_CCARD_CO_2                  /* 판매 가격 신용카드 회사 2 */
+       ,SELL_PRC_CCARD_RECV_AMT_2            /* 판매 가격 신용카드 수납 금액 2 */
+       ,DEL_YN                               /* 삭제여부 */
+       ,UPDATE_COUNT                         /* UPDATE COUNT */
+       ,FS_REG_USER_ID                       /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                           /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID                       /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM                           /* 최종 변경 일시 */
+       )
+VALUES
+       (
+        #GNRL_SELL_NO#                       /* 일반 판매 번호 */
+       ,#GNRL_SELL_CHG_SEQ#                  /* 일반 판매 변경 순번 */
+       ,#BCHG_SELL_PRC_CASH_RECV_AMT#        /* 변경전 현금 수납 금액 */
+       ,#BCHG_SELL_PRC_CCARD_CO_1#           /* 변경전 신용카드 회사 1 */
+       ,#BCHG_SELL_PRC_CCARD_RECV_AMT_1#     /* 변경전 신용카드 수납 금액 1 */
+       ,#BCHG_SELL_PRC_CCARD_CO_2#           /* 변경전 신용카드 회사 2 */
+       ,#BCHG_SELL_PRC_CCARD_RECV_AMT_2#     /* 변경전 신용카드 수납 금액 2 */
+       ,#CHG_SELL_PRC_CASH_RECV_AMT#         /* 판매 가격 현금 수납 금액 */
+       ,#SELL_PRC_CCARD_CO_1#                /* 판매 가격 신용카드 회사 1 */
+       ,#SELL_PRC_CCARD_RECV_AMT_1#          /* 판매 가격 신용카드 수납 금액 1 */
+       ,#SELL_PRC_CCARD_CO_2#                /* 판매 가격 신용카드 회사 2 */
+       ,#SELL_PRC_CCARD_RECV_AMT_2#          /* 판매 가격 신용카드 수납 금액 2 */
+       ,'N'                                  /* 삭제여부 */
+       ,1                                    /* UPDATE COUNT */
+       ,#USERNO#                             /* 최초 등록 사용자 ID */
+       ,SYSDATE                              /* 최초 등록 일시 */
+       ,#USERNO#                             /* 최종 변경 사용자 ID */
+       ,SYSDATE                              /* 최종 변경 일시 */
+       )]]>
+	</insert>
+	<select id="SB2bSaleTrmsYn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleTrmsYn B2B상품판매등록전송여부조회 */
+/* IO: 이민재,2015-09-04T14:42:35(이민재,2015-09-04T10:21:33) */
+SELECT  NVL(MAX(DECODE(TRMS_YN,'X','Y',TRMS_YN)),'N') AS TRMS_YN   /* 전송여부 */
+  FROM  TB_EP_DIS_PROD_DIS 
+ WHERE  EQP_SER_NO IN ( SELECT  PROD_SER_NO 
+                          FROM  TB_EP_SAL_EQUIPMENT_SALE 
+                         WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+                           AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ# )]]>
+	</select>
+	<select id="SB2bSaleMasterDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleMasterDtl B2B상품판매등록상세조회 */
+/* IO: 이민재,2015-10-20T09:36:25(이민재,2015-09-04T15:56:04) */
+SELECT  A.GNRL_SELL_NO                                          /* 일반판매번호 */
+	   ,A.GNRL_SELL_CHG_SEQ                                     /* 일반판매변경순번 */
+       ,A.SELL_TYP                                              /* 판매유형 */
+       ,A.SELL_DTM                                              /* 판매일시 */
+       ,A.SELL_CHRGR_ID                                         /* 판매담당자ID */
+       ,A.SELL_CHG_HST_CL                                       /* 판매변경이력구분 */
+       ,A.SELL_CHG_DTM                                          /* 판매변경일시 */
+       ,A.SELL_CHGR_ID                                          /* 판매변경자ID */
+       ,A.XCL_DEALCO_CD                                         /* 정산거래처코드 */
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = A.XCL_DEALCO_CD) AS XCL_DEALCO_NM  /* 정산거래처명 */
+       ,A.INVE_HLD_DEALCO_CD                                    /* 재고보유거래처코드 */
+       ,B.AGN_ORG_CD                                            /* 대리점 조직코드 */
+       ,B.AFFIL_AGN                                             /* 팀(소속대리점)코드 */
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = B.AFFIL_AGN) AS AFFIL_AGN_NM       /* 팀(소속대리점)명 */
+       ,A.SELL_DEALCO_CD                                        /* 판매거래처코드 */
+       ,B.DEALCO_NM AS SELL_DEALCO_NM                           /* 판매거래처명 */
+       ,A.SELL_CHG_DEALCO_CD                                    /* 판매변경거래처코드 */
+       ,A.EQP_STTL_COND                                         /* 단말기결제조건 */
+       ,A.RMK                                                   /* 비고 */
+       ,A.DCLS_YN                                               /* 일마감여부 */
+       ,A.SALEPLC                                               /* 매출처코드 */
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = A.SALEPLC) AS SALEPLC_NM           /* 매출처명 */
+       ,A.ATFIL_ID                                              /* 첨부파일ID */
+       ,'' AS FLAG
+       ,'' AS TRMS_YN
+       ,C.XCL_SLIP_NO                                           /* 전표번호 */
+       ,C.XCL_SLIP_ST                                           /* 전표상태 */ 
+       ,A.SELL_CL_CD                                            /* 판매구분 */
+ FROM  TB_EP_SAL_GNRL_SALE A
+      ,TB_DEALCO B
+      ,TB_EP_EQP_SALE C
+WHERE  A.SELL_DEALCO_CD = B.DEALCO_CD
+  AND  A.GNRL_SELL_NO = C.GNRL_SELL_NO(+)
+  AND  A.GNRL_SELL_CHG_SEQ = C.GNRL_SELL_CHG_SEQ(+)
+  AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+  AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ) 
+							    FROM  TB_EP_SAL_GNRL_SALE
+							   WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#)
+  AND  A.DEL_YN = 'N'
+  AND  B.DEL_YN = 'N'
+ORDER  BY GNRL_SELL_NO
+      ,GNRL_SELL_CHG_SEQ]]>
+	</select>
+	<select id="SB2bSaleItemDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleItemDtl B2B상품판매등록상세조회 */
+/* IO: 이민재,2015-11-26T18:13:36(이민재,2015-09-04T16:09:18) */
+SELECT  PA.*
+  FROM  (
+         SELECT  /*+ USE_HASH(A, B, C, D, E, F) */
+                 ROW_NUMBER() OVER(ORDER BY A.GNRL_SELL_NO ,A.GNRL_SELL_CHG_SEQ) AS ROWNO
+                ,A.GNRL_SELL_NO                                          /* 일반판매번호 */
+                ,A.GNRL_SELL_CHG_SEQ                                     /* 일반판매변경순번 */
+	            ,A.SELL_DTM                                              /* 판매일시 */
+	            ,A.SELL_CHG_HST_CL                                       /* 판매변경이력구분 */
+                ,'1' AS PROD_CL                                          /* 상품구분 */
+                ,A.SALEPLC                                               /* 매출처코드 */
+                ,I.DEALCO_NM AS SALEPLC_NM                               /* 매출처 */
+                ,B.SELL_SEQ                                              /* 판매순번 */
+                ,B.EQP_MDL_CD                                            /* 모델코드 */
+ 	            ,B.EQP_COLOR_CD                                          /* 모델색상 */
+                ,B.SELL_UPRC                                             /* 판매단가 */
+                ,B.SELL_PCOST                                            /* 판매원가 */
+                ,B.SELL_MRGN                                             /* 판매마진 */
+                ,B.SELL_CMMS                                             /* 판매수수료 */
+                ,B.SURTAX                                                /* 부가세 */
+                ,B.EQP_SER_NO                                            /* 단말기일련번호 */
+                ,B.PROD_SER_NO                                           /* 상품일련번호 */
+                ,B.SELL_PRC AS SELL_AMT                                  /* 판매가격 */
+                ,'N' AS FIX_PRC_YN                                       /* 고정가여부 */
+                ,1 AS SALE_QTY                                           /* 판매수량 */
+                ,C.EQP_MDL_NM                                            /* 모델명 */
+                ,C.MFACT_CD                                              /* 제조사코드 DMS101 */ 
+                ,(SELECT  IA.CM_CD_NM          
+                    FROM  TB_CM_CD IA
+	                     ,TB_CM_GRP_CD IB
+                   WHERE  IA.CM_GRP_CD_ID = IB.CM_GRP_CD_ID 
+                     AND  IA.CM_CD_ID = C.MFACT_CD
+	                 AND  IA.CM_GRP_CD_ID = 'DMS101') AS MFACT_NM        /* 제조사명 */   
+                ,D.DEALCO_CD AS HLD_DEALCO_ID                            /* 보유처코드 */ 
+                ,D.DEALCO_NM AS HLD_DEALCO_NM                            /* 보유처명 */ 
+                ,E.EQP_ST                                                /* 단말기상태 */
+                ,E.CNSL_MGMT_NO                                          /* 상담관리번호 */
+                ,G.CNSL_DT                                               /* 상담일자 */
+                ,G.ONING_DT                                              /* 개통일자 */
+                ,F.PROD_OUT_MGMT_NO                                      /* 출고관리번호 */
+                ,H.XCL_SLIP_DT                                           /* 전표일자 */
+                ,H.XCL_SLIP_NO                                           /* 전표번호 */
+                ,H.XCL_SLIP_ST                                           /* 전표상태 */
+                ,H.XCL_CNCL_SLIP_DT                                      /* 취소전표일자 */
+                ,H.XCL_CNCL_SLIP_NO                                      /* 취소전표번호 */ 
+                ,NVL(B.XRATE_APPLY_AMT,0) AS XRATE_APPLY_AMT             /* 환율금액 */
+           FROM  TB_EP_SAL_GNRL_SALE A
+                ,TB_EP_SAL_EQUIPMENT_SALE B
+                ,TB_EQP_MDL C
+                ,TB_DEALCO D 
+                ,TB_EP_DIS_PROD_DIS E
+                ,(SELECT  IB.PROD_OUT_MGMT_NO
+                         ,IA.SELL_MGMT_NO
+                         ,IA.GNRL_SELL_CHG_SEQ
+                         ,IB.EQP_MDL_CD
+                         ,IB.EQP_COLOR_CD
+                         ,IB.EQP_SER_NO
+                    FROM  TB_EP_DIS_PROD_OUT_M IA
+    	                 ,TB_EP_DIS_PROD_OUT_DTL_D IB
+                   WHERE  IA.PROD_OUT_MGMT_NO = IB.PROD_OUT_MGMT_NO
+                     AND  NVL(IB.CNCL_YN, 'N') = 'N'
+    	             AND  IA.DEL_YN = 'N'
+    	             AND  IB.DEL_YN = 'N') F
+                ,TB_EP_CST_CONSULT_MGMT G
+                ,TB_EP_EQP_SALE H
+                ,TB_DEALCO I
+          WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+            AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+            AND  A.INVE_HLD_DEALCO_CD = D.DEALCO_CD(+)
+            AND  A.SALEPLC = I.DEALCO_CD(+)
+            AND  B.EQP_MDL_CD = C.EQP_MDL_CD(+)
+            AND  B.PROD_SER_NO = E.EQP_SER_NO(+)
+            AND  B.GNRL_SELL_NO = F.SELL_MGMT_NO(+) 	
+            AND  B.GNRL_SELL_CHG_SEQ = F.GNRL_SELL_CHG_SEQ(+) 
+            AND  B.PROD_SER_NO = F.EQP_SER_NO(+)
+            AND  B.EQP_MDL_CD = F.EQP_MDL_CD(+) 			
+            AND  B.EQP_COLOR_CD = F.EQP_COLOR_CD(+)
+            AND  B.GNRL_SELL_NO = H.GNRL_SELL_NO(+)
+            AND  B.GNRL_SELL_CHG_SEQ = H.GNRL_SELL_CHG_SEQ(+)
+            AND  E.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)
+            AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+            AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                          FROM  TB_EP_SAL_GNRL_SALE
+                                         WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+                                           AND  DEL_YN = 'N')  
+            AND  A.DEL_YN = 'N'
+            AND  B.DEL_YN = 'N'
+        )PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SB2bSalePaymentDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSalePaymentDtl B2B상품판매등록상세조회 */
+/* IO: 이민재,2015-11-10T14:32:49(이민재,2015-09-04T16:55:16) */
+SELECT  A.GNRL_SELL_NO                                                /* 일반판매번호 */
+       ,A.GNRL_SELL_CHG_SEQ                                           /* 일반판매변경순번 */
+       ,B.SELL_PRC_CASH_RECV_AMT AS	BCHG_SELL_PRC_CASH_RECV_AMT       /* 변경전 판매 가격 현금 수납 금액 */     
+       ,D.SELL_PRC_CASH_RECV_AMT AS SELL_PRC_CASH_RECV_AMT            /* 판매 가격 현금 수납 금액 */
+       ,'0' AS CHG_SELL_PRC_CASH_RECV_AMT                             /* 변경후 판매 가격 현금 수납 금액 */
+       ,B.SELL_PRC_CCARD_CO_1 AS BCHG_SELL_PRC_CCARD_CO_1             /* 변경전 판매 가격 신용카드 회사 1 */
+       ,B.SELL_PRC_CCARD_CO_1 AS SELL_PRC_CCARD_CO_1                  /* 판매 가격 신용카드 회사 1 */
+       ,B.SELL_PRC_CCARD_RECV_AMT_1 AS BCHG_SELL_PRC_CCARD_RECV_AMT_1 /* 변경전 판매 가격 신용카드 수납 금액 1 */
+       ,D.SELL_PRC_CCARD_RECV_AMT_1 AS SELL_PRC_CCARD_RECV_AMT_1      /* 판매 가격 신용카드 수납 금액 1 */
+       ,'0' AS CHG_SELL_PRC_CCARD_RECV_AMT_1                          /* 변경후 판매 가격 신용카드 수납 금액 1 */
+       ,B.CCARD_XCL_CONF_YN_1                                         /* 신용카드 정산 확정 여부 1 */
+       ,B.CCARD_XCL_CONF_DT_1                                         /* 신용카드 정산 확정 일자 1 */  
+       ,B.SELL_PRC_CCARD_CO_2 AS BCHG_SELL_PRC_CCARD_CO_2             /* 변경전 판매 가격 신용카드 회사 2 */
+       ,B.SELL_PRC_CCARD_CO_2                                         /* 판매 가격 신용카드 회사 2 */
+       ,B.SELL_PRC_CCARD_RECV_AMT_2 AS BCHG_SELL_PRC_CCARD_RECV_AMT_2 /* 변경전 판매 가격 신용카드 수납 금액 2 */
+       ,D.SELL_PRC_CCARD_RECV_AMT_2 AS SELL_PRC_CCARD_RECV_AMT_2      /* 판매 가격 신용카드 수납 금액 2 */
+       ,'0' AS CHG_SELL_PRC_CCARD_RECV_AMT_2                          /* 변경후 판매 가격 신용카드 수납 금액 2 */
+       ,B.CCARD_XCL_CONF_YN_2                                         /* 신용카드 정산 확정 여부 2 */
+       ,B.CCARD_XCL_CONF_DT_2                                         /* 신용카드 정산 확정 일자 2 */
+       ,E.INVE_AMT AS BCHG_INVE_AMT                                   /* 변경전 재고 금액 */
+       ,F.INVE_AMT AS INVE_AMT                                        /* 재고 금액 */ 
+	   ,'0' AS CHG_INVE_AMT                                           /* 변경후 재고 금액 */ 
+	   ,E.MRGN_AMT AS BCHG_MRGN_AMT                                   /* 변경전 마진 금액 */
+  	   ,F.MRGN_AMT AS MRGN_AMT                                        /* 마진 금액 */
+  	   ,'0' AS CHG_MRGN_AMT                                           /* 변경후 마진 금액 */ 
+  	   ,E.CMMS_AMT AS BCHG_CMMS_AMT                                   /* 변경전 수수료 금액 */
+  	   ,F.CMMS_AMT AS CMMS_AMT                                        /* 수수료 금액 */ 
+  	   ,'0' AS CHG_CMMS_AMT                                           /* 변경후 수수료 금액 */  	   
+  	   ,E.SURTAX_AMT AS BCHG_SURTAX_AMT                               /* 변경전 부가세 금액 */
+  	   ,F.SURTAX_AMT AS	SURTAX_AMT                                    /* 부가세 금액 */ 
+  	   ,'0' AS CHG_SURTAX_AMT                                         /* 변경후 부가세 금액 */
+  	   ,E.SELL_AMT AS BCHG_SELL_AMT                                   /* 변경전 판매금액 */
+  	   ,F.SELL_AMT AS SELL_AMT                                        /* 판매금액 */
+  	   ,'0' AS CHG_SELL_AMT                                           /* 변경후 판매금액 */
+  	   ,A.SALEPLC                                                     /* 매출처코드 */
+       ,C.DEALCO_NM AS SALEPLC_NM                                     /* 매출처명 */
+       ,C.AGN_ORG_CD                                                  /* 대리점 조직 코드 */
+       ,C.UKEY_AGN_CD                                                 /* U.Key 대리점코드 */
+       ,E.CUR_CL_CD                                                   /* 화폐 구분 코드 */
+       ,E.XRATE_APPLY_AMT                                             /* 환율 적용 금액 */
+       ,E.XRATE_APPLY_DT                                              /* 환율 적용 일자 */
+  FROM  TB_EP_SAL_GNRL_SALE A
+       ,TB_EP_SAL_PAYMENT B
+       ,TB_DEALCO C
+       ,(SELECT  GNRL_SELL_NO 
+     		    ,NVL(SUM(SELL_PRC_CASH_RECV_AMT),0) AS SELL_PRC_CASH_RECV_AMT
+     		    ,NVL(SUM(SELL_PRC_CCARD_RECV_AMT_1),0) - NVL(SUM(BCHG_CCARD_RECV_AMT_1),0) AS SELL_PRC_CCARD_RECV_AMT_1
+                ,NVL(SUM(SELL_PRC_CCARD_RECV_AMT_2),0) - NVL(SUM(BCHG_CCARD_RECV_AMT_2),0) AS SELL_PRC_CCARD_RECV_AMT_2
+           FROM  TB_EP_SAL_PAYMENT
+          WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+       		AND  DEL_YN = 'N'
+          GROUP  BY GNRL_SELL_NO) D
+       ,TB_EP_SAL_SALE_AMT E
+       ,(SELECT  GNRL_SELL_NO 
+     		    ,SUM(INVE_AMT) AS INVE_AMT
+     		    ,SUM(MRGN_AMT) AS MRGN_AMT
+                ,SUM(CMMS_AMT) AS CMMS_AMT
+                ,SUM(SURTAX_AMT) AS SURTAX_AMT
+                ,SUM(SELL_AMT) AS SELL_AMT
+           FROM  TB_EP_SAL_SALE_AMT
+          WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+       		AND  DEL_YN = 'N'
+          GROUP  BY GNRL_SELL_NO) F
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  A.SALEPLC = C.DEALCO_CD(+)
+   AND  A.GNRL_SELL_NO = D.GNRL_SELL_NO
+   AND	A.GNRL_SELL_NO = E.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ
+   AND	E.GNRL_SELL_NO = F.GNRL_SELL_NO
+   AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                 FROM  TB_EP_SAL_GNRL_SALE
+                                WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#)
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+   AND  E.DEL_YN = 'N']]>
+	</select>
+	<select id="SB2bSaleGnrlNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleGnrlNo B2B상품판매번호채번 */
+/* IO: 이민재,2015-09-10T15:14:50(이민재,2015-09-10T15:13:57) */
+SELECT  'S' || LPAD(NVL(TO_NUMBER(MAX(SUBSTR(GNRL_SELL_NO,2))) ,0) + 1 ,10 ,'0') AS GNRL_SELL_NO 
+  FROM  TB_EP_SAL_GNRL_SALE]]>
+	</select>
+	<insert id="IB2bSaleEquipment" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.IB2bSaleEquipment B2B상품판매단말기판매저장 */
+/* IO: 이민재,2015-11-23T14:33:23(이민재,2015-09-10T16:19:22) */
+INSERT 
+  INTO  TB_EP_SAL_EQUIPMENT_SALE
+       (
+        GNRL_SELL_NO          /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ     /* 일반 판매 변경 순번 */
+       ,SELL_SEQ              /* 판매순번 */
+       ,EQP_SER_NO            /* 단말기일련번호 */
+       ,EQP_MDL_CD            /* 모델코드 */
+       ,EQP_COLOR_CD          /* 색상코드 */ 
+       ,PROD_SER_NO           /* 상품일련번호 */
+       ,DEL_YN                /* 삭제여부 */
+       ,UPDATE_COUNT          /* UPDATE COUNT */
+       ,SELL_UPRC             /* 판매단가 */ 
+       ,SELL_PCOST            /* 판매원가 */
+       ,SELL_MRGN             /* 판매마진 */
+       ,SELL_CMMS             /* 판매수수료 */ 
+       ,SURTAX                /* 부가세 */
+       ,SELL_PRC              /* 판매가격 */ 
+       ,FIX_PRC_YN            /* 고정가여부 */
+       ,SELL_CNCL_YN          /* 판매취소여부 */
+       ,SELL_CNCL_DTM         /* 판매취소일시 */
+       ,SELL_CNCL_CL          /* 판매취소구분 */
+       ,XRATE_APPLY_AMT       /* 환율금액 */
+	   ,FS_REG_USER_ID        /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM            /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID        /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM            /* 최종 변경 일시 */
+       )
+VALUES
+      (
+       #GNRL_SELL_NO#         /* 일반 판매 번호 */
+      ,#GNRL_SELL_CHG_SEQ#    /* 일반 판매 변경 순번 */
+      ,#SELL_SEQ#             /* 판매순번 */
+      ,#EQP_SER_NO#           /* 단말기일련번호 */ 
+      ,#EQP_MDL_CD#           /* 모델코드 */ 
+      ,#EQP_COLOR_CD#         /* 색상코드 */ 
+      ,#PROD_SER_NO#          /* 상품일련번호 */
+      ,#DEL_YN#               /* 삭제여부 */
+      ,1                      /* UPDATE COUNT */
+      ,#SELL_UPRC#            /* 판매단가 */ 
+      ,#SELL_PCOST#           /* 판매원가 */
+      ,#SELL_MRGN#            /* 판매마진 */
+      ,#SELL_CMMS#            /* 판매수수료 */ 
+      ,#SURTAX#               /* 부가세 */
+      ,#SELL_AMT#             /* 판매가격 */ 
+      ,#FIX_PRC_YN#           /* 고정가여부 */
+      ,#SELL_CNCL_YN#         /* 판매취소여부 */
+      ,#SELL_CNCL_DTM#        /* 판매취소일시 */
+      ,#SELL_CNCL_CL#         /* 판매취소구분 */
+      ,#XRATE_APPLY_AMT#      /* 환율금액 */
+      ,#USERNO#               /* 최초 등록 사용자 ID */
+      ,SYSDATE                /* 최초 등록 일시 */
+      ,#USERNO#               /* 최종 변경 사용자 ID */
+      ,SYSDATE                /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<select id="SB2bSaleReportDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleReportDtl B2B상품판매REPORT조회 */
+/* IO: 이민재,2015-09-24T10:21:41(이민재,2015-09-24T10:18:07) */
+SELECT  C.MFACT_CD
+       ,(SELECT  IA.CM_CD_NM          
+           FROM  TB_CM_CD IA
+	            ,TB_CM_GRP_CD IB
+          WHERE  IA.CM_GRP_CD_ID = IB.CM_GRP_CD_ID 
+            AND  IA.CM_CD_ID = C.MFACT_CD
+	        AND  IA.CM_GRP_CD_ID = 'DMS101') AS MFACT_NM
+	   ,C.EQP_MDL_CD
+	   ,C.EQP_MDL_NM
+	   ,COUNT(*) AS CNT
+	   ,SUM(SELL_PRC/1.1) AS SELL_PRC
+	   ,SUM((SELL_PRC/1.1)*0.1) AS SURTAX         
+  FROM  TB_EP_SAL_GNRL_SALE A
+       ,TB_EP_SAL_EQUIPMENT_SALE B 
+       ,TB_EQP_MDL C	  
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ) AS MAX
+                                 FROM  TB_EP_SAL_GNRL_SALE
+                                WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+                                  AND  DEL_YN = 'N')
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+ GROUP  BY C.MFACT_CD ,C.EQP_MDL_CD ,C.EQP_MDL_NM
+ ORDER  BY C.MFACT_CD, C.EQP_MDL_NM]]>
+	</select>
+	<select id="SB2bSaleCnclListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleCnclListPaging B2B상품판매취소조회 */
+/* IO: 이민재,2015-11-23T15:04:07(이민재,2015-09-24T17:25:51) */
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.SELL_DTM DESC, A.GNRL_SELL_NO, A.GNRL_SELL_CHG_SEQ) AS ROWNO   
+                ,A.GNRL_SELL_NO                                                /* 일반판매번호 */
+                ,A.GNRL_SELL_CHG_SEQ                                           /* 일반판매변경순번 */
+                ,A.SELL_DTM                                                    /* 판매일시 */
+                ,A.SELL_TYP                                                    /* 판매유형 */
+                ,A.SALEPLC                                                     /* 매출처코드 */
+                ,(SELECT  DEALCO_NM 
+                    FROM  TB_DEALCO 
+                   WHERE  DEALCO_CD = A.SALEPLC) AS SALEPLC_NM                 /* 매출처 */
+                ,A.SELL_DEALCO_CD                                              /* 판매처코드 */ 
+                ,(SELECT  DEALCO_NM 
+                    FROM  TB_DEALCO 
+                   WHERE  DEALCO_CD = A.SELL_DEALCO_CD) AS SELL_DEALCO_CD_NM   /* 판매처 */
+                ,A.RMK                                                         /* 비고 */
+                ,B.SELL_SEQ                                                    /* 판매순번 */ 
+                ,B.EQP_MDL_CD                                                  /* 모델코드 */
+                ,B.EQP_COLOR_CD                                                /* 모델색상 */
+                ,B.EQP_SER_NO                                                  /* 일련번호 */
+                ,B.PROD_SER_NO                                                 /* 상품일련번호 */ 
+                ,B.SELL_PRC AS SELL_AMT                                        /* 판매가 */
+                ,B.SELL_PCOST                                                  /* 판매원가 */
+                ,B.SELL_MRGN                                                   /* 판매마진 */
+                ,B.SELL_CMMS                                                   /* 판매수수료 */
+                ,B.SURTAX                                                      /* 부가세 */
+                ,C.CNSL_MGMT_NO                                                /* 상담관리번호 */ 
+                ,D.MFACT_CD                                                    /* 제조사코드 */
+                ,D.EQP_MDL_NM                                                  /* 모델명 */
+                ,E.PROD_OUT_MGMT_NO                                            /* 출고관리번호 */
+                ,'1' AS SALE_QTY                                               /* 판매수량 */
+                ,A.SELL_CL_CD                                                  /* 판매구분 */
+                ,B.XRATE_APPLY_AMT                                             /* 환율금액 */
+           FROM  TB_EP_SAL_GNRL_SALE A
+                ,TB_EP_SAL_EQUIPMENT_SALE B
+                ,TB_EP_DIS_PROD_DIS C
+                ,TB_EQP_MDL D
+                ,(SELECT  IB.PROD_OUT_MGMT_NO
+                         ,IA.SELL_MGMT_NO
+                         ,IA.GNRL_SELL_CHG_SEQ
+                         ,IB.EQP_MDL_CD
+                         ,IB.EQP_COLOR_CD
+                         ,IB.EQP_SER_NO
+                    FROM  TB_EP_DIS_PROD_OUT_M IA
+    	                 ,TB_EP_DIS_PROD_OUT_DTL_D IB
+                   WHERE  IA.PROD_OUT_MGMT_NO = IB.PROD_OUT_MGMT_NO
+                     AND  NVL(IB.CNCL_YN, 'N') = 'N'
+    	             AND  IA.DEL_YN = 'N'
+    	             AND  IB.DEL_YN = 'N'
+                 ) E
+                ,TB_EP_EQP_SALE F
+          WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+            AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+            AND  B.PROD_SER_NO = C.EQP_SER_NO
+            AND  B.EQP_MDL_CD = D.EQP_MDL_CD
+            AND  B.GNRL_SELL_NO = E.SELL_MGMT_NO(+) 	
+            AND  B.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ(+) 
+            AND  B.PROD_SER_NO = E.EQP_SER_NO(+)
+            AND  B.EQP_MDL_CD = E.EQP_MDL_CD(+) 			
+            AND  B.EQP_COLOR_CD = E.EQP_COLOR_CD(+)
+            AND  B.GNRL_SELL_NO = F.GNRL_SELL_NO(+)
+            AND  B.GNRL_SELL_CHG_SEQ = F.GNRL_SELL_CHG_SEQ(+)
+            AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                          FROM  TB_EP_SAL_GNRL_SALE
+                                         WHERE  GNRL_SELL_NO = B.GNRL_SELL_NO
+                                           AND  DEL_YN = 'N') 
+            AND  A.SELL_CNCL_YN = 'N'
+            AND  A.SELL_TYP != '04'
+            AND  A.DEL_YN = 'N'
+            AND  B.DEL_YN = 'N'
+            AND  C.INVE_ST = '02' 
+            AND  C.IN_OUT_CL = '200' 
+            AND  C.IN_OUT_DTL_CL = '205' 
+            AND  C.DEL_YN = 'N' 
+            AND  D.DEL_YN = 'N'
+            AND  D.DEL_YN = 'N'
+            AND  (F.XCL_SLIP_NO IS NULL OR F.XCL_SLIP_ST IN ('00','05'))
+            AND  A.SELL_DEALCO_CD = #SELL_DEALCO_CD# 
+]]><isNotEmpty property="SALEPLC" prepend="AND"><![CDATA[
+                 A.SALEPLC = #SALEPLC#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                 B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+                 B.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+                 B.PROD_SER_NO = #PROD_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+                 C.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+       )PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SB2bSaleCnclListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleCnclListTotCnt B2B상품판매취소총건수 */
+/* IO: 이민재,2015-10-13T17:11:06(이민재,2015-09-24T17:26:19) */
+SELECT  COUNT(*) AS TOTAL_CNT 
+  FROM  TB_EP_SAL_GNRL_SALE A
+       ,TB_EP_SAL_EQUIPMENT_SALE B
+       ,TB_EP_DIS_PROD_DIS C
+       ,TB_EQP_MDL D
+       ,(SELECT  IB.PROD_OUT_MGMT_NO
+                ,IA.SELL_MGMT_NO
+                ,IA.GNRL_SELL_CHG_SEQ
+                ,IB.EQP_MDL_CD
+                ,IB.EQP_COLOR_CD
+                ,IB.EQP_SER_NO
+           FROM  TB_EP_DIS_PROD_OUT_M IA
+    	        ,TB_EP_DIS_PROD_OUT_DTL_D IB
+          WHERE  IA.PROD_OUT_MGMT_NO = IB.PROD_OUT_MGMT_NO
+            AND  NVL(IB.CNCL_YN, 'N') = 'N'
+    	    AND  IA.DEL_YN = 'N'
+    	    AND  IB.DEL_YN = 'N'
+        ) E
+       ,TB_EP_EQP_SALE F 
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  B.PROD_SER_NO = C.EQP_SER_NO
+   AND  B.EQP_MDL_CD = D.EQP_MDL_CD
+   AND  B.GNRL_SELL_NO = E.SELL_MGMT_NO(+) 	
+   AND  B.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ(+) 
+   AND  B.PROD_SER_NO = E.EQP_SER_NO(+)
+   AND  B.EQP_MDL_CD = E.EQP_MDL_CD(+) 			
+   AND  B.EQP_COLOR_CD = E.EQP_COLOR_CD(+)
+   AND  B.GNRL_SELL_NO = F.GNRL_SELL_NO(+)
+   AND  B.GNRL_SELL_CHG_SEQ = F.GNRL_SELL_CHG_SEQ(+)
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                 FROM  TB_EP_SAL_GNRL_SALE
+                                WHERE  GNRL_SELL_NO = B.GNRL_SELL_NO
+                                  AND  DEL_YN = 'N') 
+   AND  A.SELL_CNCL_YN = 'N'
+   AND  A.SELL_TYP != '04'
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+   AND  C.INVE_ST = '02' 
+   AND  C.IN_OUT_CL = '200' 
+   AND  C.IN_OUT_DTL_CL = '205' 
+   AND  C.DEL_YN = 'N' 
+   AND  D.DEL_YN = 'N'
+   AND  (F.XCL_SLIP_NO IS NULL OR F.XCL_SLIP_ST IN ('00','05'))
+   AND  A.SELL_DEALCO_CD = #SELL_DEALCO_CD# 
+]]><isNotEmpty property="SALEPLC" prepend="AND"><![CDATA[
+        A.SALEPLC = #SALEPLC#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+        B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+        B.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+        B.PROD_SER_NO = #PROD_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+        C.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<insert id="IB2bGnrlSaleCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.IB2bGnrlSaleCncl B2B상품판매취소일반판매저장 */
+/* IO: 이민재,2015-11-04T14:14:27(이민재,2015-09-25T13:54:10) */
+INSERT 
+  INTO  TB_EP_SAL_GNRL_SALE 
+       (
+        GNRL_SELL_NO             /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ        /* 일반 판매 변경 순번 */
+       ,SELL_DTM                 /* 판매 일시 */
+       ,SELL_CHRGR_ID            /* 판매 담당자 ID */
+       ,SELL_CHG_HST_CL          /* 판매 변경 이력 구분 */
+       ,XCL_CHG_HST_CL           /* 정산 변경 이력 구분 */
+       ,SELL_CHG_DTM             /* 판매 변경 일시 */
+       ,SELL_CHGR_ID             /* 판매 변경자 ID */
+       ,XCL_DEALCO_CD            /* 정산 거래처 코드 */
+       ,INVE_HLD_DEALCO_CD       /* 재고 보유 거래처 코드 */
+       ,SELL_DEALCO_CD           /* 판매 거래처 코드 */
+       ,SELL_CHG_DEALCO_CD       /* 판매 변경 거래처 코드 */
+       ,CUST_CL                  /* 고객 구분 */
+       ,CUST_NM                  /* 고객 명 */
+       ,CUST_CTZ_REG_NO          /* 고객 주민 등록 번호 */
+       ,EQP_STTL_COND            /* 단말기 결제 조건 */
+       ,SELL_CMMS_CONF_YN        /* 판매 수수료 확정 여부 */
+       ,SELL_CNCL_YN             /* 판매 취소 여부 */
+       ,SELL_CNCL_DTM            /* 판매 취소 일시 */
+       ,SELL_CNCL_CL             /* 판매 취소 구분 */
+       ,DCLS_YN                  /* 일마감 여부 */
+       ,SELL_TYP                 /* 판매 유형 */
+       ,CUST_TEL_NO              /* 고객 전화 번호 */
+       ,CUST_ADDR                /* 고객 주소 */
+       ,CNTRTDOC_NO              /* 계약서 번호 */
+       ,SALEPLC                  /* 매출처 */
+       ,ATFIL_ID                 /* 첨부파일 ID */
+       ,RMK                      /* 비고 */
+       ,DEL_YN                   /* 삭제여부 */
+       ,UPDATE_COUNT             /* UPDATE COUNT */
+       ,FS_REG_USER_ID           /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM               /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID           /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM               /* 최종 변경 일시 */
+       ,SELL_CL_CD               /* 판매구분 */
+       )
+SELECT  GNRL_SELL_NO             /* 일반 판매 번호 */
+       ,#GNRL_SELL_CHG_SEQ_NEW#  /* 일반 판매 변경 순번 */
+       ,SELL_DTM                 /* 판매 일시 */
+       ,SELL_CHRGR_ID            /* 판매 담당자 ID */
+       ,#SELL_CHG_HST_CL#        /* 판매 변경 이력 구분 */
+       ,XCL_CHG_HST_CL           /* 정산 변경 이력 구분 */
+       ,TO_CHAR(SYSDATE,'YYYYMMDDHHMISS') /* 판매 변경 일시 */
+       ,#USERNO#                 /* 판매 변경자 ID */
+       ,XCL_DEALCO_CD            /* 정산 거래처 코드 */
+       ,INVE_HLD_DEALCO_CD       /* 재고 보유 거래처 코드 */
+       ,SELL_DEALCO_CD           /* 판매 거래처 코드 */
+       ,SELL_CHG_DEALCO_CD       /* 판매 변경 거래처 코드 */
+       ,CUST_CL                  /* 고객 구분 */
+       ,CUST_NM                  /* 고객 명 */
+       ,CUST_CTZ_REG_NO          /* 고객 주민 등록 번호 */
+       ,EQP_STTL_COND            /* 단말기 결제 조건 */
+       ,SELL_CMMS_CONF_YN        /* 판매 수수료 확정 여부 */
+       ,#SELL_CNCL_YN#           /* 판매취소여부 */
+       ,#SELL_CNCL_DTM#          /* 판매취소일시 */
+       ,#SELL_CNCL_CL#           /* 판매취소구분 */
+       ,DCLS_YN                  /* 일마감 여부 */
+       ,SELL_TYP                 /* 판매 유형 */
+       ,CUST_TEL_NO              /* 고객 전화 번호 */
+       ,CUST_ADDR                /* 고객 주소 */
+       ,CNTRTDOC_NO              /* 계약서 번호 */
+       ,SALEPLC                  /* 매출처 */
+       ,ATFIL_ID                 /* 첨부파일 ID */
+       ,RMK                      /* 비고 */
+       ,DEL_YN                   /* 삭제여부 */
+       ,UPDATE_COUNT             /* UPDATE COUNT */
+       ,FS_REG_USER_ID           /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM               /* 최초 등록 일시 */
+       ,#USERNO#                 /* 최종 변경 사용자 ID */
+       ,SYSDATE                  /* 최종 변경 일시 */
+       ,SELL_CL_CD               /* 판매구분 */
+  FROM  TB_EP_SAL_GNRL_SALE
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#]]>
+	</insert>
+	<insert id="IB2bSaleAmtCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.IB2bSaleAmtCncl B2B상품판매취소현금매출저장 */
+/* IO: 이민재,2015-11-10T13:39:42(이민재,2015-09-25T14:06:17) */
+INSERT 
+  INTO  TB_EP_SAL_SALE_AMT
+       (
+        GNRL_SELL_NO                    /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ               /* 일반 판매 변경 순번 */
+       ,BCHG_INVE_AMT                   /* 변경전 재고 금액 */
+       ,BCHG_MRGN_AMT                   /* 변경전 마진 금액 */
+       ,BCHG_CMMS_AMT                   /* 변경전 수수료 금액 */
+       ,BCHG_SURTAX_AMT                 /* 변경전 부가세 금액 */
+       ,BCHG_SELL_AMT                   /* 변경전 판매 금액 */
+       ,INVE_AMT                        /* 재고 금액 */
+       ,MRGN_AMT                        /* 마진 금액 */
+       ,CMMS_AMT                        /* 수수료 금액 */
+       ,SURTAX_AMT                      /* 부가세 금액 */
+       ,SELL_AMT                        /* 판매 금액 */
+       ,CUR_CL_CD                       /* 화폐 구분 코드 */
+       ,XRATE_APPLY_AMT                 /* 환율 적용 금액 */
+       ,XRATE_APPLY_DT                  /* 환율 적용 일자 */
+       ,DEL_YN                          /* 삭제여부 */
+       ,UPDATE_COUNT                    /* UPDATE COUNT */
+       ,FS_REG_USER_ID                  /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                      /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID                  /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM                      /* 최종 변경 일시 */
+       )
+SELECT  GNRL_SELL_NO                    /* 일반 판매 번호 */
+       ,#GNRL_SELL_CHG_SEQ_NEW#         /* 일반 판매 변경 순번 */
+       ,INVE_AMT                        /* 변경전 재고 금액 */
+       ,MRGN_AMT                        /* 변경전 마진 금액 */
+       ,CMMS_AMT                        /* 변경전 수수료 금액 */
+       ,SURTAX_AMT                      /* 변경전 부가세 금액 */
+       ,SELL_AMT                        /* 변경전 판매 금액 */
+       ,#SELL_PCOST# * (-1)             /* 재고 금액 */
+       ,#SELL_MRGN# * (-1)              /* 마진 금액 */
+       ,#SELL_CMMS# * (-1)              /* 수수료 금액 */
+       ,#SURTAX# * (-1)                 /* 부가세 금액 */
+       ,#SELL_PRC# * (-1)               /* 판매 금액 */
+       ,CUR_CL_CD                       /* 화폐 구분 코드 */
+       ,XRATE_APPLY_AMT                 /* 환율 적용 금액 */
+       ,XRATE_APPLY_DT                  /* 환율 적용 일자 */
+       ,DEL_YN                          /* 삭제여부 */
+       ,UPDATE_COUNT                    /* UPDATE COUNT */
+       ,FS_REG_USER_ID                  /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                      /* 최초 등록 일시 */
+       ,#USERNO#                        /* 최종 변경 사용자 ID */
+       ,SYSDATE                         /* 최종 변경 일시 */
+  FROM  TB_EP_SAL_SALE_AMT
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#]]>
+	</insert>
+	<insert id="IB2bPaymentCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.IB2bPaymentCncl B2B상품판매취소수납저장 */
+/* IO: 이민재,2015-09-30T18:53:45(이민재,2015-09-25T14:13:02) */
+INSERT 
+  INTO  TB_EP_SAL_PAYMENT
+       (
+        GNRL_SELL_NO                         /* 일반 판매 번호  */
+       ,GNRL_SELL_CHG_SEQ                    /* 일반 판매 변경 순번 */
+       ,BCHG_CASH_RECV_AMT                   /* 변경전 현금 수납 금액 */
+       ,BCHG_CCARD_CO_1                      /* 변경전 신용카드 회사 1 */
+       ,BCHG_CCARD_RECV_AMT_1                /* 변경전 신용카드 수납 금액 1 */
+       ,BCHG_CCARD_CO_2                      /* 변경전 신용카드 회사 2 */
+       ,BCHG_CCARD_RECV_AMT_2                /* 변경전 신용카드 수납 금액 2 */
+       ,SELL_PRC_CASH_RECV_AMT               /* 판매 가격 현금 수납 금액  */
+       ,SELL_PRC_CCARD_CO_1                  /* 판매 가격 신용카드 회사 1 */
+       ,SELL_PRC_CCARD_RECV_AMT_1            /* 판매 가격 신용카드 수납 금액 1 */
+       ,SELL_PRC_CCARD_CO_2                  /* 판매 가격 신용카드 회사 2 */
+       ,SELL_PRC_CCARD_RECV_AMT_2            /* 판매 가격 신용카드 수납 금액 2 */
+       ,DEL_YN                               /* 삭제여부 */
+       ,UPDATE_COUNT                         /* UPDATE COUNT */
+       ,FS_REG_USER_ID                       /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                           /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID                       /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM                           /* 최종 변경 일시 */
+       )
+SELECT  GNRL_SELL_NO                         /* 일반 판매 번호  */
+       ,#GNRL_SELL_CHG_SEQ_NEW#              /* 일반 판매 변경 순번 */
+       ,SELL_PRC_CASH_RECV_AMT               /* 변경전 현금 수납 금액 */
+       ,SELL_PRC_CCARD_CO_1                  /* 변경전 신용카드 회사 1 */
+       ,SELL_PRC_CCARD_RECV_AMT_1            /* 변경전 신용카드 수납 금액 1 */
+       ,SELL_PRC_CCARD_CO_2                  /* 변경전 신용카드 회사 2 */
+       ,SELL_PRC_CCARD_RECV_AMT_2            /* 변경전 신용카드 수납 금액 2 */
+       ,#SELL_AMT# * (-1)                    /* 판매 가격 현금 수납 금액  */
+       ,SELL_PRC_CCARD_CO_1                  /* 판매 가격 신용카드 회사 1 */
+       ,SELL_PRC_CCARD_RECV_AMT_1            /* 판매 가격 신용카드 수납 금액 1 */
+       ,SELL_PRC_CCARD_CO_2                  /* 판매 가격 신용카드 회사 2 */
+       ,SELL_PRC_CCARD_RECV_AMT_2            /* 판매 가격 신용카드 수납 금액 2 */
+       ,DEL_YN                               /* 삭제여부 */
+       ,UPDATE_COUNT                         /* UPDATE COUNT */
+       ,FS_REG_USER_ID                       /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM                           /* 최초 등록 일시 */
+       ,#USERNO#                             /* 최종 변경 사용자 ID */
+       ,SYSDATE                              /* 최종 변경 일시 */
+  FROM  TB_EP_SAL_PAYMENT
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#]]>
+	</insert>
+	<insert id="IB2bSaleEquipmentCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.IB2bSaleEquipmentCncl B2B상품판매취소단말기판매저장 */
+/* IO: 이민재,2015-11-23T15:06:25(이민재,2015-09-30T09:13:10) */
+INSERT 
+  INTO  TB_EP_SAL_EQUIPMENT_SALE 
+       (
+        GNRL_SELL_NO          /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ     /* 일반 판매 변경 순번 */
+       ,SELL_SEQ              /* 판매순번 */
+       ,EQP_SER_NO            /* 단말기일련번호 */
+       ,EQP_MDL_CD            /* 모델코드 */
+       ,EQP_COLOR_CD          /* 색상코드 */ 
+       ,PROD_SER_NO           /* 상품일련번호 */
+       ,DEL_YN                /* 삭제여부 */
+       ,UPDATE_COUNT          /* UPDATE COUNT */
+       ,SELL_UPRC             /* 판매단가 */ 
+       ,SELL_PCOST            /* 판매원가 */
+       ,SELL_MRGN             /* 판매마진 */
+       ,SELL_CMMS             /* 판매수수료 */ 
+       ,SURTAX                /* 부가세 */
+       ,SELL_PRC              /* 판매가격 */ 
+       ,FIX_PRC_YN            /* 고정가여부 */
+       ,SELL_CNCL_YN          /* 판매취소여부 */
+       ,SELL_CNCL_DTM         /* 판매취소일시 */
+       ,SELL_CNCL_CL          /* 판매취소구분 */
+       ,XRATE_APPLY_AMT       /* 환율금액 */
+	   ,FS_REG_USER_ID        /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM            /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID        /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM            /* 최종 변경 일시 */
+       )
+SELECT  GNRL_SELL_NO          /* 일반 판매 번호 */
+       ,#GNRL_SELL_CHG_SEQ_NEW#  /* 일반 판매 변경 순번 */
+       ,SELL_SEQ              /* 판매순번 */
+       ,EQP_SER_NO            /* 단말기일련번호 */
+       ,EQP_MDL_CD            /* 모델코드 */
+       ,EQP_COLOR_CD          /* 색상코드 */ 
+       ,PROD_SER_NO           /* 상품일련번호 */
+       ,DEL_YN                /* 삭제여부 */
+       ,1                     /* UPDATE COUNT */
+       ,SELL_UPRC             /* 판매단가 */ 
+       ,SELL_PCOST            /* 판매원가 */
+       ,SELL_MRGN             /* 판매마진 */
+       ,SELL_CMMS             /* 판매수수료 */ 
+       ,SURTAX                /* 부가세 */
+       ,SELL_PRC              /* 판매가격 */ 
+       ,FIX_PRC_YN            /* 고정가여부 */
+       ,SELL_CNCL_YN          /* 판매취소여부 */
+       ,SELL_CNCL_DTM         /* 판매취소일시 */
+       ,SELL_CNCL_CL          /* 판매취소구분 */
+       ,XRATE_APPLY_AMT       /* 환율금액 */
+	   ,FS_REG_USER_ID        /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM            /* 최초 등록 일시 */
+       ,#USERNO#              /* 최종 변경 사용자 ID */
+       ,SYSDATE               /* 최종 변경 일시 */
+  FROM  TB_EP_SAL_EQUIPMENT_SALE
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#]]>
+	</insert>
+	<select id="SB2bSaleGnrlChgNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleGnrlChgNo B2B상품판매변경순번채번 */
+/* IO: 이민재,2015-09-30T15:35:25(이민재,2015-09-30T15:35:08) */
+SELECT  TO_CHAR(MAX(GNRL_SELL_CHG_SEQ) +1) AS GNRL_SELL_CHG_SEQ
+  FROM  TB_EP_SAL_GNRL_SALE
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#]]>
+	</select>
+	<update id="UB2bSaleEquipmentCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.UB2bSaleEquipmentCncl B2B상품판매취소단말기판매수정 */
+/* IO: 이민재,2015-09-30T19:46:58(이민재,2015-09-30T16:24:02) */
+UPDATE  TB_EP_SAL_EQUIPMENT_SALE
+   SET  DEL_YN = 'Y'
+       ,UPDATE_COUNT = UPDATE_COUNT+1
+   	   ,SELL_CNCL_YN = 'Y'                                  /* 판매취소여부 */
+       ,SELL_CNCL_DTM = TO_CHAR(SYSDATE,'YYYYMMDDHHMISS')   /* 판매취소일시 */
+       ,SELL_CNCL_CL = '1'                                  /* 판매취소구분 */
+       ,LS_CHG_USER_ID = #USERNO#                           /* 최종변경사용자ID */  
+       ,LS_CHG_DTM = SYSDATE                                /* 최종변경일시 */ 
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ_NEW#
+   AND  SELL_SEQ = #SELL_SEQ#]]>
+	</update>
+	<select id="SB2bGnrlSaleCount" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bGnrlSaleCount B2B상품판매건수조회 */
+/* IO: 이민재,2015-10-01T10:14:06(이민재,2015-10-01T10:13:20) */
+SELECT  COUNT(*) AS CNT 
+  FROM  TB_EP_SAL_GNRL_SALE A
+       ,TB_EP_SAL_EQUIPMENT_SALE B
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  A.GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#
+   AND  B.SELL_CNCL_YN = 'N']]>
+	</select>
+	<select id="SB2bSaleItemDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleItemDtlTotCnt B2B상품판매등록상세총건수 */
+/* IO: 이민재,2015-11-26T18:13:48(이민재,2015-11-02T10:51:47) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_EP_SAL_GNRL_SALE A
+       ,TB_EP_SAL_EQUIPMENT_SALE B
+       ,TB_EQP_MDL C
+       ,TB_DEALCO D 
+       ,TB_EP_DIS_PROD_DIS E
+       ,(SELECT  IB.PROD_OUT_MGMT_NO
+                ,IA.SELL_MGMT_NO
+                ,IA.GNRL_SELL_CHG_SEQ
+                ,IB.EQP_MDL_CD
+                ,IB.EQP_COLOR_CD
+                ,IB.EQP_SER_NO
+           FROM  TB_EP_DIS_PROD_OUT_M IA
+    	        ,TB_EP_DIS_PROD_OUT_DTL_D IB
+          WHERE  IA.PROD_OUT_MGMT_NO = IB.PROD_OUT_MGMT_NO
+            AND  NVL(IB.CNCL_YN, 'N') = 'N'
+    	    AND  IA.DEL_YN = 'N'
+    	    AND  IB.DEL_YN = 'N'
+         ) F
+        ,TB_EP_CST_CONSULT_MGMT G
+        ,TB_EP_EQP_SALE H
+        ,TB_DEALCO I
+  WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+    AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+    AND  A.INVE_HLD_DEALCO_CD = D.DEALCO_CD(+)
+    AND  A.SALEPLC = I.DEALCO_CD(+)
+    AND  B.EQP_MDL_CD = C.EQP_MDL_CD(+) 
+    AND  B.PROD_SER_NO = E.EQP_SER_NO(+)
+    AND  B.GNRL_SELL_NO = F.SELL_MGMT_NO(+) 	
+    AND  B.GNRL_SELL_CHG_SEQ = F.GNRL_SELL_CHG_SEQ(+) 
+    AND  B.PROD_SER_NO = F.EQP_SER_NO(+)
+    AND  B.EQP_MDL_CD = F.EQP_MDL_CD(+) 			
+    AND  B.EQP_COLOR_CD = F.EQP_COLOR_CD(+)
+    AND  B.GNRL_SELL_NO = H.GNRL_SELL_NO(+)
+    AND  B.GNRL_SELL_CHG_SEQ = H.GNRL_SELL_CHG_SEQ(+)
+    AND  E.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)
+    AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+    AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                  FROM  TB_EP_SAL_GNRL_SALE
+                                 WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+                                   AND  DEL_YN = 'N')  
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+ ORDER  BY A.GNRL_SELL_NO 
+       ,A.GNRL_SELL_CHG_SEQ]]>
+	</select>
+	<select id="SB2bSaleEquipmentSellSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsesbase.db.DEPB2BSaleMgmt.SB2bSaleEquipmentSellSeq B2B상품판매단말기판매순번채번 */
+/* IO: 이민재,2015-11-03T15:58:37(이민재,2015-11-03T15:57:59) */
+SELECT  NVL(TO_NUMBER(MAX(SELL_SEQ)),0)+1 AS SELL_SEQ 
+  FROM  TB_EP_SAL_EQUIPMENT_SALE]]>
+	</select>
+</sqlMap>

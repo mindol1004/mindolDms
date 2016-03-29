@@ -1,0 +1,478 @@
+package dms.nr.nrsxmbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]대리점단말기정산정보관리</li>
+ * <li>설  명 : <pre>대리점단말기정산정보관리FU</pre></li>
+ * <li>작성일 : 2015-08-18 10:06:59</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FNRAgnEqpStlMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRAgnEqpStlMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>대리점단말기정산정보조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : PRCH_STA_DT [매입시작일]
+	 *	- field : PRCH_END_DT [매입종료일]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : SLIP_TS [전표차수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : PRCHCO_CD [대리점코드]
+	 *		- field : PRCHCO_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : XCL_PROC_DT [정산월]
+	 *		- field : SLIP_TS [전표차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_DT [전표처리일]
+	 *		- field : PRCH_AMT [정산금액]
+	 *		- field : PAY_YM [지급년월]
+	 *		- field : AGN_CRD_AMT [대리점여신금액]
+	 *		- field : AGN_SALE_AMT [대리점매출금액]
+	 *		- field : CRD_SALE_DAMT [여신매출차액]
+	 * </pre>
+	 */
+	public IDataSet fInqAgnEqpStlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    //IDataSet responseDataSum = new DataSet();
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsList = null;
+        IRecordSet rsList2 = null;
+        IRecordSet rsList3 = null;
+        IRecordSet rsList4 = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DNRAgnEqpStlMgmt dNRAgnEqpStlMgmt = (DNRAgnEqpStlMgmt) lookupDataUnit(DNRAgnEqpStlMgmt.class);
+            
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRAgnEqpStlMgmt.dSAgnEqpStlTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            
+            // 3. LISTDM호출
+            responseData = dNRAgnEqpStlMgmt.dSAgnEqpStlLstPaging(requestData, onlineCtx);
+            rsList = responseData.getRecordSet("RS_AGN_EQP_STL_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsList, requestData, intTotalCnt);
+            
+            // 2. TOTAL COUNT DM호출
+		    IDataSet dsRtn = dNRAgnEqpStlMgmt.dSAgnEqpStlSumTotCnt(requestData, onlineCtx);
+		    rsList2 = dsRtn.getRecordSet("RS_SUM_LIST");
+		    PagenateUtils.setPagenatedParamToRecordSet(rsList2, requestData, intTotalCnt);
+		    
+		    // 2. TOTAL COUNT DM호출
+		    IDataSet dsRtn2 = dNRAgnEqpStlMgmt.dSAgnEqpStlSumTotCnt2(requestData, onlineCtx);
+		    rsList3 = dsRtn2.getRecordSet("RS_SUM_LIST2");
+		    PagenateUtils.setPagenatedParamToRecordSet(rsList3, requestData, intTotalCnt);
+		    
+		    // 2. TOTAL COUNT DM호출
+		    IDataSet dsRtn3 = dNRAgnEqpStlMgmt.dSAgnEqpStlSumTotCnt3(requestData, onlineCtx);
+		    rsList4 = dsRtn3.getRecordSet("RS_SUM_LIST3");
+		    PagenateUtils.setPagenatedParamToRecordSet(rsList4, requestData, intTotalCnt);
+		    
+            
+		    responseData.putRecordSet("RS_AGN_EQP_STL_LIST", rsList);
+		    responseData.putRecordSet("RS_SUM_LIST", rsList2); //현재월총건수
+		    responseData.putRecordSet("RS_SUM_LIST2", rsList3); //현금총건수
+		    responseData.putRecordSet("RS_SUM_LIST3", rsList4); //여신총건수
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산정보상세</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_PROC_DT [정산월]
+	 *	- field : PRCHCO_CD [대리점코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_DTL
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : PRCH_DT [매입일자]
+	 *		- field : PRCH_AMT [매입금액]
+	 * </pre>
+	 */
+	public IDataSet fInqAgnEqpStlDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        int intTotalCnt = 0;
+        
+        IRecordSet rsList = null;
+        IRecordSet rsList2 = null;
+    
+        try {
+            // 1. DU lookup
+            DNRAgnEqpStlMgmt dNRAgnEqpStlMgmt = (DNRAgnEqpStlMgmt) lookupDataUnit(DNRAgnEqpStlMgmt.class);
+            
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRAgnEqpStlMgmt.dSAgnEqpStlTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            
+            // 3. LISTDM호출
+            responseData = dNRAgnEqpStlMgmt.dSAgnEqpStlDtl(requestData, onlineCtx);
+            rsList = responseData.getRecordSet("RS_AGN_EQP_STL_DTL"); //대리점정산상세리스트 조회
+            
+            // 2. TOTAL COUNT DM호출
+		    IDataSet dsRtn = dNRAgnEqpStlMgmt.dSAgnEqpStlDtlSumTotCnt(requestData, onlineCtx);
+		    rsList2 = dsRtn.getRecordSet("RS_SUM_LIST"); //대리점정산상세 매입 총금액,총건수
+		    
+		    responseData.putRecordSet("RS_AGN_EQP_STL_DTL", rsList); //대리점정산상세리스트 조회
+		    responseData.putRecordSet("RS_SUM_LIST", rsList2); //대리점정산상세 매입 총금액,총건수
+		                
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산정보전표생성</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : DEBT_DEALCO_CD [대리점코드]
+	 *		- field : ORG_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : XCL_CL [정산구분]
+	 *		- field : DEBT_PRCH_TS [매입차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : DEBT_SLIP_DT [전표처리일]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : TAX_BILL_NO [세금계산서번호]
+	 *		- field : PROXY_DEALCO_CD [대행거래처코드]
+	 *		- field : SUM_TOT [총합계]
+	 *		- field : DEBT_AMT [출고가]
+	 *		- field : DEBT_ITM_AMT [매입가]
+	 *		- field : DEBT_SURTAX [부가세]
+	 *		- field : DEBT_XCL_YM [정산년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegAgnEqpStlSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        Log log = getLog(onlineCtx);
+        boolean isOnline = false;
+
+        try {
+            	// 1. 입력 RS설정
+        		requestData.putField("USERNO", ca.getUserNo());
+            	requestData.putField("SLIP_TYPE", "AGENCY_AMT_AP");
+
+				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR010");
+			    params.put("TASK_NM", "전표발행");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+			    
+			    
+				log.debug("(((((((((((((((((((((((((((((((fSlipInveInfoHandl() result :"+ result);
+
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+
+	    	
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+    
+        return responseData;
+    }
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-18 10:06:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_DELETE
+	 *		- field : DEBT_DEALCO_CD [대리점코드]
+	 *		- field : ORG_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : XCL_CL [정산구분]
+	 *		- field : DEBT_PRCH_TS [매입차수]
+	 *		- field : DEBT_SLIP_NO [전표번호]
+	 *		- field : DEBT_SLIP_DT [전표처리일]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : TAX_BILL_NO [세금계산서번호]
+	 *		- field : PROXY_DEALCO_CD [대행거래처코드]
+	 *		- field : SUM_TOT [총합계]
+	 *		- field : DEBT_AMT [출고가]
+	 *		- field : DEBT_ITM_AMT [매입가]
+	 *		- field : DEBT_SURTAX [부가세]
+	 *		- field : DEBT_XCL_YM [정산년월]
+	 *		- field : YYYY [년]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveAgnEqpStlSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+		Log log = getLog(onlineCtx);
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    boolean isOnline = false;
+	    
+	    try{
+	    	
+				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR011");
+			    params.put("TASK_NM", "전표삭제");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				log.info("(((((((((((((((((((((((((((((((fSaveAgnEqpStlSlipDel() params :"+ params);
+				String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+			    
+			    
+				log.info("(((((((((((((((((((((((((((((((fSaveAgnEqpStlSlipDel() result :"+ result);
+
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다
+	    	
+	    
+	    } catch(BizRuntimeException e){
+	    	throw e;
+	    } catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-18 10:06:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqAgnReBatch(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    
+
+	    try {	    	
+    		// 1. DU lookup
+	    	DNRAgnEqpStlMgmt dNRAgnEqpStlMgmt = (DNRAgnEqpStlMgmt) lookupDataUnit(DNRAgnEqpStlMgmt.class);
+    	
+    		// 2. LISTDM호출
+    		IDataSet dsRtn = dNRAgnEqpStlMgmt.dSAgnreBatchDt(requestData, onlineCtx);
+    	
+    		if(dsRtn.getIntField("CNT") > 0 && dsRtn.getIntField("REBAT_DT") == 0){
+    			/* TODO : 에러코드입력 필요함({유효기간}에  주복 데이터가 있습니다). 현재는 중복데이타가 있습니다로 사용.*/
+    		throw new BizRuntimeException("DMS00117"); //재집계가 불가합니다.
+    		}
+    
+		    ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+			DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+			String dsXml = bout.toString("UTF-8");
+		
+			// call on-demand batch job
+			HashMap params = new HashMap<String,String>();
+			params.put("TASK_ID", "XCR007");
+		    params.put("TASK_NM", "단말기매입정산");
+		    params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId());
+		    params.put("USER_NO", ca.getUserNo());
+		    params.put("PROC_DT", requestData.getField("YDATE")+"01");
+		    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.nr.XCR007");				
+			params.put("ONDEMAND_DATASET", dsXml);
+			
+			String jobExecutionId = callBatchJob("XCR007", params, onlineCtx);
+		    waitBatchJobEnd(jobExecutionId, 10000);
+		    int result = getJobReturnCode(jobExecutionId);
+		    
+		    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+		    
+	} catch ( BizRuntimeException e ) {
+		throw e; //시스템 오류가 발생하였습니다.
+	
+	} catch (UnsupportedEncodingException ee) {
+		throw new BizRuntimeException("DMS00009",ee); //시스템 오류가 발생하였습니다.
+	}
+
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-21 11:23:34
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqEqpStlAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet temp = new DataSet();
+	    
+	    try {
+	    	//1. 대리점별단말정산정보조회로직호출
+		    temp = this.fInqAgnEqpStlLst(requestData, onlineCtx);
+		    IRecordSet stlRs = temp.getRecordSet("RS_AGN_EQP_STL_LIST");
+		    
+		    //2. 조회된 데이터셋에서 대리점코드를 파라미터로 넘김
+		    ArrayList<String> paramList = new ArrayList<String>();
+			
+			for(int i = 0; i<stlRs.getRecordCount(); i++){
+				paramList.add(stlRs.get(i, "DEBT_DEALCO_CD") );
+			}
+			requestData.putField("DEBT_DEALCO_CD_LIST", paramList);
+    	
+            // 3. DU lookup
+            DNRAgnEqpStlMgmt dNRAgnEqpStlMgmt = (DNRAgnEqpStlMgmt) lookupDataUnit(DNRAgnEqpStlMgmt.class);
+
+            // 4. LISTDM호출
+            responseData = dNRAgnEqpStlMgmt.dSEqpStlAllExcel(requestData, onlineCtx);
+	            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+	    
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-08-18 10:06:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqAgnTaxBillSearch(IDataSet requestData, IOnlineContext onlineCtx) {
+	
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    
+
+	    try {	    	
+    		
+		    ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+			DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+			String dsXml = bout.toString("UTF-8");
+		
+			// call on-demand batch job
+			HashMap params = new HashMap<String,String>();
+			params.put("TASK_ID", "EPR001");
+		    params.put("TASK_NM", "단말기세금계산서조회");
+		    params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId());
+		    params.put("USER_NO", ca.getUserNo());
+		    params.put("PROC_DT", requestData.getField("YDATE")+"01");
+		    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.nr.EPR001");				
+			params.put("ONDEMAND_DATASET", dsXml);
+			
+			String jobExecutionId = callBatchJob("EPR001", params, onlineCtx);
+		    waitBatchJobEnd(jobExecutionId, 10000);
+		    int result = getJobReturnCode(jobExecutionId);
+		    
+		
+		    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+		    
+	    } catch ( BizRuntimeException e ) {
+	    	throw e; //시스템 오류가 발생하였습니다.
+		
+	    } catch (UnsupportedEncodingException ee) {
+	    	throw new BizRuntimeException("DMS00009",ee); //시스템 오류가 발생하였습니다.
+	    }
+ 
+	    return responseData;
+	}
+  
+}

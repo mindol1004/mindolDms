@@ -1,0 +1,653 @@
+package dms.ep.epssxbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]단말기대금선할인정산관리</li>
+ * <li>설  명 : <pre>단말기대금선할인정산관리 FU</pre></li>
+ * <li>작성일 : 2015-10-23 09:52:49</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FEPEqpPreDcXclMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPEqpPreDcXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]단말기대금선할인정산목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:52:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DCINAD_STRD_YM [선할인 기준 년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_DCINAD_LIST
+	 *		- field : DCINAD_XCL_NO [선할인 정산 번호]
+	 *		- field : DCINAD_STRD_YM [선할인 기준 년월]
+	 *		- field : REPV_AGN_ORG_CD [대표 대리점 조직 코드]
+	 *		- field : DEALCO_NM [상호명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : DCINAD_AMT [선할인 금액]
+	 *		- field : SURTAX_AMT [부가세금액]
+	 *		- field : SPLY_PRC [공급가격]
+	 *		- field : DCINAD_XCL_CNT [선할인 정산 건수]
+	 *		- field : DCINAD_SLIP_DT [선할인 전표 일자]
+	 *		- field : DCINAD_SLIP_NO [선할인 전표 번호]
+	 *		- field : DCINAD_SLIP_ST [선할인 전표 상태]
+	 *		- field : DCINAD_CNCL_SLIP_DT [선할인 취소 전표 일자]
+	 *		- field : DCINAD_CNCL_SLIP_NO [선할인 취소 전표 번호]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 *		- field : SLIP_DT [전표일자]
+	 * </pre>
+	 */
+	public IDataSet fSEqpDcinadXcl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;    
+        
+        try {
+            // 1. DU lookup
+            DEPEqpPreDcXclMgmt dEPEqpPreDcXclMgmt = (DEPEqpPreDcXclMgmt)lookupDataUnit(DEPEqpPreDcXclMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPEqpPreDcXclMgmt.dSEqpDcinadXclTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            
+            // 3. LISTDM호출
+            responseData = dEPEqpPreDcXclMgmt.dSEqpDcinadXclPaging(requestData, onlineCtx);
+            rsPagingList = responseData.getRecordSet("RS_EQP_DCINAD_LIST");          
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]단말기대금선할인정산상세엑셀목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:52:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DCINAD_XCL_NO [선할인정산번호]
+	 *	- field : DCINAD_STRD_YM [정산기준년월]
+	 *	- field : EXCEL_FIRST [첫번째순번]
+	 *	- field : EXCEL_LAST [마지막번째순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_DCINAD_EXCEL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [대표리점별총건수]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : CLCT_DT [회수 일자(반영일자)]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : SCRB_MTHD [가입방법]
+	 *		- field : SCRB_NM [가입명]
+	 *		- field : SKN_CL [SKN 구분]
+	 *		- field : PRE_DC_CL [선할인 구분]
+	 *		- field : FEE_DEDC_YN [공제처리여부]
+	 *		- field : AMT_RMT_YN [계좌송금여부]
+	 *		- field : DEDC_TYP_CD [공제유형코드]
+	 *		- field : DPSTR [예금주]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : JDG_EQP_ST [단말기 상태(재감정 등급)]
+	 *		- field : JDG_PRCH_AMT [매입 금액(재감정 금액)]
+	 *		- field : JDG_DTL [감정상세]
+	 *		- field : ERR_JDG_YN [오감정 여부]
+	 *		- field : ASSET_AMT [자산가액]
+	 *		- field : SKN_SMPL_JDG_DAMT [대리점오류금액]
+	 *		- field : AGN_DDCT_AMT [대리점 차감금액]
+	 *		- field : AGN_EXPNS_CONF_AMT [대리점 비용 확정 금액]
+	 *		- field : XCL_AMT [총정산액]
+	 *		- field : SC_DT [현장감정일]
+	 *		- field : FST_RGSTR_NM [최초 등록자명]
+	 *		- field : FST_RGSTR [최초 등록자]
+	 *		- field : SVC_MGMT_NO [서비스 관리 번호]
+	 *		- field : SVC_CHG_DT [변경일자]
+	 *		- field : SVC_CHG [서비스변경]
+	 *		- field : SVC_CHG_DTL [서비스변경사유]
+	 *		- field : HEADQ_NM [본부명]
+	 *		- field : MKT_TEAM_NM [마케팅 팀 명]
+	 *		- field : AGN_ORG_CD [대리점코드]
+	 *		- field : AGN_ORG_NM [대리점명]
+	 *		- field : UKEY_AGN_CD [대리점코드2]
+	 *		- field : UKEY_AGN_NM [대리점명2]
+	 *		- field : UKEY_AGN_BLICENS_NO [대리점명2_사업자번호]
+	 * </pre>
+	 */
+	public IDataSet fSEqpDcinadXclDtlExcelLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        try {
+            // 1. DU lookup
+            DEPEqpPreDcXclMgmt dEPEqpPreDcXclMgmt = (DEPEqpPreDcXclMgmt)lookupDataUnit(DEPEqpPreDcXclMgmt.class);
+            responseData.putRecordSet(dEPEqpPreDcXclMgmt.dSEqpDcinadXclDtlExcelLst(requestData, onlineCtx).getRecordSet("RS_EQP_DCINAD_EXCEL_LIST"));  // 단말기대금선할인정산상세엑셀목록조회     
+            responseData.putRecordSet(dEPEqpPreDcXclMgmt.dSEqpDcinadXclDtlExcelTotCnt(requestData, onlineCtx).getRecordSet("EXCEL_TOTAL_CNT"));  // 단말기대금선할인정산상세엑셀목록총건수    
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]단말기대금선할인전표발행여부</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-23 09:52:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DCINAD_STRD_YM [정산기준년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : CHK_CNT [전표발행진행건수]
+	 * </pre>
+	 */
+	public IDataSet fSEqpPreDcSlipYn(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DEPEqpPreDcXclMgmt dEPEqpPreDcXclMgmt = (DEPEqpPreDcXclMgmt)lookupDataUnit(DEPEqpPreDcXclMgmt.class);
+            responseData = dEPEqpPreDcXclMgmt.dSEqpPreDcSlipYn(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+	/**
+	 * <pre>[FM]전표발행대상사업자번호ERP체크리스트</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-10-23 09:52:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSEqpBlicensNoCheckList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DEPEqpPreDcXclMgmt dEPEqpPreDcXclMgmt = (DEPEqpPreDcXclMgmt)lookupDataUnit(DEPEqpPreDcXclMgmt.class);
+            responseData = dEPEqpPreDcXclMgmt.dSEqpBlicensNoCheckList(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+	/**
+	 * <pre>[FM]거래처코드ERP유무체크</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-12-02 14:32:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDealcoERPCheck(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    Log logger = LogManager.getFwkLog();
+	    String jobExecutionId = ""; // 실행 JOB_ID	
+	    try {
+
+	    	HashMap params = new HashMap<String,String>(); // 배치 파라미터 값 정보.                        
+	    	params.put("TASK_ID", "EPR002");
+	    	params.put("TASK_NM", "거래처상태ERP동기화");                
+	    	params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR002");            
+	    	
+
+	    	jobExecutionId = callBatchJob("EPR002", params, onlineCtx);
+
+	    	waitBatchJobEnd(jobExecutionId, 10000);
+
+	    	int result = getJobReturnCode(jobExecutionId);
+
+	    	if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.             
+
+	    } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+ 
+	    return responseData;
+	}
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-10-23 09:52:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YYYYMM [정산기준년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqEqpPreDcXclTaxBillSearch(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+
+        try {           
+            
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+        
+            // call on-demand batch job
+            HashMap params = new HashMap<String,String>();
+            params.put("TASK_ID", "EPR001");
+            params.put("TASK_NM", "단말기대금선할인세금계산서조회");
+            params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId());
+            params.put("USER_NO", ca.getUserNo());
+            params.put("PROC_DT", requestData.getField("YYYYMM")+"01");
+            params.put("SYNC_TYPE", "XA");
+            params.put("YYYYMM", requestData.getField("YYYYMM"));            
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.nr.EPR001");                
+            params.put("ONDEMAND_DATASET", dsXml);
+            
+            String jobExecutionId = callBatchJob("EPR001", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+            
+        
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        
+        } catch (UnsupportedEncodingException ee) {
+            throw new BizRuntimeException("DMS00009",ee); //시스템 오류가 발생하였습니다.
+        }
+ 
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금선할인엑셀업로드검증</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:52:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_IN_EXCEL_LIST
+	 *		- field : DCINAD_STRD_YM [정산기준년월]
+	 *		- field : DEDC_TYP_NM [구분명]
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : SKN_JDG_AMT [자산가액]
+	 *		- field : SKN_SMPL_JDG_DAMT [대리점오류금액]
+	 *		- field : AGN_DDCT_AMT [차감금액]
+	 *		- field : AGN_EXPNS_CONF_AMT [비용보전금액]
+	 *		- field : XCL_AMT [정산금액]
+	 *		- field : DEDC_TYP_CD [구분코드]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : REPV_AGN_ORG_CD [조직코드]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : FEE_DEDC_PROC_DT [요금공제일자]
+	 *		- field : UKEY_AGN_BLICENS_NO [사업자번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EXCEL_LIST
+	 *		- field : DCINAD_STRD_YM [정산기준년월]
+	 *		- field : DEDC_TYP_NM [구분명]
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : SKN_JDG_AMT [자산가액]
+	 *		- field : SKN_SMPL_JDG_DAMT [대리점오류금액]
+	 *		- field : AGN_DDCT_AMT [차감금액]
+	 *		- field : AGN_EXPNS_CONF_AMT [비용보전금액]
+	 *		- field : XCL_AMT [정산금액]
+	 *		- field : DEDC_TYP_CD [구분코드]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : REPV_AGN_ORG_CD [조직코드]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : FEE_DEDC_PROC_DT [요금공제일자]
+	 *		- field : UKEY_AGN_BLICENS_NO [사업자번호]
+	 *		- field : ERR_DESC [오류내용]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpPreDcXclExcelErrLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        String DCINAD_STRD_YM = "";
+        String DEDC_TYP_CD = "";
+    
+        try {
+
+            // 1. DU lookup
+            DEPEqpPreDcXclMgmt dEPEqpPreDcXclMgmt = (DEPEqpPreDcXclMgmt) lookupDataUnit(DEPEqpPreDcXclMgmt.class);
+            
+            IRecordSet excelRs = reqDs.getRecordSet("RS_IN_EXCEL_LIST");
+            excelRs.addHeader(new RecordHeader("ERR_DESC"));
+
+            if (excelRs != null) {
+                
+                IRecord excelRd = null;
+                for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                    excelRd = excelRs.getRecord(i);
+                    
+                    if(excelRd.get("CNSL_MGMT_NO") == null){
+                        excelRd.set("ERR_DESC", "접수관리번호가 없습니다.");
+                        continue;
+                    }
+                    
+                    int chkCnsl = 0;
+                    for (int k = 0; k < excelRs.getRecordCount(); k++) {
+                        if(StringUtils.equals(excelRd.get("CNSL_MGMT_NO").trim(), excelRs.get(k, "CNSL_MGMT_NO").trim())){
+                            chkCnsl++;
+                        }
+                    }
+                    
+                    if(chkCnsl > 1){
+                        excelRd.set("ERR_DESC", "중복된 접수관리번호가 있습니다.");
+                        continue;
+                    }
+                    
+                    if(excelRd.get("DCINAD_STRD_YM") == null){
+                        excelRd.set("ERR_DESC", "정산기준년월이 없습니다.");
+                        continue;
+                    }
+                    
+                    if(excelRd.get("DCINAD_STRD_YM").trim().length() != 6){
+                        excelRd.set("ERR_DESC", "정산기준년월은 (YYYYMM)으로 입력 하셔야 합니다.");
+                        continue;
+                    }
+                    
+                    if(!StringUtils.isNumeric(excelRd.get("DCINAD_STRD_YM").trim())){
+                        excelRd.set("ERR_DESC", "정산기준년월은 숫자형식으로 입력 하셔야 합니다.");
+                        continue;
+                    }
+                    
+                    if(i==0){
+                        DCINAD_STRD_YM = excelRd.get("DCINAD_STRD_YM").trim();
+                    }
+                    
+                    if(!StringUtils.equals(DCINAD_STRD_YM, excelRd.get("DCINAD_STRD_YM").trim())){
+                        excelRd.set("ERR_DESC", "정산기준년월이 일치하지 않습니다.");
+                        continue;
+                    }
+                    
+                    if(excelRd.get("DEDC_TYP_NM") == null){
+                        excelRd.set("ERR_DESC", "구분값이 없습니다.");
+                        continue;
+                    }
+                    
+                    if( !StringUtils.equals(excelRd.get("DEDC_TYP_NM").trim() ,"선할인") && 
+                        !StringUtils.equals(excelRd.get("DEDC_TYP_NM").trim() ,"계좌") && 
+                        !StringUtils.equals(excelRd.get("DEDC_TYP_NM").trim() ,"선납")){
+                        excelRd.set("ERR_DESC", "구분값은 [선할인],[계좌],[선납]만 입력 가능합니다.");
+                        continue;
+                    }
+                    
+                    if(StringUtils.equals(excelRd.get("DEDC_TYP_NM").trim() ,"계좌")){
+                        DEDC_TYP_CD = "01";
+                    }else if(StringUtils.equals(excelRd.get("DEDC_TYP_NM").trim() ,"선납")){
+                        DEDC_TYP_CD = "03";
+                    }else{
+                        DEDC_TYP_CD = "02";
+                    }
+                    
+                    if( !NumberUtils.isNumber(StringUtils.defaultIfEmpty(excelRd.get("XCL_AMT"), "0")) ||
+                        !NumberUtils.isNumber(StringUtils.defaultIfEmpty(excelRd.get("SKN_JDG_AMT"), "0")) ||
+                        !NumberUtils.isNumber(StringUtils.defaultIfEmpty(excelRd.get("SKN_SMPL_JDG_DAMT"), "0")) ||
+                        !NumberUtils.isNumber(StringUtils.defaultIfEmpty(excelRd.get("AGN_DDCT_AMT"), "0")) ||
+                        !NumberUtils.isNumber(StringUtils.defaultIfEmpty(excelRd.get("AGN_EXPNS_CONF_AMT"), "0")) ){
+                        excelRd.set("ERR_DESC", "금액은 숫자형식으로 입력 하셔야 합니다.");
+                        continue;
+                    }
+                    
+                    reqDs.putField("CNSL_MGMT_NO", excelRd.get("CNSL_MGMT_NO").trim());
+                    IDataSet xclDs = dEPEqpPreDcXclMgmt.dSEqpPreDcXclExcelList(reqDs, onlineCtx);
+                    if (xclDs.getFieldCount() == 0) {
+                        excelRd.set("ERR_DESC", "데이터가 없습니다.");
+                        continue;
+                    }
+                    
+                    excelRd.set("UKEY_AGN_BLICENS_NO", xclDs.getField("UKEY_AGN_BLICENS_NO")); //사업자번호
+                    excelRd.set("DCINAD_STRD_YM", excelRd.get("DCINAD_STRD_YM").trim()); //정산기준년월
+                    excelRd.set("DEDC_TYP_CD", DEDC_TYP_CD); //공제유형
+                    excelRd.set("DEDC_TYP_NM", excelRd.get("DEDC_TYP_NM").trim()); //공제유형명
+                    excelRd.set("CNSL_MGMT_NO", xclDs.getField("CNSL_MGMT_NO")); //접수관리번호
+                    excelRd.set("PRCH_MGMT_NO", xclDs.getField("PRCH_MGMT_NO")); //매입관리번호
+                    excelRd.set("EQP_MDL_CD", xclDs.getField("EQP_MDL_CD")); //모델코드
+                    excelRd.set("EQP_MDL_NM", xclDs.getField("EQP_MDL_NM")); //모델명
+                    excelRd.set("EQP_SER_NO", xclDs.getField("EQP_SER_NO")); //일련번호
+                    excelRd.set("REPV_AGN_ORG_CD", xclDs.getField("REPV_AGN_ORG_CD")); //조직코드
+                    excelRd.set("CNSL_DT", xclDs.getField("CNSL_DT")); //상담일자
+                    excelRd.set("CLCT_DT", xclDs.getField("CLCT_DT")); //회수일자
+                    excelRd.set("FEE_DEDC_PROC_DT", xclDs.getField("FEE_DEDC_PROC_DT")); //공제처리일자
+                    excelRd.set("XCL_AMT", excelRd.get("XCL_AMT")); //정산금액
+                    excelRd.set("SKN_JDG_AMT", excelRd.get("SKN_JDG_AMT")); //자산가액
+                    excelRd.set("SKN_SMPL_JDG_DAMT", excelRd.get("SKN_SMPL_JDG_DAMT")); //대리점오류금액
+                    excelRd.set("AGN_DDCT_AMT", excelRd.get("AGN_DDCT_AMT")); //차감금액
+                    excelRd.set("AGN_EXPNS_CONF_AMT", excelRd.get("AGN_EXPNS_CONF_AMT")); //비용보전금액
+                }
+            }
+            
+            responseData.putRecordSet("RS_EXCEL_LIST", excelRs);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기대금선할인엑셀저장</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-10-23 09:52:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_IN_EXCEL_LIST
+	 *		- field : DCINAD_STRD_YM [정산기준년월]
+	 *		- field : DEDC_TYP_NM [구분명]
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : SKN_JDG_AMT [자산가액]
+	 *		- field : SKN_SMPL_JDG_DAMT [대리점오류금액]
+	 *		- field : AGN_DDCT_AMT [차감금액]
+	 *		- field : AGN_EXPNS_CONF_AMT [비용보전금액]
+	 *		- field : XCL_AMT [정산금액]
+	 *		- field : DEDC_TYP_CD [구분코드]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : REPV_AGN_ORG_CD [조직코드]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : FEE_DEDC_PROC_DT [요금공제일자]
+	 *		- field : UKEY_AGN_BLICENS_NO [사업자번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveEqpPreDcXclExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IDataSet delDs = null;
+        IDataSet seqDs = null;
+        IDataSet xclDtlDs = null;
+        IRecord excelRd = null;
+        
+        String DCINAD_STRD_YM = "";
+        int DCINAD_XCL_DTL_SEQ = 1;
+
+        try {
+            // 1. DU lookup
+            DEPEqpPreDcXclMgmt dEPEqpPreDcXclMgmt = (DEPEqpPreDcXclMgmt) lookupDataUnit(DEPEqpPreDcXclMgmt.class);
+            
+            IRecordSet excelRs = reqDs.getRecordSet("RS_IN_EXCEL_LIST");
+            
+            if(excelRs != null){
+                
+                for (int i = 0; i < excelRs.getRecordCount(); i++) {
+                    excelRd = excelRs.getRecord(i);
+                    DCINAD_STRD_YM = excelRd.get("DCINAD_STRD_YM");
+                }
+                
+                reqDs.putField("DCINAD_STRD_YM", DCINAD_STRD_YM);
+                
+                IDataSet dsCnt = dEPEqpPreDcXclMgmt.dSEqpPreDcSlipYn(reqDs, onlineCtx);
+                if( dsCnt.getIntField("CHK_CNT") > 0){
+                    throw new BizRuntimeException("DMS00150"); //진행중인 전표가 있습니다.
+                }
+                
+                IRecordSet seqRs = dEPEqpPreDcXclMgmt.dSEqpPreDcXclSeq(reqDs, onlineCtx).getRecordSet("RS_EQP_PREDC_SEQ");
+                
+                if (seqRs != null) {
+                    for (int i = 0; i < seqRs.getRecordCount(); i++) {
+                        delDs = new DataSet();
+                        delDs.putFieldMap(seqRs.getRecordMap(i));
+                        delDs.putField("USERNO", reqDs.getField("USERNO"));
+
+                        dEPEqpPreDcXclMgmt.dUEqpPreDcXclExcelDel(delDs, onlineCtx);
+                        dEPEqpPreDcXclMgmt.dUEqpPreDcXclExcelDtlDel(delDs, onlineCtx);
+                    }
+                }
+                
+                Map<String,List<Map<String, Object>>> groupMap = new HashMap<String, List<Map<String, Object>>>(); 
+                
+                for(Map<String, Object> rs : excelRs.getRecordMaps()){ 
+                    if(!groupMap.containsKey(rs.get("UKEY_AGN_BLICENS_NO"))){ 
+                        groupMap.put((String) rs.get("UKEY_AGN_BLICENS_NO"), new ArrayList<Map<String, Object>>()); 
+                    } 
+                    groupMap.get(rs.get("UKEY_AGN_BLICENS_NO")).add(rs); 
+                }
+                
+                Set<String> keys = groupMap.keySet();
+                for(String key: keys){
+                    
+                    seqDs = new DataSet();
+                    seqDs = dEPEqpPreDcXclMgmt.dSEqpPreDcXclExcelSeq(reqDs, onlineCtx);
+                    String seq = seqDs.getField("DCINAD_XCL_NO");
+                    
+                    boolean reusult = false;
+                    for(Map<String, Object> value : groupMap.get(key)){
+                        if(StringUtils.equals((String) value.get("DEDC_TYP_CD") ,"02")){ // 선할인이 포함된 데이터만 저장
+                            reusult = true;
+                        }
+                    }
+                    
+                    if(reusult){
+                        for(Map<String, Object> value : groupMap.get(key)){
+                            xclDtlDs = new DataSet();
+                            xclDtlDs.putField("DCINAD_XCL_NO", seq);
+                            xclDtlDs.putField("DCINAD_XCL_DTL_SEQ", DCINAD_XCL_DTL_SEQ++);
+                            xclDtlDs.putField("DCINAD_STRD_YM", value.get("DCINAD_STRD_YM"));
+                            xclDtlDs.putField("DEDC_TYP_CD", value.get("DEDC_TYP_CD"));
+                            xclDtlDs.putField("CNSL_MGMT_NO", value.get("CNSL_MGMT_NO"));
+                            xclDtlDs.putField("PRCH_MGMT_NO", value.get("PRCH_MGMT_NO"));
+                            xclDtlDs.putField("EQP_MDL_CD", value.get("EQP_MDL_CD"));
+                            xclDtlDs.putField("EQP_SER_NO", value.get("EQP_SER_NO"));
+                            xclDtlDs.putField("REPV_AGN_ORG_CD", value.get("REPV_AGN_ORG_CD"));
+                            xclDtlDs.putField("CNSL_DT", value.get("CNSL_DT"));
+                            xclDtlDs.putField("CLCT_DT", value.get("CLCT_DT"));
+                            xclDtlDs.putField("FEE_DEDC_PROC_DT", value.get("FEE_DEDC_PROC_DT"));
+                            xclDtlDs.putField("XCL_AMT", value.get("XCL_AMT"));
+                            xclDtlDs.putField("SKN_JDG_AMT", value.get("SKN_JDG_AMT"));
+                            xclDtlDs.putField("SKN_SMPL_JDG_DAMT", value.get("SKN_SMPL_JDG_DAMT"));
+                            xclDtlDs.putField("AGN_DDCT_AMT", value.get("AGN_DDCT_AMT"));
+                            xclDtlDs.putField("AGN_EXPNS_CONF_AMT", value.get("AGN_EXPNS_CONF_AMT"));
+                            xclDtlDs.putField("USERNO", reqDs.getField("USERNO"));
+                            
+                            dEPEqpPreDcXclMgmt.dIEqpPreDcXclExcelDtl(xclDtlDs, onlineCtx);
+                        }
+                        
+                        reqDs.putField("DCINAD_XCL_NO", seq);
+                        dEPEqpPreDcXclMgmt.dIEqpPreDcXclExcel(reqDs, onlineCtx);
+                        
+                        DCINAD_XCL_DTL_SEQ = 1;
+                    }
+                }
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+  
+}

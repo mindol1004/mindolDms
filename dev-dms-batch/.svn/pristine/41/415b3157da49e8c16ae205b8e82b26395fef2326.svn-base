@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.sc.DBC001">
+	<select id="SCntrtEnd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.DBC001.SCntrtEnd 계약종료목록 */
+/* IO: 이영진,2015-10-07T10:10:36(admin,2015-03-20T13:38:02) */
+SELECT  A.CNTRT_NO
+       ,A.RENTAL_CNTRT_END_DT
+       ,B.SVC_NO_ENPT
+       ,'DMS00130' AS ALRT_MSG_ID
+       ,'DM31' AS ALRT_MSG_CL
+  FROM  TB_RENTAL_CNTRT A
+       ,TB_NR_CNTRT B
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') - 31) = TO_DATE(TO_CHAR(SYSDATE,'YYYYMMDD'),'YYYYMMDD')
+   AND  B.OP_TYP_CD = '01'
+   AND  (B.EQP_RTN_YN = 'P' OR B.EQP_RTN_YN IS NULL)
+UNION ALL
+SELECT  A.CNTRT_NO
+       ,A.RENTAL_CNTRT_END_DT
+       ,B.SVC_NO_ENPT
+       ,'DMS00130' AS ALRT_MSG_ID
+       ,'DM7' AS ALRT_MSG_CL
+  FROM  TB_RENTAL_CNTRT A
+       ,TB_NR_CNTRT B
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') - 7) = TO_DATE(TO_CHAR(SYSDATE,'YYYYMMDD'),'YYYYMMDD') 
+   AND  B.OP_TYP_CD = '01'
+   AND  (B.EQP_RTN_YN = 'P' OR B.EQP_RTN_YN IS NULL)
+UNION ALL
+SELECT  A.CNTRT_NO
+       ,MIN(SCARL_DT) AS RENTAL_CNTRT_END_DT
+       ,A.SVC_NO_ENPT
+       ,'DMS00137' AS ALRT_MSG_ID
+       ,'D' AS ALRT_MSG_CL
+  FROM  
+      (
+        SELECT  A.CNTRT_NO
+               ,A.RENTAL_CNTRT_END_DT
+               ,B.SVC_NO_ENPT
+          FROM  TB_RENTAL_CNTRT A
+               ,TB_NR_CNTRT B
+         WHERE  A.CNTRT_NO = B.CNTRT_NO
+           AND  TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') = TO_DATE(TO_CHAR(SYSDATE,'YYYYMMDD'),'YYYYMMDD') 
+           AND  (B.OP_TYP_CD = '01' OR B.OP_TYP_CD = '07')
+           AND  (B.EQP_RTN_YN = 'P' OR B.EQP_RTN_YN IS NULL)
+      ) A,
+      TB_HOLY
+ WHERE  SCARL_DT >= (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 14)
+   AND  HOLY_YN = 'N'
+ GROUP  BY A.CNTRT_NO,A.RENTAL_CNTRT_END_DT,A.SVC_NO_ENPT
+UNION ALL
+SELECT  A.CNTRT_NO
+       ,A.DP30 AS RENTAL_CNTRT_END_DT
+       ,A.SVC_NO_ENPT
+       ,'DMS00139' AS ALRT_MSG_ID
+       ,'DP14' AS ALRT_MSG_CL
+  FROM  
+      (
+        SELECT  A.CNTRT_NO
+               ,A.RENTAL_CNTRT_END_DT
+               ,A.SCARL_DT14 AS  DP14
+               ,B.SCARL_DT30 AS  DP30
+               ,C.OP_TYP_CD
+               ,C.SVC_NO_ENPT
+               ,C.EQP_RTN_YN
+          FROM  (SELECT A.CNTRT_NO,A.RENTAL_CNTRT_END_DT, MIN(SCARL_DT) AS SCARL_DT14
+                   FROM  TB_HOLY,
+                         TB_RENTAL_CNTRT A
+                  WHERE   SCARL_DT >= (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 14)  
+                    AND   HOLY_YN = 'N'
+                  GROUP BY A.CNTRT_NO,A.RENTAL_CNTRT_END_DT
+                ) A, 
+                (SELECT A.CNTRT_NO, MIN(SCARL_DT) AS SCARL_DT30
+                   FROM  TB_HOLY,
+                         TB_RENTAL_CNTRT A
+                  WHERE   SCARL_DT >= (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 30)  
+                    AND   HOLY_YN = 'N'
+                  GROUP BY A.CNTRT_NO
+                ) B 
+               ,TB_NR_CNTRT C
+         WHERE  A.CNTRT_NO = B.CNTRT_NO
+           AND  A.CNTRT_NO = C.CNTRT_NO
+           AND  TO_DATE(TO_CHAR(SYSDATE,'YYYYMMDD'),'YYYYMMDD') BETWEEN (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 14) AND (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 19)
+           AND  (C.OP_TYP_CD = '01' OR C.OP_TYP_CD = '07')
+           AND  (C.EQP_RTN_YN = 'P' OR C.EQP_RTN_YN IS NULL) 
+      ) A
+ WHERE  1=1
+   AND  DP14 = TO_CHAR(SYSDATE,'YYYYMMDD')
+UNION ALL
+SELECT  
+        A.CNTRT_NO
+       ,MIN(SCARL_DT) AS RENTAL_CNTRT_END_DT
+       ,A.SVC_NO_ENPT
+       ,'DMS00145' AS ALRT_MSG_ID
+       ,'DP21' AS ALRT_MSG_CL
+ FROM  (
+       SELECT  A.CNTRT_NO
+              ,A.RENTAL_CNTRT_END_DT
+              ,B.SVC_NO_ENPT
+         FROM  TB_RENTAL_CNTRT A
+              ,TB_NR_CNTRT B
+        WHERE  A.CNTRT_NO = B.CNTRT_NO
+          AND  (B.OP_TYP_CD = '01' OR B.OP_TYP_CD = '07')
+          AND  (B.EQP_RTN_YN = 'P' OR B.EQP_RTN_YN IS NULL)
+          AND  (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 21) = TO_DATE(TO_CHAR(SYSDATE,'YYYYMMDD'),'YYYYMMDD')
+       ) A,
+       TB_HOLY
+ WHERE  SCARL_DT >= (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 30)
+   AND  HOLY_YN = 'N'
+ GROUP  BY A.CNTRT_NO,A.RENTAL_CNTRT_END_DT,A.SVC_NO_ENPT
+UNION ALL
+SELECT  
+        A.CNTRT_NO
+       ,A.DP30 AS RENTAL_CNTRT_END_DT
+       ,A.SVC_NO_ENPT
+       ,'DMS00140' AS ALRT_MSG_ID
+       ,'DP30' AS ALRT_MSG_CL
+ FROM  (
+       SELECT  A.CNTRT_NO
+              ,A.RENTAL_CNTRT_END_DT
+              ,A.SVC_NO_ENPT
+              ,MIN(SCARL_DT) AS DP30
+         FROM  
+             (
+               SELECT  A.CNTRT_NO
+                      ,A.RENTAL_CNTRT_END_DT
+                      ,B.SVC_NO_ENPT
+                 FROM  TB_RENTAL_CNTRT A
+                      ,TB_NR_CNTRT B
+                WHERE  A.CNTRT_NO = B.CNTRT_NO
+                  AND  TO_DATE(TO_CHAR(SYSDATE,'YYYYMMDD'),'YYYYMMDD') BETWEEN (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 30) AND (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 35)
+                  AND  (B.OP_TYP_CD = '01' OR B.OP_TYP_CD = '07')
+                  AND  (B.EQP_RTN_YN = 'P' OR B.EQP_RTN_YN IS NULL) 
+             ) A,
+             TB_HOLY
+        WHERE  SCARL_DT >= (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 30)
+          AND  HOLY_YN = 'N'
+        GROUP  BY A.CNTRT_NO,A.RENTAL_CNTRT_END_DT,A.SVC_NO_ENPT
+       ) A
+ WHERE  DP30 = TO_CHAR(SYSDATE,'YYYYMMDD')]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 프레임워크 DB관련 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd">
+
+    <bean id="nc.db.ISqlManager"
+        class="nexcore.framework.integration.db.internal.XmlSqlManager"
+        init-method="init">
+        <description>XML 기반의 ISqlManager</description>
+        <property name="configFile"          value="config/sql/nexcore-sql-config.xml" />
+        <property name="userThreadManager"   ref="nc.core.IUserThreadManager" />
+    </bean>
+    
+    <bean id="nc.db.ISqlManagerFactory"
+        class="nexcore.framework.integration.db.internal.SqlManagerFactory"
+        init-method="init" lazy-init="true">
+        <description>
+            BizLogic에서 쓰이는 ISqlManager를 생성하는 factory. 프레임워크 내부적으로 쓰인다.
+        </description>
+        <property name="bizComponentMetaDataRegistry"   ref="nc.core.IBizComponentMetaDataRegistry" />
+        <property name="txManagerFactory"               ref="nc.db.txManagerFactory-EXTERNAL"/>
+        <property name="dsFactory"                      ref="nc.db.dsFactory-JNDI"/>
+        <property name="datasourceMap"                  ref="nc.db.ISqlManagerFactory.datasourceMap"/>
+        <property name="replaceNullResultToEmptyString" value="${sqlmanager.replaceNullResultToEmptyString}"/>
+        <property name="sqlMapConfigFile"               value="${component.sql.sqlMapConfigFile}"/>
+        <property name="userThreadManager"              ref="nc.core.IUserThreadManager"/>
+        <property name="hotDeploy"                      value="${component.hotDeploy}" />
+        <property name="smartDeploy"                    value="${component.smartDeploy}" />
+        <!-- 기본 트랜잭션은 nc.db.txManagerFactory-EXTERNAL을 사용한다.
+             데이터소스별로 다른 트랜잭션을 사용하고자 하는 경우에는 
+             아래 설정을 활성화하고 데이터소스 패턴별로 트랜잭션을 설정한다. 
+        <property name="txManagerFactories">
+            <map>
+                <entry key=".*_NonXA$"      value-ref="nc.db.txManagerFactory-JDBC-FC"/>
+            </map>
+        </property>
+        -->
+    </bean>
+    
+    <bean id="nc.db.txManagerFactory-EXTERNAL"
+        class="nexcore.framework.integration.db.TxManagerFactory">
+        <description>
+           선언적 트랜잭션을 사용할 경우 사용하는(skip용) 트랜잭션 관리자 factory.
+          SqlManagerFactory에서 사용하며, getTxManager(DataSource) 메소드로 원하는 객체를 얻는다.
+        </description>
+        <property name="transactionType" value="EXTERNAL" />
+        <property name="transactionProperties">
+            <props>
+                <prop key="SetAutoCommitAllowed">false</prop>
+                <prop key="DefaultAutoCommit">false</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="nc.db.txManagerFactory-JDBC"
+        class="nexcore.framework.integration.db.TxManagerFactory">
+        <description>
+           JDBC 트랜잭션을 사용할 경우 트랜잭션 관리자 factory.
+          SqlManagerFactory에서 사용하며, getTxManager(DataSource) 메소드로 원하는 객체를 얻는다.
+        </description>
+        <property name="transactionType" value="JDBC" />
+        <property name="commitRequired"  value="false" />
+    </bean>
+
+    <bean id="nc.db.txManagerFactory-JDBC-FC"
+        class="nexcore.framework.integration.db.TxManagerFactory">
+        <description>
+           JDBC 트랜잭션을 사용할 경우 트랜잭션 관리자 factory.
+          SqlManagerFactory에서 사용하며, getTxManager(DataSource) 메소드로 원하는 객체를 얻는다.
+        </description>
+        <property name="transactionType" value="JDBC" />
+        <property name="commitRequired"  value="true" />
+    </bean>
+
+    <bean id="nc.db.dsFactory-JNDI"
+        class="nexcore.framework.integration.db.DsFactory">
+        <description>
+            J2EE Server의 DataSource를 얻어쓰는 DataSource factory.
+            SqlManagerFactory에서 사용하며, getDataSource(jndiName)으로 원하는 객체를 얻는다.
+        </description>
+        <property name="type" value="NC_JNDI" />
+    </bean>
+    
+    <!--  
+    <bean id="nc.db.ITransactionManager"
+          class="nexcore.framework.integration.transaction.internal.UserTransactionManager" >
+        <description>
+            사용자 Transaction을 직접 관리할 때 사용하는 컴포넌트. 
+        </description>
+        <property name="userTransaction" >
+            <jee:jndi-lookup jndi-name="java:comp/UserTransaction"/>
+        </property>
+    </bean>
+    -->
+</beans>

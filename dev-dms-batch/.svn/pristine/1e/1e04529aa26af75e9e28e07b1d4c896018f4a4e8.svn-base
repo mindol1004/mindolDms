@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR001">
+	<select id="SEqpInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR001.SEqpInfo 단말기모델IF조회 */
+/* IO: 안한모,2015-08-13T14:26:01(admin,2015-03-20T13:38:02) */
+SELECT 
+        IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,PROC_CL_CD
+       ,EQP_MDL_CD
+       ,EQP_MDL_NM
+       ,PET_NM
+       ,MFACT_CD
+       ,DSTRB_EQP_YN
+       ,COLOR_RPET_CNT
+       ,EQP_COLOR
+       ,PROC_ST_CD
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+  FROM TF_EQP_INFO
+ WHERE PROC_ST_CD = '09']]>
+	</select>
+	<insert id="IEqpMdl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR001.IEqpMdl 단말기모델입력 */
+/* IO: 안한모,2015-08-13T14:26:26(이영진,2015-08-03T17:37:15) */
+INSERT  
+  INTO  TB_EQP_MDL
+       (
+        EQP_MDL_CD
+       ,EQP_MDL_NM
+       ,PET_NM
+       ,MFACT_CD
+       ,DSTRB_EQP_YN
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       ,FS_REG_USER_ID
+        ) 
+VALUES 
+       (
+        #EQP_MDL_CD#
+       ,#EQP_MDL_NM#
+       ,#PET_NM#
+       ,#MFACT_CD#
+       ,#DSTRB_EQP_YN#
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       )]]>
+	</insert>
+	<update id="UEqpInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR001.UEqpInfo 단말기모델IF수정 */
+/* IO: 안한모,2015-08-13T14:26:35(이영진,2015-08-03T17:42:50) */
+UPDATE TF_EQP_INFO
+    SET PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+        AND IF_FILE_NM = #IF_FILE_NM#
+        AND IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<select id="SEqpInfoColor" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR001.SEqpInfoColor 단말기모델색상IF조회 */
+/* IO: 안한모,2015-08-13T14:26:19(이영진,2015-08-03T19:24:53) */
+SELECT 
+       EQP_MDL_CD
+      , COLOR_CD
+  FROM (
+        SELECT EQP_MDL_CD
+               ,MAX(DECODE(CNT,1,C1,2,C2,3,C3,4,C4,5,C5,6,C6,7,C7,8,C8,9,C9,10
+               ,C10,11,C11,12,C12,13,C13,14,C14,15,C15,16,C16,17,C17,18,C18,19,C19,20,C20)) COLOR_CD
+          FROM (
+            SELECT
+            A.*,B.CNT
+            FROM
+            (
+                SELECT 
+                        IF_SEQ
+                        ,EQP_MDL_CD
+                        ,SUBSTR(EQP_COLOR,1,2) AS C1
+                        ,SUBSTR(EQP_COLOR,3,2) AS C2
+                        ,SUBSTR(EQP_COLOR,5,2) AS C3
+                        ,SUBSTR(EQP_COLOR,7,2) AS C4
+                        ,SUBSTR(EQP_COLOR,9,2) AS C5
+                        ,SUBSTR(EQP_COLOR,11,2) AS C6
+                        ,SUBSTR(EQP_COLOR,13,2) AS C7
+                        ,SUBSTR(EQP_COLOR,15,2) AS C8
+                        ,SUBSTR(EQP_COLOR,17,2) AS C9
+                        ,SUBSTR(EQP_COLOR,19,2) AS C10
+                        ,SUBSTR(EQP_COLOR,21,2) AS C11
+                        ,SUBSTR(EQP_COLOR,23,2) AS C12
+                        ,SUBSTR(EQP_COLOR,25,2) AS C13
+                        ,SUBSTR(EQP_COLOR,27,2) AS C14
+                        ,SUBSTR(EQP_COLOR,29,2) AS C15
+                        ,SUBSTR(EQP_COLOR,31,2) AS C16
+                        ,SUBSTR(EQP_COLOR,33,2) AS C17
+                        ,SUBSTR(EQP_COLOR,35,2) AS C18
+                        ,SUBSTR(EQP_COLOR,37,2) AS C19
+                        ,SUBSTR(EQP_COLOR,39,2) AS C20
+                  FROM TF_EQP_INFO
+                 WHERE PROC_ST_CD = '09'
+            ) A,
+            (
+                SELECT LEVEL CNT
+                FROM DUAL
+                CONNECT BY LEVEL <= 20
+            ) B
+        ) A
+        GROUP BY CNT,EQP_MDL_CD
+ ) A
+ WHERE COLOR_CD IS NOT NULL
+ ORDER BY EQP_MDL_CD,COLOR_CD]]>
+	</select>
+	<insert id="IEqpMdlColor" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR001.IEqpMdlColor 단말기모델색상입력 */
+/* IO: 안한모,2015-08-13T14:26:31(이영진,2015-08-03T19:29:46) */
+INSERT  
+  INTO  TB_EQP_COLOR
+   	   (
+        EQP_MDL_CD
+       ,COLOR_CD
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       ,FS_REG_USER_ID
+       ) 
+VALUES 
+       (
+        #EQP_MDL_CD#
+       ,#COLOR_CD#
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       )]]>
+	</insert>
+</sqlMap>

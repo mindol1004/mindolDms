@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="commGridPageCnt" classname="GridButton" inheritanceid="" position="absolute 0 0 100 20" titletext="Grid Page Count" onload="GridPageCnt_onload" style="background:transparent;">
+    <Layouts>
+      <Layout>
+        <UserCombo id="cboPage" taborder="0" position="absolute 0 0 55 21" innerdataset="@dsCombo" codecolumn="pageNo" datacolumn="pageNo" displayrowcount="5" style="align:center middle;" onitemchanged="cboPage_onitemchanged" inputtype="number" tooltiptext="바로가기"/>
+        <Static id="stc_pageNo" usedecorate="true" class="sta_pagingNumber" position="absolute 0 0 100 20" anchor="left top right" style="background:#ffffffff;align:right middle;"/>
+      </Layout>
+    </Layouts>
+    <Objects/>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통 Composite
+ * 02. 화면 : commGridPageCnt.xfdl
+ * 03. 화면 Notice : Grid Control용 Pageing Composite
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+include "LIB::comUtil.xjs";
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : GridPage_onload
+-----------------------------------------------------------------------------------------------*/
+function GridPageCnt_onload(obj:Form, e:LoadEventInfo)
+{
+	//trace("GridPageCnt_onload>>>>>");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Page번호 Setting
+-----------------------------------------------------------------------------------------------*/
+function setPageNoCnt(iPageSize, iTotalCnt, iCurrPage)
+{
+	if ( gfn_isNull(iTotalCnt) || iTotalCnt == 0 || gfn_isNull(iPageSize) || iPageSize == 0 ) {
+		this.visible = false;
+	} else {
+		//전체Page Max값
+		var iMaxNumQuotient  = Math.floor(iTotalCnt / iPageSize);	//몫
+		var iMaxNumRemainder = ( iTotalCnt%iPageSize > 0 ) ? 1 : 0;	//나머지
+		var iMaxPageNum      = iMaxNumQuotient + iMaxNumRemainder;
+	
+		stc_pageNo.text = "<fc v='#e64b40'><b v='true'>" + iCurrPage + "</b></fc> <fc v='#dddddd'>/</fc> " + iMaxPageNum + " page";
+		this.visible = true;
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Page번호 Setting2
+-----------------------------------------------------------------------------------------------*/
+function setPageNoCnt2(objPageDs:Dataset)
+{
+	var iCurrPage = objPageDs.getColumn(0,"page");
+	var iPageSize = objPageDs.getColumn(0,"page_size");
+	var iTotalCnt = objPageDs.getColumn(0,"total_record_cnt");
+	this.setPageNoCnt(iPageSize, iTotalCount, iCurrPage);
+}]]></Script>
+  </Form>
+</FDL>

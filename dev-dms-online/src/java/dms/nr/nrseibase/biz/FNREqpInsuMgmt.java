@@ -1,0 +1,213 @@
+package dms.nr.nrseibase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]손해배상금정책 관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-07-10 09:43:49</li>
+ * <li>작성자 : 안진갑 (bella21cjk)</li>
+ * </ul>
+ *
+ * @author 안진갑 (bella21cjk)
+ */
+public class FNREqpInsuMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNREqpInsuMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-10-14 13:35:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_MDL_CD [모델코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_INSU_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : OUT_PRC [출고가]
+	 *		- field : EQP_INSURE_FEE [단말보험료]
+	 *		- field : LAUNC_DT [출시일]
+	 *		- field : REG_DT [등록일]
+	 *		- field : EQP_INSURE_RMK [비고]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : EQP_INSURE_NO [단말기보험번호]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpInsuLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+		IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet cmpPolyListRs = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DNREqpInsuMgmt dNREqpInsuMgmt = (DNREqpInsuMgmt) lookupDataUnit(DNREqpInsuMgmt.class);
+			
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dNREqpInsuMgmt.dSEqpInsuTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+			// 3. LISTDM호출
+			responseData = dNREqpInsuMgmt.dSEqpInsuLstPaging(reqDs, onlineCtx);
+			cmpPolyListRs = responseData.getRecordSet("RS_EQP_INSU_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(cmpPolyListRs, reqDs, intTotalCnt);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-10-14 13:35:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_INSU
+	 *		- field : EQP_INSURE_NO [단말기보험번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : EQP_INSURE_FEE [단말기보험요금]
+	 *		- field : EQP_INSURE_RMK [단말기보험비고]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegEqpInsu(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet reqDs = new DataSet();
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	    try {	    	
+			
+			if ( StringUtils.isEmpty(requestData.getField("EQP_MDL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("EQP_MDL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} 
+			
+	    	//정책종료여부 판단
+			if("N".equals(requestData.getField("POLY_USE_YN"))){
+				throw new BizRuntimeException("DMS00119",new String[] { HpcUtils.getLangMsg("정책사용여부") ,"사용"});//{0}는 {1}만 입력가능합니다.
+            }
+			
+			//유효시작일 유효성 체크
+            if( Integer.parseInt(DateUtils.getCurrentDate("yyyyMM")) > Integer.parseInt(requestData.getField("EFF_PRD_STA_DT")) ){
+                throw new BizRuntimeException("DMS00172"); //이전날짜는 선택이 불가능합니다.
+            };
+            
+			// 1. DU lookup
+			DNREqpInsuMgmt dNREqpInsuMgmt = (DNREqpInsuMgmt) lookupDataUnit(DNREqpInsuMgmt.class);
+			
+            // 유효시작일 중복 체크
+			IDataSet dsRtn = dNREqpInsuMgmt.dSChkDupFrDt(requestData, onlineCtx);
+            if( dsRtn.getIntField("DUP_CNT") > 0){
+                /* TODO : 에러코드입력 필요함({유효기간}에  주복 데이터가 있습니다). 현재는 중복데이타가 있습니다로 사용.*/
+                throw new BizRuntimeException("DMS00003");
+            }
+            
+			// 2. 손해배상금정책 채번
+			String EQP_INSURE_NO = dNREqpInsuMgmt.dSEqpInsuNo(requestData, onlineCtx).getField("EQP_INSURE_NO");
+			
+			// 3. 업무 DM호출
+			requestData.putField("EQP_INSURE_NO", EQP_INSURE_NO);			
+			dNREqpInsuMgmt.dIEqpInsu(requestData, onlineCtx);
+			
+			dNREqpInsuMgmt.dUPreEquInsu(requestData, onlineCtx);	
+        } catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-10-14 13:35:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_INSU
+	 *		- field : EQP_INSURE_NO [단말기보험번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : EQP_INSURE_FEE [단말기보험요금]
+	 *		- field : EQP_INSURE_RMK [단말기보험비고]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdEqpInsu(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet reqDs = new DataSet();
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+	    try {
+	    	
+			if ( StringUtils.isEmpty(requestData.getField("EQP_MDL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("EQP_MDL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} 
+			
+			// 1. DU lookup
+			DNREqpInsuMgmt dNREqpInsuMgmt = (DNREqpInsuMgmt) lookupDataUnit(DNREqpInsuMgmt.class);
+
+			// 유효시작일 중복 체크
+	        IDataSet dsRtn = dNREqpInsuMgmt.dSChkDupFrDt2(requestData, onlineCtx);
+	        if( dsRtn.getIntField("DUP_CNT") > 0){
+	            /* TODO : 에러코드입력 필요함({유효기간}에  중복 데이터가 있습니다). 현재는 중복데이타가 있습니다로 사용.*/
+	            throw new BizRuntimeException("DMS00003");
+	        }
+			
+			// 2. 업무 DM호출
+			dNREqpInsuMgmt.dUEqpInsu(requestData, onlineCtx);
+			
+			dNREqpInsuMgmt.dUPreEquInsu(requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	    return responseData;
+	}
+  
+}

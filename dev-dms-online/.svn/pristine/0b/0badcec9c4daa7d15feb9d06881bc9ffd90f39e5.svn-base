@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpRJdgMgmt">
+	<select id="SEqpClctOmitListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpRJdgMgmt.SEqpClctOmitListTotCnt 재감정회수일자누락목록총건수 */
+/* IO: 정동현,2015-10-15T17:27:21(정동현,2015-10-14T18:12:48) */
+]]><isEmpty property="CNSL_MGMT_NO"><![CDATA[  
+SELECT  COUNT(*)  AS  TOTAL_CNT
+  FROM  TB_EP_CST_CONSULT_MGMT  A
+       ,TB_EP_CST_PRCHS_OUT_M B
+	   ,TB_EP_CST_PRCHS_MGMT  C
+       ,TB_EQP_MDL D
+ WHERE  A.CNSL_MGMT_NO = B.PRCH_OUT_MGMT_NO  
+   AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+   AND  A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+   AND  C.DEL_YN(+) = 'N'  
+   AND  A.CLCT_DT IS NULL
+   AND  B.OUT_CONF_DT BETWEEN #CLCT_FROM_DT# AND #CLCT_TO_DT#
+]]></isEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[ 
+SELECT  COUNT(*)  AS  TOTAL_CNT
+ FROM TB_EP_CST_CONSULT_MGMT A
+     ,TB_EP_CST_PRCHS_MGMT B
+     ,TB_EQP_MDL C
+ WHERE A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+  AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+  AND A.EQP_MDL_CD = C.EQP_MDL_CD
+  AND A.DEL_YN = 'N'      
+  AND B.DEL_YN(+) = 'N'
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SEqpClctOmitListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpRJdgMgmt.SEqpClctOmitListPaging 재감정회수일자누락목록조회 */
+/* IO: 정동현,2015-10-15T17:27:03(정동현,2015-10-14T18:15:35) */
+]]><isEmpty property="CNSL_MGMT_NO"><![CDATA[  
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_SER_NO ASC)  AS  ROWNO   
+                ,A.CNSL_MGMT_NO                                                  /* 상담관리 번호 */
+                ,A.CLCT_DT                                                       /* 회수일자 */
+		        ,A.EQP_COLOR_CD                                                  /* 단말기 색상 코드 */
+		        ,NVL(C.EQP_MDL_CD,A.EQP_MDL_CD) AS  EQP_MDL_CD                   /* 단말기 모델코드 */
+		        ,D.EQP_MDL_NM                                                    /* 단말기 모델명 */
+  		        ,A.EQP_SER_NO                                                    /* 단말기 일련번호 */
+		        ,A.SKN_CL                                                        /* SKN 구분 */
+		        ,NVL(C.PROGR_ST,A.PROGR_ST) AS  PROGR_ST                         /* 진행상태 */
+		   FROM  TB_EP_CST_CONSULT_MGMT  A
+		        ,TB_EP_CST_PRCHS_OUT_M B
+		        ,TB_EP_CST_PRCHS_MGMT  C
+                ,TB_EQP_MDL D
+		  WHERE  A.CNSL_MGMT_NO = B.PRCH_OUT_MGMT_NO
+		    AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+		    AND  A.EQP_MDL_CD = D.EQP_MDL_CD
+		    AND  A.DEL_YN = 'N'
+		    AND  B.DEL_YN = 'N'
+		    AND  C.DEL_YN(+) = 'N'
+        AND  A.CLCT_DT IS NULL
+        AND  B.OUT_CONF_DT BETWEEN #CLCT_FROM_DT# AND #CLCT_TO_DT#
+         ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#
+]]></isEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_SER_NO ASC)  AS  ROWNO   
+				,A.CNSL_MGMT_NO                                                  /* 상담관리 번호 */
+				,A.CLCT_DT                                                       /* 회수일자 */
+				,A.EQP_COLOR_CD                                                  /* 단말기 색상 코드 */
+			    ,NVL(B.EQP_MDL_CD,A.EQP_MDL_CD) AS  EQP_MDL_CD                   /* 단말기 모델코드 */
+			    ,C.EQP_MDL_NM                                                    /* 단말기 모델명 */
+			    ,A.EQP_SER_NO                                                    /* 단말기 일련번호 */
+			    ,NVL(B.PROGR_ST,A.PROGR_ST) AS  PROGR_ST                         /* 진행상태 */
+			    ,A.SKN_CL                                                        /* SKN 구분 */
+		   FROM TB_EP_CST_CONSULT_MGMT A
+		 	   ,TB_EP_CST_PRCHS_MGMT B
+			   ,TB_EQP_MDL C
+		  WHERE A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+			AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+			AND A.EQP_MDL_CD = C.EQP_MDL_CD
+			AND A.DEL_YN = 'N'      
+			AND B.DEL_YN(+) = 'N'
+	) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<update id="UEqpClctOmit" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpRJdgMgmt.UEqpClctOmit 재감정회수일자확정 */
+/* IO: 정동현,2015-09-11T09:16:42(정동현,2015-08-28T11:04:13) */
+UPDATE  TB_EP_CST_CONSULT_MGMT
+   SET  CLCT_YN = 'Y'                /* 회수여부 */
+       ,CLCT_DT = #CLCT_DT#          /* 회수일자 */
+       ,SKN_CL = 'Y'                 /* SKN 구분 */
+       ,SKN_EQP_ST = EQP_ST          /* SKN 단말기 상태 */
+       ,SKN_JDG_AMT = CNSL_AMT       /* SKN 감정 금액 */
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #USER_NO#      
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+</sqlMap>

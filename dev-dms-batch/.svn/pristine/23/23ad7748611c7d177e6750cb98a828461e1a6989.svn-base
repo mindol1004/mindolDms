@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBS005">
+	<select id="SIFInsuInvRsltAprv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBS005.SIFInsuInvRsltAprv 보증보험청구결과승인 IF조회 */
+/* IO: 장미진,2016-01-12T18:42:08(장미진,2015-12-14T10:42:43) */
+SELECT  A.IF_PROC_DT
+       ,A.IF_FILE_NM
+       ,A.IF_SEQ
+       ,A.CO_CL_CD
+       ,A.SVC_NO
+       ,A.SVC_NO_ENPT
+       ,A.CTZ_COPREG_NO
+       ,A.CTZ_COPREG_NO_ENPT
+       ,A.INSU_MGMT_NO
+       ,A.SVC_MGMT_NO
+       ,A.SVC_SCRB_DT
+       ,A.SVC_TERM_DT
+       ,A.INSU_SCUR_NO
+       ,A.INSU_INV_DT
+       ,A.INSU_INV_AMT
+       ,A.INSU_RECV_DT
+       ,A.INSU_RECV_AMT
+       ,A.ST_CD
+       ,A.INSURE_CL_CD
+       ,B.SGI_INSU_NO
+  FROM  TF_INSU_INV_RSLT_APRV A
+       ,TB_INSU_SGI B
+ WHERE  (A.INSU_MGMT_NO = B.SGI_INSURE_MGMT_NO AND A.SVC_MGMT_NO = B.SGI_SVC_MGMT_NO AND B.OP_TYP_CD='A1')
+   AND  A.PROC_ST_CD = '09'
+   AND  A.IF_PROC_DT BETWEEN SUBSTR(#PROC_DT#,0,6)||'01' AND SUBSTR(#PROC_DT#,0,6)||'31']]>
+	</select>
+	<update id="UIFInsuInvRsltAprv" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.UIFInsuInvRsltAprv 보증보험청구결과IF상태변경 */
+/* IO: 장미진,2015-12-16T11:01:19(장미진,2015-12-14T10:46:01) */
+UPDATE  TF_INSU_INV_RSLT_APRV
+   SET  PROC_ST_CD      = '01'
+       ,LS_CHG_USER_ID  = 'BAT'
+       ,LS_CHG_DTM      = SYSDATE
+ WHERE  INSU_MGMT_NO    = #INSU_MGMT_NO#
+       ,IF_PROC_DT      = #IF_PROC_DT#
+       ,IF_FILE_NM      = #IF_FILE_NM# 
+       ,IF_SEQ          = #IF_SEQ#]]>
+	</update>
+	<update id="UInsuInvStAprv" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.UInsuInvStAprv 보증보험청구완료처리 */
+/* IO: 장미진,2015-12-17T10:10:54(장미진,2015-12-14T11:17:05) */
+UPDATE  TB_INSU_INV
+   SET  INV_ST_CD = '07'					 /* 청구확정*/
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  UKEY_INSURE_MGMT_NO = #INSU_MGMT_NO# /*	보증보험관리번호*/]]>
+	</update>
+	<insert id="IInsuInvRslt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.IInsuInvRslt 보증보험청구결과입력 */
+/* IO: 장미진,2015-12-17T10:10:14(장미진,2015-12-15T17:43:04) */
+INSERT INTO  TB_INSU_INV_RSLT
+            (INSU_INV_RSLT_SEQ			/*보증보험청구결과순번*/
+            ,SGI_INSU_NO				/*SGI보증보험번호*/
+            ,INV_RSLT_CO_CD				/*청구결과회사코드*/
+            ,INV_RSLT_INSURE_CL			/*청구결과보험구분*/
+            ,INV_RSLT_SVC_NO			/*청구결과서비스번호*/
+            ,INV_RSLT_SVC_NO_ENPT		/*청구결과서비스번호암호화*/
+            ,INV_RSLT_INSURE_MGMT_NO	/*청구결과보험관리번호*/
+            ,INV_RSLT_SVC_MGMT_NO		/*청구결과서비스관리번호*/
+            ,INV_RSLT_SVC_SCRB_YMD		/*청구결과서비스가입년월일*/
+            ,INV_RSLT_SVC_TERM_DT		/*청구결과서비스해지일자*/
+            ,INV_RSLT_INSURE_SCUR_NO	/*청구결과보험증권번호*/
+            ,INV_RSLT_INSUM_INV_DT		/*청구결과보험금청구일자*/
+            ,INV_RSLT_INSUM_INV_AMT		/*청구결과보험금청구금액*/
+            ,INV_RSLT_INSUM_RECV_DT		/*청구결과보험금수납일자*/
+            ,INV_RSLT_INSUM_RECV_AMT	/*청구결과보험금수납금액*/
+            ,INV_RSLT_ST_CD				/*청구결과상태코드*/
+)
+SELECT  (SELECT NVL(MAX(INSU_INV_RSLT_SEQ),0)+1 FROM TB_INSU_INV_RSLT WHERE SGI_INSU_NO=#SGI_INSU_NO#)
+       ,#SGI_INSU_NO#
+       ,#CO_CL_CD#
+       ,#INSURE_CL_CD#
+       ,#SVC_NO#
+       ,#SVC_NO_ENPT#
+       ,#INSU_MGMT_NO#
+       ,#SVC_MGMT_NO#
+       ,#SVC_SCRB_DT#
+       ,#SVC_TERM_DT#
+       ,#INSU_SCUR_NO#
+       ,#INSU_INV_DT#
+       ,#INSU_INV_AMT#
+       ,#INSU_RECV_DT#
+       ,#INSU_RECV_AMT#
+       ,#ST_CD#
+  FROM  DUAL]]>
+	</insert>
+</sqlMap>

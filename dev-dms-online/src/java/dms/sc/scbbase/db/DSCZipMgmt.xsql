@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCZipMgmt">
+	<select id="SInqZip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCZipMgmt.SInqZip 우편번호조회 */
+/* IO: 이유미,2015-02-13T11:35:32(심상준,2014-09-04T10:08:26) */
+SELECT  
+        *
+  FROM (
+        SELECT
+]]><isNotEmpty property="ROAD_NM"><![CDATA[        
+                /*+ USE_NL(C B A D) */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EUMD_NM"><![CDATA[        
+                /*+ USE_NL(C B A D) */
+]]></isNotEmpty><![CDATA[
+                ROW_NUMBER() OVER (ORDER BY A.POST_NO ASC) AS ROWNO
+               ,A.POST_NO            /* 우편번호 */
+               ,TO_CHAR(C.CTAP_NM||' '||C.CTPB_NM||' '||C.EUMD_NM||' '||D.LTNO_MANO_INFO||'-'||D.LTNO_SBNO_INFO||' '||A.BLGR_BDIO_NM) AS ADDR1 /* 지번주소 */
+               ,TO_CHAR(C.CTAP_NM||' '||C.CTPB_NM) AS ADDR2                                /* 도로명주소(시,도) */
+               ,TO_CHAR(C.ROAD_NM ||' '||B.BDIO_MANO_CTT||DECODE(B.BDIO_SBNO_CTT,0,'','-'||B.BDIO_SBNO_CTT)||' ('||C.EUMD_NM ||DECODE(NVL(A.BLGR_BDIO_NM,''),'','',', '||A.BLGR_BDIO_NM)||')') AS ADDR3 /* 도로명주소 상세*/
+          FROM  TB_ADDR_ADD_INFO A   /* SC_주소추가정보 */
+               ,TB_ADDR B            /* SC 주소 */
+               ,TB_ROAD_NM_ADDR C    /* SC_도로명주소 */ 
+               ,TB_LTNO_ADDR D       /* SC_지번주소 */
+         WHERE  A.ADDR_MGMT_NO = B.ADDR_MGMT_NO 
+           AND  B.ROAD_NM_CD  = C.ROAD_NM_CD
+           AND  B.EUMD_SNO  = C.EUMD_SNO
+           AND  B.ADDR_MGMT_NO = D.ADDR_MGMT_NO
+]]><isNotEmpty property="CTAP_NM" prepend="AND"><![CDATA[
+                C.CTAP_NM = #CTAP_NM#
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="CTPB_NM" prepend="AND"><![CDATA[
+                C.CTPB_NM = #CTPB_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ROAD_NM" prepend="AND"><![CDATA[
+                C.ROAD_NM LIKE #ROAD_NM#||'%'
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="BLGR_BDIO_NM" prepend="AND"><![CDATA[
+                A.BLGR_BDIO_NM LIKE '%'||#BLGR_BDIO_NM#||'%'
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="EUMD_NM" prepend="AND"><![CDATA[
+                C.EUMD_NM LIKE #EUMD_NM#||'%' 
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="LTNO_MANO_INFO" prepend="AND"><![CDATA[
+                D.LTNO_MANO_INFO LIKE #LTNO_MANO_INFO#||'%' 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="LTNO_SBNO_INFO" prepend="AND"><![CDATA[
+                D.LTNO_SBNO_INFO LIKE #LTNO_SBNO_INFO#||'%' 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BDIO_MANO_CTT" prepend="AND"><![CDATA[
+                B.BDIO_MANO_CTT LIKE #BDIO_MANO_CTT#||'%' 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BDIO_SBNO_CTT" prepend="AND"><![CDATA[
+                B.BDIO_SBNO_CTT LIKE #BDIO_SBNO_CTT#||'%' 
+]]></isNotEmpty><![CDATA[
+         ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCntAddr" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCZipMgmt.SCntAddr 우편번호전체건수조회 */
+/* IO: 이유미,2015-02-13T11:41:15(심상준,2014-09-21T16:23:30) */
+SELECT  
+]]><isNotEmpty property="ROAD_NM"><![CDATA[        
+                /*+ USE_NL(C B A D) */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EUMD_NM"><![CDATA[        
+                /*+ USE_NL(C B A D) */
+]]></isNotEmpty><![CDATA[
+        COUNT(*) AS TOTAL_CNT    /* 우편번호전체건수 */
+  FROM  TB_ADDR_ADD_INFO A      /* SC_주소추가정보 */
+       ,TB_ADDR B                /* SC 주소 */
+       ,TB_ROAD_NM_ADDR C        /* SC_도로명주소 */ 
+       ,TB_LTNO_ADDR D           /* SC_지번주소 */
+ WHERE  A.ADDR_MGMT_NO = B.ADDR_MGMT_NO 
+   AND  B.ROAD_NM_CD  = C.ROAD_NM_CD
+   AND  B.EUMD_SNO  = C.EUMD_SNO
+   AND  B.ADDR_MGMT_NO = D.ADDR_MGMT_NO
+]]><isNotEmpty property="CTAP_NM" prepend="AND"><![CDATA[
+        C.CTAP_NM = #CTAP_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CTPB_NM" prepend="AND"><![CDATA[
+        C.CTPB_NM = #CTPB_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ROAD_NM" prepend="AND"><![CDATA[
+        C.ROAD_NM LIKE #ROAD_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BLGR_BDIO_NM" prepend="AND"><![CDATA[
+        A.BLGR_BDIO_NM LIKE '%'||#BLGR_BDIO_NM#||'%'
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty property="EUMD_NM" prepend="AND"><![CDATA[
+        C.EUMD_NM LIKE #EUMD_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="LTNO_MANO_INFO" prepend="AND"><![CDATA[
+        D.LTNO_MANO_INFO LIKE #LTNO_MANO_INFO#||'%' 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="LTNO_SBNO_INFO" prepend="AND"><![CDATA[
+        D.LTNO_SBNO_INFO LIKE #LTNO_SBNO_INFO#||'%' 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BDIO_MANO_CTT" prepend="AND"><![CDATA[
+        B.BDIO_MANO_CTT LIKE #BDIO_MANO_CTT#||'%' 
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BDIO_SBNO_CTT" prepend="AND"><![CDATA[
+        B.BDIO_SBNO_CTT LIKE #BDIO_SBNO_CTT#||'%' 
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqDiv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCZipMgmt.SInqDiv 주소(시/도)조회 */
+/* IO: 이유미,2014-11-20T19:36:13(심상준,2014-09-22T13:13:44) */
+SELECT  
+        DISTINCT(CTAP_NM) AS CTAP_NM   /* 시도명 */ 
+  FROM  TB_ROAD_NM_ADDR  /* SC_주소추가정보 */
+ ORDER  BY CTAP_NM ASC]]>
+	</select>
+	<select id="SInqDivDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCZipMgmt.SInqDivDtl 주소(시/군/구)조회 */
+/* IO: 이유미,2014-11-20T19:36:25(심상준,2014-09-22T14:27:32) */
+SELECT  
+        DISTINCT(CTPB_NM) AS CTPB_NM    /* 시군구명 */
+  FROM  TB_ROAD_NM_ADDR  /* SC_주소추가정보 */
+ WHERE  CTAP_NM = #CTAP_NM#
+ ORDER  BY CTPB_NM ASC]]>
+	</select>
+</sqlMap>

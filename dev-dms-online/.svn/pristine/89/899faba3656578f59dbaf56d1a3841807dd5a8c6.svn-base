@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRStlMnt">
+	<select id="SCalChrStlLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRStlMnt.SCalChrStlLstPaging 위약금정산정보조회 */
+/* IO: 김혁범,2015-09-09T09:26:26(김혁범,2015-07-27T17:45:25) */
+SELECT  F.SVC_MGMT_NO /*서비스관리번호*/
+       ,A.XCL_ITM_CD /*위약금종류*/      
+       ,NVL(SUM(A.XCL_AMT),0) AS DMS_PEN_AMT/*DMS금액*/
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS UKEY_PEN_AMT/*UKEY금액*/
+       ,NVL(SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT),0) AS DIV_PEN /*차액*/
+       ,NVL(SUM(A.XCL_UKEY_RECV_AMT),0) AS PEN_RECV_AMT/*수납액*/
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT) -  SUM(A.XCL_UKEY_RECV_AMT),0) AS UN_DIV_PEN/*미납액*/
+  FROM  TB_ETC_XCL A /*기타정산T*/
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT F
+ WHERE  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.CNTRT_NO = F.CNTRT_NO
+   /*AND  C.EQP_MDL_CD = B.EQP_MDL_CD(+)*/
+   /*AND  F.OP_TYP_CD IN ('07')*/
+]]><isNotEqual prepend="AND" property="PEN_POLY_CL" compareValue="%"><![CDATA[              
+	    A.XCL_ITM_CD = #PEN_POLY_CL#
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        A.XCL_DT BETWEEN TO_CHAR(TRUNC(TO_DATE(#YDATE#, 'YYYYMM'),'YYYY'),'YYYYMMDD') 
+                     AND TO_CHAR(LAST_DAY(TO_DATE(#YDATE#,'YYYYMM')),'YYYYMMDD')
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        F.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[           
+  GROUP BY F.SVC_MGMT_NO, A.XCL_ITM_CD]]>
+	</select>
+	<select id="SCalChrStlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRStlMnt.SCalChrStlTotCnt 위약금정산정보조회총건수 */
+/* IO: 김혁범,2015-09-10T16:45:33(김혁범,2015-07-27T17:46:14) */
+SELECT  COUNT(*) AS M_CNT
+        ,NVL(SUM(PA.DMS_PEN_AMT),0) AS M_PRC
+  FROM  (
+          SELECT  F.SVC_MGMT_NO /*서비스관리번호*/
+                 ,A.XCL_ITM_CD /*위약금종류*/      
+                 ,NVL(SUM(A.XCL_AMT),0) AS DMS_PEN_AMT/*DMS금액*/
+                 ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS UKEY_PEN_AMT/*UKEY금액*/
+                 ,NVL(SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT),0) AS DIV_PEN /*차액*/
+                 ,NVL(SUM(A.XCL_UKEY_RECV_AMT),0) AS PEN_RECV_AMT/*수납액*/
+                 ,NVL(SUM(A.XCL_UKEY_INV_AMT) -  SUM(A.XCL_UKEY_RECV_AMT),0) AS UN_DIV_PEN/*미납액*/
+            FROM  TB_ETC_XCL A /*기타정산T*/
+                 ,TB_RENTAL_CNTRT C
+                 ,TB_NR_CNTRT F
+           WHERE  A.CNTRT_NO = C.CNTRT_NO
+             AND  C.CNTRT_NO = F.CNTRT_NO
+]]><isNotEqual prepend="AND" property="PEN_POLY_CL" compareValue="%"><![CDATA[              
+	    A.XCL_ITM_CD = #PEN_POLY_CL#
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        A.XCL_DT BETWEEN TO_CHAR(TRUNC(TO_DATE(#YDATE#, 'YYYYMM'),'YYYY'),'YYYYMMDD') 
+                     AND TO_CHAR(LAST_DAY(TO_DATE(#YDATE#,'YYYYMM')),'YYYYMMDD')
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        F.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+   GROUP BY F.SVC_MGMT_NO,A.XCL_ITM_CD
+         )PA]]>
+	</select>
+	<select id="SCalChrStlMgmtDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRStlMnt.SCalChrStlMgmtDtlLst 위약금정산정보상세 */
+/* IO: 김혁범,2015-09-02T21:38:30(김혁범,2015-07-29T13:13:42) */
+SELECT  
+        F.RENTAL_SER_NO /*일련번호*/
+       ,F.SVC_MGMT_NO/*서비스관리번호*/
+       ,C.EQP_MDL_CD/*모델코드*/
+       ,B.EQP_MDL_NM/*모델명*/
+       ,C.RENTAL_CNTRT_STA_DT /*계약시작일자*/
+       ,C.RENTAL_CNTRT_END_DT /*계약종료일자*/
+       ,F.OP_PROC_DT /*실종료일*/
+       ,COUNT(*) OVER(PARTITION BY A.CNTRT_NO) AS CNT/*대수(계약번호)*/   
+       ,A.XCL_AMT AS DMS_PEN_AMT/*DMS금액*/
+       ,A.XCL_UKEY_INV_AMT AS UKEY_PEN_AMT/*UKEY금액*/
+       ,A.XCL_AMT - A.XCL_UKEY_INV_AMT AS DIV_PEN /*차액*/
+       ,A.XCL_UKEY_RECV_AMT AS PEN_RECV_AMT/*수납액*/
+       ,A.XCL_UKEY_INV_AMT -  A.XCL_UKEY_RECV_AMT AS UN_DIV_PEN/*미납액*/
+       ,A.XCL_CL_CD 
+  FROM  TB_ETC_XCL A /*기타정산T*/
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_PEN D
+       ,TB_NR_CNTRT F
+       /*,TB_EQP_CLCT_OBJ E*/
+       ,TB_EQP_MDL B
+ WHERE  A.CNTRT_NO = C.CNTRT_NO
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  A.CNTRT_NO = F.CNTRT_NO
+   /*AND  F.SVC_MGMT_NO = E.SVC_MGMT_NO*/
+   AND  F.OP_TYP_CD IN ('07') 
+   AND  C.EQP_MDL_CD = B.EQP_MDL_CD(+)
+]]><isNotEqual prepend="AND" property="PEN_POLY_CL" compareValue="%"><![CDATA[              
+	                   A.XCL_CL_CD = #PEN_POLY_CL#
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        TO_CHAR(TO_DATE(F.OP_PROC_DT),'YYYYMM') = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        C.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SCalChrStlSysLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRStlMnt.SCalChrStlSysLst 위약금정산정보현재월조회 */
+/* IO: 김혁범,2015-09-10T17:31:23(김혁범,2015-09-08T11:29:30) */
+SELECT  F.SVC_MGMT_NO/*서비스관리번호*/
+       ,A.XCL_SLIP_NO/*전표번호*/
+       /*전표상태*/
+       ,C.RENTAL_CNTRT_STA_DT /*계약시작일자*/
+       ,C.RENTAL_CNTRT_END_DT /*계약종료일자*/
+       ,A.XCL_ITM_CD/*위약금종류*/
+       ,NVL(SUM(A.XCL_AMT),0) AS DMS_PEN_AMT/*DMS금액*/
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS UKEY_PEN_AMT/*UKEY금액*/
+       ,NVL(SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT),0) AS DIV_PEN/*차액*/
+       ,NVL(SUM(A.XCL_UKEY_RECV_AMT),0) AS PEN_RECV_AMT/*수납액*/
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT) - SUM(A.XCL_UKEY_RECV_AMT),0) AS UN_DIV_PEN/*미납액*/
+       ,CASE WHEN F.OP_TYP_CD = '02' OR F.OP_TYP_CD = '07' THEN F.OP_PROC_DT
+        ELSE ''
+        END AS END_DT
+  FROM  TB_ETC_XCL A/*기타정산T*/
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT F
+ WHERE  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.CNTRT_NO = F.CNTRT_NO
+   /*AND  SUBSTR(A.XCL_DT,0,6) = TO_CHAR(SYSDATE,'YYYYMM')*/
+]]><isNotEqual prepend="AND" property="PEN_POLY_CL" compareValue="%"><![CDATA[              
+	    A.XCL_ITM_CD = #PEN_POLY_CL#
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        F.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        SUBSTR(A.XCL_DT,0,6)  = #YDATE#
+]]></isNotEmpty><![CDATA[
+ GROUP BY F.SVC_MGMT_NO,C.RENTAL_CNTRT_STA_DT, C.RENTAL_CNTRT_END_DT,F.OP_TYP_CD,F.OP_PROC_DT, A.XCL_ITM_CD,A.XCL_SLIP_NO]]>
+	</select>
+	<select id="SCalChrStlSysLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRStlMnt.SCalChrStlSysLstTotCnt 위약금정산정보현재월총건수 */
+/* IO: 김혁범,2015-09-10T17:41:42(김혁범,2015-09-08T17:21:40) */
+SELECT  COUNT(*) AS S_CNT
+        ,NVL(SUM(PA.DMS_PEN_AMT),0) AS S_PRC
+  FROM  (  
+          SELECT  F.SVC_MGMT_NO/*서비스관리번호*/
+                 ,A.XCL_SLIP_NO/*전표번호*/
+                  /*전표상태*/
+                 ,C.RENTAL_CNTRT_STA_DT /*계약시작일자*/
+                 ,C.RENTAL_CNTRT_END_DT /*계약종료일자*/
+                 ,A.XCL_ITM_CD/*위약금종류*/
+                 ,NVL(SUM(A.XCL_AMT),0) AS DMS_PEN_AMT/*DMS금액*/
+                 ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS UKEY_PEN_AMT/*UKEY금액*/
+                 ,NVL(SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT),0) AS DIV_PEN/*차액*/
+                 ,NVL(SUM(A.XCL_UKEY_RECV_AMT),0) AS PEN_RECV_AMT/*수납액*/
+                 ,NVL(SUM(A.XCL_UKEY_INV_AMT) - SUM(A.XCL_UKEY_RECV_AMT),0) AS UN_DIV_PEN/*미납액*/
+                 ,CASE WHEN F.OP_TYP_CD = '02' OR F.OP_TYP_CD = '07' THEN F.OP_PROC_DT
+                  ELSE ''
+                  END AS END_DT
+            FROM  TB_ETC_XCL A/*기타정산T*/
+                 ,TB_RENTAL_CNTRT C
+                 ,TB_NR_CNTRT F
+           WHERE  A.CNTRT_NO = C.CNTRT_NO
+             AND  C.CNTRT_NO = F.CNTRT_NO
+]]><isNotEqual prepend="AND" property="PEN_POLY_CL" compareValue="%"><![CDATA[              
+	    A.XCL_ITM_CD = #PEN_POLY_CL#
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        F.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        SUBSTR(A.XCL_DT,0,6)  = #YDATE#
+]]></isNotEmpty><![CDATA[
+   GROUP BY  F.SVC_MGMT_NO, A.XCL_SLIP_NO, C.RENTAL_CNTRT_STA_DT, C.RENTAL_CNTRT_END_DT, A.XCL_ITM_CD, F.OP_TYP_CD, F.OP_PROC_DT
+        )PA]]>
+	</select>
+</sqlMap>

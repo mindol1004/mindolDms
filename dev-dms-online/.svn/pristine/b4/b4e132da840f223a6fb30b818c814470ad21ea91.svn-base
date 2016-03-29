@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCBatTaskOpHstMgmt">
+	<insert id="IBatTaskOpHst" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCBatTaskOpHstMgmt.IBatTaskOpHst 일괄작업처리이력등록 */
+/* IO: 이영진,2015-08-05T12:18:59(임정택,2014-09-30T13:00:55) */
+INSERT
+  INTO  TH_BAT_TASK_PROC_HST /*일괄작업처리이력*/
+        (
+          TASK_DT 					/* 작업일자 */ 	
+        , TASK_NO 					/* 작업번호 */ 	
+        , TASK_ID 					/* 작업ID */ 	
+        , TASK_NM 					/* 작업명 */ 	
+        , GRP_ID 						/* 그룹ID */ 	
+        , INST_CD 					/* 기관코드 */ 	
+        , BAT_TASK_PROC_ST_CD /* 일괄작업처리상태코드 */ 	
+        , PROC_STA_DTM 				/* 처리시작일시 */ 	
+        , PROC_END_DTM 				/* 처리종료일시 */ 	
+        , PROC_CNT 						/* 처리건수 */ 	
+        , FS_REG_USER_ID 		/* 최초등록사용자ID */ 	
+        , FS_REG_DTM 				/* 최초등록일시 */ 	
+        , LS_CHG_USER_ID 		/* 최종변경사용자ID */ 	
+        , LS_CHG_DTM 				/* 최종변경일시 */
+        , PROC_FILE_NM				/* 처리파일명 */ 
+          )	
+VALUES  
+        (
+          #TASK_DT#							/* 작업일자 */ 	           
+        , #TASK_NO# 	          /* 작업번호 */ 	           
+        , #TASK_ID# 	          /* 작업ID */ 	             
+        , #TASK_NM# 	          /* 작업명 */ 	             
+        , #GRP_ID# 	            /* 그룹ID */ 	             
+        , #INST_CD# 	          /* 기관코드 */ 	           
+        , #BAT_TASK_PROC_ST_CD# 	/* 일괄작업처리상태코드 */ 
+        , SYSDATE               /* 처리시작일시 */ 	       
+        , #PROC_END_DTM# 	        /* 처리종료일시 */ 	       
+        , 0                     /* 처리건수 */ 	           
+        , #FS_REG_USER_ID# 	    /* 최초등록사용자ID */ 	   
+        , SYSDATE 	            /* 최초등록일시 */ 	       
+        , #LS_CHG_USER_ID# 	    /* 최종변경사용자ID */ 	   
+        , SYSDATE               /* 최종변경일시 */
+        , #PROC_FILE_NM#			/* 처리파일명 */         
+          )]]>
+	</insert>
+	<update id="UBatTaskOpHst" parameterClass="map" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCBatTaskOpHstMgmt.UBatTaskOpHst 일괄작업처리이력수정 */
+/* IO: 이영진,2015-08-05T12:19:50(임정택,2014-09-30T12:25:02) */
+UPDATE  
+        TH_BAT_TASK_PROC_HST  /*일괄작업처리이력*/
+   SET  BAT_TASK_PROC_ST_CD 	= #BAT_TASK_PROC_ST_CD#/*일괄작업처리상태코드*/
+   	   ,PROC_FILE_NM			= #PROC_FILE_NM# 
+       ,PROC_END_DTM          = SYSDATE
+       ,PROC_CNT              = #PROC_CNT#
+       ,LS_CHG_USER_ID 		= NVL(#LS_CHG_USER_ID#, LS_CHG_USER_ID)/* 최종변경사용자ID */ 	
+       ,LS_CHG_DTM 			= SYSDATE /*최종변경일시*/
+ WHERE  TASK_NO = #TASK_NO#]]>
+	</update>
+	<select id="STaskNoSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scsbase.db.DSCBatTaskOpHstMgmt.STaskNoSeq 작업번호시퀀스조회 */
+/* IO: 이영진,2015-08-05T11:39:42(임정택,2014-09-30T12:27:37) */
+SELECT 
+       SQ01_TH_BAT_TASK_PROC_HST.NEXTVAL AS TASK_NO 
+FROM DUAL]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInveInfoMgmt">
+	<select id="SInveInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoLstPaging 단말자산현황조회 */
+/* IO: 장미진,2015-09-16T17:03:26(이민재,2015-07-17T16:00:30) */
+SELECT
+        *
+  FROM (
+        SELECT 
+                ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+               ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+               ,A.EQP_SER_NO             		/* 단말기일련번호*/
+               ,E.EQP_MDL_NM   					 /* 모델명 */
+               ,A.EQP_MDL_CD   					 /* 모델코드 */
+               ,A.EQP_COLOR_CD					 /* 색상코드 */
+               ,F.PET_NM       					 /* 펫네임 */ 
+               ,E.CNTRT_PRD     				 /* 계약기간코드 */
+               ,D.NEW_CNTRT_DT 					 /* 계약일 */ 					
+               ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+               ,A.FISCL_REMPRC      			 /* 잔존가 */  
+               ,D.OP_TYP_CD     				 /* 계약상태코드 */
+               ,A.FISCL_SVCL					 /* 내용년수 */
+               ,E.CAPA_CD                 		 /* 용량코드 */
+               ,A.INVE_ST_CD					 /* 재고상태코드 */
+               ,G.ASSET_SLIP_ST						 /*전표상태코드*/
+               ,G.ASSET_SLIP_NO						 /*전표번호*/
+               ,A.ASSET_NO						 /* 자산번호 */
+               ,G.YYYY
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,TB_EQP_MDL F
+               ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY')AS YYYY
+                   FROM  TB_ASSET_SLIP A
+                  WHERE  ASSET_SLIP_NO = (SELECT MAX(ASSET_SLIP_NO) FROM TB_ASSET_SLIP WHERE ASSET_NO=A.ASSET_NO)
+                ) G
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.EQP_MDL_CD = F.EQP_MDL_CD(+)
+           AND  A.ASSET_NO = G.ASSET_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+                A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+                D.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" prepend="AND" compareValue="%"><![CDATA[
+                A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST = #ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[) PA
+]]><isEmpty prepend="WHERE" property="SELECT_ALL"><![CDATA[
+   ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#
+]]></isEmpty><![CDATA[]]>
+	</select>
+	<select id="SInveInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoTotCnt 단말자산현황총건수 */
+/* IO: 장미진,2015-08-31T17:34:03(이민재,2015-07-17T16:00:46) */
+SELECT    
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+       ,TB_EQP_MDL F
+       ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST
+           FROM  TB_ASSET_SLIP A
+          WHERE  ASSET_SLIP_NO = (SELECT MAX(ASSET_SLIP_NO) FROM TB_ASSET_SLIP WHERE ASSET_NO=A.ASSET_NO)
+        ) G
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.EQP_MDL_CD = F.EQP_MDL_CD(+)
+   AND  A.ASSET_NO = G.ASSET_NO(+)
+   AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+        A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+        D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+        D.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" prepend="AND" compareValue="%"><![CDATA[
+        A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		G.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+		G.ASSET_SLIP_ST = #ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SInveInfoDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoDtl 단말자산현황상세조회 */
+/* IO: 장미진,2015-10-07T14:54:19(이민재,2015-07-17T16:01:03) */
+SELECT 
+        ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+       ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+       ,E.EQP_MDL_NM   					 /* 모델명 */
+       ,A.EQP_MDL_CD   					 /* 모델코드 */
+       ,A.EQP_COLOR_CD					 /* 색상코드 */
+       ,F.PET_NM       					 /* 펫네임 */ 
+       ,E.CNTRT_PRD   					 /* 계약기간코드 */
+       ,D.NEW_CNTRT_DT 					 /* 계약일 */
+       ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+       ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+       ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+       ,A.FISCL_REMPRC      			 /* 잔존가 */  
+       ,D.OP_TYP_CD     				 /* 계약상태코드 */
+       ,A.FISCL_SVCL					 /* 내용년수 */
+       ,E.CAPA_CD                 		 /* 용량코드 */
+       ,A.EQP_SER_NO
+       ,A.INVE_ST_CD
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+       ,TB_EQP_MDL F
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO    = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.EQP_MDL_CD = F.EQP_MDL_CD(+)
+   AND  A.OP_CL_CD       = 'NR'
+   AND  A.ASSET_NO = #ASSET_NO#]]>
+	</select>
+	<insert id="IControllSlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.IControllSlipInfo 단말자산전표발행 */
+/* IO: 장미진,2015-09-07T16:07:26(장미진,2015-08-26T09:47:12) */
+INSERT INTO  TB_ASSET_SLIP
+            (
+             ASSET_NO
+            ,ASSET_SLIP_SEQ
+            ,ASSET_SLIP_CL_CD
+            ,ASSET_SLIP_NO
+            ,ASSET_SLIP_ST
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM 
+            )
+    VALUES  (
+             #ASSET_NO#
+            ,(SELECT NVL(TO_NUMBER(MAX(ASSET_SLIP_SEQ)),0)+1 FROM TB_ASSET_SLIP WHERE ASSET_NO = #ASSET_NO#)  /*자산번호max +1*/
+            ,'AA'				/*ASSET_SLIP_CL_CD*/
+            ,#ASSET_SLIP_NO#
+            ,'10'				/*ASSET_SLIP_ST*/
+            ,#USER_NO#    		/*FS_REG_USER_ID*/
+            ,SYSDATE
+            ,#USER_NO#	    	/*LS_CHG_USER_ID*/
+            ,SYSDATE
+            )]]>
+	</insert>
+	<update id="UControllSlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.UControllSlipInfo 단말자산전표취소처리 */
+/* IO: 장미진,2015-09-04T10:37:36(장미진,2015-08-28T13:54:15) */
+UPDATE  TB_ASSET_SLIP
+   SET  ASSET_SLIP_ST = '05'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  ASSET_SLIP_NO = #ASSET_SLIP_NO#]]>
+	</update>
+	<select id="SInveInfoLstPagingAll" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoLstPagingAll 단말자산전표전체처리용조회 */
+/* IO: 장미진,2015-09-23T10:15:19(장미진,2015-09-04T12:26:37) */
+SELECT 
+        ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+       ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+       ,A.EQP_SER_NO             		/* 단말기일련번호*/
+       ,E.EQP_MDL_NM   					 /* 모델명 */
+       ,A.EQP_MDL_CD   					 /* 모델코드 */
+               ,A.EQP_COLOR_CD					 /* 색상코드 */
+               ,F.PET_NM       					 /* 펫네임 */ 
+               ,E.CNTRT_PRD     				 /* 계약기간코드 */
+               ,D.NEW_CNTRT_DT 					 /* 계약일 */ 					
+               ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+               ,A.FISCL_REMPRC      			 /* 잔존가 */  
+               ,D.OP_TYP_CD     				 /* 계약상태코드 */
+               ,A.FISCL_SVCL					 /* 내용년수 */
+               ,E.CAPA_CD                 		 /* 용량코드 */
+               ,A.INVE_ST_CD					 /* 재고상태코드 */
+               ,G.ASSET_SLIP_ST						 /*전표상태코드*/
+               ,G.ASSET_SLIP_NO						 /*전표번호*/
+               ,A.ASSET_NO						 /* 자산번호 */
+               ,G.YYYY
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,TB_EQP_MDL F
+               ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY')AS YYYY
+                   FROM  TB_ASSET_SLIP A
+                  WHERE  ASSET_SLIP_NO = (SELECT MAX(ASSET_SLIP_NO) FROM TB_ASSET_SLIP WHERE ASSET_NO=A.ASSET_NO)
+                ) G
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.EQP_MDL_CD = F.EQP_MDL_CD(+)
+           AND  A.ASSET_NO = G.ASSET_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+           AND  (G.ASSET_SLIP_ST IS NULL OR G.ASSET_SLIP_ST='05')
+           AND  SUBSTR(D.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6)]]>
+	</select>
+	<select id="SInveInfoConfirm" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoConfirm 단말자산전표전체처리확인용조회 */
+/* IO: 장미진,2015-09-04T19:57:19(장미진,2015-09-04T13:19:29) */
+SELECT  COUNT(1) AS TOT_CNT
+       ,NVL((SUM(PA.EQP_PRCH_AMT)),0) AS TOT_PRC	 /* 매입가합계 */ 
+  FROM  (SELECT D.NEW_CNTRT_DT,A.EQP_PRCH_AMT
+           FROM TB_EQP_ASSET A ,
+                TB_EQP_CNTRT B ,
+                TB_RENTAL_CNTRT C ,
+                TB_NR_CNTRT D ,
+                TB_RENTAL_POLY E ,
+                TB_EQP_MDL F ,
+               (SELECT ASSET_NO,
+                       ASSET_SLIP_NO,
+                       ASSET_SLIP_ST
+                  FROM TB_ASSET_SLIP A
+                 WHERE ASSET_SLIP_NO = (SELECT MAX(ASSET_SLIP_NO) 
+                                          FROM TB_ASSET_SLIP 
+                                         WHERE ASSET_NO=A.ASSET_NO)) G
+WHERE A.ASSET_NO               = B.ASSET_NO
+AND B.CNTRT_NO                 = C.CNTRT_NO
+AND B.CNTRT_NO                 = D.CNTRT_NO
+AND C.RENTAL_POLY_NO           = E.RENTAL_POLY_NO
+AND A.EQP_MDL_CD               = F.EQP_MDL_CD(+)
+AND A.ASSET_NO                 = G.ASSET_NO(+)
+AND A.OP_CL_CD                 = 'NR'
+AND (G.ASSET_SLIP_ST          IS NULL OR G.ASSET_SLIP_ST             ='05')
+AND SUBSTR(D.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6)
+) PA]]>
+	</select>
+	<select id="SInqInveAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInqInveAllExcel 단말자산현황전체다운로드 */
+/* IO: 문재웅,2015-09-24T13:39:41(문재웅,2015-09-24T10:53:30) */
+SELECT 
+        D.SVC_MGMT_NO    		AS "서비스관리번호"
+       ,A.EQP_SER_NO            AS "단말기일련번호"
+       ,E.EQP_MDL_NM   			AS "모델명"
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS110' 
+            AND CM_CD_ID = E.CAPA_CD ) AS "용량"
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS100' 
+            AND CM_CD_ID = A.EQP_COLOR_CD) AS "색상"
+       ,F.PET_NM       			AS "펫네임"
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS112' 
+            AND CM_CD_ID = E.CNTRT_PRD ) AS "계약기간"
+       ,TO_CHAR(TO_DATE(D.NEW_CNTRT_DT,'YYYYMMDD'),'YYYY-MM-DD')   			AS "계약일"
+       ,TO_CHAR(TO_DATE(C.RENTAL_CNTRT_STA_DT,'YYYYMMDD'),'YYYY-MM-DD')   	AS "계약시작일"
+       ,TO_CHAR(TO_DATE(C.RENTAL_CNTRT_END_DT,'YYYYMMDD'),'YYYY-MM-DD')   	AS "계약종료일"
+       ,A.EQP_PRCH_AMT      	AS "매입금액"
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS108' 
+            AND CM_CD_ID = A.INVE_ST_CD) AS "단말상태"	/*재고상태코드 */
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS115' 
+            AND CM_CD_ID = D.OP_TYP_CD) AS "계약상태"
+       ,G.ASSET_SLIP_NO			AS "전표번호"
+       /* ,G.ASSET_SLIP_ST			AS "전표상태코드" */
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS153' 
+            AND CM_CD_ID = NVL(G.ASSET_SLIP_ST,'00')) AS "전표상태"
+       /*              
+       ,A.EQP_MDL_CD   			AS "모델코드"
+       ,A.FISCL_REMPRC      	AS "잔존가"
+       ,A.FISCL_SVCL			AS "내용년수"
+       ,A.ASSET_NO				AS "자산번호"
+       */
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+       ,TB_EQP_MDL F
+       ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY')AS YYYY
+           FROM  TB_ASSET_SLIP A
+          WHERE  ASSET_SLIP_NO = (SELECT MAX(ASSET_SLIP_NO) FROM TB_ASSET_SLIP WHERE ASSET_NO=A.ASSET_NO)
+        ) G
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.EQP_MDL_CD = F.EQP_MDL_CD(+)
+   AND  A.ASSET_NO = G.ASSET_NO(+)
+   AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+        A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+        D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+        D.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" prepend="AND" compareValue="%"><![CDATA[
+        A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="ASSET_SLIP_ST" compareValue="%"><![CDATA[
+]]><isEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+       G.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="ASSET_SLIP_ST" compareValue="00"><![CDATA[
+       G.ASSET_SLIP_ST = #ASSET_SLIP_ST#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+ORDER BY D.SVC_MGMT_NO ASC]]>
+	</select>
+</sqlMap>

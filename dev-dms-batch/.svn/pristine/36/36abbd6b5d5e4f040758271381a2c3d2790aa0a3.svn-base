@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR003">
+	<select id="SSelEqpInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR003.SSelEqpInfo 제각대상단말기조회 */
+/* IO: 안진갑,2016-01-06T11:29:25(문재웅,2015-08-28T17:12:21) */
+SELECT  A.INVE_ST_CD    /* 재고상태코드 */
+       ,A.ASSET_NO      /* 자산번호 */
+  FROM  TB_EQP_ASSET A  /* PR_단말기자산 */
+       ,TB_NR_CNTRT  B  /* NR_신규R계약 */
+       ,TB_EQP_CNTRT C  /* PR_단말기계약 */
+ WHERE  A.ASSET_NO = C.ASSET_NO 
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  A.OP_CL_CD = 'NR'
+   AND  (( B.EQP_RTN_YN = 'N' AND  B.OP_TYP_CD IN('02','07') ) OR  B.OP_TYP_CD = '08' )  /* 정상해지,중도해지,렌탈계약종료(단독) */
+   AND  A.INVE_ST_CD NOT IN('60','61','70','71') /* 매각,제각처리하지않은 데이터 */
+UNION
+/* 계약종료일+30 된계약중 단말기 미반납 정보 */
+SELECT  A.INVE_ST_CD    /* 재고상태코드 */
+       ,A.ASSET_NO      /* 자산번호 */
+  FROM  TB_EQP_ASSET    A   /* PR_단말기자산 */
+       ,TB_EQP_CNTRT    B   /* PR_단말기계약 */
+       ,TB_RENTAL_CNTRT C   /* PR_렌탈계약 */
+       ,TB_NR_CNTRT     D   /* NR_신규R계약 */
+       ,TB_EQP_CLCT_OBJ  F  /* PR_단말기회수대상 */
+ WHERE  A.ASSET_NO      = B.ASSET_NO
+   AND  B.CNTRT_NO      = C.CNTRT_NO
+   AND  B.CNTRT_NO      = D.CNTRT_NO
+   AND  D.SVC_MGMT_NO   = F.SVC_MGMT_NO
+   AND  D.EQP_SER_NO = F.EQP_SER_NO
+   AND  D.EQP_RTN_YN = 'P' 
+   AND  A.OP_CL_CD      = 'NR'
+   AND  F.RTN_REG_DT   IS NULL  /* 미반납 */
+   AND  A.INVE_ST_CD NOT IN('60','61','70','71') /* 매각,제각처리하지않은 데이터 */
+   AND  TO_CHAR(SYSDATE, 'YYYYMMDD') >= (SELECT  MIN(SCARL_DT) AS OP_PROC_DT 
+                                           FROM  TB_HOLY 
+                                          WHERE  SCARL_DT >= (SELECT TO_CHAR(TO_DATE(C.RENTAL_CNTRT_END_DT) + 30,'YYYYMMDD') FROM DUAL)   /* 렌탈계약종료일자+30(영업일) 날자대상인 것 */
+                                            AND  HOLY_YN = 'N'
+                                         )]]>
+	</select>
+	<update id="UEqpAsset" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR003.UEqpAsset 단말기자산상태변경 */
+/* IO: 문재웅,2015-09-03T12:47:06(문재웅,2015-09-03T12:47:06) */
+UPDATE TB_EQP_ASSET
+   SET INVE_ST_CD     = #INVE_ST_CD#
+     , LS_CHG_USER_ID = 'BAT'
+     , LS_CHG_DTM     = SYSDATE                       
+ WHERE ASSET_NO   = #ASSET_NO#]]>
+	</update>
+</sqlMap>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRRentalSaleFixMgnt">
+	<select id="SRentalSaleLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalSaleFixMgnt.SRentalSaleLstPaging 렌탈매출확정조회 */
+/* IO: 김혁범,2015-08-07T16:43:32(김혁범,2015-08-07T13:17:00) */
+SELECT  *
+  FROM(SELECT  ROW_NUMBER() OVER(ORDER BY A.SALE_CL_CD ASC) AS ROWNO
+              ,A.SALE_CL_CD /*계정*/
+              ,A.EQP_MDL_CD /*모델코드*/
+              ,C.EQP_MDL_NM
+              ,A.AGN_CD /*대리점코드*/
+              ,D.DEAL_CO_NM /*대리점명*/
+              ,A.OP_TYP_CD /*계약상태*/
+              ,A.AS_CNT/*추정건수*/
+              ,A.TOT_AS_SALE_AMT/*추정액*/
+              ,B.FX_CNT/*렌탈건수*/
+              ,B.TOT_FX_SALE_AMT/*렌탈료*/        
+        FROM(SELECT  SALE_ASMPT_YM
+                    ,SUM(SALE_AMT) AS TOT_AS_SALE_AMT
+                    ,COUNT(*) AS AS_CNT
+                    ,EQP_MDL_CD
+                    ,SALE_CL_CD
+                    ,OP_TYP_CD
+                    ,AGN_CD
+               FROM  TB_SALE_ASMPT 
+              WHERE  SALE_ASMPT_FIX_CL = 'AS'
+             GROUP BY SALE_CL_CD,EQP_MDL_CD,OP_TYP_CD,SALE_ASMPT_YM,AGN_CD)A
+           ,(SELECT  SALE_ASMPT_YM
+                    ,SUM(SALE_AMT) AS TOT_FX_SALE_AMT
+                    ,COUNT(*) AS FX_CNT
+                    ,EQP_MDL_CD
+                    ,SALE_CL_CD
+                    ,OP_TYP_CD
+                    ,AGN_CD
+               FROM  TB_SALE_ASMPT 
+              WHERE  SALE_ASMPT_FIX_CL = 'FX'
+             GROUP BY SALE_CL_CD,EQP_MDL_CD,OP_TYP_CD,SALE_ASMPT_YM,AGN_CD)B
+           ,TB_EQP_MDL C
+           ,TB_DEAL_CO D
+      WHERE  B.SALE_ASMPT_YM = A.SALE_ASMPT_YM
+        AND  A.EQP_MDL_CD =  C.EQP_MDL_CD(+)
+        AND  A.AGN_CD = D.DEAL_CO_CD(+)
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+               A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="SALE_CL_CD" compareValue="%"><![CDATA[
+               A.SALE_CL_CD = #SALE_CL_CD#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+               A.SALE_ASMPT_YM LIKE '%'||#YDATE#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+               A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[  
+    )PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SRentalSaleTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalSaleFixMgnt.SRentalSaleTotCnt 렌탈매출확정총건수 */
+/* IO: 김혁범,2015-08-07T13:45:38(김혁범,2015-08-07T13:17:22) */
+SELECT COUNT(1) AS TOTAL_CNT        
+ FROM(SELECT  SALE_ASMPT_YM
+             ,SUM(SALE_AMT) AS TOT_AS_SALE_AMT
+             ,COUNT(*) AS AS_CNT
+             ,EQP_MDL_CD
+             ,SALE_CL_CD
+             ,OP_TYP_CD
+             ,AGN_CD
+        FROM  TB_SALE_ASMPT 
+       WHERE  SALE_ASMPT_FIX_CL = 'AS'
+     GROUP BY SALE_CL_CD,EQP_MDL_CD,OP_TYP_CD,SALE_ASMPT_YM,AGN_CD)A
+    ,(SELECT  SALE_ASMPT_YM
+             ,SUM(SALE_AMT) AS TOT_FX_SALE_AMT
+             ,COUNT(*) AS FX_CNT
+             ,EQP_MDL_CD
+             ,SALE_CL_CD
+             ,OP_TYP_CD
+             ,AGN_CD
+        FROM  TB_SALE_ASMPT 
+       WHERE  SALE_ASMPT_FIX_CL = 'FX'
+     GROUP BY SALE_CL_CD,EQP_MDL_CD,OP_TYP_CD,SALE_ASMPT_YM,AGN_CD)B
+    ,TB_EQP_MDL C
+    ,TB_DEAL_CO D
+ WHERE B.SALE_ASMPT_YM = A.SALE_ASMPT_YM
+   AND A.EQP_MDL_CD =  C.EQP_MDL_CD(+)
+   AND A.AGN_CD = D.DEAL_CO_CD(+)
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+       A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="SALE_CL_CD" compareValue="%"><![CDATA[
+       A.SALE_CL_CD = #SALE_CL_CD#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+       A.SALE_ASMPT_YM LIKE '%'||#YDATE#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+       A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SRentalSaleDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalSaleFixMgnt.SRentalSaleDtlLst 렌탈매출확정상세 */
+/* IO: 김혁범,2015-08-07T14:42:07(김혁범,2015-08-07T14:42:07) */]]>
+	</select>
+</sqlMap>

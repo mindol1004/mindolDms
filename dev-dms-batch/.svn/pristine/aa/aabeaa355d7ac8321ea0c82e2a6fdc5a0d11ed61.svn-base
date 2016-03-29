@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR012">
+	<select id="SFpaCmmsLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR012.SFpaCmmsLst FPA수수료 대상조회 */
+/* IO: 문재웅,2015-11-16T13:52:04(문재웅,2015-10-27T15:34:37) */
+WITH
+TB_FPA_MONTH_BASE AS
+( 
+  SELECT (SELECT TO_NUMBER(CM_CD_NM) FROM TB_CM_CD WHERE CM_GRP_CD_ID = 'DMS252' AND CM_CD_ID ='M0')  AS FPA_M0  /* FPA 월기준 FROM */
+  ,(SELECT TO_NUMBER(CM_CD_NM) FROM TB_CM_CD WHERE CM_GRP_CD_ID = 'DMS252' AND CM_CD_ID ='M1')        AS FPA_M1  /* FPA 월기준 TO */
+  ,(SELECT TO_NUMBER(CM_CD_NM) FROM TB_CM_CD WHERE CM_GRP_CD_ID = 'DMS252' AND CM_CD_ID LIKE'NORMEND%' AND USE_YN ='Y')   AS NORMEND /* FPA 정상종료 수수료: 현재 사용여부 Y */
+  ,(SELECT TO_NUMBER(CM_CD_NM) FROM TB_CM_CD WHERE CM_GRP_CD_ID = 'DMS252' AND CM_CD_ID LIKE'MIDTERM%' AND USE_YN ='Y')   AS MIDTERM /* FPA 중도해지 수수료: 현재 사용여부 Y */
+   FROM DUAL
+)  
+,TB_CNTRT_DATA AS
+(
+SELECT  A.CNTRT_NO
+       ,#XCL_YM# AS XCL_YM  
+        /* ,MONTHS_BETWEEN(TO_DATE(샵XCL_YM샵,'YYYYMM'),TO_DATE(SUBSTR(B.RENTAL_CNTRT_STA_DT,1,6),'YYYYMM') ) + 1 AS DEPR_DTL_TS  차수(월수) */
+       ,CASE WHEN TO_NUMBER(SUBSTR(B.RENTAL_CNTRT_STA_DT,7,2)) < D.FPA_M0 THEN 1 ELSE 0 END                 /* FROM MONTH  */
+         + MONTHS_BETWEEN(TO_DATE(#XCL_YM#,'YYYYMM'), TO_DATE(SUBSTR(B.RENTAL_CNTRT_STA_DT,1,6),'YYYYMM'))  /* FROM~TO MONTH  */
+        AS DEPR_DTL_TS /* 차수(월수) */
+       ,CASE WHEN A.OP_TYP_CD = '07' THEN
+          /* MONTHS_BETWEEN(TO_DATE(샵XCL_YM샵,'YYYYMM'),TO_DATE(SUBSTR(A.OP_PROC_DT,1,6),'YYYYMM') ) + 1  */
+          CASE WHEN TO_NUMBER(SUBSTR(A.OP_PROC_DT,7,2)) <  D.FPA_M0 THEN 1 ELSE 0 END                 /* FROM MONTH  */
+           + MONTHS_BETWEEN(TO_DATE(#XCL_YM#,'YYYYMM'), TO_DATE(SUBSTR(A.OP_PROC_DT,1,6),'YYYYMM'))   /* FROM~TO MONTH  */
+        ELSE 0 END AS MID_TERM_TS /* 업무처리일자 중도해지(월수) */
+       ,A.OP_TYP_CD 
+       ,B.RENTAL_CNTRT_STA_DT
+       ,B.RENTAL_CNTRT_END_DT
+       ,A.OP_PROC_DT 
+       ,D.NORMEND   /* 정상종료 FPA 수수료 */
+       ,D.MIDTERM   /* 중도해지 FPA 수수료 */
+ FROM  TB_NR_CNTRT A      /* NR_신규R계약  */
+      ,TB_RENTAL_CNTRT B  /* PR_렌탈계약   */
+      ,TB_FPA_MONTH_BASE D
+ WHERE  A.CNTRT_NO       = B.CNTRT_NO
+   AND  SUBSTR(A.NEW_CNTRT_DT,0,6) <= #XCL_YM#    /* 계약일 = 렌타탈시작일  */
+   AND  #XCL_YM# BETWEEN SUBSTR(B.RENTAL_CNTRT_STA_DT,0,6)  AND SUBSTR(B.RENTAL_CNTRT_END_DT,0,6)
+   AND  A.OP_TYP_CD IN('01','03','04','06','07' ) /* 가입:'01','03','04'/ 중도해지:06,07 */
+)
+
+/* ■ CASE 2.1 해약자료 ■ */
+SELECT  A.* 
+       ,A.NORMEND AS MID_TERM_CMMS            /* 중도해지 FPA 수수료 */
+       ,0 AS NORM_END_CMMS                    /* 정상종료 FPA 수수료 */
+       ,0 AS EXTNS_CMMS                       /* 연장 FPA 수수료 */
+  FROM  TB_CNTRT_DATA A
+ WHERE  A.OP_TYP_CD IN('06', '07' )           /* 반품해지/기변철회, 중도해지 */
+   AND  #XCL_YM# BETWEEN SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6)  AND SUBSTR(A.OP_PROC_DT,0,6)  /* 중도해지일까지  */
+UNION 
+/* ■ CASE 2.1 정상종료, 연장 ■ */
+SELECT  A.* 
+       ,0 AS MID_TERM_CMMS                          /* 중도해지 FPA 수수료 */
+       ,CASE WHEN A.DEPR_DTL_TS <= 12 THEN 
+             A.NORMEND ELSE 0 END AS NORM_END_CMMS  /* 최대정상종료 수수료 */
+       ,CASE WHEN A.DEPR_DTL_TS > 12 THEN     
+             A.MIDTERM ELSE 0 END AS EXTNS_CMMS     /* 연장 수수료 */
+  FROM  TB_CNTRT_DATA A 
+ WHERE  A.OP_TYP_CD IN('01','03','04')]]>
+	</select>
+	<insert id="IFpaCmms" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.IFpaCmms FPA수수료등록 */
+/* IO: 문재웅,2015-10-28T15:24:35(문재웅,2015-10-14T14:31:43) */
+INSERT INTO TB_FPA_CMMS
+         (
+            CNTRT_NO	    /* 계약번호 */
+           ,XCL_YM	        /* 정산년월 */
+           ,MID_TERM_CMMS	/* 중도해지수수료 */
+           ,NORM_END_CMMS	/* 정상종료수수료 */
+           ,EXTNS_CMMS	    /* 연장수수료 */
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+     	   ,LS_CHG_USER_ID
+       	   ,LS_CHG_DTM
+         )
+  VALUES (
+            #CNTRT_NO#	    /* 계약번호 */
+           ,#XCL_YM#	    /* 정산년월 */
+           ,#MID_TERM_CMMS#	/* 중도해지수수료 */
+           ,#NORM_END_CMMS#	/* 정상종료수수료 */
+           ,#EXTNS_CMMS#	/* 연장수수료 */
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+         )]]>
+	</insert>
+	<delete id="DBatFPACmms" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.DBatFPACmms FPA수수료 배치전삭제 */
+/* IO: 문재웅,2015-10-22T14:38:12(문재웅,2015-08-20T15:10:25) */
+DELETE  FROM TB_FPA_CMMS
+ WHERE  XCL_YM = NVL(#XCL_YM#, TO_CHAR(SYSDATE, 'YYYYMM'))]]>
+	</delete>
+	<select id="SExtDebtInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR012.SExtDebtInfo 채권에기등록된데이터조회 */
+/* IO: 문재웅,2015-10-22T19:34:14(진병수,2015-09-30T19:56:58) */
+SELECT A.*, S.SLIP_NO, NVL(S.SLIP_ST_CD,'05') AS SLIP_ST_CD 
+   FROM TB_XCL_DEBT A
+      , TB_SLIP     S
+  WHERE A.OP_CL_CD    = 'NR'
+    AND A.DEBT_XCL_YM = SUBSTR(#PROC_DT#,1,6)
+ /* AND A.XCL_CL      = 'FP'  정산구분:FPA수수료 */
+    AND A.XCL_ITM_CL  = 'FP'  /* 정산구분코드:FPA수수료 */
+    AND S.SLIP_NO  (+)=  A.DEBT_SLIP_NO]]>
+	</select>
+	<select id="SSalesCom2Etc" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR012.SSalesCom2Etc 수수료계약목록조회 */
+/* IO: 진병수,2015-11-04T10:54:08(진병수,2015-08-20T15:50:39) */
+SELECT D.CNTRT_NO                  AS CNTRT_NO
+     , '501802'                    AS XCL_DEPT_CD
+     , #PROC_DT#     		       AS XCL_DT
+     , 'FP'                        AS XCL_ITM_CD
+     , NVL((SELECT DEALCO_BLICENS_NO FROM TB_DEALCO WHERE DEALCO_CD = '1000000008'),'501000')            AS XCL_DEALCO_CD
+     , NULL                        AS XCL_CL_CD
+     , NULL                        AS ACNT_CD
+     , NULL                        AS XCL_ST_CD
+     , NVL(MID_TERM_CMMS,0)+NVL(NORM_END_CMMS,0)+NVL(EXTNS_CMMS,0)          AS XCL_AMT
+     , 0                           AS SPLY_PRC
+     , (NVL(MID_TERM_CMMS,0)+NVL(NORM_END_CMMS,0)+NVL(EXTNS_CMMS,0))/10     AS SURTAX_AMT
+     , NULL                        AS SURTAX_CL  
+     , NULL                        AS TAXBILL_NO
+     , NULL                        AS TAXBILL_DT
+     , NULL                        AS UPD_TAXBILL_NO
+     , NULL                        AS XCL_SCHD_DT
+     , NULL                        AS XCL_PROC_DT
+     , NULL                        AS XCL_SLIP_NO
+     , 'N'                         AS DEL_YN
+     , A.ASSET_NO                  AS ASSET_NO
+     , 'BAT'                       AS FS_REG_USER_ID            
+     ,  SYSDATE                    AS FS_REG_DTM
+  FROM TB_EQP_ASSET    A
+     , TB_EQP_CNTRT    B
+     , TB_RENTAL_CNTRT C
+     , TB_NR_CNTRT     D
+     , TB_FPA_CMMS     E
+ WHERE A.OP_CL_CD  = 'NR'
+   AND B.ASSET_NO  = A.ASSET_NO
+   AND C.CNTRT_NO  = B.CNTRT_NO
+   AND D.CNTRT_NO  = C.CNTRT_NO
+   AND B.CNTRT_NO  = E.CNTRT_NO
+   AND E.XCL_YM = NVL(SUBSTR(#PROC_DT#,1,6),TO_CHAR(ADD_MONTHS(SYSDATE,-1),'YYYYMM'))]]>
+	</select>
+	<select id="SXclEtcInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR012.SXclEtcInfo 기타정산에기등록된데이터조회_미사용 */
+/* IO: 문재웅,2015-10-22T19:06:28(진병수,2015-09-30T19:56:58) */
+SELECT A.*, S.SLIP_NO, NVL(S.SLIP_ST_CD,'05') AS SLIP_ST_CD 
+   FROM TB_ETC_XCL A
+      , TB_SLIP    S
+  WHERE A.XCL_DT     LIKE SUBSTR(#PROC_DT#,1,6) || '%'
+    AND A.XCL_ITM_CD = 'FP'	 /* 정산구분코드:FPA */
+    AND S.SLIP_NO (+)=  A.XCL_SLIP_NO]]>
+	</select>
+	<insert id="IDebt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR005.IDebt 수수료채무등록 */
+/* IO: 진병수,2015-10-08T18:42:39(진병수,2015-08-06T19:19:04) */
+INSERT INTO TB_XCL_DEBT
+            (
+              OP_CL_CD
+            , DEBT_XCL_YM
+            , XCL_CL
+            , DEBT_DEALCO_CD
+            , DEBT_AGN_CD
+            , DEBT_BIZ_REG_NO            
+            , XCL_ITM_CL
+            , DEBT_ITM_AMT
+            , DEBT_SURTAX
+            , DEBT_SLIP_NO
+            , DEBT_SLIP_DT
+            , DEBT_ORGL_SLIP_NO
+            , DEBT_CNCL_SLIP_NO
+            , DEBT_CNCL_DT
+            , DEBT_ADJ_BF_AMT
+            , DEBT_ADJ_DAMT
+            , DEBT_PRCH_TS
+            , FS_REG_USER_ID
+            , FS_REG_DTM
+            , LS_CHG_USER_ID
+            , LS_CHG_DTM
+            )
+            VALUES
+            (
+              #OP_CL_CD#
+            , #DEBT_XCL_YM#
+            , #XCL_CL#
+            , #DEBT_DEALCO_CD#
+            , #DEBT_AGN_CD#
+            , #DEBT_BIZ_REG_NO#
+            , #XCL_ITM_CL#
+            , #DEBT_ITM_AMT#
+            , #DEBT_SURTAX#
+            , #DEBT_SLIP_NO#
+            , #DEBT_SLIP_DT#
+            , #DEBT_ORGL_SLIP_NO#
+            , #DEBT_CNCL_SLIP_NO#
+            , #DEBT_CNCL_DT#
+            , NVL(#DEBT_ADJ_BF_AMT#,0)
+            , NVL(#DEBT_ADJ_DAMT#,  0)
+            , NVL(#DEBT_PRCH_TS#,  1)
+            , NVL(#USR_NO#, 'BAT')
+            , SYSDATE
+            , NVL(#USR_NO#, 'BAT')
+            , SYSDATE
+            
+            )]]>
+	</insert>
+	<insert id="IEtcXcl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR005.IEtcXcl 수수료기타정산등록 */
+/* IO: 진병수,2015-10-07T11:25:12(진병수,2015-08-20T15:32:36) */
+INSERT INTO TB_ETC_XCL
+  (
+     ETC_XCL_NO
+    ,CNTRT_NO
+    ,XCL_DEPT_CD  
+    ,XCL_DT       
+    ,XCL_ITM_CD   
+    ,XCL_DEALCO_CD
+    ,XCL_CL_CD 
+    ,ACNT_CD
+    ,XCL_ST_CD
+    ,XCL_AMT
+    ,ASSET_NO
+    ,SPLY_PRC
+    ,SURTAX_AMT
+    ,FS_REG_USER_ID
+    ,FS_REG_DTM
+    ,LS_CHG_USER_ID
+    ,LS_CHG_DTM    
+    ,DEL_YN
+  )
+  VALUES
+  (
+     SQ01_TB_ETC_XCL.NEXTVAL         
+    , #CNTRT_NO#
+    , #XCL_DEPT_CD#
+    , #XCL_DT#
+    , #XCL_ITM_CD#
+    , #XCL_DEALCO_CD#
+    , #XCL_CL_CD#
+    , #ACNT_CD#
+    , #XCL_ST_CD#
+    , #XCL_AMT#
+    , #ASSET_NO#
+    , #SPLY_PRC#
+    , #SURTAX_AMT#
+    , NVL(#USER_NO#, 'BAT')
+    , SYSDATE
+    , NVL(#USER_NO#, 'BAT')
+    , SYSDATE
+    , 'N'
+    )]]>
+	</insert>
+	<delete id="DXclDebt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.DXclDebt 정산채무정보삭제 */
+/* IO: 문재웅,2015-10-22T20:01:36(진병수,2015-09-15T09:36:58) */
+DELETE TB_XCL_DEBT
+ WHERE OP_CL_CD       = NVL(#OP_CL_CD#,'NR')
+   AND DEBT_XCL_YM    = #DEBT_XCL_YM#
+   AND XCL_CL         = NVL(#XCL_CL#, '01')	/* 현재의미없음 */
+   /* AND DEBT_DEALCO_CD = 샵DEBT_DEALCO_CD샵 */
+   AND DEBT_BIZ_REG_NO= #DEBT_BIZ_REG_NO#
+   AND XCL_ITM_CL     = NVL(#XCL_ITM_CL#, XCL_ITM_CL)	/* 정산구분코드:FPA */
+   AND DEBT_PRCH_TS   = NVL(#DEBT_PRCH_TS#, DEBT_PRCH_TS)]]>
+	</delete>
+	<delete id="DXclEtcByYM" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.DXclEtcByYM 기타정산정보삭제 */
+/* IO: 문재웅,2015-10-22T19:13:24(진병수,2015-09-15T09:36:58) */
+DELETE TB_ETC_XCL
+ WHERE XCL_ITM_CD = 'FP' /* 정산구분코드:FPA */
+   /* AND NVL(XCL_DEPT_CD, 'NR') IN ('NR','501802') */
+   AND XCL_DEPT_CD IN ('501802')
+   AND XCL_DT LIKE SUBSTR(#PROC_DT#,1,6) || '%']]>
+	</delete>
+	<select id="SClsComLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR012.SClsComLst FPA수수료집계목록조회 */
+/* IO: 진병수,2015-11-04T10:55:14(정동현,2015-08-20T14:33:41) */
+SELECT 
+        'NR'                              AS  OP_CL_CD
+       ,A.XCL_YM                          AS  DEBT_XCL_YM
+       ,'01'                              AS  XCL_CL
+       ,(SELECT DEALCO_BLICENS_NO FROM TB_DEALCO WHERE DEALCO_CD = '1000000008')                      AS  DEBT_BIZ_REG_NO	/* FPA수수료 대상업체: 맥코리(나중추가) '8569452136' */
+       ,'FP'                              AS  XCL_ITM_CL
+       ,NULL                              AS  DEBT_DEALCO_CD
+       ,NULL                              AS  DEBT_AGN_CD
+       ,SUM(NVL(MID_TERM_CMMS,0)+NVL(NORM_END_CMMS,0)+NVL(EXTNS_CMMS,0))    AS  DEBT_ITM_AMT
+       ,SUM(NVL(MID_TERM_CMMS,0)+NVL(NORM_END_CMMS,0)+NVL(EXTNS_CMMS,0))/10 AS  DEBT_SURTAX
+       ,NULL                              AS  DEBT_SLIP_NO
+       ,NULL                              AS  DEBT_ORGL_SLIP_NO
+       ,NULL                              AS  DEBT_CNCL_SLIP_NO
+       ,NULL                              AS  DEBT_CNCL_DT
+  FROM  TB_FPA_CMMS A
+ WHERE  A.XCL_YM = NVL(SUBSTR(#PROC_DT#,1,6),TO_CHAR(ADD_MONTHS(SYSDATE,-1),'YYYYMM'))
+ GROUP  BY  A.XCL_YM]]>
+	</select>
+</sqlMap>

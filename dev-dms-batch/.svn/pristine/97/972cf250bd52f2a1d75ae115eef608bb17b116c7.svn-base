@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.EPR010">
+	<select id="SSlipSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.SSlipSeq 전표시퀀스조회 */
+/* IO: 진병수,2015-08-31T09:25:19(진병수,2015-08-28T20:11:23) */
+SELECT LPAD(SQ01_TB_SLIP.NEXTVAL,10,'0') AS SLIP_NO  
+  FROM DUAL]]>
+	</select>
+	<insert id="ISlipData" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.ISlipData 전표데이터등록 */
+/* IO: 진병수,2015-09-08T16:39:56(진병수,2015-08-20T14:46:28) */
+INSERT INTO TB_SLIP
+            (
+               SLIP_NO
+             , PRPSL_DEPT_CD
+             , SLIP_DT
+             , PRPSR
+             , PRPSL_DT
+             , DEAL_TYP_CD
+             , SLIP_APRV_DEPT_CD
+             , SLIP_APRVR
+             , SLIP_APRV_DT
+             , DEBIT_TOT
+             , CR_TOT
+             , PRF_CD
+             , SLIP_APLY
+             , SLIP_TRMS_YN
+             , ORGL_SLIP_NO
+             , SLIP_NORM_CNCL_CL
+             , SLIP_RTNR
+             , SLIP_RETUR_DT
+             , TAX_BILL_NO
+             , SLIP_CL_CD
+             , FISCL_SYS_SEQ     
+             , SLIP_ST_CD 
+             , FS_REG_USER_ID
+             , FS_REG_DTM    
+             , LS_CHG_USER_ID
+             , LS_CHG_DTM    
+            )   
+     VALUES 
+            (
+               #SLIP_NO#
+             , #PRPSL_DEPT_CD#
+             , NVL(#SLIP_DT#, TO_CHAR(SYSDATE, 'YYYYMMDD'))
+             , #PRPSR#
+             , #PRPSL_DT#
+             , NVL(#DEAL_TYP_CD#, ' ')
+             , #SLIP_APRV_DEPT_CD#
+             , #SLIP_APRVR#
+             , #SLIP_APRV_DT#
+             , NVL(#DEBIT_TOT# , 0)
+             , NVL(#CR_TOT#    , 0)
+             , #PRF_CD#
+             , #SLIP_APLY#
+             , #SLIP_TRMS_YN#
+             , #ORGL_SLIP_NO#
+             , #SLIP_NORM_CNCL_CL#
+             , #SLIP_RTNR#
+             , #SLIP_RETUR_DT#
+             , #TAX_BILL_NO#
+             , #SLIP_CL_CD#
+             , #FISCL_SYS_SEQ#
+             , NVL(#SLIP_ST_CD#,'10')
+             , NVL(#USER_NO#,'BAT')
+             , SYSDATE
+             , NVL(#USER_NO#,'BAT')
+             , SYSDATE
+            )]]>
+	</insert>
+	<update id="USlipStatus" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.USlipStatus 전표상태수정 */
+/* IO: 진병수,2015-08-31T14:02:52(진병수,2015-08-25T16:46:31) */
+UPDATE TB_SLIP
+   SET SLIP_ST_CD = #SLIP_ST_CD#
+     , LS_CHG_USER_ID = NVL(#USER_NO#, LS_CHG_USER_ID)
+     , LS_CHG_DTM	  = SYSDATE
+ WHERE SLIP_NO    = #SLIP_NO#]]>
+	</update>
+	<select id="SSlipInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.SSlipInfo 전표정보조회 */
+/* IO: 진병수,2015-09-04T19:13:31(진병수,2015-09-04T19:12:33) */
+SELECT *
+  FROM TB_SLIP
+ WHERE SLIP_NO = #SLIP_NO#]]>
+	</select>
+	<insert id="IAssetSlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.IAssetSlipInfo 단말자산전표테이블에입력 */
+/* IO: 진병수,2015-09-08T15:33:33(장미진,2015-08-26T09:47:12) */
+INSERT INTO  TB_ASSET_SLIP
+            (
+             ASSET_NO
+            ,ASSET_SLIP_SEQ
+            ,ASSET_SLIP_CL_CD
+            ,ASSET_SLIP_NO
+            ,ASSET_SLIP_ST
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM 
+            )
+    VALUES  (
+             #ASSET_NO#
+            ,(SELECT NVL(TO_NUMBER(MAX(ASSET_SLIP_SEQ)),0)+1 FROM TB_ASSET_SLIP WHERE ASSET_NO = #ASSET_NO#)  /*자산번호max +1*/
+            ,NVL(#ASSET_SLIP_CL_CD#, 'AA')				/*ASSET_SLIP_CL_CD*/
+            ,NVL(#ASSET_SLIP_NO#,#SLIP_NO#)
+            ,'10'				/*ASSET_SLIP_ST*/
+            ,#USER_NO#    		/*FS_REG_USER_ID*/
+            ,SYSDATE
+            ,#USER_NO#	    	/*LS_CHG_USER_ID*/
+            ,SYSDATE
+            )]]>
+	</insert>
+	<update id="UAssetSlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR010.UAssetSlipInfo 단말자산전표취소처리 */
+/* IO: 진병수,2015-09-08T14:28:52(장미진,2015-08-28T13:54:15) */
+UPDATE  TB_ASSET_SLIP
+   SET  ASSET_SLIP_ST = '05'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  ASSET_SLIP_NO = #ASSET_SLIP_NO#]]>
+	</update>
+	<select id="SUserInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.inf.EPR010.SUserInfo 사용자정보조회 */
+/* IO: 진병수,2015-09-08T15:58:17(진병수,2015-09-08T15:57:33) */
+SELECT *
+  FROM TB_USER
+ WHERE USER_NO = #USER_NO#]]>
+	</select>
+</sqlMap>

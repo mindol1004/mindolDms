@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="commRDviewer" classname="test_RD" inheritanceid="" position="absolute 0 0 800 700" titletext="RDviewer" onload="Form_onload">
+    <Layouts>
+      <Layout>
+        <Static id="staMainBg" position="absolute 0 0 800 700" style="background:white;" anchor="all"/>
+        <ActiveX id="atxRDViewer" windowed="true" taborder="4" anchor="all" position="absolute 0 0 800 700" positiontype="position" adjustalpha="true" popupstyle="true" progid="{5A7B56B3-603D-4953-9909-1247D41967F8}" ZoomRatio="100"/>
+      </Layout>
+    </Layouts>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : commRDviewer.xfdl
+ * 03. 화면 설명 : Cronix Viewer화면
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs";
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//trace("Form_onload>>>>>>>>>>>");	
+	form.titletext = argReportTitle;
+
+	var sActivexID = "atxRDViewer";
+	_gfn_runReport(argReportUrl, argXmlData, argArgs, sActivexID, argToolbar, argZoomRatio);
+}]]></Script>
+  </Form>
+</FDL>

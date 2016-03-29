@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="tip_excel" classname="test1" position="absolute 0 0 745 645" titletext="New Form" onload="form_onload" class="_SS_Effect">
+    <Layouts>
+      <Layout>
+        <Grid id="Grid00" taborder="1" binddataset="ds_excel_imp" useinputpanel="false" autofittype="col" position="absolute 23 34 270 153">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Col size="80"/>
+                <Col size="80"/>
+                <Col size="80"/>
+              </Columns>
+              <Rows>
+                <Row band="head" size="24"/>
+                <Row band="body" size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell col="0" text="col1" displaytype="normal"/>
+                <Cell col="1" text="col2" displaytype="normal"/>
+                <Cell col="2" text="col3" displaytype="normal"/>
+              </Band>
+              <Band id="body">
+                <Cell col="0" text="bind:col1" displaytype="normal"/>
+                <Cell col="1" text="bind:col2" displaytype="normal"/>
+                <Cell col="2" text="bind:col3" displaytype="normal"/>
+              </Band>
+            </Format>
+          </Formats>
+        </Grid>
+        <Button id="Button09" taborder="1" text="(1) CSV ▶ Dataset ▶ Grid" onclick="Button09_onclick" position="absolute 23 165 270 190" class="_SS_Title4"/>
+        <Button id="Button10" taborder="1" text="(2) Excel ▶ Clipboard ▶ Dataset" onclick="Button10_onclick" position="absolute 23 437 270 462" class="_SS_Title4"/>
+        <Static id="Static03" text="2) Excel Import" onclick="Static00_onclick" class="_SS_Title3" position2="absolute l:5 w:325 t:5 h:25" positiontype="position2" style="border:0px solid #808080ff ;" usedecorate="true"/>
+        <GroupBox id="GroupBox09" text=" 설명 " enableevent="false" position2="absolute l:280 w:449 t:155 h:265" positiontype="position2"/>
+        <Static id="Static06" text="CSV파일을 Dataset으로 불러들여 Grid에 바인딩하는 예제임&#13;&#10;※ CSV 포맷은 아래와 같은 형식이어야 함" onclick="Static00_onclick" class="_SS_Text" position2="absolute l:293 w:413 t:173 h:33" positiontype="position2" style="border:0px solid #808080ff ;" usedecorate="true"/>
+        <TextArea id="TextArea09" taborder="1" value="function Button09_onclick(obj:Button,  e:ClickEventInfo)&#13;&#10;{&#13;&#10;&#9;var buff = ta_csv.value;&#13;&#10;&#13;&#10;&#9;// buff --&gt; ds_excel_imp&#13;&#10;&#9;ds_excel_imp.clear();&#13;&#10;&#9;ds_excel_imp.loadCSV(buff, true);&#13;&#10;}" wordwrap="word" autoselect="false" class="_SS_Table_Text" enableevent="false" position2="absolute l:293 w:425 t:296 h:113" positiontype="position2" readonly="true"/>
+        <GroupBox id="GroupBox10" text=" 설명 " enableevent="false" position2="absolute l:280 w:449 t:427 h:209" positiontype="position2"/>
+        <TextArea id="TextArea10" taborder="1" value="function Button10_onclick(obj:Button,  e:ClickEventInfo)&#13;&#10;{&#13;&#10;&#9;// ClipBoard --&gt; buff&#13;&#10;&#9;var buff = system.getClipboard(&quot;CF_CSV&quot;); // ClipBoard내용 가져오기&#13;&#10;&#9;if( buff == undefined )&#13;&#10;&#9;&#9;alert(&quot;Excel을 띄워서 내용을 먼저 복사하십시오.&quot;);&#9;&#9;&#13;&#10;&#9;&#9;&#13;&#10;&#9;// buff --&gt; ds_excel_imp&#13;&#10;&#9;var row, col;&#9;&#13;&#10;&#9;var arr_rec = new Array();&#13;&#10;&#9;var arr_col = new Array();&#9;&#13;&#10;&#9;arr_rec = buff.split(&quot;\r\n&quot;);&#13;&#10;&#9;for( row = 0 ; row &lt; arr_rec.length-1 ; row++ )&#13;&#10;&#9;{&#13;&#10;&#9;&#9;arr_col = arr_rec[row].split(&quot;,&quot;);&#13;&#10;&#9;&#9;ds_excel_imp.addRow();&#13;&#10;&#9;&#9;for( col = 0 ; col &lt; arr_col.length ; col++ )&#13;&#10;&#9;&#9;&#9;ds_excel_imp.setColumn(row, col, arr_col[col]);&#13;&#10;&#9;}&#13;&#10;&#9;ds_excel_imp.rowposition = 0;&#13;&#10;}" wordwrap="word" autoselect="false" class="_SS_Table_Text" enableevent="false" position2="absolute l:293 w:425 t:496 h:129" positiontype="position2" readonly="true"/>
+        <TextArea id="ta_csv" taborder="2" value="CSV:utf-8&#13;&#10;Dataset:ds_excel_imp&#13;&#10;col1:STRING(20),col2:STRING(20),col3:STRING(20)&#13;&#10;홍길동,인사부,부장&#13;&#10;홍길순,총무부,차장&#13;&#10;김갑돌,연구소,과장&#13;&#10;김갑순,기술부,대리" wordwrap="word" readonly="true" class="_SS_Table_Text" enableevent="false" position2="absolute l:309 w:337 t:224 h:49" positiontype="position2"/>
+        <Static id="Static68" text="처리 소스" usedecorate="true" onclick="Static00_onclick" class="_SS_Table_Header" enableevent="false" position2="absolute l:293 w:137 t:280 h:17" positiontype="position2"/>
+        <Static id="Static00" text="처리 소스" usedecorate="true" onclick="Static00_onclick" class="_SS_Table_Header" enableevent="false" position2="absolute l:293 w:137 t:480 h:17" positiontype="position2"/>
+        <Static id="Static01" text="CSV 포맷" usedecorate="true" onclick="Static00_onclick" class="_SS_Table_Header" enableevent="false" position2="absolute l:309 w:81 t:208 h:17" positiontype="position2"/>
+        <Static id="Static02" text="&#13;&#10;※ ExportObject는 Excel Import기능은 제공하지 않음&#13;&#10;     아래예제는 ExportObjet가 아닌 다른 방법으로 Excel Import를 처리하는 &#13;&#10;     예제임" usedecorate="true" onclick="Static00_onclick" class="_SS_Emphasis" position2="absolute l:293 w:429 t:21 h:57" positiontype="position2" style="border:0px solid #808080ff ;"/>
+        <Static id="Static04" text="Excel내용을 Ctrl+C로 복사한 후 버튼을 누르면 Clipboard의 내용을 Dataset&#13;&#10;으로 불러들여 Grid에 바인딩하는 예제임" usedecorate="true" onclick="Static00_onclick" class="_SS_Text" position2="absolute l:293 w:413 t:445 h:33" positiontype="position2" style="border:0px solid #808080ff ;"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_excel_imp" preload="true" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true">
+        <ColumnInfo>
+          <Column type="STRING" size="256" id="col1"/>
+          <Column type="STRING" size="256" id="col2"/>
+          <Column type="STRING" size="256" id="col3"/>
+        </ColumnInfo>
+        <Rows/>
+      </Dataset>
+    </Objects>
+    <Script type="xscript4.0"><![CDATA[function form_onload(obj:Form, e:LoadEventInfo)
+{
+	AniWorkFormEnd(e);
+}
+
+// (1) CSV ▶ Dataset ▶ Grid
+function Button09_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var buff = ta_csv.value;
+
+	// buff --> ds_excel_imp
+	ds_excel_imp.clear();
+	ds_excel_imp.loadCSV(buff, true);
+}
+
+// (2) Excel ▶ Clipboard ▶ Dataset
+function Button10_onclick(obj:Button,  e:ClickEventInfo)
+{
+	// ClipBoard --> buff
+	var buff = system.getClipboard("CF_CSV"); // ClipBoard내용 가져오기
+	if( buff == undefined )
+		alert("Excel을 띄워서 내용을 먼저 복사하십시오.");		
+		
+	// buff --> ds_excel_imp
+	var row, col;	
+	var arr_rec = new Array();
+	var arr_col = new Array();	
+	arr_rec = buff.split("\r\n");
+	for( row = 0 ; row < arr_rec.length-1 ; row++ )
+	{
+		arr_col = arr_rec[row].split(",");
+		ds_excel_imp.addRow();
+		for( col = 0 ; col < arr_col.length ; col++ )
+			ds_excel_imp.setColumn(row, col, arr_col[col]);
+	}
+	ds_excel_imp.rowposition = 0;
+}
+
+]]></Script>
+  </Form>
+</FDL>

@@ -1,0 +1,204 @@
+package dms.ep.epscsbase.biz;
+
+import org.junit.runner.Request;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]재감정회수일자누락목록관리</li>
+ * <li>설  명 : <pre>재감정회수일자누락목록관리</pre></li>
+ * <li>작성자 : 정동현 (jjddhh123)</li>
+ * </ul>
+ *
+ * @author 정동현 (jjddhh123)
+ */
+public class FEPEqpRJdgMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPEqpRJdgMgmt(){
+		super();
+	}
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-27 11:23:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CLCT_FROM_DT [회수일자]
+	 *	- field : CLCT_TO_DT [회수일자]
+	 *	- field : CNSL_MGMT_NO [접수관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CLCT_LST
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : SKN_CL [SKN구분]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : ERR_CHK [ERR_CHK]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpClctOmitList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DEPEqpRJdgMgmt dEPEqpRJdgMgmt = (DEPEqpRJdgMgmt)lookupDataUnit(DEPEqpRJdgMgmt.class);
+            
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPEqpRJdgMgmt.dSEqpClctOmitListTotCnt(requestData, onlineCtx);   // 재감정회수일자누락목록 총건수        
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));     
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            
+            // 3. LISTDM호출
+            responseData = dEPEqpRJdgMgmt.dSEqpClctOmitListPaging(reqDs, onlineCtx);    // 재감정회수일자누락목록 조회       
+            rsPagingList = responseData.getRecordSet("RS_EQP_CLCT_LST");          
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);                            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-27 11:23:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CLCT_LST
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : SKN_CL [SKN구분]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : CHECKED [CHECKED]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdEqpClctOmit(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();      
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        try {
+            // 1. DU lookup
+            DEPEqpRJdgMgmt dEPEqpRJdgMgmt = (DEPEqpRJdgMgmt) lookupDataUnit(DEPEqpRJdgMgmt.class);
+            // 2. 업무 DM호출
+            responseData = dEPEqpRJdgMgmt.dUEqpClctOmit(requestData, onlineCtx);
+        }catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>재감정회수일자누락목록조회엑셀업로드</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-27 11:23:37
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_EQP_CLCT_LST
+	 *		- field : CNSL_MGMT_NO [접수관리번호]
+	 *		- field : CLCT_DT [회수일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_CLCT_LST
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : SKN_CL [SKN구분]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : ONING_DT [개통일자]
+	 *		- field : ERR_CHK [에러체크]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpClctOmitListExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet resData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IDataSet reqDsTemp = new DataSet();
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DEPEqpRJdgMgmt dEPEqpRJdgMgmt = (DEPEqpRJdgMgmt)lookupDataUnit(DEPEqpRJdgMgmt.class);
+            
+            if(requestData != null && requestData.getRecordSet("RQ_EQP_CLCT_LST") != null){
+                for(int i = 0; i < requestData.getRecordSet("RQ_EQP_CLCT_LST").getRecordCount(); i++){
+                    reqDsTemp.putField("CNSL_MGMT_NO", requestData.getRecordSet("RQ_EQP_CLCT_LST").get(i, "CNSL_MGMT_NO").toString());
+                    reqDsTemp.putField("CLCT_DT", requestData.getRecordSet("RQ_EQP_CLCT_LST").get(i, "CLCT_DT").toString());
+                    resData = dEPEqpRJdgMgmt.dSEqpClctOmitList(reqDsTemp, onlineCtx);    // 재감정회수일자누락목록 조회
+                    if(resData == null || resData.getRecordSet("RS_EQP_CLCT_LST") == null || resData.getRecordSet("RS_EQP_CLCT_LST").getRecordCount() <= 0){
+                        //컬럼정의순서는 SEqpClctOmitList 쿼리와 동일할것
+                        IRecordSet rsClctList = new RecordSet("RS_EQP_CLCT_LST", new String[]{"CHECKED","CNSL_MGMT_NO","CLCT_DT","EQP_COLOR_CD","EQP_MDL_CD","EQP_MDL_NM","EQP_SER_NO","PROGR_ST","SKN_CL","ONING_DT","ERR_CHK"});
+                        IRecord rcClctList = null;
+                        rcClctList = rsClctList.newRecord();
+                        rcClctList.set("CHECKED", "0");
+                        rcClctList.set("CNSL_MGMT_NO", requestData.getRecordSet("RQ_EQP_CLCT_LST").get(i, "CNSL_MGMT_NO").toString());
+                        rcClctList.set("CLCT_DT", requestData.getRecordSet("RQ_EQP_CLCT_LST").get(i, "CLCT_DT").toString());
+                        rcClctList.set("ERR_CHK", "미존재접수관리번호");
+                        rsClctList.setRecord(0, rcClctList);
+                        resData.putRecordSet("RS_EQP_CLCT_LST",rsClctList);
+                    }
+                    if(i == 0) {
+                        responseData.putRecordSet("RS_EQP_CLCT_LST", resData.getRecordSet("RS_EQP_CLCT_LST"));
+                    }
+                    else {
+                        responseData.getRecordSet("RS_EQP_CLCT_LST").addRecord(resData.getRecordSet("RS_EQP_CLCT_LST").getRecord(0));
+                    }
+                }
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+  
+}

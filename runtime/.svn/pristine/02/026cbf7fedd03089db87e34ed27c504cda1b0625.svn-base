@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 코어 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <bean id="nc.core.ILog4jManager"
+        class="nexcore.framework.core.log.impl.Log4jManager">
+        <description>
+        	<![CDATA[Log4j 설정 및 logger 로그레벨을 관리하는 컴포넌트 ]]>
+        </description>
+        <property name="fileUpdateEnabled" value="false" />
+    </bean>
+
+    <bean id="nc.core.DevLogLevelManager"
+        class="nexcore.framework.core.log.impl.DevLogLevelManager"
+        init-method="init" destroy-method="destroy">
+        <description>
+        	<![CDATA[업무로그 레벨을 관리]]>
+        </description>
+        <property name="sqlManager"   ref="nc.db.ISqlManager" />
+        <property name="cacheManager" ref="nc.core.ICacheManager" />
+        <property name="cacheName"    value="devloglevel" />
+        <property name="log4jManager" ref="nc.core.ILog4jManager" />
+    </bean>
+
+    <bean id="nc.core.IFrontDataLog"
+        class="nexcore.framework.core.service.front.DefaultFrontDataLog"
+        init-method="init" destroy-method="destroy">
+        <description>
+            <![CDATA[ front 의 raw 데이타 로깅. transaction별, reqid 별 elap time도 찍는다. ]]>
+        </description>
+		<property name="enabled"  			value="true"/>
+		<property name="directory"  		value="${NEXCORE_LOG_HOME}"/>
+		<property name="filenamePattern"  	value="${DATE}/front-${DATE}.log"/>
+		<property name="splitFilePerTx"  	value="false"/>
+		<property name="writeRawData"  		value="true"/>
+		<property name="logFileBufferSize"  value="8192"/>
+    </bean>
+
+    <bean id="nc.core.IOutboundDataLog"
+        class="nexcore.framework.core.service.outbound.DefaultOutboundDataLog"
+        init-method="init" destroy-method="destroy">
+        <description>
+            <![CDATA[ outbound 의 raw 데이타 로깅. transaction별, reqid 별 elap time도 찍는다. ]]>
+        </description>
+		<property name="enabled"  			value="true"/>
+		<property name="directory"  		value="${NEXCORE_LOG_HOME}"/> <!-- / 로 시작하지 않으면 NEXCORE_HOME 기준 상대경로 -->
+		<property name="filenamePattern"  	value="${DATE}/outbound-${DATE}.log"/>  <!-- 로그파일 포멧. -->
+		<property name="splitFilePerTx"  	value="false"/>
+		<property name="writeRawData"  		value="true"/>
+		<property name="logFileBufferSize"  value="8192"/> <!-- default 8K -->
+    </bean>
+
+    <bean id="nc.core.IJsonFrontDataLog"
+        class="nexcore.framework.core.service.front.DefaultFrontDataLog"
+        init-method="init" destroy-method="destroy">
+        <description>
+            <![CDATA[ front 의 raw 데이타 로깅. transaction별, reqid 별 elap time도 찍는다. ]]>
+        </description>
+		<property name="enabled"  			value="true"/>
+		<property name="directory"  		value="${NEXCORE_LOG_HOME}"/>
+		<property name="filenamePattern"  	value="${DATE}/front-json-${DATE}.log"/>
+		<property name="splitFilePerTx"  	value="false"/>
+		<property name="writeRawData"  		value="true"/>
+		<property name="logFileBufferSize"  value="8192"/>
+    </bean>
+
+    <bean id="nc.core.IXmlFrontDataLog"
+        class="nexcore.framework.core.service.front.DefaultFrontDataLog"
+        init-method="init" destroy-method="destroy">
+        <description>
+            <![CDATA[ front 의 raw 데이타 로깅. transaction별, reqid 별 elap time도 찍는다. ]]>
+        </description>
+		<property name="enabled"  			value="true"/>
+		<property name="directory"  		value="${NEXCORE_LOG_HOME}"/>
+		<property name="filenamePattern"  	value="${DATE}/front-xml-${DATE}.log"/>
+		<property name="splitFilePerTx"  	value="false"/>
+		<property name="writeRawData"  		value="true"/>
+		<property name="logFileBufferSize"  value="8192"/>
+    </bean>
+
+    <bean id="nc.core.OldLogFileDailyCleaner"
+        class="nexcore.framework.core.util.OldFileDailyCleaner"
+        init-method="init" destroy-method="destroy">
+        <description>
+        	<![CDATA[오래된 로그파일을 지정된 시간에 매일 삭제한다.]]>
+        </description>
+        <property name="enabled"                 value="${logclean.enabled}" />
+        <property name="scheduleTime"            value="${logclean.scheduleTime}" />
+        <property name="retainDays"              value="${logclean.retainDays}" />
+        <property name="deleteEmptySubDirectory" value="${logclean.deleteEmptySubDirectory}" />
+        <property name="fileNameSuffix"          value=".log" />
+        <property name="directories">
+            <list>
+                <value>${NEXCORE_LOG_HOME}</value>
+            </list>
+        </property>
+        <property name="ignoreSubDirectories">
+            <list>
+            	<!--  
+            	<value>batch</value>
+            	<value>batchjob</value>
+            	-->
+            </list>
+        </property>
+    </bean>
+
+</beans>
+            

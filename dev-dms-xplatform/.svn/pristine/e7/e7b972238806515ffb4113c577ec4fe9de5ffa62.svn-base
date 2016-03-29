@@ -1,0 +1,373 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  comFile.xjs
+ * 03. js 설명 : 파일 upload /  Download 관련 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+/************************************************************************************************
+ * Function : file upload를 위한 파일추가
+ * @param   : bMultiFile - File 단건/다건여부 ( default : false : 단건)
+ * Return   : File Info Dataset
+************************************************************************************************/
+function gfn_getFileInfo(bMultiFile)
+{
+	if ( gfn_isNull(bMultiFile) ) bMultiFile = false;
+	
+	var objRtnDs = new Dataset();
+	objRtnDs.addColumn( "fullpath", "string", 255 );
+	objRtnDs.addColumn( "filename", "string", 255 );
+	objRtnDs.addColumn( "filesize", "string", 255 );
+	objRtnDs.addColumn( "filetype", "string", 255 );
+	
+	var objFileDialog = new FileDialog();
+		objFileDialog.defaultextention = true;
+		objFileDialog.filter = "All|*.*";
+
+	if ( bMultiFile ) {
+		var vFile = objFileDialog.open("File Open", FileDialog.MULTILOAD, "%MYDOCUMENT%");
+
+		if (vFile == undefined || vFile == null) return;
+	
+		//파일정보
+		for(var i=0; i<vFile.length; i++)
+		{
+			vFile[i].open(VirtualFile.openRead);
+			var sFilePath = vFile[i].fullpath; //파일경로(전체경로-파일명포함)
+			var sFileSize = vFile[i].getFileSize();//파일사이즈
+			var sFileName = vFile[i].filename; //파일명(전체명-확장자포함)
+			var aryFileName = sFileName.split(".");//파일명
+			var sFileType = aryFileName[aryFileName.length - 1];//파일확장자
+			vFile[i].close();
+			
+			if ( !_gfn_checkFile(sFileName, sFileSize, sFileType) ) return;		 
+
+			var iAddRow = objRtnDs.addRow();
+			objRtnDs.setColumn(iAddRow , "fullpath", sFilePath);
+			objRtnDs.setColumn(iAddRow , "filename", sFileName);
+			objRtnDs.setColumn(iAddRow , "filesize", sFileSize);		
+			objRtnDs.setColumn(iAddRow , "filetype", sFileType);
+		}
+	
+	} else {
+		var vFile = objFileDialog.open("File Open", FileDialog.LOAD, "%MYDOCUMENT%");
+		
+		if (vFile == undefined || vFile == null) return;
+	
+		//파일정보
+		vFile.open(VirtualFile.openRead);
+		var sFilePath = vFile.fullpath; //파일경로(전체경로-파일명포함)
+		var sFileSize = vFile.getFileSize();//파일사이즈
+		var sFileName = vFile.filename; //파일명(전체명-확장자포함)
+		var aryFileName = sFileName.split(".");//파일명
+		var sFileType = aryFileName[aryFileName.length - 1];//파일확장자
+		vFile.close();
+
+		if ( !_gfn_checkFile(sFileName, sFileSize, sFileType) ) return;		 
+
+		var iAddRow = objRtnDs.addRow();
+		objRtnDs.setColumn(iAddRow , "fullpath", sFilePath);
+		objRtnDs.setColumn(iAddRow , "filename", sFileName);
+		objRtnDs.setColumn(iAddRow , "filesize", sFileSize);		
+		objRtnDs.setColumn(iAddRow , "filetype", sFileType);
+	}
+
+	return objRtnDs;
+}
+
+/************************************************************************************************
+ * Function : 파일 체크
+ * @param   : sFileName - 파일명
+ * @param   : sFileSize - 파일size
+ * @param   : sFileType - 파일type
+ * Return   : File Info Dataset
+************************************************************************************************/
+function _gfn_checkFile(sFileName, sFileSize, sFileType)
+{
+	//파일확장자 체크 - 프로그램 파일을 업로드 못함
+	if (sFileType == "jsp" || sFileType == "js" || sFileType == "asp" || sFileType == "php" || sFileType == "aspx" || sFileType == "exe" || sFileType == "com" || sFileType == "bat" || sFileType == "dll")
+	{
+		gfn_message("A","프로그램 확장자는 업로드 하실수 없습니다.");		
+		return false;
+	}		
+	
+	//파일 사이즈 체크 - 5MB이하
+	//trace("sFileSize==="+sFileSize);
+	if (sFileSize > UPLOAD_SIZE_LIMIT)
+	{
+		gfn_message("A","총 "+ (UPLOAD_SIZE_LIMIT / 1024) +"KB 이상의 파일은 첨부할 수 없습니다.\n파일사이즈를 줄여주세요.\n" 
+			+ sFileName + " 은(는) 파일사이즈가 [ " + Math.round(sFileSize / 1024) + "KB ] 입니다.");
+		return false;
+	}
+	
+	return true;
+}
+
+/************************************************************************************************
+ * Function : 파일을 Blob 데이타로 읽어서 Return
+ * Return   : Blob데이타
+************************************************************************************************/
+function gfn_readFileBlob()
+{
+	var objFdg = new FileDialog();
+		objFdg.defaultextention = true; 
+
+	var vFile = objFdg.open("File Open", FileDialog.LOAD, "%MYDOCUMENT%");
+	var rtn = vFile.open(VirtualFile.openRead | VirtualFile.openBinary);
+	
+	if ( rtn == -1 ) return;
+
+	vFile.seek(0,VirtualFile.seekBegin);
+	var bData = new Buffer(vFile.read(vFile.getFileSize()));
+	vFile.close(); 
+
+	return bData.data;
+}
+
+/************************************************************************************************
+ * Function : Blob 데이타로 읽어서 파일로 저장
+ * @param   : objFileDs - blob를 가지고 있는 Dataset
+ * @param   : sColNm - blob column명
+ * Return   : Blob데이타
+************************************************************************************************/
+function gfn_writeFileBlob(objFileDs, nRow, sColNm)
+{
+	var objFdg = new FileDialog();
+		objFdg.defaultextention = true; 
+
+	var vFile = objFdg.open("File Save", FileDialog.SAVE, "%MYDOCUMENT%");
+	if (vFile == undefined || vFile == null) return;
+
+	var read_data = vFile.open(VirtualFile.openWrite|VirtualFile.openBinary);
+
+	var tmpBuffer = new Buffer(objFileDs.getColumn(nRow, sColNm));
+
+	var bSuccess = vFile.write(tmpBuffer.data, "utf-8");
+	vFile.close();
+}
+
+
+/************************************************************************************************
+ * Function : file upload
+ * @param   : sFileSvcId	 - 파일업로드후 리턴 Service id(Object명으로 사용)
+ * @param   : sCallBackFnc	 - 파일업로드후 리턴 callBack함수명(Object명으로 사용)
+ * @param   : objFileDS	     - 파일업로드 정보 Dataset Object
+ * @param   : sFullPathCol   - 파일업로드 정보 파일경로(전체) Column명
+ * @param   : objButton      - 파일업로드 버튼 Object
+ * Return   : 첨부파일갯수 n
+************************************************************************************************/
+function gfn_fileUpload(sFileSvcId, sCallBackFnc, objFileDS, sFullPathCol, objButton)
+{
+	if ( gfn_isNull(objFileDS) ) return;
+	if ( gfn_isNull(sFullPathCol) ) return;
+	if ( objFileDS.rowcount == 0 ) return;
+
+	// 업로드버튼 비활성화
+	if (!gfn_isNull(objButton)) objButton.enable = false;
+	
+	var bExist;
+	var objFileUpload;
+	var sFileUploadNm = sFileSvcId + "_FILEDELIMITER_" + sCallBackFnc;	//업로드object명으로 사용
+
+	//FileUpload Object 생성
+	bExist = isValidObject(sFileUploadNm);
+	if ( !bExist ) {
+		objFileUpload = new FileUpload();
+		objFileUpload.init(sFileUploadNm, 10, 10, 10 ,10);
+		objFileUpload.visible = false;
+		this.addChild(sFileUploadNm,objFileUpload);
+		objFileUpload.show();
+		objFileUpload.onload.addHandler(_gfn_FileUpload_onload);
+		objFileUpload.onerror.addHandler(_gfn_FileUpload_onerror);
+	} else {
+		objFileUpload = eval(sFileUploadNm);
+	}
+
+	var sServiceUrl = application.services[gv_ServiceUrl].url + gds_svcconfig.lookup("DOMAIN_CD", gv_domainCd, gv_RunMode+"Url") + "/fileupload.cmd";
+ 	
+	for( var i=0; i<objFileDS.rowcount; i++)
+	{
+		objFileUpload.innerdataset 	= "";
+		
+		objFileUpload.appendItem();
+		objFileUpload.innerdataset 	= objFileDS.name;
+		objFileUpload.filecolumn 	= sFullPathCol;
+	}
+	var bSucc = objFileUpload.upload(sServiceUrl);
+
+	// 업로드버튼 활성화
+	if (!gfn_isNull(objButton)) objButton.enable = true;
+	
+	return bSucc;
+}
+
+/************************************************************************************************
+ * Function : file upload 성공 Callback
+ * @param   : obj 	: FileUpload Object
+ * @param   : e  : FileUploadLoadEventInfo
+ * Return   : 업로드후 리턴
+************************************************************************************************/
+function _gfn_FileUpload_onload(obj:FileUpload,  e:FileUploadLoadEventInfo)
+{
+	//trace("_gfn_FileUpload_onload>>>>>>>>>");
+// 	if( e.datasets == null )
+// 	{
+// 		alert("업로드 실패");
+// 	} else {
+// 		alert("업로드 성공");
+// 		trace(e.datasets[0].getColumn(0,"ncUploadedFileId"));
+// 		trace(e.datasets[0].getColumn(0,"ncFieldName"));
+// 		trace(e.datasets[0].getColumn(0,"ncUploadedFileName"));
+// 		trace(e.datasets[0].getColumn(0,"ncUploadedFileFullName"));
+// 		trace(e.datasets[0].getColumn(0,"contentType"));
+// 		trace(e.datasets[0].getColumn(0,"size"));
+// 		trace(e.datasets[0].getColumn(0,"status"));
+//	}
+	//alert("업로드성공");
+	//alert(e.datasets[0].saveXML());
+	
+	/* return dataset 구조
+	ncUploadedFileId	        업로드한 파일에 대한 ID값
+	ncFieldName	                업로드한 파일에 대한 필드명(UI에서 사용할 필요없음.)
+	ncUploadedFileName	        업로드한 파일명
+	ncUploadedFileFullName	    업로드한 파일의 최초 로컬Path를 포함한 명
+	contentType	                업로드한 파일의 Type(ex. IMG)
+	size	                    업로드한 파일의 사이즈
+	status	                    업로드 결과
+	*/
+	var iErrorCode  = 0;
+	var sErrorMsg   = "Success";
+	var arrTemp = String(obj.name).split("_FILEDELIMITER_");
+	//CallBack
+	if(!gfn_isNull(arrTemp[1]))	{
+		eval(arrTemp[1] + "(arrTemp[0], iErrorCode, sErrorMsg, e.datasets[0])");
+	}
+}
+
+/************************************************************************************************
+ * Function : 업로드후 Error 리턴
+ * @param   : obj 	: FileUpload Object
+ * @param   : e  : FileUploadErrorEventInfo
+ * Return   : void
+************************************************************************************************/
+function _gfn_FileUpload_onerror(obj:FileUpload,  e:FileUploadErrorEventInfo)
+{
+	//trace("_gfn_FileUpload_onerror>>>>>>>>>");
+	var iErrorCode  = e.errorcode;
+	var sErrorMsg   = e.errormsg;
+	var arrTemp = String(obj.name).split("_FILEDELIMITER_");
+	
+	//CallBack
+	if(!gfn_isNull(arrTemp[1]))	{
+		eval(arrTemp[1] + "(arrTemp[0], iErrorCode, sErrorMsg)");
+	}
+}
+
+/************************************************************************************************
+ * Function : 파일다운로드
+ * @param   : sFileID   - FileDownload 식별 ID
+ * @param   : sFileName - 파일명
+ * Return   : 성공여부(true/false)
+************************************************************************************************/
+function gfn_fileDownload(sFileID, sFileName )
+{
+	//FileDownload Object 생성
+	var sFileDownloadNm = "FileDownLoad";
+	var bExist = isValidObject(sFileDownloadNm);
+	var objFileDown;
+	if ( !bExist ) {
+		objFileDown = new FileDownload();
+		objFileDown.init(sFileDownloadNm, 10, 10, 10 ,10);
+		objFileDown.visible = false;
+		this.addChild(sFileDownloadNm, objFileDown);
+		objFileDown.show();
+	} else {
+		objFileDown = eval(sFileDownloadNm);
+	}
+
+	var sServiceUrl = application.services[gv_ServiceUrl].url + gds_svcconfig.lookup("DOMAIN_CD", gv_domainCd, gv_RunMode+"Url") + "/filedownload.cmd";
+	
+	objFileDown.downloadfilename = sFileName;
+	objFileDown.downloadurl = sServiceUrl + "?nc_uploaded_file_id="+sFileID+"&nc_uploaded_file_name="+sFileName;
+	
+	var bSucc = objFileDown.download();//파일다운로드	
+
+	return bSucc;
+}
+
+/************************************************************************************************
+ * Function : USCAN 파일다운로드
+ * @param   : svcNo - 고객계정서비스관리번호
+ * @param   : fileID - 파일명
+ * Return   : 성공여부(true/false)
+************************************************************************************************/
+function gfn_fileDownloadUscan(uscanDs, strSvcNoCol, strFileIdCol)
+{
+	//uscan 암호화 동적생성
+	var ActiveX00 = new ActiveX();
+	ActiveX00.progid = "{E4527462-B56E-489B-B983-7C3CAAB8C2FA}";
+	ActiveX00.name = "InziSFS";
+	if( !isValidObject("ActiveX00")){
+		this.addChild("ActiveX00",ActiveX00); 
+	}
+	ActiveX00.visible = false;
+	//폴더암호화
+	InziSFS.SFSConnect(USCAN_ROOT,"1111");
+	//암호화해제
+	//InziSFS.ShowFolder(USCAN_ROOT,"1111");
+
+	var sServiceUrl = application.services[gv_ServiceUrl].url + gds_svcconfig.lookup("DOMAIN_CD", gv_domainCd, gv_RunMode+"Url") + "/filedownload2.cmd";
+	var objHttpObject = new HttpObject();
+	var vFile;
+	var svcNo;
+	var fileID;
+	var rtn;
+	for(var i=0; i<uscanDs.rowcount; i++)
+	{
+		svcNo = uscanDs.getColumn(i,strSvcNoCol);
+		fileID = uscanDs.getColumn(i,strFileIdCol);
+		vFile = new VirtualFile();
+		vFile.createDirectory(USCAN_ROOT+"\\"+svcNo,true);
+		vFile.open(USCAN_ROOT+"\\"+svcNo+"\\"+fileID, VirtualFile.openWrite ); 
+
+		if (vFile)
+		{ 
+			rtn = objHttpObject.download(sServiceUrl + "?file_id="+svcNo+"\\"+fileID, vFile, false);
+		} else {
+			gfn_message("A","DMS00075"); //파일다운이 실패하였습니다.
+			return false;
+		}
+	} 
+	vFile.close();
+	return true;
+
+}
+
+/************************************************************************************************
+ * Function : 파일 확장자 엑셀체크
+ * @param   : sFilePath - 파일경로
+ * Return   : File Info Dataset
+************************************************************************************************/
+function gfn_checkFileExcelType(sFilePath)
+{
+	var aryFileName = sFilePath.split(".");//파일경로명
+	var sFileType = aryFileName[aryFileName.length - 1];//파일확장자
+	//trace(" sFileType = " + sFileType);
+	
+	//파일확장자 체크 - EXCEL이외 프로그램 파일을 업로드 못함
+	if (sFileType != "xls" && sFileType != "xlsx" && sFileType != "csv")
+	{
+		gfn_message("A","엑셀 파일 이외에는 업로드 하실수 없습니다.");		
+		return false;
+	}		
+	
+	return true;
+}
+]]></Script>

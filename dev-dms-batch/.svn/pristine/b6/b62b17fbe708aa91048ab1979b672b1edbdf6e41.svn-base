@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR018">
+	<select id="SIFInsuScrbChg" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR018.SIFInsuScrbChg 인터페이스테이블 UKEY보증보험정보 조회 */
+/* IO: 안진갑,2015-08-21T17:39:55(안진갑,2015-08-20T12:54:59) */
+SELECT  IF_PROC_DT
+	   ,IF_FILE_NM
+       ,IF_SEQ
+       ,OP_PROC_CL_CD
+       ,CUST_TYP_CD         AS UKEY_CUST_CL
+       ,CUST_NM             AS UKEY_CUST_NM
+       ,CTZ_COPREG_NO       AS UKEY_CTZ_COPREG_NO
+       ,BLICENS_NO          AS UKEY_BIZ_REG_NO
+       ,INSU_MGMT_NO        AS UKEY_INSURE_MGMT_NO
+       ,INSU_SVC_NO         AS UKEY_SVC_NO
+       ,SVC_MGMT_NO         AS UKEY_SVC_MGMT_NO
+       ,RENTAL_SER_NO       AS RENTAL_SER_NO
+       ,RENTAL_SCRB_DT      AS RENTAL_SCRB_DT
+       ,RENTAL_TERM_DT      AS RENTAL_TERM_DT
+       ,TTUL_CHG_DT         AS TTUL_CHG_DT
+       ,INSU_SCUR_NO        AS UKEY_INSURE_SCUR_NO
+       ,INSU_SCRB_AMT       AS UKEY_INSURE_SCRB_AMT
+       ,INSU_STA_DT         AS UKEY_INSURE_STA_DT
+       ,INSU_END_DT         AS UKEY_INSURE_END_DT
+       ,INSU_TERM_RSN_CD    AS INSURE_CCTR_RSN_CD
+       ,INSU_SCRB_ST_CD     AS INSUCO_SCRB_STAT_CD
+       ,TEEN_YN             AS TEEN_YN
+       ,GRTOR_CTZ_COPREG_NO AS GRTOR_CTZ_COPREG_NO
+       ,GRTOR_BLICENS_NO    AS GRTOR_BIZ_REG_NO
+       ,CUST_NM_ENPT        AS UKEY_CUST_NM_ENPT
+       ,CTZ_COPREG_NO_ENPT  AS UKEY_CTZ_COPREG_NO_ENPT         
+  FROM  TF_INSU_SCRB_CHG
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UIFInsuScrbChg" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR018.UIFInsuScrbChg 인터페이스테이블상태변경 */
+/* IO: 안진갑,2015-08-20T20:33:48(안진갑,2015-08-20T12:58:13) */
+UPDATE  TF_INSU_SCRB_CHG
+   SET  PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+        AND IF_FILE_NM = #IF_FILE_NM#
+        AND IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<insert id="IInsuUkey" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR018.IInsuUkey 보증보험Ukey정보등록 */
+/* IO: 안진갑,2015-08-21T17:40:44(안진갑,2015-08-20T13:01:14) */
+]]><selectKey resultClass="String" keyProperty="UKEY_INSU_NO" type="pre"><![CDATA[
+SELECT  'IU'||LPAD(SQ01_TB_INSU_UKEY.NEXTVAL,10,'0') FROM DUAL
+]]></selectKey><![CDATA[
+INSERT INTO TB_INSU_UKEY
+(
+  UKEY_INSU_NO
+ ,CNTRT_NO
+ ,UKEY_CUST_CL
+ ,UKEY_CUST_NM
+ ,UKEY_CTZ_COPREG_NO
+ ,UKEY_BIZ_REG_NO
+ ,UKEY_INSURE_MGMT_NO
+ ,UKEY_SVC_NO
+ ,UKEY_SVC_MGMT_NO
+ ,RENTAL_SER_NO
+ ,RENTAL_SCRB_DT
+ ,RENTAL_TERM_DT
+ ,TTUL_CHG_DT
+ ,UKEY_INSURE_SCUR_NO
+ ,UKEY_INSURE_SCRB_AMT
+ ,UKEY_INSURE_STA_DT
+ ,UKEY_INSURE_END_DT
+ ,INSURE_CCTR_RSN_CD
+ ,INSUCO_SCRB_STAT_CD
+ ,TEEN_YN
+ ,GRTOR_CTZ_COPREG_NO
+ ,GRTOR_BIZ_REG_NO
+ ,SCRB_FNSH_YN
+ ,USCAN_FNSH_YN
+ ,TERM_FNSH_YN
+ ,UKEY_CBACK_INSURE_FEE
+ ,UKEY_INSU_RMK
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+ ,UKEY_CUST_NM_ENPT
+ ,UKEY_CTZ_COPREG_NO_ENPT 
+)
+SELECT  #UKEY_INSU_NO#
+       ,CNTRT_NO
+       ,#UKEY_CUST_CL#
+       ,#UKEY_CUST_NM#
+       ,#UKEY_CTZ_COPREG_NO#
+       ,#UKEY_BIZ_REG_NO#
+       ,#UKEY_INSURE_MGMT_NO#
+       ,#UKEY_SVC_NO#
+       ,#UKEY_SVC_MGMT_NO#
+       ,#RENTAL_SER_NO#
+       ,#RENTAL_SCRB_DT#
+       ,#RENTAL_TERM_DT#
+       ,#TTUL_CHG_DT#
+       ,#UKEY_INSURE_SCUR_NO#
+       ,#UKEY_INSURE_SCRB_AMT#
+       ,#UKEY_INSURE_STA_DT#
+       ,#UKEY_INSURE_END_DT#
+       ,#INSURE_CCTR_RSN_CD#
+       ,#INSUCO_SCRB_STAT_CD#
+       ,#TEEN_YN#
+       ,#GRTOR_CTZ_COPREG_NO#
+       ,#GRTOR_BIZ_REG_NO#
+       ,#SCRB_FNSH_YN#
+       ,#USCAN_FNSH_YN#
+       ,#TERM_FNSH_YN#
+       ,#UKEY_CBACK_INSURE_FEE#
+       ,#UKEY_INSU_RMK#
+       ,'BAT'
+       ,SYSDATE
+       ,'BAT'
+       ,SYSDATE
+       ,#UKEY_CUST_NM_ENPT#
+       ,#UKEY_CTZ_COPREG_NO_ENPT#
+  FROM  TB_NR_CNTRT
+ WHERE  SVC_MGMT_NO = #UKEY_SVC_MGMT_NO#]]>
+	</insert>
+</sqlMap>

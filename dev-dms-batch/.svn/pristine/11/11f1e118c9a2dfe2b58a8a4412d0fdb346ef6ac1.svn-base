@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.BPR004">
+	<select id="STbEqpJdg" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR004.STbEqpJdg 단말기감정정보조회 */
+/* IO: 김윤환,2015-08-11T16:07:42(김윤환,2015-08-10T16:39:04) */
+SELECT 
+	   A.EQP_MDL_CD 		/* 단말기모델코드 */
+	   ,A.EQP_SER_NUM      	/* 단말기일련번호 */
+	   ,B.EQP_JDG_RSLT_CD  	/* 단말기감정결과코드 */
+	   ,DECODE(B.EQP_JDG_RSLT_CD,'10','R','20','D','X') AS INFO_PROC_CL_CD /* 처리구분코드 */
+	   ,B.ASSET_NO	        /* 자산번호 */
+	   ,B.EQP_JDG_SEQ	    /* 단말기감정순번 */
+ FROM TB_EQP_ASSET A
+ 	 ,TB_EQP_JDG B
+WHERE A.ASSET_NO = B.ASSET_NO
+  AND A.OP_CL_CD='PR'
+  AND B.JDG_APRV_YN = 'Y'
+  AND B.JDG_APRV_DT = #PROC_DT#
+  AND (A.DEL_YN = 'N' AND B.DEL_YN = 'N')
+UNION ALL
+SELECT 
+       A.EQP_MDL_CD 			/* 단말기모델코드 */
+	   ,A.EQP_SER_NUM      		/* 단말기일련번호 */
+	   ,'' AS EQP_JDG_RSLT_CD  	/* 단말기감정결과코드 */
+	   ,'L' AS INFO_PROC_CL_CD 	/* 처리구분코드: L 분실확정 */ 
+	   ,'' AS ASSET_NO	        /* 자산번호 */
+	   ,0 AS EQP_JDG_SEQ	    /* 단말기감정순번 */
+  FROM TB_EQP_ASSET A
+ WHERE A.OP_CL_CD='PR' 
+   AND A.DEL_YN = 'N' 
+   AND A.EQP_LOSS_DT = #PROC_DT#]]>
+	</select>
+	<select id="STbEqpJdgDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR004.STbEqpJdgDtl 단말기감정상세정보조회 */
+/* IO: 김윤환,2015-08-11T15:56:21(김윤환,2015-08-10T16:40:45) */
+SELECT 
+	   RPAD(REPLACE(SYS_CONNECT_BY_PATH(RPAD(EQP_INDF_AMT,11,' ')||''||RPAD(INSP_DRL_ITM_NM,30,' '), '§'),'§',''),410,' ') AS RE_CMC_INFO
+ FROM (
+	    SELECT ROW_NUMBER() OVER(PARTITION BY IA.EQP_JDG_SEQ ORDER BY IA.DMG_CMP_POLY_NO) AS RN
+			   , COUNT(*) OVER (PARTITION BY IA.EQP_JDG_SEQ ) AS CNT
+			   ,IA.EQP_JDG_SEQ
+			   ,IA.INSP_DRL_ITM_CD
+			   ,IA.EQP_INDF_AMT
+			   ,(SELECT CM_CD_NM 
+	        	   FROM TB_CM_CD 
+	       		  WHERE CM_GRP_CD_ID = 'DMS107' 
+	         		AND USE_YN = 'Y' 
+	         		AND CM_CD_ID = IA.INSP_DRL_ITM_CD ) INSP_DRL_ITM_NM
+		   FROM TB_EQP_JDG_DTL IA
+		  WHERE IA.ASSET_NO = #ASSET_NO#
+		    AND IA.EQP_JDG_SEQ = #EQP_JDG_SEQ#
+			AND IA.DEL_YN='N'
+	   )
+WHERE level = CNT
+START WITH RN = 1
+CONNECT BY PRIOR EQP_JDG_SEQ = EQP_JDG_SEQ AND PRIOR RN = RN -1]]>
+	</select>
+	<insert id="ITfRpkgCnctExpirInfo" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR004.ITfRpkgCnctExpirInfo IF리패키징계약정보등록 */
+/* IO: 김윤환,2015-08-10T16:43:01(김윤환,2015-08-10T16:43:01) */
+INSERT
+  INTO TF_RPKG_CNCT_EXPIR_INFO
+  (
+	IF_PROC_DT		/* IF_처리일자 */
+	,IF_FILE_NM		/* IF_파일명 */
+	,IF_SEQ			/* IF_순번 */
+	,EQP_MDL_CD		/* 단말기모델코드 */
+	,EQP_SER_NUM	/* 단말기일련번호 */
+	,INFO_PROC_CL_CD	/* 정보처리구분코드 */
+	,RE_CMC_INFO	/* 재상품화정보 */
+	,PROC_ST_CD		/* 처리상태코드 */
+	,FS_REG_USER_ID	/* 최초등록사용자ID */
+	,FS_REG_DTM		/* 최초등록일시 */
+	,LS_CHG_USER_ID	/* 최종변경사용자ID */
+	,LS_CHG_DTM		/* 최종변경일시 */
+  )
+  VALUES
+  (
+	#IF_PROC_DT#	/* IF_처리일자 */
+	,#IF_FILE_NM#	/* IF_파일명 */
+	,#IF_SEQ#		/* IF_순번 */
+	,#EQP_MDL_CD#	/* 단말기모델코드 */
+	,#EQP_SER_NUM#	/* 단말기일련번호 */
+	,#INFO_PROC_CL_CD#	/* 정보처리구분코드 */
+	,#RE_CMC_INFO#	/* 재상품화정보 */
+	,'09'		
+	,'BAT'	
+	,SYSDATE		
+	,'BAT'	
+	,SYSDATE
+  )]]>
+	</insert>
+</sqlMap>

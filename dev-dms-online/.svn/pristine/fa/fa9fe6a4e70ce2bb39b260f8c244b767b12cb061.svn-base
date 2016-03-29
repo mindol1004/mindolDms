@@ -1,0 +1,645 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCnslMgmt">
+	<select id="SScrbPrstLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SScrbPrstLst 가입현황 조회 */
+/* IO: 김혁범,2015-08-26T15:24:16(박홍서,2015-08-06T10:51:40) */
+SELECT  A.NEW_CNTRT_DT AS NR_CNTRT_DT
+       ,A.CNTRT_NO
+       ,A.SVC_MGMT_NO
+       ,A.NEW_CNTRTR_NM AS NR_CNTRTR_NM
+       ,A.SVC_NO
+       ,D.EQP_MDL_NM
+       ,A.RENTAL_SER_NO AS RENTAL_SER_NUM
+       ,E.DMS_PEN_AMT
+       ,A.AGN_CD
+       ,B.ORG_NM AS AGN_NM
+       ,A.FS_REG_USER_ID
+       ,A.FS_REG_DTM
+       ,A.LS_CHG_USER_ID
+       ,A.LS_CHG_DTM
+  FROM  TB_NR_CNTRT A
+       ,TB_DEALCO B
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_POLY D
+       ,TB_RENTAL_PEN E
+ WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+   AND  A.AGN_CD = B.AGN_ORG_CD
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+   AND  C.CNTRT_NO = E.CNTRT_NO(+)
+   AND  C.PEN_POLY_NO = E.PEN_POLY_NO(+)
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+ ORDER BY A.AGN_CD, A.CNTRT_NO]]>
+	</select>
+	<select id="SScrbPrstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SScrbPrstPaging 가입현황 페이징 조회 */
+/* IO: 김혁범,2015-08-26T15:27:22(박홍서,2015-08-06T10:53:49) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.AGN_CD, A.CNTRT_NO) AS ROWNO
+               ,A.NEW_CNTRT_DT AS NR_CNTRT_DT
+               ,A.CNTRT_NO
+               ,A.SVC_MGMT_NO
+               ,A.NEW_CNTRTR_NM AS NR_CNTRTR_NM
+               ,A.SVC_NO
+               ,D.EQP_MDL_NM
+               ,A.RENTAL_SER_NO AS RENTAL_SER_NUM
+               ,SUM(E.DMS_PEN_AMT) AS DMS_PEN_AMT
+               ,A.AGN_CD
+               ,B.ORG_NM AS AGN_NM
+               ,A.FS_REG_USER_ID
+               ,A.FS_REG_DTM
+               ,A.LS_CHG_USER_ID
+               ,A.LS_CHG_DTM
+          FROM  TB_NR_CNTRT A
+               ,TB_DEALCO B
+               ,TB_RENTAL_CNTRT C
+               ,TB_RENTAL_POLY D
+               ,TB_RENTAL_PEN E
+         WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+           AND  A.AGN_CD = B.AGN_ORG_CD
+           AND  A.CNTRT_NO = C.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+           AND  C.CNTRT_NO = E.CNTRT_NO(+)
+           AND  C.PEN_POLY_NO = E.PEN_POLY_NO(+) 
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+         GROUP BY A.NEW_CNTRT_DT
+                 ,A.CNTRT_NO
+                 ,A.SVC_MGMT_NO
+                 ,A.NEW_CNTRTR_NM
+                 ,A.SVC_NO
+                 ,D.EQP_MDL_NM
+                 ,A.RENTAL_SER_NO
+                 ,A.AGN_CD
+                 ,B.ORG_NM
+                 ,A.FS_REG_USER_ID
+                 ,A.FS_REG_DTM
+                 ,A.LS_CHG_USER_ID
+                 ,A.LS_CHG_DTM
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SScrbPrstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SScrbPrstTotCnt 가입현황 총건수 조회 */
+/* IO: 문재웅,2015-08-13T11:18:00(박홍서,2015-08-06T10:56:40) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_NR_CNTRT A
+       ,TB_DEALCO B
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_POLY D
+       ,TB_RENTAL_PEN E
+ WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DTM# AND #CNTRT_TO_DTM#
+   AND  A.AGN_CD = B.AGN_ORG_CD
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+   AND  C.CNTRT_NO = E.CNTRT_NO(+)
+   AND  C.PEN_POLY_NO = E.PEN_POLY_NO(+)
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SScrbPrstDetl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SScrbPrstDetl 가입현황 상세조회 */
+/* IO: 김혁범,2015-08-27T10:39:31(박홍서,2015-08-07T14:12:58) */
+SELECT  A.CNTRT_NO
+       ,A.SVC_MGMT_NO
+       ,A.RENTAL_SER_NO AS RENTAL_SER_NUM
+       ,A.SVC_NO
+       ,B.DCP_NO AS DMG_CMP_POLY_NO
+       ,B.PEN_POLY_NO
+       ,B.RENTAL_POLY_NO
+       ,A.SVCL AS CTT_PRD
+       ,B.RENTAL_CNTRT_STA_DT
+       ,B.RENTAL_CNTRT_END_DT
+       ,B.MM_RENTAL_FEE AS MTH_RENTAL_FEE
+       ,A.OP_PROC_DT
+       ,A.NEW_CNTRT_DT AS NR_CNTRT_DT
+       ,A.NEW_CNTRT_RMK AS NC_RMK
+       ,C.PEN_POLY_APLY_DT AS PP_APLY_DT
+       ,C.PEN_POLY_EFF_PRD_STA_DT AS PP_EFF_PRD_FR_DT
+       ,C.PEN_POLY_EFF_PRD_END_DT AS PP_EFF_PRD_TO_DT
+       ,C.TOT_RENTAL_FEE_RT
+       ,C.REM_RENTAL_FEE_RT
+       ,C.DAY_RENTAL_FEE_RT
+       ,C.RENTAL_FEE_RT
+       ,D.PEN_POLY_CL
+       ,D.PEN_OCCR_DT AS RP_OCCR_DT
+       ,D.DMS_PEN_AMT
+       ,D.UKEY_PEN_AMT
+       ,D.PEN_RECV_AMT AS RP_PAY_AMT
+       ,C.PEN_POLY_RMK AS PP_RMK
+       ,A.AGN_CD
+       ,E.ORG_NM AS AGN_NM
+       ,E.HIGHR_DEALCO_CD AS POS_AGENCY
+       ,H.ORG_NM AS POS_AGENCY_NM
+       ,E.DEALCO_TEL_NO AS DEAL_TEL_NO
+       ,E.DEALCO_EMAIL_ADDR AS DEAL_EML_ADDR
+       ,E.CHRGR_NM AS PRPB_NM
+       ,E.CHRGR_MBLPHON_NO AS PRPB_MBL_PHON
+       ,A.NEW_CNTRTR_NM AS NR_CNTRTR_NM
+       ,A.NEW_CNTRTR_BIRTH_YMD AS NR_CNTRTR_BIRTH
+       ,A.CUST_TYP
+       ,A.NEW_CNTRTR_ZIPCD AS NR_CNTRTR_POST_NO
+       ,A.NEW_CNTRTR_INV_ADDR AS NR_CNTRTR_INV_ADDR
+       ,A.NEW_CNTRTR_INV_ADDR_DTL AS NR_CNTRTR_INV_ADDR_DTL
+       ,A.LEGAL_AGENT_NM AS LEGAL_REPVE_NM
+       ,A.LEGAL_AGENT_BIRTH_YMD AS LEGAL_REPVE_BIRTH
+       ,A.LEGAL_AGENT_CUST_TYP AS LEGAL_REPVE_CUST_TYP
+       ,A.LEGAL_AGENT_CORP_REG_NO AS LEGAL_REPVE_CORP_NUM
+       ,A.LEGAL_AGENT_REL AS LEGAL_REPVE_REL
+       ,A.EQP_RTN_YN
+       ,A.TTUL_CHG_YN AS NM_CHG_YN
+       ,A.EQP_CHG_YN
+       ,A.LEGAL_AGENT_CHG_YN AS LEGAL_REPVE_YN
+       ,A.EQP_SER_NO AS EQP_SER_NUM
+       ,G.EQP_MDL_CD
+       ,G.EQP_MDL_NM
+       ,G.CAPA_CD
+       ,G.LAUNC_DT AS FST_RGST_DT
+       ,G.ESI_USE_YN
+       ,G.MDL_NO
+       ,A.COLOR_CD
+       ,G.PET_NM
+       ,A.FS_REG_USER_ID
+       ,A.FS_REG_DTM
+       ,A.LS_CHG_USER_ID
+       ,A.LS_CHG_DTM
+       ,A.OP_TYP_CD /*계약상태*/
+       ,A.TERM_PROC_RSLT_CD /*해지처리결과*/
+       ,A.TERM_PROC_RSLT_DTL_CD /*해지결과상세코드*/
+       ,F.RENTAL_PRN /*렌탈원금(총렌탈료)*/
+       ,A.TERM_PROC_REQS_DT /*해지처리요청일자*/
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_PEN_POLY C
+       ,TB_RENTAL_PEN D
+       ,TB_DEALCO E
+       ,TB_RENTAL_POLY F
+       ,TB_EQP_STRD_INFO G
+       ,TB_DEALCO H
+ WHERE  A.CNTRT_NO = #CNTRT_NO#
+   AND  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.PEN_POLY_NO = C.PEN_POLY_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO(+)
+   AND  B.PEN_POLY_NO = D.PEN_POLY_NO(+)
+   AND  A.AGN_CD = E.AGN_ORG_CD
+   AND  B.RENTAL_POLY_NO = F.RENTAL_POLY_NO
+   AND  F.EQP_MDL_CD = G.EQP_MDL_CD
+   AND  F.CAPA_CD = G.CAPA_CD
+   AND  F.OP_CL_CD = G.OP_CL_CD
+   AND  E.HIGHR_DEALCO_CD = H.DEALCO_CD(+)]]>
+	</select>
+	<select id="SApplfSubmitDtmLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SApplfSubmitDtmLst 신청서제출일시 목록조회 */
+/* IO: 박홍서,2015-08-07T14:19:04(박홍서,2015-08-07T14:16:01) */
+SELECT  APPLF_TYP
+       ,APPLF_SUBMIT_DTM
+  FROM  TB_NR_APPLF
+ WHERE  CNTRT_NO = #CNTRT_NO#
+ ORDER BY APPLF_TYP]]>
+	</select>
+	<select id="SCnslMemoLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SCnslMemoLst 상담메모 목록조회 */
+/* IO: 박홍서,2015-08-07T15:44:07(박홍서,2015-08-07T14:17:09) */
+SELECT  CNTRT_NO
+       ,CNSL_CNTRTR_MEMO_SEQ AS CNSL_MEMO_SEQ
+       ,CNSL_CNTRTR_MEMO AS CNSL_MEMO
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TB_NR_CNSL_CNTRTR_MEMO
+ WHERE  CNTRT_NO = #CNTRT_NO#
+ ORDER BY CNSL_CNTRTR_MEMO_SEQ DESC]]>
+	</select>
+	<insert id="INrCnslMemo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.INrCnslMemo 상담메모 입력 */
+/* IO: 박홍서,2015-08-07T16:09:07(박홍서,2015-08-07T16:09:07) */
+MERGE INTO  TB_NR_CNSL_CNTRTR_MEMO A
+     USING  DUAL
+        ON (
+            A.CNTRT_NO = #CNTRT_NO#
+       AND  A.CNSL_CNTRTR_MEMO_SEQ = #CNSL_MEMO_SEQ#
+           )
+WHEN MATCHED THEN
+    UPDATE
+       SET  CNSL_CNTRTR_MEMO = #CNSL_MEMO#
+           ,LS_CHG_USER_ID = #USER_NO#
+           ,LS_CHG_DTM     = SYSDATE
+WHEN NOT MATCHED THEN
+    INSERT (
+            CNTRT_NO
+           ,CNSL_CNTRTR_MEMO_SEQ
+           ,CNSL_CNTRTR_MEMO
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+           )
+   VALUES
+          (
+            #CNTRT_NO#
+           ,#CNSL_MEMO_SEQ#
+           ,#CNSL_MEMO#
+           ,#USER_NO#
+           ,SYSDATE
+           ,#USER_NO#
+           ,SYSDATE
+          )]]>
+	</insert>
+	<select id="SAgnPrstLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SAgnPrstLst 대리점현황 조회 */
+/* IO: 박홍서,2015-08-10T11:25:39(박홍서,2015-08-10T11:25:39) */
+SELECT  A.AGN_CD
+       ,B.ORG_NM AS AGN_NM
+       ,B.DEALCO_BLICENS_NO AS DEAL_BIZ_NUM
+       ,SUM(C.EQP_PRCH_AMT) AS TMTH_SUM_PRC
+       ,(SELECT  SUM(IB.EQP_PRCH_AMT)
+           FROM  TB_NR_CNTRT IA
+                ,TB_RENTAL_CNTRT IB
+                ,TB_RENTAL_POLY IC
+          WHERE  IA.AGN_CD = A.AGN_CD
+            AND  IA.CNTRT_NO = IB.CNTRT_NO
+            AND  IB.RENTAL_POLY_NO = IC.RENTAL_POLY_NO) AS ALL_SUM_PRC
+  FROM  TB_NR_CNTRT A
+       ,TB_DEALCO B
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_POLY D
+ WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DT# AND #CNTRT_TO_DT#
+   AND  A.AGN_CD = B.AGN_ORG_CD
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DEAL_BIZ_NUM"><![CDATA[
+        B.DEALCO_BLICENS_NO = #DEAL_BIZ_NUM#
+]]></isNotEmpty><![CDATA[
+ GROUP BY A.AGN_CD, B.ORG_NM, B.DEALCO_BLICENS_NO
+ ORDER BY A.AGN_CD]]>
+	</select>
+	<select id="SAgnPrstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SAgnPrstPaging 대리점현황 페이징 조회 */
+/* IO: 박홍서,2015-08-10T11:26:33(박홍서,2015-08-10T11:26:33) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.AGN_CD) AS ROWNO
+               ,A.AGN_CD
+               ,B.ORG_NM AS AGN_NM
+               ,B.DEALCO_BLICENS_NO AS DEAL_BIZ_NUM
+               ,SUM(C.EQP_PRCH_AMT) AS TMTH_SUM_PRC
+               ,(SELECT  SUM(IB.EQP_PRCH_AMT)
+                   FROM  TB_NR_CNTRT IA
+                        ,TB_RENTAL_CNTRT IB
+                        ,TB_RENTAL_POLY IC
+                  WHERE  IA.AGN_CD = A.AGN_CD
+                    AND  IA.CNTRT_NO = IB.CNTRT_NO
+                    AND  IB.RENTAL_POLY_NO = IC.RENTAL_POLY_NO) AS ALL_SUM_PRC
+          FROM  TB_NR_CNTRT A
+               ,TB_DEALCO B
+               ,TB_RENTAL_CNTRT C
+               ,TB_RENTAL_POLY D
+         WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DT# AND #CNTRT_TO_DT#
+           AND  A.AGN_CD = B.AGN_ORG_CD
+           AND  A.CNTRT_NO = C.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DEAL_BIZ_NUM"><![CDATA[
+                B.DEALCO_BLICENS_NO = #DEAL_BIZ_NUM#
+]]></isNotEmpty><![CDATA[
+         GROUP BY A.AGN_CD, B.ORG_NM, B.DEALCO_BLICENS_NO
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAgnPrstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SAgnPrstTotCnt 대리점현황 총건수 조회 */
+/* IO: 박홍서,2015-08-10T11:27:20(박홍서,2015-08-10T11:27:20) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  (SELECT  A.AGN_CD
+           FROM  TB_NR_CNTRT A
+                ,TB_DEALCO B
+                ,TB_RENTAL_CNTRT C
+                ,TB_RENTAL_POLY D
+          WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DT# AND #CNTRT_TO_DT#
+            AND  A.AGN_CD = B.AGN_ORG_CD
+            AND  A.CNTRT_NO = C.CNTRT_NO
+            AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DEAL_BIZ_NUM"><![CDATA[
+                 B.DEALCO_BLICENS_NO = #DEAL_BIZ_NUM#
+]]></isNotEmpty><![CDATA[
+          GROUP BY A.AGN_CD)]]>
+	</select>
+	<select id="SAgnTmthPrchLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SAgnTmthPrchLst 대리점 당월매입 리스트 조회 */
+/* IO: 박홍서,2015-08-10T16:48:48(박홍서,2015-08-10T16:46:45) */
+SELECT  A.NEW_CNTRT_DT AS NR_CNTRT_DT
+       ,C.EQP_MDL_NM
+       ,A.COLOR_CD
+       ,B.EQP_PRCH_AMT
+       ,B.EQP_REMPRC AS EQP_REM_PRC_AMT
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_RENTAL_POLY C
+ WHERE  A.AGN_CD = #AGN_CD#
+   AND  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DT# AND #CNTRT_TO_DT#
+   AND  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+ ORDER BY A.NEW_CNTRT_DT]]>
+	</select>
+	<select id="SAgnAccmPrchLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SAgnAccmPrchLst 대리점 누적매입 리스트 조회 */
+/* IO: 박홍서,2015-08-10T16:49:02(박홍서,2015-08-10T16:48:28) */
+SELECT  SUBSTR(A.NEW_CNTRT_DT,0,6) AS CNTRT_YM
+       ,C.EQP_MDL_NM
+       ,COUNT(1) AS PRCH_CNT
+       ,SUM(B.EQP_PRCH_AMT) AS SUM_PRCH_AMT
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_RENTAL_POLY C
+ WHERE  A.AGN_CD = #AGN_CD#
+   AND  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.RENTAL_POLY_NO = C.RENTAL_POLY_NO
+ GROUP BY SUBSTR(A.NEW_CNTRT_DT,0,6), C.EQP_MDL_NM
+ ORDER BY CNTRT_YM]]>
+	</select>
+	<select id="SAgnCnslMemoLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SAgnCnslMemoLst 대리점 상담메모 리스트 조회 */
+/* IO: 박홍서,2015-08-11T10:18:54(박홍서,2015-08-11T09:48:33) */
+SELECT  AGN_CD
+       ,PRCH_YM
+       ,CNSL_AGN_MEMO_SEQ
+       ,CNSL_AGN_MEMO
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TB_NR_CNSL_AGN_MEMO
+ WHERE  AGN_CD = #AGN_CD#
+   AND  PRCH_YM = #CNTRT_YM#
+ ORDER BY CNSL_AGN_MEMO_SEQ DESC]]>
+	</select>
+	<insert id="IAgnCnslMemo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.IAgnCnslMemo 대리점 상담메모 입력 */
+/* IO: 박홍서,2015-08-11T09:49:37(박홍서,2015-08-11T09:49:37) */
+MERGE INTO  TB_NR_CNSL_AGN_MEMO A
+     USING  DUAL
+        ON (
+            A.AGN_CD = #AGN_CD#
+       AND  A.PRCH_YM = #PRCH_YM#
+       AND  A.CNSL_AGN_MEMO_SEQ = #CNSL_AGN_MEMO_SEQ#
+           )
+WHEN MATCHED THEN
+    UPDATE
+       SET  CNSL_AGN_MEMO = #CNSL_AGN_MEMO#
+           ,LS_CHG_USER_ID = #USER_NO#
+           ,LS_CHG_DTM     = SYSDATE
+WHEN NOT MATCHED THEN
+    INSERT (
+            AGN_CD
+           ,PRCH_YM
+           ,CNSL_AGN_MEMO_SEQ
+           ,CNSL_AGN_MEMO
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+           )
+   VALUES
+          (
+            #AGN_CD#
+           ,#PRCH_YM#
+           ,#CNSL_AGN_MEMO_SEQ#
+           ,#CNSL_AGN_MEMO#
+           ,#USER_NO#
+           ,SYSDATE
+           ,#USER_NO#
+           ,SYSDATE
+          )]]>
+	</insert>
+	<select id="SEqpAssetPrstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SEqpAssetPrstTotCnt 단말기 자산현황 총건수 조회 */
+/* IO: 박홍서,2015-08-11T17:13:46(박홍서,2015-08-11T17:13:46) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_NR_CNTRT A
+       ,TB_DEALCO B
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_POLY D
+ WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DT# AND #CNTRT_TO_DT#
+   AND  A.AGN_CD = B.AGN_ORG_CD
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_SER_NUM"><![CDATA[
+        A.RENTAL_SER_NO = #RENTAL_SER_NUM#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SEqpAssetPrstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SEqpAssetPrstPaging 단말기 자산현황 페이징 조회 */
+/* IO: 박홍서,2015-08-11T17:14:32(박홍서,2015-08-11T17:14:32) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.NEW_CNTRT_DT, A.CNTRT_NO) AS ROWNO
+               ,A.NEW_CNTRT_DT AS NR_CNTRT_DT
+               ,A.AGN_CD
+               ,B.ORG_NM AS AGN_NM
+               ,D.EQP_MDL_NM
+               ,A.RENTAL_SER_NO AS RENTAL_SER_NUM
+               ,A.COLOR_CD
+               ,D.OUT_PRC
+          FROM  TB_NR_CNTRT A
+               ,TB_DEALCO B
+               ,TB_RENTAL_CNTRT C
+               ,TB_RENTAL_POLY D
+         WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DT# AND #CNTRT_TO_DT#
+           AND  A.AGN_CD = B.AGN_ORG_CD
+           AND  A.CNTRT_NO = C.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_SER_NUM"><![CDATA[
+                A.RENTAL_SER_NO = #RENTAL_SER_NUM#
+]]></isNotEmpty><![CDATA[
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpAssetPrstLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SEqpAssetPrstLst 단말기 자산현황 리스트 조회 */
+/* IO: 박홍서,2015-08-11T17:15:12(박홍서,2015-08-11T17:15:12) */
+SELECT  A.NEW_CNTRT_DT AS NR_CNTRT_DT
+       ,A.AGN_CD
+       ,B.ORG_NM AS AGN_NM
+       ,D.EQP_MDL_NM
+       ,A.RENTAL_SER_NO AS RENTAL_SER_NUM
+       ,A.COLOR_CD
+       ,D.OUT_PRC
+  FROM  TB_NR_CNTRT A
+       ,TB_DEALCO B
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_POLY D
+ WHERE  A.NEW_CNTRT_DT BETWEEN #CNTRT_FR_DT# AND #CNTRT_TO_DT#
+   AND  A.AGN_CD = B.AGN_ORG_CD
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = D.RENTAL_POLY_NO
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_SER_NUM"><![CDATA[
+        A.RENTAL_SER_NO = #RENTAL_SER_NUM#
+]]></isNotEmpty><![CDATA[
+ ORDER BY A.NEW_CNTRT_DT, A.CNTRT_NO]]>
+	</select>
+	<select id="SScrbPrstPenDetl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SScrbPrstPenDetl 가입현황상세정책정보 조회 */
+/* IO: 김혁범,2015-08-26T14:44:32(김혁범,2015-08-25T20:18:58) */
+SELECT  D.PEN_POLY_NO
+       ,D.CNTRT_NO
+       ,D.PEN_POLY_CL
+       ,D.DMS_PEN_AMT
+       ,D.UKEY_PEN_AMT
+       ,D.PEN_RECV_AMT AS RP_PAY_AMT
+       ,D.PEN_OCCR_DT AS RP_OCCR_DT
+       ,B.DCP_NO AS DMG_CMP_POLY_NO
+  FROM  TB_RENTAL_PEN D
+       ,TB_RENTAL_CNTRT B
+ WHERE  D.CNTRT_NO = B.CNTRT_NO
+   AND  D.CNTRT_NO = #CNTRT_NO#]]>
+	</select>
+	<select id="SRentalCnslPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SRentalCnslPaging 렌탈상담 페이지 조회 */
+/* IO: 이영진,2015-09-14T16:15:43(박홍서,2015-08-10T11:25:39) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.CNSL_NO) AS ROWNO
+               ,A.CNSL_NO
+               ,A.CNTRT_NO
+               ,B.SVC_NO
+               ,B.SVC_NO_ENPT
+               ,B.AGN_CD
+               ,C.AGN_NM
+               ,B.SVC_MGMT_NO
+               ,B.NEW_CNTRTR_NM
+               ,B.NEW_CNTRTR_NM_ENPT
+               ,A.CNSL_DTM
+               ,A.CNSL_CUST_TYP_CD
+               ,A.CNSL_PROC_ST_CD
+               ,A.CNSL_ENQR_TYP_CD
+               ,A.CNSL_ENQR_MTHD_CD
+               ,A.CNSL_ENQR_CONT
+               ,A.CUSR_ID
+               ,A.OK_RWD_ACCO
+               ,A.OK_RWD_ACCO_ENPT
+          FROM  TB_RENTAL_CNSL A
+               ,TB_NR_CNTRT B
+               ,(SELECT  AGN_ORG_CD, MAX(DEALCO_NM) AS AGN_NM
+                   FROM  TB_DEALCO
+                  WHERE  AGN_ORG_CD IS NOT NULL
+                    AND  DEALCO_CL_1 = 'A1'
+                  GROUP  BY AGN_ORG_CD) C               
+         WHERE  A.CNSL_DTM BETWEEN #CNSL_FR_DT#||'000000' AND #CNSL_TO_DT#||'235959'
+           AND  A.CNTRT_NO = B.CNTRT_NO
+           AND  B.AGN_CD = C.AGN_ORG_CD(+)
+]]><isNotEmpty prepend="AND" property="SVC_NO_ENPT"><![CDATA[
+                B.SVC_NO_ENPT = #SVC_NO_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                B.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="CNSL_CUST_TYP_CD" compareValue="%"><![CDATA[
+                A.CNSL_CUST_TYP_CD = #CNSL_CUST_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CNSL_PROC_ST_CD" compareValue="%"><![CDATA[
+                A.CNSL_PROC_ST_CD = #CNSL_PROC_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CNSL_ENQR_TYP_CD" compareValue="%"><![CDATA[
+                A.CNSL_ENQR_TYP_CD = #CNSL_ENQR_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CNSL_ENQR_MTHD_CD" compareValue="%"><![CDATA[
+                A.CNSL_ENQR_MTHD_CD = #CNSL_ENQR_MTHD_CD#
+]]></isNotEqual><![CDATA[          
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SRentalCnslTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SRentalCnslTotCnt 렌탈상담 총건수 조회 */
+/* IO: 이영진,2015-09-10T10:23:46(박홍서,2015-08-10T11:27:20) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  (SELECT  A.CNSL_NO
+          FROM  TB_RENTAL_CNSL A
+               ,TB_NR_CNTRT B
+         WHERE  A.CNSL_DTM BETWEEN #CNSL_FR_DT#||'000000' AND #CNSL_TO_DT#||'235959'
+           AND  A.CNTRT_NO = B.CNTRT_NO
+]]><isNotEmpty prepend="AND" property="SVC_NO_ENPT"><![CDATA[
+                B.SVC_NO_ENPT = #SVC_NO_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                B.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="CNSL_CUST_TYP_CD" compareValue="%"><![CDATA[
+                A.CNSL_CUST_TYP_CD = #CNSL_CUST_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CNSL_PROC_ST_CD" compareValue="%"><![CDATA[
+                A.CNSL_PROC_ST_CD = #CNSL_PROC_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CNSL_ENQR_TYP_CD" compareValue="%"><![CDATA[
+                A.CNSL_ENQR_TYP_CD = #CNSL_ENQR_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CNSL_ENQR_MTHD_CD" compareValue="%"><![CDATA[
+                A.CNSL_ENQR_MTHD_CD = #CNSL_ENQR_MTHD_CD#
+]]></isNotEqual><![CDATA[           
+        )]]>
+	</select>
+	<select id="SRentalCnslCntrtNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SRentalCnslCntrtNo 렌탈상담 계약조회 */
+/* IO: 이영진,2015-09-11T11:10:46(박홍서,2015-08-10T11:27:20) */
+SELECT  MAX(CNTRT_NO) AS CNTRT_NO
+  FROM  TB_NR_CNTRT
+ WHERE  SVC_NO_ENPT = #SVC_NO_ENPT#]]>
+	</select>
+	<insert id="IRentalCnsl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.IRentalCnsl 렌탈상담 입력 */
+/* IO: 이영진,2015-09-14T11:06:08(이영진,2015-09-14T10:13:20) */
+INSERT
+  INTO  TB_RENTAL_CNSL
+       (
+        CNSL_NO
+       ,CNTRT_NO
+       ,CUSR_ID
+       ,CNSL_DTM
+       ,CNSL_CUST_TYP_CD
+       ,CNSL_PROC_ST_CD
+       ,CNSL_ENQR_TYP_CD
+       ,CNSL_ENQR_MTHD_CD
+       ,CNSL_ENQR_CONT
+       ,OK_RWD_ACCO
+       ,OK_RWD_ACCO_ENPT
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+SELECT  
+        #CNSL_NO#
+       ,CNTRT_NO
+       ,#USERNO#
+       ,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')
+       ,#CNSL_CUST_TYP_CD#
+       ,#CNSL_PROC_ST_CD#
+       ,#CNSL_ENQR_TYP_CD#
+       ,#CNSL_ENQR_MTHD_CD#
+       ,#CNSL_ENQR_CONT#
+       ,#OK_RWD_ACCO#
+       ,#OK_RWD_ACCO_ENPT#
+       ,#USERNO#
+       ,SYSDATE
+       ,#USERNO#
+       ,SYSDATE
+  FROM  TB_NR_CNTRT
+ WHERE  SVC_NO_ENPT = #SVC_NO_ENPT#
+   AND  ROWNUM = 1]]>
+	</insert>
+	<select id="SRentalCnslNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscsbase.db.DNRCnslMgmt.SRentalCnslNo 렌탈상담번호 조회 */
+/* IO: 이영진,2015-09-14T10:50:06(이영진,2015-09-14T10:49:07) */
+SELECT  'CN'||LPAD(SQ01_TB_RENTAL_CNSL.NEXTVAL,10,'0') AS CNSL_NO
+  FROM  DUAL]]>
+	</select>
+</sqlMap>

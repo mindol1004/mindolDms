@@ -1,0 +1,346 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ADL version="1.1">
+  <TypeDefinition url="default_typedef.xml"/>
+  <GlobalVariables url="globalvars.xml"/>
+  <Application id="DMS" codepage="utf-8" language="Korean" loginformurl="" loginformstyle="" windowopeneffect="" windowcloseeffect="" version="" tracemode="new" themeid="THEME::DMS.xtheme" onerror="application_onerror" onexit="application_onexit" onload="application_onload" onloadingglobalvariables="application_onloadingglobalvariables" addcookietovariable="false" httpretry="3" httptimeout="600" usewaitcursor="true" enginesetupkey="{0239FCE5-88CF-48e9-912D-90DAFC25E38B}" engineurl="./Install/Download/XPLATFORM9.2_SetupEngine.exe" engineversion="9.2.0.320" filesecurelevel="all" networksecurelevel="all" licenseurl="./license/XPLATFORM_Client_License.xml" usehttpkeepalive="true">
+    <Layout>
+      <MainFrame id="mainframe" title="maintitle" defaultfont="" resizable="true" showtitlebar="true" showstatusbar="false" position="absolute 0 0 1280 728" titletext="DMS" onbeforeclose="MainFrame_onbeforeclose" onmove="MainFrame_onmove" onsize="MainFrame_onsize" style.icon="" showcascadetitletext="false" style="icon:URL('IMG::mainicon.ico');">
+        <VFrameSet id="VFrameSet" separatesize="60,*" style="background:#ffffffff;border:0 none #00000000 ;bordertype:normal 0 0 ;">
+          <Frames>
+            <ChildFrame id="TopFrame" formurl="FRAME::TopFrame.xfdl" dragmovetype="none" showtitlebar="false" style="border:0 none #00000000 ;titlebarheight:20;statusbarheight:25;" position="absolute 0 0 0 0"/>
+            <HFrameSet id="HFrameSet" separatesize="22,*">
+              <Frames>
+                <ChildFrame id="LeftFrame" formurl="FRAME::LeftFrame.xfdl" dragmovetype="none" resizable="true" showtitlebar="false" style="titlebarheight:20;statusbarheight:25;"/>
+                <VFrameSet id="VFrameSet2" separatesize="32,*" style="background:#ffffffff;border:0 none #00000000 ;bordertype:normal 0 0 ;" position="absolute 0 0 0 0">
+                  <Frames>
+                    <ChildFrame id="TabFrame" formurl="FRAME::TabFrame.xfdl" dragmovetype="none" showtitlebar="false" style="border:0 none #00000000 ;titlebarheight:20;statusbarheight:25;" position="absolute 0 0 0 0" openstatus="normal"/>
+                    <FrameSet id="WorkFrameSet" position="absolute 0 0 0 0" openstatus="normal" style="background:transparent;">
+                      <Frames>
+                        <ChildFrame id="WorkMain" showtitlebar="false" position="absolute 0 0 1254 608" openstatus="normal" style="background:transparent;titlebarheight:20;statusbarheight:25;" onactivate="mainframe_VFrameSet_HFrameSet_VFrameSet2_WorkFrameSet_WorkMain_onactivate" resizable="true" autosize="false" dragmovetype="normal" topmost="false"/>
+                        <FrameSet id="WorkFrame" visible="false" style="background:transparent;" openstatus="maximize" position="absolute 0 0 1058 528">
+                          <Frames/>
+                        </FrameSet>
+                      </Frames>
+                    </FrameSet>
+                  </Frames>
+                </VFrameSet>
+              </Frames>
+            </HFrameSet>
+          </Frames>
+        </VFrameSet>
+      </MainFrame>
+    </Layout>
+    <ScreenInfo/>
+    <Style url="CSS::dms.css"/>
+  </Application>
+  <Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  HPC.xadl
+ * 03. js 설명 :  Application Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+include "./LIB/comUtil.xjs";
+include "./LIB/comDate.xjs";
+include "./LIB/comConst.xjs";
+include "./LIB/comDataset.xjs";
+include "./LIB/comGrid.xjs";
+include "./LIB/comValidation.xjs";
+include "./LIB/comApp.xjs";
+include "./LIB/comFrame.xjs";
+include "./LIB/comDomain.xjs";
+include "./LIB/comAutr.xjs";
+
+
+var ap_VFrameSet;   //메인프레인 하단 VFrameset
+var ap_TopFrame;	//상단메뉴 Frame
+var ap_HFrameSet;	//좌측메뉴, 업무영역 FrameSet
+var ap_LeftFrame;	//좌측메뉴 Frame
+var ap_VFrameSet2;  //업무영역 VFrameset
+var ap_TabFrame;	//Tab메뉴 Frame
+var ap_WorkFrameSet;//업무영역 Frame + WorkMain 영역
+var ap_WorkFrame;	//업무영역 Frame
+var ap_WorkMain;    //WorkMain 영역
+
+var ap_activeWinId;	// Active화면 Id
+var ap_initWidth  = 1058; //업무화면 초기 width 
+var ap_initHeight =  528;  //업무화면 초기 height
+
+var ap_menuHideWidth = 22;
+var ap_menuShowWidth = 218;
+//var gv_menuHideHeight = 8;
+//var ap_menuShowHeight;
+
+var ap_ArrParam = Array();
+var ap_sessionTimeCount = 0;
+var ap_sessionTime;
+var index = 0;
+var rtn = "";
+var av_arrange = "m";
+var ap_adlId = "DMS";  //adl ID 
+var pv_arrParam;
+var pv_exit = true;
+
+var strADLPath = "";
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : SSO 연동 User 정보셋팅
+-----------------------------------------------------------------------------------------------*/
+function application_onloadingglobalvariables(obj:Object, e:LoadEventInfo)
+{
+	if(gv_TransUser.length != 0) 
+	{
+		var av_User = gv_TransUser.split("$$");		
+		gv_TransUser = {USER_ID:av_User[1], USER_PWD:av_User[2], TRANS_YN:av_User[3], ADMIN_YN:av_User[4], USER_NO:av_User[5]};
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : application_onload Event
+-----------------------------------------------------------------------------------------------*/
+function application_onload(obj:Object, e:LoadEventInfo)
+{
+	var objExtCommon = new ExtCommon();
+	//ip주소셋팅
+	var tepmpIPAddress =  objExtCommon.getIPAddress();   
+	gv_IPAddress = tepmpIPAddress[0].split(",");
+	
+	//pc MAC 주소셋팅
+	var arrIpMacAddr = objExtCommon.getMacAddress();
+	var arrIpMac = arrIpMacAddr[0].split(":");
+	gv_MacAddress = arrIpMac.toString().toUpperCase();
+    
+	//실행ADL 경로
+	strADLPath = application.xadl;
+
+	//로컬, 개발, 운영 구분
+	if(strADLPath.indexOf("localhost") != -1 || strADLPath.indexOf("file:") != -1) 
+	{
+		gv_domainCd = "DMS_INTRA"; //기본시스템을 해피포인트 운영정보시스템 으로 셋팅
+		gv_RunMode = "Local";
+		gv_DataType = 0; //XML모드
+	} 
+	else if(strADLPath.indexOf(gds_svcconfig.getColumn(0, "DevUrl")) != -1
+			|| strADLPath.indexOf(gds_svcconfig.getColumn(1, "DevUrl")) != -1) 
+	{
+        gv_domainCd = gds_svcconfig.lookupAs("DevUrl", strADLPath.split("/")[2], "DOMAIN_CD");
+		gv_RunMode = "Dev";
+		gv_DataType = 0; //XML모드
+
+	} 
+	else if(strADLPath.indexOf(gds_svcconfig.getColumn(0, "ProdUrl")) != -1
+			|| strADLPath.indexOf(gds_svcconfig.getColumn(1, "ProdUrl")) != -1) 
+	{ 
+        gv_domainCd = gds_svcconfig.lookupAs("ProdUrl", strADLPath.split("/")[2], "DOMAIN_CD");
+        gv_RunMode = "Prod";
+        gv_DataType = 1; //BINARY모드
+	} 
+	else 
+	{ 
+        gv_domainCd = "DMS_INTRA"; //기본시스템을 DMS_INTRA 시스템 으로 셋팅
+        gv_RunMode = "Prod";
+        gv_DataType = 1; //BINARY모드
+        
+	}
+	mainframe.titletext = "Device Management System ["+gv_domainCd+"]";
+	
+	//각각의 Frame정보 저장
+	ap_VFrameSet  = application.mainframe.VFrameSet;
+	ap_TopFrame   = application.mainframe.VFrameSet.TopFrame;
+	ap_HFrameSet  = application.mainframe.VFrameSet.HFrameSet;
+	ap_LeftFrame  = application.mainframe.VFrameSet.HFrameSet.LeftFrame;
+	ap_VFrameSet2 = application.mainframe.VFrameSet.HFrameSet.VFrameSet2;
+	ap_TabFrame   = application.mainframe.VFrameSet.HFrameSet.VFrameSet2.TabFrame;
+	ap_WorkFrameSet = application.mainframe.VFrameSet.HFrameSet.VFrameSet2.WorkFrameSet;
+	ap_WorkFrame = application.mainframe.VFrameSet.HFrameSet.VFrameSet2.WorkFrameSet.WorkFrame;
+	ap_WorkMain =  application.mainframe.VFrameSet.HFrameSet.VFrameSet2.WorkFrameSet.WorkMain;
+	
+	afn_setFrameSize();
+	
+	application.mainframe.visible = false;
+	
+	afn_loginProcess(gv_LinkSystem);
+	/* 화면처리방식 modaless 변경 2015.04.07 심상준
+	if ( rtn == "OK" ) {
+		ap_TopFrame.form.fn_setTopMenu(); //top menu 생성
+		application.mainframe.visible = true;
+	} else if ( rtn == "CLOSE" ) {
+		exit();
+	}
+	*/
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Login 화면 Active
+-----------------------------------------------------------------------------------------------*/
+function afn_loginProcess(strLinkSystem)
+{
+	var nMoniterIndex;
+	var nScreenLeft;
+	var nScreenTop;
+	var nScreenRight;
+	var nScreenBottom;
+	var nScreenWidth;
+	var nScreenHeight;
+	var arrScreenSize;
+	
+	nMoniterIndex = system.getMonitorIndex(system.cursorx, system.cursory); //모니터번호
+	objScreenSize = system.getScreenRect(nMoniterIndex);
+	nScreenLeft = objScreenSize.left;
+	nScreenTop = objScreenSize.top;
+	nScreenRight = objScreenSize.right;
+	nScreenBottom = objScreenSize.bottom;
+	nScreenWidth = nScreenRight - nScreenLeft;
+	nScreenHeight = nScreenBottom - nScreenTop;
+	
+	//로그인 화면기동
+	var objFrame = new ChildFrame("Login", nScreenLeft+(nScreenWidth/2)-235, nScreenTop+(nScreenHeight/2)-130, nScreenLeft+(nScreenWidth/2)+235,  nScreenTop+(nScreenHeight/2)+130);
+
+	objFrame.showtitlebar  = false;
+	objFrame.style.icon = "IMG::mainicon.ico";
+   	objFrame.titletext = ap_adlId;
+   	objFrame.showontaskbar = true;
+
+	objFrame.layered = true;
+	
+	if(gv_LinkSystem == "GW" || gv_LinkSystem == "VOC") objFrame.visible = false;	
+	objFrame.formurl = "FRAME::Login.xfdl";
+	
+	objFrame.showModeless("Login");
+	/* 화면처리방식 modaless 변경 2015.04.07 심상준	
+	objFrame.destroy();
+	objFrame = null;
+	
+	return rtn;
+	*/
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : application Frame 사이즈 체크
+-----------------------------------------------------------------------------------------------*/
+function afn_setFrameSize()
+{
+	var nMoniterIndex;
+	var nScreenLeft;
+	var nScreenTop;
+	var nScreenRight;
+	var nScreenBottom;
+	var nScreenWidth;
+	var nScreenHeight;
+	var arrScreenSize;
+	
+	nMoniterIndex = system.getMonitorIndex(system.cursorx, system.cursory); //모니터번호
+	objScreenSize = system.getScreenRect(nMoniterIndex);
+	nScreenLeft = objScreenSize.left;
+	nScreenTop = objScreenSize.top;
+	nScreenRight = objScreenSize.right;
+	nScreenBottom = objScreenSize.bottom;
+	nScreenWidth = nScreenRight - nScreenLeft;
+	nScreenHeight = nScreenBottom - nScreenTop;
+		
+	if(nScreenWidth < 1024||nScreenHeight < 728) {
+		application.mainframe.openstatus = "maximize";
+	} else {
+		application.mainframe.move(nScreenLeft,nScreenTop);
+	}
+}
+
+
+function MainFrame_onsize(obj:MainFrame, e:SizeEventInfo)
+{
+	//화면 최소사이즈 정의
+	if(e.cx<1280) {	//900, 1280
+		application.mainframe.position.width = 1280;
+	}
+	
+	if(e.cy<728) {	//600, 728
+		application.mainframe.position.height = 728;
+	}
+}
+
+function application_onerror(obj:Object, e:ErrorEventInfo)
+{
+	// http 또는 socket 에러코드 404로 실패시
+   
+     if (e.errorcode == -2147418085) {
+         var errorMsg = "";	
+			if (e.statuscode == 10060) {
+			   errorMsg = "Internal Server Error";			  
+			   //"서버와의 통신이 원활하지 않습니다."
+			}else if (e.statuscode == 0) {
+			 //  alert(e.errormsg);
+				errorMsg = e.errormsg;	
+			
+			}else if (e.statuscode == 404) {
+			//   errorMsg = "404 Not Found 웹페이지 연결을 할수가 없습니다.";		
+			   errorMsg = "404 Not Found Server Error.";	
+				//404 에러시 처리 방안
+			}else if (e.statuscode == 408) {
+			    errorMsg = "408 Request Timeout";
+		       //408 Request Timeout
+			} else if (e.statuscode == 500) {
+			     errorMsg ="500 Internal Server Error"; 
+			//500 에러시 처리 방안
+			} else if (e.statuscode == 503) {
+			   errorMsg ="System is unavailable. Please reconnect after a while."; 
+			//"System is unavailable. Please reconnect after a while."
+			} else if (e.statuscode == 12029) {
+			   errorMsg ="Has failed to communicate with the current system. Please use it after a while.."; 
+			//"Has failed to communicate with the current system. Please use it after a while.."
+			// 미등록 오류 발생시.
+			} else {
+		  	  errorMsg =  e.errormsg;		  	  
+			}
+			
+		    
+		var popRtn= application.alert("ErrorCode :  " + e.statuscode + "\nErrorMsg : " +errorMsg);		 
+ 	}
+}
+
+/*****************************************************************************************
+ * 함  수  명	: 	application_onexit
+ * 입      력	: 	없음           
+ * 반      환	: 	없음
+ * 기      능	: 	창 닫을때 logout 이력처리
+ *****************************************************************************************/
+function application_onexit(obj:Object, e:ExitEventInfo)
+{
+	if (pv_exit){
+		var serviceTarget = "PSCLginOp_pLgout";
+		var sSvcID       = "lgout";
+		var sSvcURL      = serviceTarget;
+		var sPtrn 		 = "U";        //입력C,조회R,수정U,삭제D,복합M
+		var sInputDs     = "";
+		var sOutputDs    = "";
+		var sArgs        = "";
+		var sCallBackFnc = "fn_LogoutCallback";
+		var bAsync       = false;
+		var bWaitCursor  = true;
+		var iHttptimeout = "";
+		
+		//트랜잭션호출
+		gfn_transaction(sSvcID, sSvcURL, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc, bAsync, bWaitCursor, 30);
+		return false;
+	}
+}
+
+/*-----------------------------------------------------------------------------------------------
+ * fn_LogoutCallback : logout Callback
+ *----------------------------------------------------------------------------------------------*/
+function fn_LogoutCallback(svcID, errorCode, errorMsg)
+{
+	switch(svcID) {
+		case "lgout" : 
+			pv_exit = false;
+		    application.exit();
+	}
+	
+}
+]]></Script>
+</ADL>

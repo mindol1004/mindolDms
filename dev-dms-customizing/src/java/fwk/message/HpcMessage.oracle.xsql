@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap
+    PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="hpc.message">
+
+    <select id="getMessages" parameterClass="string" resultClass="hmap">
+        SELECT LOCALE_XD, 
+               MESSAGE_ID as "ID",
+               MESSAGE_NAME as "NAME",
+               MESSAGE_REMARK as "REMARK",
+               MESSAGE_REASON as "REASON",
+               MESSAGE_TYPE_XD as "TYPE_XD",
+               POS_RESP_CD as "POS_RESP_CD",
+			   CO_RESP_CD as "CO_RESP_CD",
+			   CO_RESP_DTL_CD as "CO_RESP_DTL_CD"
+          FROM SKF_MESSAGE
+    </select>
+
+    <select id="getMessage" parameterClass="map" resultClass="hmap">
+        SELECT LOCALE_XD,
+               MESSAGE_ID as "ID",
+               MESSAGE_NAME as "NAME",
+               MESSAGE_REMARK as "REMARK",
+               MESSAGE_REASON as "REASON",
+               MESSAGE_TYPE_XD as "TYPE_XD",
+               POS_RESP_CD as "POS_RESP_CD",
+			   CO_RESP_CD as "CO_RESP_CD",
+			   CO_RESP_DTL_CD as "CO_RESP_DTL_CD"
+          FROM SKF_MESSAGE
+         WHERE LOCALE_XD = #locale#
+           AND MESSAGE_ID = #id#
+    </select>
+    
+    <select id="getMessageBundle" parameterClass="string" resultClass="hmap">
+        SELECT LOCALE_XD, 
+               MESSAGE_ID as "ID",
+               MESSAGE_NAME as "NAME",
+               MESSAGE_REMARK as "REMARK",
+               MESSAGE_REASON as "REASON",
+               MESSAGE_TYPE_XD as "TYPE_XD",
+               POS_RESP_CD as "POS_RESP_CD",
+			   CO_RESP_CD as "CO_RESP_CD",
+			   CO_RESP_DTL_CD as "CO_RESP_DTL_CD"
+          FROM SKF_MESSAGE
+         WHERE MESSAGE_ID = #value#
+    </select>
+    
+</sqlMap>

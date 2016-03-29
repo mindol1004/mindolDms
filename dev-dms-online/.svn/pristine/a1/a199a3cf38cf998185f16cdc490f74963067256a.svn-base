@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInveInfoMgmt">
+	<select id="SInveInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoLstPaging 단말자산현황조회 */
+/* IO: 장미진,2015-08-06T12:52:31(이민재,2015-07-17T16:00:30) */
+SELECT
+        *
+  FROM (
+        SELECT 
+                ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+               ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+               ,E.EQP_MDL_NM   					 /* 모델명 */
+               ,A.EQP_MDL_CD   					 /* 모델코드 */
+               ,A.EQP_COLOR_CD						 /* 색상코드 */
+               ,F.PET_NM       					 /* 펫네임 */ 
+               ,C.RENTAL_CNTRT_PRD     				 /* 계약기간코드 */
+               ,D.NR_CNTRT_DT 					 /* 계약일 */
+               ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+               ,A.EQP_REM_PRC_AMT      			 /* 잔존가 */  
+               ,D.OP_TYP_CD     				 /* 계약상태코드 */
+               ,A.EQP_SRV_LIFE						 /* 내용년수 */
+               ,E.CAPA_CD                 		 /* 용량코드 */
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,TB_EQP_MDL F
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.EQP_MDL_CD = F.EQP_MDL_CD
+           AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NR_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+                D.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInveInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoTotCnt 단말자산현황총건수 */
+/* IO: 장미진,2015-08-05T17:00:53(이민재,2015-07-17T16:00:46) */
+SELECT    
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO    = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.OP_CL_CD       = 'NR'        
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        D.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+        D.NR_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="OP_TYP_CD" prepend="AND" compareValue="%"><![CDATA[
+        D.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SInveInfoDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoDtl 단말자산현황상세조회 */
+/* IO: 장미진,2015-08-06T12:53:19(이민재,2015-07-17T16:01:03) */
+SELECT 
+        ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+       ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+       ,E.EQP_MDL_NM   					 /* 모델명 */
+       ,A.EQP_MDL_CD   					 /* 모델코드 */
+       ,A.EQP_COLOR_CD						 /* 색상코드 */
+       ,F.PET_NM       					 /* 펫네임 */ 
+       ,C.RENTAL_CNTRT_PRD     				 /* 계약기간코드 */
+       ,D.NR_CNTRT_DT 					 /* 계약일 */
+       ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+       ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+       ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+       ,A.EQP_REM_PRC_AMT      			 /* 잔존가 */  
+       ,D.OP_TYP_CD     				 /* 계약상태코드 */
+       ,A.EQP_SRV_LIFE						 /* 내용년수 */
+       ,E.CAPA_CD                 		 /* 용량코드 */
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+       ,TB_EQP_MDL F
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO    = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.EQP_MDL_CD = F.EQP_MDL_CD
+   AND  A.OP_CL_CD       = 'NR'
+   AND  D.SVC_MGMT_NO = #SVC_MGMT_NO#]]>
+	</select>
+</sqlMap>

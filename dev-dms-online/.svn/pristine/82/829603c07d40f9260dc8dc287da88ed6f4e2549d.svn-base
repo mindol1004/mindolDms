@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRRCmcProcRgstMgmt">
+	<select id="SRCmcProcRgstLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.SRCmcProcRgstLstPaging 재상품화처리조회목록 */
+/* IO: 박민정,2015-08-04T11:29:34(박민정,2015-08-04T11:15:24) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.ASSET_NO DESC) AS ROWNO
+                ,B.EQP_IN_DT AS IN_DT             /*단말기입고일자*/
+                ,A.ASSET_NO                       /*자산번호*/
+                ,A.EQP_MDL_CD                     /*단말기모델코드*/
+                ,E.EQP_MDL_NM                     /*단말기모델*/
+                ,A.EQP_COLOR_CD                   /*단말기색상코드*/
+                ,A.EQP_SER_NUM                    /*단말기일련번호*/
+                ,A.EQP_IMEI_NUM                   /*단말기IMEI번호*/
+                ,A.BOX_NO                         /*BOX NO*/
+                ,A.EQP_PRCH_AMT AS PRCH_AMT       /*단말기매입금액*/
+                ,C.EQP_JDG_DT                     /*단말기감정일자*/
+                ,C.EQP_JDG_RSLT_CD                /*단말기감정결과코드*/
+                ,C.JDG_APRV_YN                    /*감정승인여부*/
+                ,C.JDG_CHRGR_NO                   /*감정담당자번호*/
+                ,U.USER_NM AS JDG_CHRGR_NM        /*감정담당자이름*/
+                ,B.IN_PLC_CD                      /*입고처코드*/
+                ,D.DEAL_CO_NM                     /*입고처명*/
+           FROM  TB_EQP_ASSET A                   /*단말기 자산*/
+                ,TB_EQP_IN B                      /*단말기입고*/
+                ,TB_EQP_JDG C                     /*단말기감정*/
+                ,TB_EQP_MDL E                     /*단말기모델*/
+                ,TB_DEAL_CO D                     /*거래처*/
+                ,TB_USER U 
+          WHERE  A.ASSET_NO = B.ASSET_NO
+            AND  A.OP_CL_CD = 'PR'
+            AND  A.INVE_ST_CD = '10'              /*재고상태:입고*/
+            AND  B.IN_DTL_CD = '20'               /*입고상세코드:재상품화*/
+            AND  C.EQP_JDG_RSLT_CD ='10'          /*감정결과코드:재상품화 */
+            AND  C.JDG_APRV_YN = 'Y'              /*감정승인여부:Y*/
+            AND  B.ASSET_NO = C.ASSET_NO(+)
+            AND  B.EQP_IN_DT = C.EQP_IN_DT(+)
+            AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+            AND  C.JDG_CHRGR_NO = U.USER_NO(+)
+            AND  B.IN_PLC_CD = D.DEAL_CO_CD
+            AND  A.DEL_YN = 'N'
+            AND  B.DEL_YN = 'N'
+            AND  C.DEL_YN(+) = 'N'
+            AND  B.EQP_IN_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+            AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NUM"><![CDATA[
+            AND  A.EQP_SER_NUM = #EQP_SER_NUM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+            AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+            AND  A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[            
+        )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SRCmcProcRgstLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRRCmcProcRgstMgmt.SRCmcProcRgstLstTotCnt 재상품화처리조회총건수 */
+/* IO: 박민정,2015-08-04T11:41:03(박민정,2015-08-04T11:37:14) */
+SELECT  COUNT(*) AS TOTAL_CNT     /*전체건수*/
+  FROM  TB_EQP_ASSET A            /*단말기 자산*/
+       ,TB_EQP_IN B               /*단말기입고*/
+       ,TB_EQP_JDG C              /*단말기감정*/
+       ,TB_EQP_MDL E              /*단말기모델*/
+       ,TB_DEAL_CO D              /*거래처*/
+       ,TB_USER U 
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  A.OP_CL_CD = 'PR'
+   AND  A.INVE_ST_CD = '10'       /*재고상태:입고*/
+   AND  B.IN_DTL_CD = '20'        /*입고상세코드:재상품화*/
+   AND  C.EQP_JDG_RSLT_CD='10'    /*감정결과코드:재상품화 */
+   AND  C.JDG_APRV_YN= 'Y'        /*감정승인여부:Y*/
+   AND  B.ASSET_NO = C.ASSET_NO(+)
+   AND  B.EQP_IN_DT = C.EQP_IN_DT(+)
+   AND  A.EQP_MDL_CD = E.EQP_MDL_CD
+   AND  C.JDG_CHRGR_NO = U.USER_NO(+)
+   AND  B.IN_PLC_CD = D.DEAL_CO_CD
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+   AND  C.DEL_YN(+) = 'N'
+   AND  B.EQP_IN_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+   AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NUM"><![CDATA[
+   AND  A.EQP_SER_NUM = #EQP_SER_NUM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+   AND  A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+   AND  A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.BNR042">
+	<select id="SClsComLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR042.SClsComLst 수수료목록조회 */
+/* IO: 진병수,2015-08-17T13:48:27(진병수,2015-08-06T19:18:25) */
+SELECT 
+       'NR'                        AS  OP_CL_CD
+     , SUBSTR(A.NEW_CNTRT_DT,1, 6)  AS DEBT_XCL_YM
+     , 'AS'                        AS XCL_CL
+     , A.AGN_CD                    AS BOND_DEALCO_CD
+     , 'IN'                        AS XCL_ITM_CL
+     , COUNT(*) * 20000            AS DEBT_ITM_AMT
+     , COUNT(*) * 20000 /10        AS DEBT_SURTAX
+     , NULL                        AS DEBT_SLIP_NO
+     , 'DEL'                       AS ACNT_CD
+     , TO_CHAR(SYSDATE,'YYYYMMDD') AS DEBT_SLIP_DT
+     , NULL                        AS DEBT_ORGL_SLIP_NO
+     , NULL                        AS DEBT_CNCL_SLIP_NO
+     , NULL                        AS DEBT_CNCL_DT
+     , 'BAT'                       AS FS_REG_USER_ID
+     , SYSDATE                     AS FS_REG_DTM
+     , 'BAT'                       AS LS_CHG_USER_ID
+     , SYSDATE                     AS LS_CHG_DTM
+  FROM TB_NR_CNTRT A
+ WHERE A.OP_TYP_CD ='01'
+   AND SUBSTR(A.NEW_CNTRT_DT,1, 6) = TO_CHAR(ADD_MONTHS(SYSDATE), 'YYYYMM')
+ GROUP BY  AGN_CD, SUBSTR(A.NEW_CNTRT_DT,1, 6)]]>
+	</select>
+	<insert id="IClsComDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR012.IClsComDtl 수수료등록 */
+/* IO: 진병수,2015-08-06T19:24:49(진병수,2015-08-06T19:19:04) */
+INSERT INTO TB_XCL_DEBT
+            (
+              OP_CL_CD
+            , DEBT_XCL_YM
+            , XCL_CL
+            , BOND_DEALCO_CD
+            , XCL_ITM_CL
+            , DEBT_ITM_AMT
+            , DEBT_SURTAX
+            , DEBT_SLIP_NO
+            , ACNT_CD
+            , DEBT_SLIP_DT
+            , DEBT_ORGL_SLIP_NO
+            , DEBT_CNCL_SLIP_NO
+            , DEBT_CNCL_DT
+            , FS_REG_USER_ID
+            , FS_REG_DTM
+            , LS_CHG_USER_ID
+            , LS_CHG_DTM
+            )
+            VALUES
+            (
+              #OP_CL_CD#
+            , #DEBT_XCL_YM#
+            , #XCL_CL#
+            , #BOND_DEALCO_CD#
+            , #XCL_ITM_CL#
+            , #DEBT_ITM_AMT#
+            , #DEBT_SURTAX#
+            , #DEBT_SLIP_NO#
+            , #ACNT_CD#
+            , #DEBT_SLIP_DT#
+            , #DEBT_ORGL_SLIP_NO#
+            , #DEBT_CNCL_SLIP_NO#
+            , #DEBT_CNCL_DT#
+            , #FS_REG_USER_ID#
+            , #FS_REG_DTM#
+            , #LS_CHG_USER_ID#
+            , #LS_CHG_DTM#
+            )]]>
+	</insert>
+</sqlMap>

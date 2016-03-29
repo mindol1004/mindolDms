@@ -1,0 +1,492 @@
+package dms.nr.nrbisbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]보증보험금지급관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-s10-14 10:17:13</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class PNRInsuMxclMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRInsuMxclMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [정산년월]
+	 *	- field : SGI_INSURE_MGMT_NO [보증보험관리번호]
+	 *	- field : STA_DT [필드1]
+	 *	- field : END_DT [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : YYYY [정산년]
+	 *		- field : YYYYMM [정산년월]
+	 *		- field : M_CNT [총건수]
+	 *		- field : M_PRC [채권항목금액]
+	 *		- field : DMS_AMT_SUM [DMS금액합계]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표처리상태코드]
+	 *		- field : SLIP_DT [전표처리일자]
+	 *		- field : MATCHED_YN [보험금일치여부]
+	 *	- record : RS_SUM_LIST
+	 *		- field : M_CNT [총건수]
+	 *		- field : M_AMT [총금액]
+	 *	- record : RS_INSUM_XCL_LIST
+	 *		- field : XCL_DT [정산년월]
+	 *		- field : SGI_INSU_NO [보험관리번호]
+	 *		- field : XCL_AMT [DMS금액]
+	 *		- field : XCL_UKEY_INV_AMT [UKEY금액]
+	 *		- field : INVE_MATCHED [보험금일치여부]
+	 *		- field : XCL_DEALCO_CD [대리점코드]
+	 * </pre>
+	 */
+	public IDataSet pInqInsuMxclLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuMxclLst", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : CHK [필드1]
+	 *		- field : YYYY [필드2]
+	 *		- field : YYYYMM [정산년월]
+	 *		- field : M_CNT [총건수]
+	 *		- field : M_PRC [채권항목금액]
+	 *		- field : DMS_AMT_SUM [DMS합계금액]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표처리상태코드]
+	 *		- field : SLIP_DT [전표처리일자]
+	 *		- field : MATCHED_YN [보험금일치여부]
+	 *		- field : DEALCO_BLICENS_NO [사업자관리번호]
+	 *	- field : XCL_YM [정산년월]
+	 *	- field : SGI_INSURE_MGMT_NO [보험관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveInqInsuMxclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fSaveInqInsuMxclSlip", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : CHK [필드1]
+	 *		- field : YYYY [필드2]
+	 *		- field : YYYYMM [정산년월]
+	 *		- field : M_CNT [총건수]
+	 *		- field : M_PRC [채권항목금액]
+	 *		- field : DMS_AMT_SUM [DMS금액]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표처리상태코드]
+	 *		- field : SLIP_DT [전표처리일자]
+	 *		- field : MATCHED_YN [보험금일치여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveInqInsuMxclSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fSaveInqInsuMxclSlipDel", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqInsuMxclAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuMxclAllExcel", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SGI_INSURE_MGMT_NO [보증보험관리번호]
+	 *	- field : XCL_YM [정산년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_INSUM_XCL_LIST
+	 *		- field : XCL_DT [정산년월]
+	 *		- field : SGI_INSU_NO [보험관리번호]
+	 *		- field : XCL_AMT [DMS금액]
+	 *		- field : XCL_UKEY_INV_AMT [UKEY금액]
+	 *		- field : INVE_MATCHED [환급금일치여부]
+	 *		- field : XCL_DEALCO_CD [필드6]
+	 *	- record : RS_SLIP_LIST
+	 *		- field : CHK [필드1]
+	 *		- field : YYYY [필드2]
+	 *		- field : YYYYMM [정산년월]
+	 *		- field : M_CNT [총건수]
+	 *		- field : M_PRC [채무항목금액]
+	 *		- field : DMS_AMT_SUM [DMS합계금액]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표처리상태코드]
+	 *		- field : SLIP_DT [전표처리일자]
+	 *		- field : MATCHED_YN [환급금일치여부]
+	 *	- record : RS_SUM_LIST
+	 *		- field : M_CNT [필드1]
+	 *		- field : M_AMT [필드2]
+	 * </pre>
+	 */
+	public IDataSet pInqInsuRfndXclLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuRfndXclLst", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : CHK [필드1]
+	 *		- field : YYYY [필드2]
+	 *		- field : YYYYMM [정산년월]
+	 *		- field : M_CNT [총건수]
+	 *		- field : M_PRC [채권항목금액]
+	 *		- field : DMS_AMT_SUM [DMS합계금액]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표처리상태코드]
+	 *		- field : SLIP_DT [전표일자]
+	 *		- field : MATCHED_YN [보험금일치여부]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *	- field : SGI_INSURE_MGMT_NO [보험관리번호]
+	 *	- field : XCL_YM [정산년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveInqInsuRfndXclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fSaveInqInsuRfndXclSlip", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqInsuRfndXclAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuRfndXclAllExcel", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	    
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : DEBT_XCL_YM [필드1]
+	 *		- field : DEBT_ITM_AMT_CNT [필드2]
+	 *		- field : DEBT_ITM_SUM_AMT [필드3]
+	 *		- field : XCL_AMT [필드4]
+	 *		- field : XCL_UKEY_INV_AMT [필드5]
+	 *		- field : SLIP_NO [필드6]
+	 *		- field : SLIP_ST_CD [필드7]
+	 *		- field : DEBT_SLIP_DT [필드1]
+	 *		- field : INVE_MATCHED [필드2]
+	 *		- field : SGI_INSURE_MGMT_NO [필드3]
+	 *		- field : CHK [필드1]
+	 *		- field : YYYY [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveInqInsuRfndXclSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fSaveInqInsuRfndXclSlipDel", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqInsuMxclReBatch(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuMxclReBatch", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqInsuRfndXclReBatch(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuRfndXclReBatch", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	    // 3. 결과값 리턴
+	    responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DEBT_XCL_YM [정산년월]
+	 *	- field : SLIP_NO [전표번호]
+	 *	- field : SGI_INSURE_MGMT_NO [보증보험관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqInsuRfndXclDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuRfndXclDtlLst", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-10-14 10:17:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : BOND_XCL_YM [정산년월]
+	 *	- field : SLIP_NO [전표번호]
+	 *	- field : SGI_INSURE_MGMT_NO [보증보험관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqInsuMxclDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+	        // 1. FM 호출
+	        responseData = callSharedBizComponentByDirect("nr.NRSISBase", "fInqInsuMxclDtlLst", requestData, onlineCtx);
+	    } catch ( BizRuntimeException e ) {
+	        throw e;
+	    } catch ( Exception e ) {
+	        throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+	    }
+	
+	    return responseData;
+	}
+  
+}

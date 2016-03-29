@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCUserAutrDataRolMgmt">
+	<select id="SUserDataRolCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DFSCUserAutrDataRolMgmt.SUserDataRolCnt 사용자데이터권한전체건수조회 */
+/* IO: 임지후,2014-12-19T10:38:02(심상준,2014-09-11T15:39:31) */
+SELECT 
+        COUNT(*) AS TOTAL_CNT	   /* 사용자데이터권한전체건수 */
+  FROM  TB_DATA_AUTR_ROL A    /* SC_데이터권한역할 */
+       ,TB_AUTR_ROL B         	   /* SC_권한역할  */
+       ,TB_BRND C				   /* AF_브랜드 */
+       ,TB_MCHT D				   /* AF_가맹점 */
+       ,TB_USER_AUTR_ROL E         /* SC_사용자권한역할 */
+       ,TB_USER F                  /* SC_사용자 */
+       ,TB_CM_CD G                 /* SC_공통코드 */
+ WHERE  A.AUTR_ROL_ID = B.AUTR_ROL_ID
+   AND  A.AUTR_OBJ_BRND_CD  = C.BRND_CD (+)
+   AND  A.AUTR_OBJ_MCHT_NO  = D.MCHT_NO (+)
+   AND  B.AUTR_ROL_ID       = E.AUTR_ROL_ID
+   AND  E.USER_NO           = F.USER_NO 
+   AND  TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN E.APLY_STA_DT AND E.APLY_END_DT
+   AND  E.USE_YN       = 'Y'
+   AND  G.CM_GRP_CD_ID = 'AFC003'	  /* 회사명 공통코드 */
+   AND  G.CM_CD_ID     = A.AUTR_OBJ_CO_CD        
+]]><isNotEmpty prepend="AND" property="USER_NO"><![CDATA[
+        F.USER_NO = #USER_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SUserDataRolListInq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DFSCUserAutrDataRolMgmt.SUserDataRolListInq 사용자데이터권한역할조회 */
+/* IO: 임지후,2014-12-19T10:47:59(심상준,2014-09-11T15:43:03) */
+SELECT  
+        *
+  FROM (
+        
+         SELECT  
+                  ROW_NUMBER() OVER (ORDER BY A.AUTR_SNO ASC) AS ROWNO
+                 ,A.AUTR_ROL_ID	                					   /* 권한역할ID */
+                 ,B.AUTR_ROL_NM	                					   /* 권한역할명 */
+                 ,A.AUTR_SNO	                    			       /* 권한일련번호 */
+                 ,A.AUTR_OBJ_CO_CD	            	         	       /* 권한대상회사코드 */
+                 ,G.CM_CD_NM AS AUTR_OBJ_CO_CD_NM		               /* 권한대상회사코드명 */
+                 ,A.AUTR_OBJ_BRND_CD	         	         	       /* 권한대상브랜드코드 */
+                 ,C.BRND_NM AS AUTR_OBJ_BRND_NM	                       /* 권한대상브랜드코드명 */
+                 ,A.AUTR_OBJ_MCHT_NO                                   /* 권한대상가맹점번호 */
+                 ,DECODE(A.AUTR_OBJ_MCHT_NO,'ALL','전체',D.MCHT_NM) AS AUTR_OBJ_MCHT_NM   /* 권한대상가맹점명 */
+            FROM  TB_DATA_AUTR_ROL A   					       /* SC_데이터권한역할 */
+                 ,TB_AUTR_ROL B         		                       /* SC_권한역할  */
+                 ,TB_BRND C						  					   /* AF_브랜드 */
+                 ,TB_MCHT D						 					   /* AF_가맹점 */
+                 ,TB_USER_AUTR_ROL E                                   /* SC_사용자권한역할 */
+                 ,TB_USER F                                            /* SC_사용자 */
+                 ,TB_CM_CD G                                           /* SC_공통코드 */
+           WHERE  A.AUTR_ROL_ID = B.AUTR_ROL_ID
+             AND  A.AUTR_OBJ_BRND_CD  = C.BRND_CD (+)
+             AND  A.AUTR_OBJ_MCHT_NO  = D.MCHT_NO (+)
+             AND  B.AUTR_ROL_ID       = E.AUTR_ROL_ID
+             AND  E.USER_NO           = F.USER_NO 
+             AND  TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN E.APLY_STA_DT AND E.APLY_END_DT
+             AND  E.USE_YN       = 'Y'
+             AND  G.CM_GRP_CD_ID = 'AFC003'			  /* 회사명 공통코드 */
+             AND  G.CM_CD_ID     = A.AUTR_OBJ_CO_CD        
+]]><isNotEmpty prepend="AND" property="USER_NO"><![CDATA[
+                  F.USER_NO = #USER_NO#
+]]></isNotEmpty><![CDATA[
+           ORDER BY A.AUTR_ROL_ID ASC,
+         		    A.AUTR_SNO ASC
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SUsrDataRolBrndLstInq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DFSCUserAutrDataRolMgmt.SUsrDataRolBrndLstInq 사용자접근가능 브랜드목록조회 */
+/* IO: 임지후,2015-01-26T16:01:29(임지후,2015-01-26T15:54:25) */
+SELECT 
+        BRND_CD     /* 브랜드코드 */
+       ,BRND_NM     /* 브랜드명 */
+  FROM 	TB_BRND     /* AF_브랜드 */
+ WHERE
+]]><iterate property="BRND_LIST" prepend="BRND_CD IN" open="(" conjunction=", " close=")"><![CDATA[
+   #BRND_LIST[]#
+]]></iterate><![CDATA[]]>
+	</select>
+	<select id="SUsrDataRolMchtLstInq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DFSCUserAutrDataRolMgmt.SUsrDataRolMchtLstInq 사용자접근가능 가맹점목록조회 */
+/* IO: 임지후,2015-01-26T16:02:36(임지후,2015-01-26T15:54:58) */
+SELECT 
+        MCHT_NO    /* 가맹점번호 */
+       ,MCHT_NM	   /* 가맹점명 */
+  FROM  TB_MCHT	   /* AF_가맹점 */
+ WHERE 
+]]><iterate property="MCHT_LIST" prepend="MCHT_NO IN" open="(" conjunction=", " close=")"><![CDATA[
+   #MCHT_LIST[]#
+]]></iterate><![CDATA[]]>
+	</select>
+</sqlMap>

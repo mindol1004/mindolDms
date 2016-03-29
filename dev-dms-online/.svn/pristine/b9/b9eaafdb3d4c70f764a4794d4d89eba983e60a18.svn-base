@@ -1,0 +1,151 @@
+package dms.pr.prbpmbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]매입교품관리</li>
+ * <li>설  명 : <pre>매입교품관리</pre></li>
+ * <li>작성일 : 2015-07-10 08:55:56</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ *
+ * @author 양재석 (jsyang)
+ */
+public class PPRExpartEqpMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PPRExpartEqpMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>매입교품조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:20:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_IN_DT [조회입고시작일]
+	 *	- field : END_IN_DT [조회입고종료일]
+	 *	- field : IN_PLC_CD [입고처코드]
+	 *	- field : IN_PLC_NM [입고처명]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : EQP_SER_NUM [단말기일련번호]
+	 *	- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *	- field : INVE_ST_CD [재고상태코드]
+	 *	- field : BOX_NO [BOX NO]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_LIST
+	 *		- field : IN_DT [입고일자]
+	 *		- field : IN_PLC_CD [입고처코드]
+	 *		- field : IN_PLC_NM [입고처명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : LAST_EXPART_DT [최종교품일자]
+	 *		- field : EXPART_EQP_SER_NUM [교품단말기일련번호]
+	 *		- field : EXPART_EQP_IMEI_NUM [교품단말기IMEI번호]
+	 *		- field : EXPART_EQP_COLOR_CD [교품단말기색상코드]
+	 *		- field : EXPART_IN_DT [교품입고일자]
+	 * </pre>
+	 */
+	public IDataSet pInqExpartEqpLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("pr.PRSPMBase", "fInqExpartEqpLst", requestData, onlineCtx);
+			//responseData = fPRExpartEqpMgmt.fInqExpartEqpLst(requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+		return responseData;
+	}
+
+	/**
+	 * <pre>매입교품상태저장</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-10 11:20:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_EQP_LIST
+	 *		- field : IN_DT [입고일자]
+	 *		- field : IN_PLC_CD [입고처코드]
+	 *		- field : IN_PLC_NM [입고처명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : LAST_EXPART_DT [최종교품일자]
+	 *		- field : EXPART_EQP_SER_NUM [교품단말기일련번호]
+	 *		- field : EXPART_EQP_IMEI_NUM [교품단말기IMEI번호]
+	 *		- field : EXPART_EQP_COLOR_CD [교품단말기색상코드]
+	 *		- field : EXPART_IN_DT [교품입고일자]
+	 *		- field : IC_CHK [등록취소구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInExpartStatSave(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. FM 호출
+			if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // INSERT
+				responseData = callSharedBizComponentByDirect("pr.PRSPMBase", "fRegExpartEqpReg", requestData, onlineCtx);
+			}else if ( "D".equals(ca.getTrnPtrnDvcd()) ) { // DELETE
+				responseData = callSharedBizComponentByDirect("pr.PRSPMBase", "fUpdExpartRegEqpCnl", requestData, onlineCtx);
+			}
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00000", null); // 정상처리회되었습니다.
+		
+		return responseData;
+	}
+  
+}

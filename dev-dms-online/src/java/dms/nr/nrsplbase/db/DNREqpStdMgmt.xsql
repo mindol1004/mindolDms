@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpStdMgmt">
+	<select id="SEqpStdLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpStdMgmt.SEqpStdLstPaging 단말기준정보조회 */
+/* IO: admin,2016-02-18T13:53:01(이민재,2015-07-09T17:05:09) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.FS_REG_DTM DESC, A.EQP_MDL_CD, A.CAPA_CD) AS ROWNO
+                ,A.OP_CL_CD
+                ,A.EQP_MDL_CD
+                ,A.EQP_MDL_NM
+                ,A.MFACT_CD
+                ,A.LAUNC_DT
+                ,A.PET_NM
+                ,A.CAPA_CD
+                ,A.ESI_USE_YN
+                ,A.ESI_RMK
+                ,A.MDL_NO
+                ,A.FS_REG_USER_ID
+                ,A.FS_REG_DTM
+                ,A.LS_CHG_USER_ID
+                ,A.LS_CHG_DTM
+           FROM  TB_EQP_STRD_INFO A
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEqual property="OP_CL_CD" prepend="AND" compareValue="%"><![CDATA[
+                 A.OP_CL_CD = #OP_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                 UPPER(A.EQP_MDL_CD)= UPPER(#EQP_MDL_CD#)
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_NM" prepend="AND"><![CDATA[
+                 UPPER(A.EQP_MDL_NM) LIKE '%'||UPPER(#EQP_MDL_NM#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MFACT_CD" prepend="AND"><![CDATA[
+                 A.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="ESI_USE_YN" prepend="AND" compareValue="%"><![CDATA[
+                 A.ESI_USE_YN = #ESI_USE_YN#
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[
+		  ORDER  BY A.FS_REG_DTM DESC, A.EQP_MDL_CD, A.CAPA_CD
+        )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpStdTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpStdMgmt.SEqpStdTotCnt 단말기준정보총건수 */
+/* IO: admin,2016-02-18T13:54:11(이민재,2015-07-09T17:05:34) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_EQP_STRD_INFO A
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEqual property="OP_CL_CD" prepend="AND" compareValue="%"><![CDATA[
+        A.OP_CL_CD = #OP_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+        UPPER(A.EQP_MDL_CD) = UPPER(#EQP_MDL_CD#)
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_NM" prepend="AND"><![CDATA[
+        UPPER(A.EQP_MDL_NM) LIKE '%'||UPPER(#EQP_MDL_NM#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MFACT_CD" prepend="AND"><![CDATA[
+        A.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="ESI_USE_YN" prepend="AND" compareValue="%"><![CDATA[
+        A.ESI_USE_YN = #ESI_USE_YN#
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<insert id="IEqpStd" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpStdMgmt.IEqpStd 단말기준정보저장 */
+/* IO: 이민재,2015-08-12T09:39:59(이민재,2015-07-09T17:22:20) */
+INSERT
+  INTO  TB_EQP_STRD_INFO                        /* 단말기기준 */ 
+       (
+        OP_CL_CD                                /* 업무구분코드 */
+       ,EQP_MDL_CD                              /* 단말기모델코드 */
+       ,CAPA_CD                                 /* 저장용량 */
+       ,EQP_MDL_NM                              /* 단말기모델명 */
+       ,MFACT_CD                                /* 제조사코드 */
+       ,LAUNC_DT                                /* 출시일 */
+       ,PET_NM                                  /* 펫네임 */
+       ,ESI_USE_YN                              /* 사용여부 */
+       ,ESI_RMK                                 /* 비고 */
+       ,MDL_NO                                  /* 모델번호 */
+       ,FS_REG_USER_ID                          /* 최초등록사용자ID */
+       ,FS_REG_DTM                              /* 최초등록일시 */
+       ,LS_CHG_USER_ID                          /* 최종변경사용ID */
+       ,LS_CHG_DTM                              /* 최종변경일시 */ 
+        )
+VALUES
+       (
+        #OP_CL_CD#                              /* 업무구분코드 */
+       ,#EQP_MDL_CD#                            /* 단말기모델코드 */
+       ,#CAPA_CD#                               /* 저장용량 */
+       ,#EQP_MDL_NM#                            /* 단말기모델명 */
+       ,#MFACT_CD#                              /* 제조사코드 */
+       ,#LAUNC_DT#                              /* 출시일 */
+       ,#PET_NM#                                /* 펫네임 */
+       ,#ESI_USE_YN#                            /* 사용여부 */
+       ,#ESI_RMK#                               /* 비고 */
+       ,#MDL_NO#                                /* 모델번호 */
+       ,#USERNO#                                /* 최초등록사용자ID */
+       ,SYSDATE                                 /* 최초등록일시 */
+       ,#USERNO#                                /* 최종변경사용ID */
+       ,SYSDATE                                 /* 최종변경일시 */ 
+        )]]>
+	</insert>
+	<update id="UEqpStd" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpStdMgmt.UEqpStd 단말기준정보수정 */
+/* IO: 이영진,2015-10-21T13:57:52(이민재,2015-07-09T17:22:42) */
+UPDATE  TB_EQP_STRD_INFO                 /* 단말기기준 */
+   SET  PET_NM         = #PET_NM#        /* 펫네임 */
+       ,MDL_NO         = #MDL_NO#        /* 모델번호 */
+       ,LAUNC_DT       = #LAUNC_DT#		 /* 출시일자 */
+       ,ESI_USE_YN     = #ESI_USE_YN#    /* 사용여부 */ 
+       ,ESI_RMK        = #ESI_RMK#       /* 비고 */
+       ,LS_CHG_USER_ID = #USERNO#        /* 최종변경사용자ID */  
+       ,LS_CHG_DTM     = SYSDATE         /* 최종변경일시 */ 
+ WHERE  OP_CL_CD       = #OP_CL_CD#      /* 업무구분코드 */
+   AND  EQP_MDL_CD     = #EQP_MDL_CD#    /* 단말기모델코드 */
+   AND  CAPA_CD        = #CAPA_CD#       /* 저장용량코드 */]]>
+	</update>
+	<select id="SEqpStdListChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNREqpStdMgmt.SEqpStdListChk 단말기기준정보저장사전체크 */
+/* IO: 이민재,2015-08-04T09:56:09(이민재,2015-07-15T20:13:02) */
+SELECT  COUNT(1) AS ROW_CNT             /* 사전체크 카운트 */
+  FROM  TB_EQP_STRD_INFO                /* 단말기기준정보 */
+ WHERE  OP_CL_CD = #OP_CL_CD#           /* 업무구분코드 */
+   AND  EQP_MDL_CD= #EQP_MDL_CD#        /* 단말기모델코드 */
+   AND  CAPA_CD = #CAPA_CD#             /* 저장용량코드 */]]>
+	</select>
+</sqlMap>

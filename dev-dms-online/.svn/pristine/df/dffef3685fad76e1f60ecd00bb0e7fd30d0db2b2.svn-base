@@ -1,0 +1,239 @@
+package dms.nr.nrsisbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+
+import org.apache.commons.logging.Log;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]추심회수금 조회 및 수수료정산</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-11-13 10:09:35</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class FNRColsClctCmmsXclMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRColsClctCmmsXclMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-11-13 10:10:18
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqColsClctCmmsXclLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+	    IDataSet dsCnt = new DataSet();
+	    IRecordSet usrListRs =  null;
+	    IRecordSet usrSumRs =  null;
+	    int intTotalCnt = 0;
+	    
+	    try {
+		    // 1. DU lookup
+	    	DNRColsClctCmmsXclMgmt dNRColsClctCmmsXclMgmt = (DNRColsClctCmmsXclMgmt) lookupDataUnit(DNRColsClctCmmsXclMgmt.class);
+	    		    		    
+			// 4. 추심회수금합계조회
+			IDataSet sumDs = dNRColsClctCmmsXclMgmt.dScolsClctSum(requestData, onlineCtx);
+			usrSumRs = sumDs.getRecordSet("RS_COLS_SUM_LIST");
+	    	responseData.putRecordSet("RS_COLS_SUM_LIST", usrSumRs);	
+			
+	    	// 2. TOTAL COUNT DM호출            
+			dsCnt = dNRColsClctCmmsXclMgmt.dSColsClctCmmsXclTotCnt(requestData, onlineCtx);
+	        intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+	        PagenateUtils.setPagenatedParamsToDataSet(requestData);
+			
+			// 3. LISTDM호출
+			IDataSet listDs = dNRColsClctCmmsXclMgmt.dSColsClctCmmsXclLstPaging(requestData, onlineCtx);
+			usrListRs = listDs.getRecordSet("RS_COLS_CLCT_CMMS_XCL_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(usrListRs, requestData, intTotalCnt);
+			
+			responseData.putRecordSet("RS_COLS_CLCT_CMMS_XCL_LIST", usrListRs);		
+	    } catch ( BizRuntimeException e ) {
+	    	throw e; //시스템 오류가 발생하였습니다.
+	    }
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-11-17 10:14:56
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveInqColsClctCmmsXclSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        Log log = getLog(onlineCtx);
+        IRecordSet rs = requestData.getRecordSet("RS_SLIP_LIST");
+        IDataSet paramData = new DataSet();
+        boolean isOnline = false;
+
+        try {
+        	
+        	DNRColsClctCmmsXclMgmt dNRColsClctCmmsXclMgmt = (DNRColsClctCmmsXclMgmt) lookupDataUnit(DNRColsClctCmmsXclMgmt.class);
+        	
+        	for(int i=0; i<rs.getRecordCount(); i++){
+        		paramData.putFieldMap(rs.getRecordMap(i));
+        		
+        		paramData.putField("XCL_YM", rs.get(i, "XCL_YM"));
+        		paramData.putField("SGI_INSURE_MGMT_NO", rs.get(i,"SGI_INSURE_MGMT_NO"));
+        		
+        		//IRecordSet rsSeq = dNRInsuMxclMgmt.dSInsuMxclSumTotCnt(paramData, onlineCtx).getRecordSet("RS_SUM_LIST");
+        		
+        		//requestData.putField("M_CNT", rsSeq.get(i, "M_CNT"));
+    			//requestData.putField("M_PRC", rsSeq.get(i, "M_AMT"));
+    			
+    			//IRecord record = rs.getRecord(i);
+    			
+    			//record.set("M_CNT", rsSeq.get(i, "M_CNT"));
+        		//record.set("M_PRC", rsSeq.get(i, "M_PRC"));
+    			//record.set("YYYYMM", rs.get(i, "DEBT_XCL_YM"));
+    			
+        		IRecord ir = null;
+        		
+            	// 1. 입력 RS설정
+        		requestData.putField("USERNO", ca.getUserNo());
+        		ir = rs.getRecord(i);
+        		
+        		if("CD".equals(ir.get("ITEM"))){
+        			requestData.putField("SLIP_TYPE", "NR_CD"); //추심수수료_손해배상금(단말파손)
+        		}
+        		if("CR".equals(ir.get("ITEM"))){
+        			requestData.putField("SLIP_TYPE", "NR_CR"); //추심수수료_미납금
+        		}
+        		if("CE".equals(ir.get("ITEM"))){
+        			requestData.putField("SLIP_TYPE", "NR_CE"); //추심수수료_중도해지
+        		}
+        		if("CX".equals(ir.get("ITEM"))){
+        			requestData.putField("SLIP_TYPE", "NR_CX"); //추심수수료_반납지연위약금
+        		}
+        		if("CY".equals(ir.get("ITEM"))){
+        			requestData.putField("SLIP_TYPE", "NR_CY"); //추심수수료_연체가산금
+        		}
+        		if("CN".equals(ir.get("ITEM"))){
+        			requestData.putField("SLIP_TYPE", "NR_CN"); //추심수수료_손해배상금(단말미반납)
+        		}
+        		
+        		//requestData.putField("SLIP_TYPE", "NR_HP");
+
+				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR010");
+			    params.put("TASK_NM", "전표발행");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+			    
+			    
+				log.debug("(((((((((((((((((((((((((((((((fSaveInqInsuMxclSlip() result :"+ result);
+
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.    			
+        	}
+			
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+    
+        return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-11-17 14:22:54
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveInqColsClctCmmsXclSlipDel(IDataSet requestData, IOnlineContext onlineCtx) {
+		 Log log = getLog(onlineCtx);
+		    IDataSet responseData = new DataSet();
+		    CommonArea ca = getCommonArea(onlineCtx);
+		    boolean isOnline = false;
+		    IRecordSet rs = requestData.getRecordSet("RS_SLIP_DELETE");
+		    
+		    try{
+		    	
+		    	for(int i=0; i<rs.getRecordCount(); i++){
+		    		
+		    		//IRecord record = rs.getRecord(i);
+	        		//record.set("YYYY", rs.get(i, "DEBT_XCL_YM"));  
+
+					ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+					DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+					String dsXml = bout.toString("UTF-8");
+
+					// call on-demand batch job
+					HashMap params = new HashMap<String,String>();
+					params.put("TASK_ID", "EPR011");
+				    params.put("TASK_NM", "전표삭제");
+				    params.put("USER_NO", ca.getUserNo());
+				    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");				
+					params.put("POST_SLIP_DATASET", dsXml);
+					log.info("(((((((((((((((((((((((((((((((fSaveInqInsuMxclSlipDel() params :"+ params);
+					String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+				    waitBatchJobEnd(jobExecutionId, 10000);
+				    int result = getJobReturnCode(jobExecutionId);
+				    
+					log.info("(((((((((((((((((((((((((((((((fSaveInqInsuMxclSlipDel() result :"+ result);
+
+				    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다
+		    	
+		    	}
+		    } catch(BizRuntimeException e){
+		    	throw e;
+		    } catch ( Exception e ) {
+				throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+			}
+		
+		    return responseData;
+	}
+  
+}

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRStlMnt">
+	<select id="SCalChrStlLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRStlMnt.SCalChrStlLstPaging 위약금정산정보조회 */
+/* IO: 김혁범,2015-08-31T17:00:46(김혁범,2015-07-27T17:45:25) */
+SELECT  * 
+  FROM (
+         SELECT  ROW_NUMBER() OVER(ORDER BY IA.PEN_POLY_NO ASC) AS ROWNO/*정책번호*/
+         ,IA.*
+          FROM (SELECT  C.EQP_MDL_CD/*모델코드*/
+                       ,B.EQP_MDL_NM/*모델명*/
+                       ,COUNT(*) OVER(PARTITION BY A.CNTRT_NO) AS CNT/*대수(계약번호)*/
+                       ,CASE WHEN   D.PEN_POLY_CL = '01'  THEN   'PE' /*중도해지*/
+                             WHEN   D.PEN_POLY_CL = '02'  THEN   'PX' /*반납지연*/
+                             WHEN   D.PEN_POLY_CL = '03'  THEN   'PY' /*연체*/
+                        ELSE ''
+                        END   AS  PP_PEN_POLY_CL
+                       ,D.PEN_POLY_CL         
+                       ,SUM(A.XCL_AMT) AS DMS_PEN_AMT/*DMS금액*/
+                       ,SUM(A.XCL_UKEY_INV_AMT) AS UKEY_PEN_AMT/*UKEY금액*/
+                       ,SUM(A.XCL_AMT) - SUM(A.XCL_UKEY_INV_AMT) AS DIV_PEN /*차액*/
+                       ,SUM(A.XCL_UKEY_RECV_AMT) AS PEN_RECV_AMT/*수납액*/
+                       ,D.PEN_POLY_NO
+                       ,TO_CHAR(TO_DATE(D.PEN_OCCR_DT),'YYYYMM') AS PEN_OCCR_DT
+                 FROM  TB_ETC_XCL A /*기타정산T*/
+                      ,TB_RENTAL_CNTRT C
+                      ,TB_RENTAL_PEN D
+                      ,TB_EQP_MDL B
+                      ,TB_NR_CNTRT F
+                WHERE  A.CNTRT_NO = C.CNTRT_NO
+                  AND  A.CNTRT_NO = D.CNTRT_NO
+                  AND  A.CNTRT_NO = F.CNTRT_NO
+                  AND  C.EQP_MDL_CD = B.EQP_MDL_CD(+)
+                  AND  F.OP_TYP_CD IN ('07') 
+]]><isNotEqual prepend="AND" property="PP_PEN_POLY_CL" compareValue="%"><![CDATA[              
+	]]><isEqual property="PEN_POLY_CL" compareValue="01"><![CDATA[
+	                   A.XCL_CL_CD = 'PE'
+	]]></isEqual><![CDATA[
+	]]><isEqual property="PEN_POLY_CL" compareValue="02"><![CDATA[
+	                   A.XCL_CL_CD = 'PX'
+	]]></isEqual><![CDATA[
+	]]><isEqual property="PEN_POLY_CL" compareValue="03"><![CDATA[
+	                   A.XCL_CL_CD = 'PY'
+	]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+                       TO_CHAR(TO_DATE(D.PEN_OCCR_DT),'YYYYMM') = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                       C.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[        
+                  GROUP BY C.EQP_MDL_CD,  B.EQP_MDL_NM ,A.CNTRT_NO, D.PEN_POLY_CL, D.PEN_POLY_NO, D.PEN_OCCR_DT   
+              )IA
+       )PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCalChrStlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRStlMnt.SCalChrStlTotCnt 위약금정산정보조회총건수 */
+/* IO: 김혁범,2015-08-31T16:46:28(김혁범,2015-07-27T17:46:14) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  (SELECT  D.PEN_POLY_NO
+           FROM  TB_ETC_XCL A /*기타정산T*/
+                ,TB_RENTAL_CNTRT C
+                ,TB_RENTAL_PEN D
+                ,TB_EQP_MDL B
+                ,TB_NR_CNTRT F
+          WHERE  A.CNTRT_NO = C.CNTRT_NO
+            AND  A.CNTRT_NO = D.CNTRT_NO
+            AND  F.OP_TYP_CD IN ('07')
+            AND  C.EQP_MDL_CD = B.EQP_MDL_CD(+)
+]]><isNotEqual prepend="AND" property="PP_PEN_POLY_CL" compareValue="%"><![CDATA[              
+	]]><isEqual property="PEN_POLY_CL" compareValue="01"><![CDATA[
+	            A.XCL_CL_CD = 'PE'
+	]]></isEqual><![CDATA[
+	]]><isEqual property="PEN_POLY_CL" compareValue="02"><![CDATA[
+	            A.XCL_CL_CD = 'PX'
+	]]></isEqual><![CDATA[
+	]]><isEqual property="PEN_POLY_CL" compareValue="03"><![CDATA[
+	            A.XCL_CL_CD = 'PY'
+	]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+                TO_CHAR(TO_DATE(D.PEN_OCCR_DT),'YYYYMM') = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                C.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[        
+         GROUP BY C.EQP_MDL_CD,  B.EQP_MDL_NM ,A.CNTRT_NO, D.PEN_POLY_CL, D.PEN_POLY_NO, D.PEN_OCCR_DT   
+         )PA]]>
+	</select>
+	<select id="SCalChrStlMgmtDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRStlMnt.SCalChrStlMgmtDtlLst 위약금정산정보상세 */
+/* IO: 김혁범,2015-08-31T17:04:11(김혁범,2015-07-29T13:13:42) */
+SELECT  D.PEN_POLY_NO /*정책번호*/
+       ,F.RENTAL_SER_NO /*일련번호*/
+       ,F.SVC_MGMT_NO/*서비스관리번호*/
+       ,C.EQP_MDL_CD/*모델코드*/
+       ,B.EQP_MDL_NM/*모델명*/
+       ,C.RENTAL_CNTRT_STA_DT /*계약시작일자*/
+       ,C.RENTAL_CNTRT_END_DT /*계약종료일자*/
+       ,F.OP_PROC_DT /*실종료일*/
+       ,COUNT(*) OVER(PARTITION BY A.CNTRT_NO) AS CNT/*대수(계약번호)*/
+       ,CASE WHEN   D.PEN_POLY_CL = '01'  THEN   'PE' /*중도해지*/
+             WHEN   D.PEN_POLY_CL = '02'  THEN   'PX' /*반납지연*/
+             WHEN   D.PEN_POLY_CL = '03'  THEN   'PY' /*연체*/
+        ELSE ''
+        END   AS  PP_PEN_POLY_CL
+       ,D.PEN_POLY_CL         
+       ,A.XCL_AMT AS DMS_PEN_AMT/*DMS금액*/
+       ,A.XCL_UKEY_INV_AMT AS UKEY_PEN_AMT/*UKEY금액*/
+       ,A.XCL_AMT - A.XCL_UKEY_INV_AMT AS DIV_PEN /*차액*/
+       ,A.XCL_UKEY_RECV_AMT AS PEN_RECV_AMT/*수납액*/ 
+  FROM  TB_ETC_XCL A /*기타정산T*/
+       ,TB_RENTAL_CNTRT C
+       ,TB_RENTAL_PEN D
+       ,TB_NR_CNTRT F
+       /*,TB_EQP_CLCT_OBJ E*/
+       ,TB_EQP_MDL B
+ WHERE  A.CNTRT_NO = C.CNTRT_NO
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  A.CNTRT_NO = F.CNTRT_NO
+   /*AND  F.SVC_MGMT_NO = E.SVC_MGMT_NO*/
+   AND  F.OP_TYP_CD IN ('07') 
+   AND  C.EQP_MDL_CD = B.EQP_MDL_CD(+)
+]]><isNotEqual prepend="AND" property="PP_PEN_POLY_CL" compareValue="%"><![CDATA[              
+	]]><isEqual property="PEN_POLY_CL" compareValue="01"><![CDATA[
+	            A.XCL_CL_CD = 'PE'
+	]]></isEqual><![CDATA[
+	]]><isEqual property="PEN_POLY_CL" compareValue="02"><![CDATA[
+	            A.XCL_CL_CD = 'PX'
+	]]></isEqual><![CDATA[
+	]]><isEqual property="PEN_POLY_CL" compareValue="03"><![CDATA[
+	            A.XCL_CL_CD = 'PY'
+	]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[        
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        TO_CHAR(TO_DATE(D.PEN_OCCR_DT),'YYYYMM') = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        C.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

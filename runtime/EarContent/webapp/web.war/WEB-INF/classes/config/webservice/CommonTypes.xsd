@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:types.common" elementFormDefault="qualified">
+    <xsd:simpleType name="DateDt">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern
+                value="[1-9][0-9][0-9][0-9](([0][1|3|5|7|8])([0][1-9]|[1-2][0-9]|[3][0-1])|([0][4|6|9])([0][1-9]|[1-2][0-9]|[3][0])|([0][2])([0][1-9]|[1-2][0-9])|([1][0|2])([0][1-9]|[1-2][0-9]|[3][0-1])|([1][1])([0][1-9]|[1-2][0-9]|[3][0]))" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="DateYm">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern
+                value="[1-9][0-9][0-9][0-9](([0][1|3|5|7|8])([0][1-9]|[1-2][0-9]|[3][0-1])|([0][4|6|9])([0][1-9]|[1-2][0-9]|[3][0])|([0][2])([0][1-9]|[1-2][0-9])|([1][0|2])([0][1-9]|[1-2][0-9]|[3][0-1])|([1][1])([0][1-9]|[1-2][0-9]|[3][0]))" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="DateMd">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern
+                value="(([0][1|3|5|7|8])([0][1-9]|[1-2][0-9]|[3][0-1])|([0][4|6|9])([0][1-9]|[1-2][0-9]|[3][0])|([0][2])([0][1-9]|[1-2][0-9])|([1][0|2])([0][1-9]|[1-2][0-9]|[3][0-1])|([1][1])([0][1-9]|[1-2][0-9]|[3][0]))" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TimeTm">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern
+                value="([2][1-3]|[0][0-9]|[1][0-9])([0-5][0-9])([0-5][0-9])" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TimeHm">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="([2][1-3]|[0][0-9]|[1][0-9])([0-5][0-9])" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TimeMs">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="([0-5][0-9])([0-5][0-9])" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TimestampDs">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern
+                value="[1-9][0-9][0-9][0-9](([0][1|3|5|7|8])([0][1-9]|[1-2][0-9]|[3][0-1])|([0][4|6|9]) ([0][1-9]|[1-2][0-9]|[3][0])|([0][2])([0][1-9]|[1-2][0-9])|([1][0|2])([0][1-9]|[1-2][0-9]|[3][0-1])|([1][1])([0][1-9]|[1-2][0-9]|[3][0]))(([2][1-3]|[0][0-9]|[1][0-9])([0-5][0-9])([0-5][0-9])[0-9]{3})" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TimestampDd">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern
+                value="[1-9][0-9][0-9][0-9](([0][1|3|5|7|8])([0][1-9]|[1-2][0-9]|[3][0-1])|([0][4|6|9]) ([0][1-9]|[1-2][0-9]|[3][0])|([0][2])([0][1-9]|[1-2][0-9])|([1][0|2])([0][1-9]|[1-2][0-9]|[3][0-1])|([1][1])([0][1-9]|[1-2][0-9]|[3][0]))(([2][1-3]|[0][0-9]|[1][0-9])([0-5][0-9])([0-5][0-9])[0-9]{6})" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:complexType name="ResultMessage">
+        <xsd:sequence>
+            <xsd:element name="result">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:enumeration value="OK" />
+                        <xsd:enumeration value="FAIL" />
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+            <xsd:element name="messageId" type="xsd:string" />
+            <xsd:element name="messageName" type="xsd:string" />
+            <xsd:element name="messageReason" type="xsd:string" />
+            <xsd:element name="messageRemark" type="xsd:string" />
+            <xsd:element name="recordSetId" type="xsd:string" />
+            <xsd:element name="recordId" type="xsd:string" />
+            <xsd:element name="fieldId" type="xsd:string" />
+            <xsd:element name="affectedRowCount" type="xsd:integer" />
+            <xsd:element name="exceptionStackTrace" type="xsd:string" />
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="WsRequestContext">
+        <xsd:sequence>
+            <xsd:element name="userId" type="xsd:string" />
+            <xsd:element name="terminalId" type="xsd:string" />
+            <xsd:element name="localeXd" type="xsd:string" />
+            <xsd:element name="branchCode" type="xsd:string" />
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:schema>

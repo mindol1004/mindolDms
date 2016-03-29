@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRReqpClctInRgst">
+	<select id="SInqResqpClctLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prbimbase.db.DPRReqpClctInRgst.SInqResqpClctLstTotCnt 회수대상임대폰조회총건수 */
+/* IO: 이준우,2015-07-16T10:55:29(이준우,2015-07-14T20:56:54) */
+WITH TE AS
+(  
+SELECT '20150701' CLCT_DT, '0002' ASSET_NUM, 'm3' EQP_MDL_CD, 'c4' EQP_COLOR_CD, 'sn0005' EQP_SER_NUM, '6' EQP_IMEI_NUM, '1' CLCT_YN FROM dual 
+UNION ALL SELECT '20150701', '0007', 'm8', 'c7', 'sn0024', '3', '1' FROM dual 
+UNION ALL SELECT '20150705', '0009', 'm5', 'c6', 'sn0046', '6', '' FROM dual 
+UNION ALL SELECT '20150709', '0001', 'm4', 'c2', 'sn0032', '7', '' FROM dual 
+UNION ALL SELECT '20150701', '0008', 'm3', 'c6', 'sn0009', '5', '' FROM dual 
+UNION ALL SELECT '20150709', '0004', 'm4', 'c5', 'sn0013', '4', '' FROM dual 
+UNION ALL SELECT '20150708', '0005', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150718', '0025', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150728', '0015', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150711', '0035', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150712', '0045', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150714', '0055', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+) 
+
+
+
+SELECT  COUNT(*) AS TOTAL_CNT
+
+  FROM  TE]]>
+	</select>
+	<select id="SInqResqpClctLstPaging" ><![CDATA[/* Biz: dms.pr.prbimbase.db.DPRReqpClctInRgst.SInqResqpClctLstPaging 회수대상임대폰조회목록 */
+/* IO: 이준우,2015-07-16T11:37:45(이준우,2015-07-15T12:35:58) */
+WITH TE AS
+(  
+SELECT '20150701' CLCT_DT, '0002' ASSET_NUM, 'm3' EQP_MDL_CD, 'c4' EQP_COLOR_CD, 'sn0005' EQP_SER_NUM, '6' EQP_IMEI_NUM, '1' CLCT_YN FROM dual 
+UNION ALL SELECT '20150701', '0007', 'm8', 'c7', 'sn0024', '3', '1' FROM dual 
+UNION ALL SELECT '20150705', '0009', 'm5', 'c6', 'sn0046', '6', '' FROM dual 
+UNION ALL SELECT '20150709', '0001', 'm4', 'c2', 'sn0032', '7', '' FROM dual 
+UNION ALL SELECT '20150701', '0008', 'm3', 'c6', 'sn0009', '5', '' FROM dual 
+UNION ALL SELECT '20150709', '0004', 'm4', 'c5', 'sn0013', '4', '' FROM dual 
+UNION ALL SELECT '20150708', '0005', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150718', '0025', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150728', '0015', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150711', '0035', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150712', '0045', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+UNION ALL SELECT '20150714', '0055', 'm4', 'c5', 'sn0053', '2', '' FROM dual 
+) 
+
+
+
+SELECT * FROM (
+SELECT  ROWNUM  AS ROWNO
+      ,  CLCT_DT   /*회수일*/
+      , ASSET_NUM      /*자산번호*/
+      , EQP_MDL_CD     /*모델코드*/
+      , EQP_COLOR_CD       /*색상코드*/
+      , EQP_SER_NUM    /*일련번호*/
+      , EQP_IMEI_NUM     /*IMEI*/
+      , CLCT_YN        /*회수여부*/
+  FROM  TE)]]>
+	</select>
+</sqlMap>

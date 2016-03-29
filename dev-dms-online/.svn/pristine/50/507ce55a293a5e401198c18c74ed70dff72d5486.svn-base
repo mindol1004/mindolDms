@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCPrnInfoInqHstMgmt">
+	<insert id="IPrnInfoInqHst" parameterClass="map" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCPrnInfoInqHstMgmt.IPrnInfoInqHst 개인정보조회이력등록 */
+/* IO: 이유미,2014-11-12T15:25:47(김석영,2014-08-11T13:03:03) */
+INSERT
+  INTO  TH_PRN_INFO_INQ_HST   /* 개인정보조회이력     */
+       (
+        INQ_REQ_DTM           /* 조회요청일시           */
+       ,PRN_INFO_INQ_NO         /* 개인정보조회번호     */
+       ,INQ_OBJ_CL_CD         /* 조회대상구분코드    */
+       ,INQ_OBJ_NO            /* 조회대상번호         */
+       ,INQ_REQ_CHNL_CD       /* 조회요청채널코드    */
+       ,INQ_REQ_IDF_NO        /* 조회요청식별번호    */
+       ,FRM_ID                /* 화면ID       */
+       ,PRN_INFO_INQ_ITEM_CD  /* 개인정보조회항목코드 */
+       ,PRN_INFO_INQ_CTT      /* 개인정보조회내용      */
+       ,IP_ADDR               /* IP주소                */
+       ,MAC_ADDR              /* MAC주소              */
+       ,GLB_ID                /* 글로벌ID      */
+       ,FS_REG_USER_ID        /* 최초등록사용자ID  */
+       ,FS_REG_DTM            /* 최초등록일시          */
+       ,LS_CHG_USER_ID        /* 최종변경사용자ID  */
+       ,LS_CHG_DTM            /* 최종변경일시          */
+        )
+VALUES
+       (
+        NVL2(#INQ_REQ_DTM#,TO_DATE(SUBSTR(#INQ_REQ_DTM#, 1, 14),'YYYYMMDDHH24MISS'),SYSDATE)  /* 조회요청일시   */
+       ,SQ01_TH_PRN_INFO_INQ_HST.NEXTVAL  /* 개인정보조회번호     */
+       ,#INQ_OBJ_CL_CD#                   /* 조회대상구분코드    */
+       ,#INQ_OBJ_NO#                      /* 조회대상번호         */
+       ,#INQ_REQ_CHNL_CD#                 /* 조회요청채널코드    */
+       ,#INQ_REQ_IDF_NO#                  /* 조회요청식별번호    */
+       ,#FRM_ID#                          /* 화면ID       */
+       ,#PRN_INFO_INQ_ITEM_CD#            /* 개인정보조회항목코드 */
+       ,#PRN_INFO_INQ_CTT#                /* 개인정보조회내용      */
+       ,#IP_ADDR#                         /* IP주소                */
+       ,#MAC_ADDR#                        /* MAC주소              */
+       ,#GLB_ID#                          /* 글로벌ID      */
+       ,#INQ_REQ_IDF_NO#                  /* 최초등록사용자ID 2014-10-16 USER_NO에서 수정 */
+       ,SYSDATE                           /* 최초등록일시          */
+       ,#INQ_REQ_IDF_NO#                  /* 최종변경사용자ID 2014-10-16 USER_NO에서 수정 */
+       ,SYSDATE                           /* 최종변경일시          */
+        )]]>
+	</insert>
+</sqlMap>

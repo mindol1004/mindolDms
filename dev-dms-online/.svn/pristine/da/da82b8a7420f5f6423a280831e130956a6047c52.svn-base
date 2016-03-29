@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpMgmt">
+	<select id="SEqpMgmtLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMgmt.SEqpMgmtLst 단말기모델조회 */
+/* IO: 이민재,2015-09-22T10:37:18(이민재,2015-09-22T10:20:03) */
+SELECT  EQP_MDL_CD
+       ,EQP_MDL_NM
+       ,DECODE(DEL_YN, 'N', 'Y', 'N') AS USE_YN
+       ,PROD_CL
+       ,MFACT_CD
+       ,BARCD_TYP
+  FROM  TB_EQP_MDL
+ WHERE  DEL_YN = 'N']]>
+	</select>
+	<select id="SEqpMgmtColorLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMgmt.SEqpMgmtColorLst 단말기색상조회 */
+/* IO: 이민재,2015-09-22T15:39:31(이민재,2015-09-22T10:37:52) */
+SELECT  A.CM_CD_ID AS EQP_COLOR_CD
+       ,A.CM_CD_NM AS EQP_COLOR_NM
+  FROM  TB_CM_CD A
+       ,TB_CM_GRP_CD B
+ WHERE  A.CM_GRP_CD_ID = B.CM_GRP_CD_ID
+   AND  A.CM_GRP_CD_ID = 'DMS100']]>
+	</select>
+	<select id="SEqpMgmtTrmsYnLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMgmt.SEqpMgmtTrmsYnLst 단말기전송여부조회 */
+/* IO: 이민재,2015-11-17T18:11:30(이민재,2015-09-22T10:42:27) */
+SELECT  NVL(TRMS_CL,'N') AS TRMS_CL
+       ,DECODE(TRMS_YN ,'X' ,'Y' ,TRMS_YN) AS TRMS_YN
+  FROM  TB_EP_DIS_PROD_DIS 
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EQP_SER_NO = #PROD_SER_NO#]]>
+	</select>
+	<select id="SEqpMgmtDisLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMgmt.SEqpMgmtDisLst 단말기재고조회 */
+/* IO: 이민재,2016-01-05T17:20:37(이민재,2015-09-22T11:00:07) */
+SELECT  PA.*
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD, A.EQP_COLOR_CD, A.EQP_SER_NO) AS ROWNO
+                ,A.EQP_MDL_CD                /* 모델코드 */
+                ,A.EQP_COLOR_CD              /* 모델색상 */ 
+                ,A.EQP_SER_NO AS PROD_SER_NO /* 상품일련번호 */
+                ,A.BF_SER_NO AS EQP_SER_NO   /* 일련번호 */
+                ,A.EQP_ST                    /* 단말기상태 */
+                ,A.INVE_ST                   /* 재고상태 */
+                ,A.HLD_DEALCO_ID             /* 보유거래처ID */
+                ,(SELECT  DEALCO_NM 
+                    FROM  TB_DEALCO 
+                   WHERE  DEALCO_CD = A.HLD_DEALCO_ID) AS HLD_DEALCO_NM /* 보유거래처명 */
+                ,A.UPDATE_COUNT              /* UPDATE COUNT */
+                ,A.CNSL_MGMT_NO              /* 상담관리번호 */
+                ,A.INVE_AMT                  /* 재고금액 */
+                ,B.PROD_CL                   /* 상품구분 */
+                ,B.MFACT_CD                  /* 제조사코드 */
+                ,B.EQP_MDL_NM                /* 모델명 */
+                ,B.LAUNC_DT                  /* 출시일 */
+                ,'01' AS SELL_CHG_HST_CL     /* 구분 */
+                ,'1' AS SALE_QTY             /* 판매수량 */
+                ,'N' AS FIX_PRC_YN           /* 고정가여부 */
+                ,D.SELL_PCOST                /* 판매원가 */ 
+                ,D.SELL_UPRC                 /* 판매단가 */ 
+                ,D.SELL_MRGN                 /* 판매마진 */   
+                ,D.SELL_CMMS                 /* 판매수수료 */
+                ,D.SURTAX                    /* 부가세 */ 
+                ,A.CONF_SELL_AMT             /* 확정판매금액 */
+                ,DECODE(#SELL_TYP#,'04',A.CONF_SELL_AMT,((D.SELL_UPRC)*1)+D.SURTAX) AS SELL_AMT /* 판매가(부가세포함), 확정판매금액 */
+                ,E.PRCH_MGMT_NO              /* 매입관리번호 */
+                ,E.PRCH_AMT                  /* 매입금액 */
+                ,E.IMEI                      /* IMEI */
+                ,NVL(TRMS_CL,'N') AS TRMS_CL
+                ,DECODE(TRMS_YN ,'X' ,'Y' ,TRMS_YN) AS TRMS_YN
+           FROM  TB_EP_DIS_PROD_DIS A
+                ,TB_EQP_MDL B
+                ,(SELECT  A.EQP_MDL_CD 
+                         ,A.EQP_SER_NO
+                         ,A.EQP_COLOR_CD
+                         ,A.SELL_PCOST
+                         ,A.SELL_MRGN
+                         ,A.SELL_CMMS
+                         ,A.SELL_PCOST + A.SELL_MRGN + A.SELL_CMMS AS SELL_UPRC
+                         ,(A.SELL_PCOST) * 1 * 0.1 AS SURTAX
+                    FROM  (SELECT  IA.EQP_MDL_CD 
+                                  ,IA.EQP_SER_NO
+                                  ,IA.EQP_COLOR_CD
+                                  ,'0' AS SELL_MRGN
+                                  ,'0' AS SELL_CMMS
+                                  ,NVL(SUM(DECODE(IA.OCCR_CL, '01', 1, '05', -1) * IA.AMT),0) + IB.HOLD_AMT AS SELL_PCOST
+                             FROM  TB_EP_DIS_PROD_UNIT_PRC IA
+                                  ,TB_EP_DIS_PROD_DIS IB
+                            WHERE  IA.EQP_MDL_CD = IB.EQP_MDL_CD
+                              AND  IA.EQP_SER_NO = IB.EQP_SER_NO
+                              AND  IA.EQP_COLOR_CD = IB.EQP_COLOR_CD
+                              AND  IA.DEL_YN = 'N'
+                              AND  IB.DEL_YN = 'N'
+                            GROUP  BY IA.EQP_MDL_CD, IA.EQP_SER_NO, IA.EQP_COLOR_CD, '0', '0', IB.HOLD_AMT
+                          ) A
+                 ) D
+                ,TB_EP_CST_PRCHS_MGMT E 
+          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+            AND  A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+            AND  A.EQP_SER_NO = D.EQP_SER_NO(+)
+            AND  A.EQP_COLOR_CD = D.EQP_COLOR_CD(+)
+            AND  A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+]]><isNotEmpty property="HLD_DEALCO_ID"><![CDATA[
+            AND  A.HLD_DEALCO_ID = #HLD_DEALCO_ID#
+]]></isNotEmpty><![CDATA[
+            AND  A.DEL_YN = 'N'
+            AND  A.INVE_ST = '01'
+            AND  E.PROGR_ST > '13' 
+  ) PA
+WHERE  ROWNO BETWEEN #firstRowIndex# AND #lastRowIndex#]]>
+	</select>
+	<select id="SEqpMgmtSaleLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMgmt.SEqpMgmtSaleLst 단말기판매상품조회 */
+/* IO: 이민재,2015-11-20T16:21:22(이민재,2015-10-01T13:13:20) */
+SELECT  A.GNRL_SELL_NO
+       ,A.GNRL_SELL_CHG_SEQ
+       ,A.SELL_DTM
+       ,A.SALEPLC
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = A.SALEPLC) AS SALEPLC_NM
+       ,B.SELL_SEQ
+       ,B.SELL_PRC AS SELL_AMT
+       ,B.SELL_PCOST
+       ,B.SELL_MRGN
+       ,B.SELL_CMMS
+       ,B.SURTAX
+       ,'0' AS SELL_PRC_CASH_RECV_AMT
+       ,'0' AS SELL_PRC_CCARD_RECV_AMT_1
+       ,C.CNSL_MGMT_NO
+       ,C.EQP_MDL_CD
+       ,D.EQP_MDL_NM
+       ,C.EQP_COLOR_CD
+       ,C.EQP_SER_NO AS PROD_SER_NO
+       ,C.BF_SER_NO AS EQP_SER_NO
+       ,C.HLD_DEALCO_ID AS SELL_DEALCO_CD
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = C.HLD_DEALCO_ID) AS SELL_DEALCO_CD_NM
+       ,E.PROD_OUT_MGMT_NO                                           /* 출고관리번호 */
+       ,F.XCL_SLIP_NO                                                /* 전표번호 */
+       ,F.XCL_SLIP_ST                                                /* 전표상태 */ 
+  FROM  TB_EP_SAL_GNRL_SALE A 
+       ,TB_EP_SAL_EQUIPMENT_SALE B 
+       ,TB_EP_DIS_PROD_DIS C
+       ,TB_EQP_MDL D
+       ,(SELECT  IB.PROD_OUT_MGMT_NO
+                ,IA.SELL_MGMT_NO
+                ,IA.GNRL_SELL_CHG_SEQ
+                ,IB.EQP_MDL_CD
+                ,IB.EQP_COLOR_CD
+                ,IB.EQP_SER_NO
+           FROM  TB_EP_DIS_PROD_OUT_M IA
+    	        ,TB_EP_DIS_PROD_OUT_DTL_D IB
+          WHERE  IA.PROD_OUT_MGMT_NO = IB.PROD_OUT_MGMT_NO
+            AND  NVL(IB.CNCL_YN, 'N') = 'N'
+    	    AND  IA.DEL_YN = 'N'
+    	    AND  IB.DEL_YN = 'N'
+         ) E
+       ,TB_EP_EQP_SALE F
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO 
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ 
+   AND  B.PROD_SER_NO = C.EQP_SER_NO
+   AND  B.GNRL_SELL_NO = E.SELL_MGMT_NO(+) 	
+   AND  B.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ(+) 
+   AND  B.PROD_SER_NO = E.EQP_SER_NO(+)
+   AND  B.EQP_MDL_CD = E.EQP_MDL_CD(+) 			
+   AND  B.EQP_COLOR_CD = E.EQP_COLOR_CD(+)
+   AND  B.GNRL_SELL_NO = F.GNRL_SELL_NO(+)
+   AND  B.GNRL_SELL_CHG_SEQ = F.GNRL_SELL_CHG_SEQ(+)
+   AND  C.EQP_MDL_CD = D.EQP_MDL_CD 
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ) 
+         						 FROM  TB_EP_SAL_GNRL_SALE 
+        					    WHERE  GNRL_SELL_NO = A.GNRL_SELL_NO
+        					      AND  DEL_YN = 'N')  
+   AND  A.SELL_CNCL_YN = 'N'
+   AND  C.INVE_ST = '02' 
+   AND  C.IN_OUT_CL = '200' 
+   AND  C.IN_OUT_DTL_CL = '205' 
+   AND  A.DEL_YN = 'N' 
+   AND  B.DEL_YN = 'N'
+   AND  C.DEL_YN = 'N'
+   AND  D.DEL_YN = 'N'
+   AND  C.EQP_MDL_CD = #EQP_MDL_CD#
+   AND  C.EQP_SER_NO = #PROD_SER_NO#]]>
+	</select>
+	<select id="SEqpMgmtDisTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPEqpMgmt.SEqpMgmtDisTotCnt 단말기재고조회총건수 */
+/* IO: 이민재,2015-12-30T12:41:55(이민재,2015-12-30T11:30:15) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_EP_DIS_PROD_DIS A
+       ,TB_EQP_MDL B
+       ,(SELECT  A.EQP_MDL_CD 
+                ,A.EQP_SER_NO
+                ,A.EQP_COLOR_CD
+                ,A.SELL_PCOST
+                ,A.SELL_MRGN
+                ,A.SELL_CMMS
+                ,A.SELL_PCOST + A.SELL_MRGN + A.SELL_CMMS AS SELL_UPRC
+                ,(A.SELL_PCOST) * 1 * 0.1 AS SURTAX
+           FROM  (SELECT  IA.EQP_MDL_CD 
+                         ,IA.EQP_SER_NO
+                         ,IA.EQP_COLOR_CD
+                         ,'0' AS SELL_MRGN
+                         ,'0' AS SELL_CMMS
+                         ,NVL(SUM(DECODE(IA.OCCR_CL, '01', 1, '05', -1) * IA.AMT),0) + IB.HOLD_AMT AS SELL_PCOST
+                    FROM  TB_EP_DIS_PROD_UNIT_PRC IA
+                         ,TB_EP_DIS_PROD_DIS IB
+                   WHERE  IA.EQP_MDL_CD = IB.EQP_MDL_CD
+                     AND  IA.EQP_SER_NO = IB.EQP_SER_NO
+                     AND  IA.EQP_COLOR_CD = IB.EQP_COLOR_CD
+                     AND  IA.DEL_YN = 'N'
+                     AND  IB.DEL_YN = 'N'
+                   GROUP  BY IA.EQP_MDL_CD, IA.EQP_SER_NO, IA.EQP_COLOR_CD, '0', '0', IB.HOLD_AMT
+                 ) A
+        ) D
+       ,TB_EP_CST_PRCHS_MGMT E 
+ WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND  A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   AND  A.EQP_SER_NO = D.EQP_SER_NO(+)
+   AND  A.EQP_COLOR_CD = D.EQP_COLOR_CD(+)
+   AND  A.CNSL_MGMT_NO = E.CNSL_MGMT_NO(+)
+]]><isNotEmpty property="HLD_DEALCO_ID"><![CDATA[
+   AND  A.HLD_DEALCO_ID = #HLD_DEALCO_ID#
+]]></isNotEmpty><![CDATA[
+   AND  A.DEL_YN = 'N'
+   AND  A.INVE_ST = '01']]>
+	</select>
+</sqlMap>

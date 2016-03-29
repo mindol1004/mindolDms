@@ -1,0 +1,344 @@
+package dms.nr.nrseabase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+import org.apache.commons.lang.StringUtils;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import fwk.utils.SAPUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]고정자산감가상각</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-03 09:45:25</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class FNRDeprMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRDeprMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-03 09:45:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DEPR_STRD_YM [기준년월]
+	 *	- field : DEPR_TS [감가상각차수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_DEPR_LST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : DEPR_OBJ_AMT [매입가]
+	 *		- field : DEPR_DTL_REM_AMT [잔존가]
+	 *		- field : DEPR_FISCL_ACNTB_AMT [감가상각회계잔존가액]
+	 *		- field : DEPR_DTL_SUM_AMT [감가상각누계액]
+	 *		- field : DEPR_DTL_AMT [감가상각액]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : EQP_PRCH_DT [매입일]
+	 *		- field : DEPR_DTL_TS [회차]
+	 *		- field : ALLWN_AMT [충당부채]
+	 *		- field : ALLWN_SUM_AMT [충당부채누계]
+	 *		- field : EQP_CMP_AMT_TOT [단말기배상액=손해배상액]
+	 *		- field : EQP_JDG_DT [손배처리일시]
+	 *		- field : DEPR_TS [감가상각차수]
+	 * </pre>
+	 */
+	public IDataSet fInqDeprLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+
+		try {
+			// 1. DU lookup
+			DNRDeprMgmt dNRDeprMgmt = (DNRDeprMgmt) lookupDataUnit(DNRDeprMgmt.class);
+			
+			// 2. 전표현황 조회
+			responseData = dNRDeprMgmt.dSDeprSlipLst(requestData, onlineCtx);								
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-03 09:45:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDeprOnlineRecall(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	   
+	    try {
+	    	 
+	    	//IDataSet reqDs = this.fInqDeprLst(requestData, onlineCtx);
+	    	IRecordSet slipRs = requestData.getRecordSet("RS_SLIP_LIST");
+	    	//IRecordSet sumRs = reqDs.getRecordSet("RS_SUM_LIST");
+	    	
+	    	//SAPUtils.debug("(((((((((((((((((((((((((((((((fDeprOnlineRecall() onlineCtx :"+ onlineCtx);
+	    	
+	    	//if( slipRs == null ){
+			//	return responseData;
+			//}
+	    	
+	    	//requestData.putRecordSet(slipRs);
+	    	//requestData.putRecordSet(sumRs);
+		
+			if("01".equals(requestData.getField("IS_RECALL"))){//재집계
+				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "XCR001");
+				params.put("TASK_NM", "감가상각등록");
+			    params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId()); 
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("STD_YM", requestData.getField("DEPR_STRD_YM"));    //감가상각월
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.nr.XCR001");
+				params.put("ONDEMAND_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("XCR001", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 30000);
+			    int result = getJobReturnCode(jobExecutionId);
+			    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+	    			
+	    	}else if("02".equals(requestData.getField("IS_RECALL"))) {//전표생성
+	    		
+ 	    		for(int i=0; i<slipRs.getRecordCount(); i++){
+		    		IRecord ir = slipRs.getRecord(i);
+		    		
+	    			if("10".equals(ir.get("SLIP_ST_CD")) || "20".equals(ir.get("SLIP_ST_CD")) || "30".equals(ir.get("SLIP_ST_CD")) ){
+		    			throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+		    		}
+	    		}
+	    		requestData.putField("SLIP_TYPE", "NR_AC");//전표유형
+	    		requestData.putField("USER_NO", ca.getUserNo());
+	    		//배치로직호출 -- 전표생성
+	    		ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+	    		DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+	    		String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR010");
+			    params.put("TASK_NM", "전표발행");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+		    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+	    	}else if("03".equals(requestData.getField("IS_RECALL"))){ //전표삭제
+			   
+	    		for(int i=0; i<slipRs.getRecordCount(); i++){
+		    		IRecord ir = slipRs.getRecord(i);
+		    		
+		    		if(StringUtils.isEmpty(ir.get("SLIP_ST_CD")) ||"00".equals(ir.get("SLIP_ST_CD")) || "05".equals(ir.get("SLIP_ST_CD"))  ){
+				    	throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+	    	    	}else if( "20".equals(ir.get("SLIP_ST_CD")) || "30".equals(ir.get("SLIP_ST_CD"))){
+	    	    		throw new BizRuntimeException("DMS00087"); //{0} 건은 처리가 불가능 합니다.--승인완료인
+	    	    	}
+	    		}
+	    		//requestData.getRecordSet("RS_SLIP_DELETE").setId("RS_SLIP_DELETE");//SLIP_NO,YYYY들어있음
+	    		IRecordSet rs  = requestData.getRecordSet("RS_SLIP_LIST");
+	    		requestData.putRecordSet("RS_SLIP_DELETE", (IRecordSet) rs.clone());
+	    		requestData.removeRecordSet("RS_SLIP_LIST");
+	    		
+	    		//IRecord totalSum = requestData.getRecordSet("RS_SUM_LIST").getRecord(0);
+	    		
+	    		//requestData.putField("DEPR_AMT", totalSum.get("DEPR_AMT"));//감가상각액총액
+	    		//requestData.putField("ALLWN_AMT", totalSum.get("ALLWN_AMT"));//충당부채액총액
+	    		requestData.putField("SLIP_TYPE", "NR_AC");//전표유형
+	    		requestData.putField("USER_NO", ca.getUserNo());
+	    		
+
+	    		ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+	    		DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+	    		String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR011");
+			    params.put("TASK_NM", "전표삭제");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+		    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+			
+	    	}
+	    		
+	    	
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-03 09:45:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DEPR_STRD_YM [감가상각월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqDeprAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+            // 1. DU lookup
+	    	DNRDeprMgmt dNRDeprMgmt = (DNRDeprMgmt) lookupDataUnit(DNRDeprMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNRDeprMgmt.dInqDeprAllExcel(requestData, onlineCtx); 
+	                
+	        } catch ( BizRuntimeException e ) {
+	            throw e; //시스템 오류가 발생하였습니다.
+	        }
+	
+	    return responseData;
+	}
+
+    /**
+	 *
+	 *
+	 * @author 진병수 (greatjin)
+	 * @since 2015-08-03 09:45:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 *	- field : DEPR_STA_DT [감가상각시작일]
+	 *	- field : DEPR_END_DT [감가상각종료일]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fCalDepr(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try {
+            // 1. DU lookup
+            DNRDeprMgmt dNRDeprMgmt = (DNRDeprMgmt) lookupDataUnit(DNRDeprMgmt.class);
+            
+            // 2. 장덕선
+            responseData = dNRDeprMgmt.dSCalDepr(requestData, onlineCtx);
+//            usrListRs = responseData.getRecordSet("RS_LIST");
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+    
+        return responseData;
+    }
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2015-08-03 09:45:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqDeprDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		
+	    IDataSet dsCnt = new DataSet();
+		IRecordSet usrListRs = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DNRDeprMgmt dNRDeprMgmt = (DNRDeprMgmt) lookupDataUnit(DNRDeprMgmt.class);
+			
+			// 3. TOTAL COUNT DM호출
+			dsCnt = dNRDeprMgmt.dSDeprTotCnt(requestData, onlineCtx);
+			IRecordSet sumRs = dsCnt.getRecordSet("RS_SUM_LIST");
+						
+			String cnt = sumRs.get(0,"TOTAL_CNT");
+			intTotalCnt = Integer.parseInt(cnt);
+			PagenateUtils.setPagenatedParamsToDataSet(requestData);			
+			
+			// 4. 상세 조회 호출
+			IDataSet deprData = dNRDeprMgmt.dSDeprDtlLstPaging(requestData, onlineCtx);
+			usrListRs = deprData.getRecordSet("RS_DEPR_LIST");
+			
+			responseData.putRecordSet("RS_SUM_LIST", sumRs);
+			//PagenateUtils.setPagenatedParamToRecordSet(sumRs, requestData, intTotalCnt);
+			
+			responseData.putRecordSet("RS_DEPR_LIST",usrListRs);
+			PagenateUtils.setPagenatedParamToRecordSet(usrListRs, requestData, intTotalCnt);									
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+  
+}

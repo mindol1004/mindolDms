@@ -1,0 +1,100 @@
+package dms.nr.nrseabase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]고정자산감가상각</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-03 09:45:25</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class FNRDeprMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRDeprMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-03 09:45:25
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DEPR_STRD_YM [기준년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_DEPR_LST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : DEPR_OBJ_AMT [매입가]
+	 *		- field : DEPR_DTL_REM_AMT [잔존가]
+	 *		- field : DEPR_DTL_SUM_AMT [감가상각누계액]
+	 *		- field : DEPR_DTL_AMT [감가상각액]
+	 *		- field : CAPA_CD [용량코드]
+	 *		- field : EQP_PRCH_DT [매입일]
+	 *		- field : DEPR_DTL_TS [회차]
+	 *		- field : ALLWN_AMT [충당부채]
+	 *		- field : ALLWN_SUM_AMT [충당부채누계]
+	 *		- field : EQP_CMP_AMT_TOT [단말기배상액=손해배상액]
+	 *		- field : JDG_APRV_DT [손배처리일시]
+	 * </pre>
+	 */
+	public IDataSet fInqDeprLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet usrListRs = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DNRDeprMgmt dNRDeprMgmt = (DNRDeprMgmt) lookupDataUnit(DNRDeprMgmt.class);
+			
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dNRDeprMgmt.dSDeprTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+			// 3. LISTDM호출
+			responseData = dNRDeprMgmt.dSDeprLstPaging(reqDs, onlineCtx);
+			usrListRs = responseData.getRecordSet("RS_DEPR_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(usrListRs, reqDs, intTotalCnt);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+  
+}

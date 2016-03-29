@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPInveTrnsfMgmt">
+	<select id="SInveTrnsfTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveTrnsfMgmt.SInveTrnsfTotCnt 재고이관조회총건수 */
+/* IO: 이민재,2015-11-19T17:20:52(이민재,2015-11-17T14:17:31) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/ 
+  FROM  TB_EP_DIS_PROD_DIS A
+       ,TB_EQP_MDL B
+ WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND  A.IN_OUT_CL = '400'
+   AND  A.IN_OUT_DTL_CL = '401'
+   AND  A.DEL_YN = 'N'  
+   AND  A.CONF_SELL_DT BETWEEN #CONF_STA_DT# AND #CONF_END_DT#  
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+        UPPER(A.EQP_SER_NO) LIKE UPPER(#PROD_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+        UPPER(A.BF_SER_NO) LIKE UPPER(#EQP_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+        A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInveTrnsfPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveTrnsfMgmt.SInveTrnsfPaging 재고이관조회 */
+/* IO: 이민재,2015-11-19T17:20:41(이민재,2015-11-17T14:17:48) */
+SELECT  PA.*
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.CONF_SELL_DT DESC, A.EQP_MDL_CD, A.EQP_COLOR_CD, A.EQP_SER_NO) AS ROWNO
+                ,A.EQP_MDL_CD                                           /* 모델코드 */
+                ,A.EQP_COLOR_CD                                         /* 모델색상 */ 
+                ,A.EQP_SER_NO AS PROD_SER_NO                            /* 상품일련번호 */
+                ,A.BF_SER_NO AS EQP_SER_NO                              /* 일련번호 */
+                ,A.EQP_ST                                               /* 단말기상태 */
+                ,A.INVE_ST                                              /* 재고상태 */
+                ,A.HLD_DEALCO_ID                                        /* 보유거래처ID */
+                ,(SELECT  DEALCO_NM 
+                    FROM  TB_DEALCO 
+                   WHERE  DEALCO_CD = A.HLD_DEALCO_ID) AS HLD_DEALCO_NM /* 보유거래처명 */
+                ,A.CNSL_MGMT_NO                                         /* 상담관리번호 */
+                ,A.IN_OUT_CL                                            /* 입출고구분 */
+                ,A.IN_OUT_DTL_CL                                        /* 입출고상세구분 */
+                ,A.INVE_AMT                                             /* 재고금액 */
+                ,A.CONF_SELL_DT                                         /* 확정판매일자 */
+                ,B.MFACT_CD                                             /* 제조사코드 */
+                ,B.EQP_MDL_NM                                           /* 모델명 */
+           FROM  TB_EP_DIS_PROD_DIS A
+                ,TB_EQP_MDL B                
+          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+            AND  A.IN_OUT_CL = '400'
+            AND  A.IN_OUT_DTL_CL = '401'
+            AND  A.DEL_YN = 'N'  
+            AND  A.CONF_SELL_DT BETWEEN #CONF_STA_DT# AND #CONF_END_DT#          
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+                 UPPER(A.EQP_SER_NO) LIKE UPPER(#PROD_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+                 UPPER(A.BF_SER_NO) LIKE UPPER(#EQP_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+                 A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+       ) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IInveTrnsfEqpAsset" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveTrnsfMgmt.IInveTrnsfEqpAsset 단말기자산이관 */
+/* IO: 이민재,2015-11-19T17:05:05(이민재,2015-11-18T09:54:16) */
+INSERT
+  INTO  TB_EQP_ASSET                           /* 단말기자산 */ 
+        (
+         ASSET_NO                              /* 자산번호 */
+        ,EQP_MDL_CD                            /* 단말기모델코드 */
+        ,EQP_SER_NO                            /* 일련번호 */
+        ,EQP_IMEI_NO                           /* IMEI */
+        ,EQP_COLOR_CD                          /* 색상코드 */
+        ,EQP_PRCH_AMT                          /* 매입단가 */
+        ,FST_IN_DT                             /* 입고일자 */
+        ,DEL_YN                                /* 삭제여부 */        
+        ,OP_CL_CD                              /* 업무구분코드 */
+        ,INVE_ST_CD                            /* 재고상태코드 */
+        ,EQP_PRCH_DT                           /* 단말기매입일자 */
+        ,FISCL_ACNTB_AMT                       /* 회계장부금액 */
+        ,FISCL_REMPRC                          /* 회계잔존가 */
+        ,FISCL_DEPR_SUM_AMT                    /* 회계감가상각누계금액 */
+        ,FS_REG_USER_ID                        /* 최초등록사용자 */
+        ,FS_REG_DTM                            /* 최종등록일시 */
+        ,LS_CHG_USER_ID                        /* 최종변경사용자ID */
+        ,LS_CHG_DTM                            /* 최종변경일시 */
+        )
+VALUES
+        (
+         #ASSET_NO#                            /* 자산번호 */
+        ,#EQP_MDL_CD#                          /* 단말기모델코드 */
+        ,#EQP_SER_NO#	                       /* 일련번호 */
+        ,#IMEI#	                               /* IMEI */
+        ,#EQP_COLOR_CD#	                       /* 색상코드 */
+        ,#INVE_AMT#	                           /* 매입단가 */
+        ,TO_CHAR(SYSDATE,'YYYYMMDD')           /* 입고일자 */
+        ,'N'	                               /* 삭제여부 */        
+        ,'PR'                                  /* 업무구분코드 */
+        ,'10'                                  /* 재고상태코드 */
+        ,TO_CHAR(SYSDATE,'YYYYMMDD')           /* 단말기매입일자 */
+        ,#INVE_AMT#                            /* 회계장부금액 */
+        ,#INVE_AMT#                            /* 회계잔존가 */
+        ,0                                     /* 회계감가상각누계금액 */
+        ,#USERNO#	                           /* 최초등록사용자ID */
+        ,SYSDATE   	                           /* 최초등록일시 */
+        ,#USERNO#	                           /* 최종변경사용자ID */
+        ,SYSDATE         	                   /* 최종변경일시 */
+        )]]>
+	</insert>
+	<insert id="IInveTrnsfEqpIn" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveTrnsfMgmt.IInveTrnsfEqpIn 단말기입고이관 */
+/* IO: 이민재,2015-11-18T13:10:05(이민재,2015-11-18T10:13:45) */
+INSERT  
+  INTO  TB_EQP_IN
+        (
+         EQP_IN_NO                      /* 입고번호 */
+        ,ASSET_NO                       /* 자산번호 */
+        ,EQP_MDL_CD                     /* 모델코드 */ 
+        ,EQP_SER_NO                     /* 일련번호 */
+        ,EQP_IN_DT                      /* 입고일자 */
+        ,IN_DTL_CD                      /* 입고상세코드 */
+        ,IN_DEALCO_CD                   /* 입고거래처코드 */
+        ,DEL_YN                         /* 삭제여부 */
+        ,FS_REG_USER_ID                 /* 최초등록사용자ID */
+        ,FS_REG_DTM                     /* 최종등록일시 */
+        ,LS_CHG_USER_ID                 /* 최종변경사용자ID */
+        ,LS_CHG_DTM                     /* 최종변경일시 */
+        )
+VALUES
+        ( 
+         #EQP_IN_NO#                    /* 입고번호 */
+        ,#ASSET_NO#                     /* 자산번호 */
+        ,#EQP_MDL_CD#                   /* 모델코드 */ 
+        ,#EQP_SER_NO#                   /* 일련번호 */
+        ,TO_CHAR(SYSDATE,'YYYYMMDD')    /* 입고일자 */
+        ,'50'                           /* 입고상세코드 */
+        ,'11010'                        /* 입고거래처코드 */ 
+        ,'N'                            /* 삭제여부 */
+        ,#USERNO#                       /* 최초등록사용자ID */
+        ,SYSDATE                        /* 최종등록일시 */
+        ,#USERNO#                       /* 최종변경사용자ID */
+        ,SYSDATE                        /* 최종변경일시 */ 
+        )]]>
+	</insert>
+	<select id="SInveTrnsfEqpAssetSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveTrnsfMgmt.SInveTrnsfEqpAssetSeq 단말기자산번호채번 */
+/* IO: 이민재,2015-11-18T10:32:17(이민재,2015-11-18T10:32:11) */
+SELECT  'EA'||LPAD(SQ01_TB_EQP_ASSET.NEXTVAL,10,'0') AS ASSET_NO
+  FROM  DUAL]]>
+	</select>
+	<select id="SInveTrnsfEqpInSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveTrnsfMgmt.SInveTrnsfEqpInSeq 단말기입고번호채번 */
+/* IO: 이민재,2015-11-18T13:08:03(이민재,2015-11-18T13:07:36) */
+SELECT  'EI'||LPAD(SQ01_TB_EQP_IN.NEXTVAL,10,'0') AS EQP_IN_NO
+  FROM  DUAL]]>
+	</select>
+	<insert id="IInveTrnsfXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveTrnsfMgmt.IInveTrnsfXcl 재고이관정산등록 */
+/* IO: 이민재,2015-11-19T17:03:37(이민재,2015-11-19T13:19:37) */
+INSERT  
+  INTO  TB_EP_INVE_MOV_XCL
+        (
+         INVE_MOV_XCL_NO                /* 재고이동정산번호 */
+        ,INVE_MOV_DT                    /* 재고이동일자 */
+        ,CNSL_MGMT_NO                   /* 상담관리번호 */
+        ,PRCH_MGMT_NO                   /* 매입관리번호 */
+        ,EQP_MDL_CD                     /* 모델코드 */
+        ,EQP_SER_NO                     /* 일련번호 */
+        ,INVE_AMT                       /* 재고금액 */
+        ,DEL_YN                         /* 삭제여부 */
+        ,FS_REG_USER_ID                 /* 최초등록사용자ID */
+        ,FS_REG_DTM                     /* 최종등록일시 */
+        ,LS_CHG_USER_ID                 /* 최종변경사용자ID */
+        ,LS_CHG_DTM                     /* 최종변경일시 */ 
+        )
+VALUES
+        ( 
+         #INVE_MOV_XCL_NO#              /* 재고이동정산번호 */
+        ,TO_CHAR(SYSDATE,'YYYYMMDD')    /* 재고이동일자 */
+        ,#CNSL_MGMT_NO#                 /* 상담관리번호 */
+        ,#PRCH_MGMT_NO#                 /* 매입관리번호 */
+        ,#EQP_MDL_CD#                   /* 모델코드 */
+        ,#EQP_SER_NO#                   /* 일련번호 */
+        ,#INVE_AMT#                     /* 재고금액 */ 
+        ,'N'                            /* 삭제여부 */
+        ,#USERNO#                       /* 최초등록사용자ID */
+        ,SYSDATE                        /* 최종등록일시 */
+        ,#USERNO#                       /* 최종변경사용자ID */
+        ,SYSDATE                        /* 최종변경일시 */ 
+        )]]>
+	</insert>
+	<select id="SInveTrnsfXclSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveTrnsfMgmt.SInveTrnsfXclSeq 재고이관정산번호채번 */
+/* IO: 이민재,2015-11-19T13:30:03(이민재,2015-11-19T13:28:18) */
+SELECT  TO_CHAR(LPAD(SQ01_TB_EP_INVE_MOV_XCL.NEXTVAL,15,0)) AS INVE_MOV_XCL_NO
+  FROM  DUAL]]>
+	</select>
+</sqlMap>

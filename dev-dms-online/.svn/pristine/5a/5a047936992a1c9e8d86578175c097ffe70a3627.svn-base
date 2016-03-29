@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPRJdgInveMgmt">
+	<select id="SRJdgPrstListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgInveMgmt.SRJdgPrstListPaging 재감정현황조회 */
+/* IO: 정동현,2015-12-02T10:53:17(정동현,2015-09-01T16:58:04) */
+SELECT PA.* 
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_MGMT_NO )  AS  ROWNO
+               ,NVL(B.PROGR_ST,A.PROGR_ST)  AS  PROGR_ST                                        /* 진행상태   공통코드 :DMS179 */
+               ,A.CNSL_DT                                                                       /* 상담 일자 */
+               ,A.IN_CONF_DT                                                                    /* 입고 확정 일자 */
+               ,NVL(B.CLCT_DT,A.CLCT_DT)  AS  CLCT_DT                                           /* 회수일자 */
+               ,D.PROD_CHRTIC_1                                                                 /* 상품특성 공통코드 :DMS164 */
+               ,D.MFACT_CD                                                                      /* 제조사 공통코드 :DMS101*/
+               ,D.EQP_MDL_CD                                                                    /* 단말기 모델코드 */
+               ,D.EQP_MDL_NM                                                                    /* 단말기 모델명 */
+               ,A.EQP_SER_NO                                                                    /* 단말기 일련 번호 */
+               ,E.HEADQ_NM                                                                      /* 본부 명 */
+               ,E.MKT_TEAM_CD                                                                   /* 마케팅 팀 코드 */
+               ,E.MKT_TEAM_NM                                                                   /* 마케팅 팀 명 */
+               ,C.AFFIL_ORG_ID                                                                  /* 소속조직코드(조직) */
+               ,(SELECT ORG_NM 
+                   FROM TB_EP_BAS_ORG_MGMT 
+                  WHERE ORG_ID = C.AFFIL_ORG_ID AND DEL_YN = 'N')  AS  AFFIL_ORG_NM             /* 소속조직명(조직) */	
+               ,C.AGN_ORG_CD                                                                    /* 대리점 조직 코드 */
+               ,C.AFFIL_AGN                                                                     /* 소속 대리점코드(팀코드) */
+               ,(SELECT DEALCO_NM 
+                   FROM TB_DEALCO 
+                  WHERE DEALCO_CD = C.AFFIL_AGN AND DEL_YN = 'N' )  AS  AFFIL_AGN_NM            /* 소속 대리점명(팀명) */          
+               ,A.CNSL_DEALCO_CD                                                                /* 상담 거래처코드(상담처) */
+               ,C.DEALCO_NM  AS  CNSL_DEALCO_NM                                                 /* 상담 거래처명(상담처) */
+               ,A.DPSTR                                                                         /* 예금주 */
+               ,A.DPSTR_ENPT                                                                    /* 예금주 암호화*/
+               ,A.ONING_DT                                                                      /* 개통일자 */
+               ,NVL(B.SKN_EQP_ST, A.SKN_EQP_ST)  AS  SKN_EQP_ST                                 /* SKN 단말기상태 */
+               ,A.EQP_PRC                                                                       /* 단말기 가격 */	 
+               ,NVL(A.STRD_INCEN,0)  AS  U_STRD_INCEN                                           /* UKEY 기준 인센티브 */
+               ,NVL(A.STRD_INCEN_SCOP_AMT,0)  AS  STRD_INCEN_SCOP_AMT                           /* 기준 인센티브 범위금액 */
+               ,A.SKN_JDG_AMT                                                                   /* SKN 상담금액 */
+               ,NVL(B.EQP_ST, A.EQP_ST)  AS  EQP_ST                                             /* 단말기상태*/
+               ,B.EQP_ST_DTAIL                                                                  /* 단말기 상태 세부 */
+			   ,NVL(B.SELL_GRADE , A.SELL_GRADE)  AS  SALE_EQP_ST   					        /* 판매등급 */
+               ,B.ADJ_AMT                                                                       /* 조정금액 */
+               ,B.PRCH_AMT                                                                      /* 매입금액 */
+               ,NVL(B.STRD_INCEN,0)  AS  STRD_INCEN                                             /* 기준 인센티브 */    
+               ,DECODE(NVL(B.EQP_ST,0)
+                      ,NVL(B.SKN_EQP_ST,0)
+                      ,NVL(B.UKEY_STRD_INCEN_SCOP_AMT,0)
+                      ,NVL(B.STRD_INCEN,0))  AS  DEC_INCV_AMT                                   /* 확정인센티브 UKEY_STRD_INCEN_SCOP_AMT : UKEY 기준 인센티브 범위 금액*/
+               ,B.SKN_SMPL_JDG_DAMT                                                             /* SKN 감정 차액 */
+               ,B.PRCH_AMT + NVL((SELECT  IA.CM_CD_ID          
+                                    FROM  TB_CM_CD IA                                           /* SC_공통코드 */
+                                         ,TB_CM_GRP_CD IB                                       /* SC_공통그룹코드 */
+                                   WHERE  IA.CM_GRP_CD_ID = IB.CM_GRP_CD_ID
+                                     AND  IA.CM_GRP_CD_ID = 'DMS182'
+                                     AND  IA.MGMT_ITEM_CD1 <= A.CNSL_DT
+                                     AND  IA.MGMT_ITEM_CD2 >= A.CNSL_DT),0)  AS  TOT_AMT        /* 총금액, DMS182 :GKEY 유보금*/
+               ,B.SKN_JDG_CL                                                                    /* SKN 감정구분 공통코드 :DMS180*/
+               ,B.SKN_JDG_CL_SUB                                                                /* SKN 감정구분 서브 공통코드 :DMS181*/
+               ,B.EVALCNSLR_SUGG                                                                /* 평가원의견 */
+               ,(SELECT  USER_NM
+                   FROM  TB_USER 
+                  WHERE  USER_NO = B.INPT )  AS  INPT                                           /* 검수자 */ 
+               ,B.TLY_DT                                                                        /* 검수일자 */
+               ,B.SKN_PROC_YN                                                                   /* SKN 처리여부 */
+               ,B.SKN_PROC_DT                                                                   /* SKN 처리일자 */
+               ,A.CNSL_MGMT_NO                                                                  /* 상담 관리 번호 */
+               ,DECODE(A.PAY_MTHD,'01',A.PAY_DT,'')  AS  OLDEQ_PAY_DT_1                         /* 송금일자        PAY_MTHD : 지급방법 */
+               ,DECODE(A.PAY_MTHD,'02',A.PAY_DT,'')  AS  OLDEQ_PAY_DT_2                         /* 요금공제일자    PAY_DT : 지급일자 */
+               ,NVL(B.BOX_NO, A.BOX_NO)  AS  BOX_NO                                             /* 박스 번호*/
+               ,NVL(B.IMEI, A.IMEI)  AS  IMEI                                                   /* IMEI */
+               ,NVL(A.PRE_DC_CL,'N')  AS  PRE_DC_CL                                             /* 선할인구분 */
+			   ,(SELECT  USER_NM
+                   FROM  TB_USER 
+                  WHERE  USER_NO = A.IN_PROC_CHRGR_ID )  AS  IN_USER_NM                         /* 입고처리담당자*/
+			   ,(SELECT  USER_NM
+                   FROM  TB_USER 
+                  WHERE  USER_NO = NVL(B.BOX_PROC_CHRGR,A.BOX_PROC_CHRGR) 
+                 )  AS  BOX_PROC_CHRGR                                                          /* 박스처리담당자*/  
+               ,SUBSTR(NVL(B.BOX_PROC_DT,A.BOX_PROC_DT),0,8)  AS  BOX_DT                        /* 박스처리일자 */
+               ,DECODE(B.SCRN_AFIMG_YN,'A','강','B','약','')  AS  SCRN_AFIMG_YN                   /* 화면잔상여부 */
+               ,B.CMCT_CO                                                                       /* 통신사 */
+               ,NVL(B.SCRB_MTHD,'A')  AS  SCRB_MTHD                                             /* 가입방법 */
+               ,NVL(B.PRCH_CHG_DAMT_AMT,0) AS PRCH_CHG_DAMT_AMT                                 /* 매입 변경 차액 금액 */
+               ,SUBSTR(F.PWR_ST,0,2)  AS  PWR_ST                                                /* 전원불량 공통코드:DMS199*/
+               ,SUBSTR(F.RECG_ST,0,2)  AS  RECG_ST                                              /* 충전불량 공통코드:DMS200 */
+               ,SUBSTR(F.USIM_ST,0,2)  AS  USIM_ST                                              /* USIM불량 공통코드:DMS201*/
+               ,SUBSTR(F.SBELL_ST,0,2)  AS  SBELL_ST                                            /* 벨소리불량 공통코드:DMS202 */
+               ,SUBSTR(F.VIBR_ST,0,2)  AS  VIBR_ST                                              /* 진동불량 공통코드:DMS203 */
+               ,SUBSTR(F.SPK_ST,0,2)  AS  SPK_ST                                                /* 스피커불량 공통코드:DMS204 */     
+               ,SUBSTR(F.ILRM_SENSOR_ST,0,2)  AS  ILRM_SENSOR_ST                                /* 조도센서불량 공통코드:DMS205 */
+               ,SUBSTR(F.GRCP_ST,0,2)  AS  GRCP_ST                                              /* 자이로센서불량 공통코드:DMS206 */
+               ,SUBSTR(F.APRC_SENSOR_ST,0,2)  AS  APRC_SENSOR_ST                                /* 근접센서불량 공통코드:DMS207 */
+               ,SUBSTR(F.CAMR_ST,0,2)  AS  CAMR_ST                                              /* 카메라불량 공통코드:DMS208 */
+               ,SUBSTR(F.BATER_ST,0,2)  AS  BATER_ST                                            /* B/T불량 공통코드:DMS209 */
+               ,SUBSTR(F.AFIMG_ST,0,2)  AS  AFIMG_ST                                            /* 잔상불량 공통코드:DMS210 */
+               ,SUBSTR(F.TOUCH_ST,0,2)  AS  TOUCH_ST                                            /* 터치불량 공통코드:DMS211 */
+               ,SUBSTR(F.WIFI_ST,0,2)  AS  WIFI_ST                                              /* WIFI불량 공통코드:DMS212 */
+               ,SUBSTR(F.STAIN_ST,0,2)  AS  STAIN_ST                                            /* 얼룩 공통코드:DMS213 */
+               ,SUBSTR(F.BRUI_ST,0,2)  AS  BRUI_ST                                              /* 멍 공통코드:DMS214 */
+               ,SUBSTR(F.SQUS_ST,0,2)  AS  SQUS_ST                                              /* 눌림 공통코드:DMS215 */
+               ,SUBSTR(F.LQFD_INFLO_ST,0,2)  AS  LQFD_INFLO_ST                                  /* 액상유입 공통코드:DMS216 */
+               ,SUBSTR(F.LED_ST,0,2)  AS  LED_ST                                                /* LED파손 공통코드:DMS217 */
+               ,SUBSTR(F.BUTN_ST,0,2)  AS  BUTN_ST                                              /* 버튼불량 공통코드:DMS218 */
+               ,SUBSTR(F.BOTM_TOUCH_ST,0,2)  AS  BOTM_TOUCH_ST                                  /* 하단터치메뉴 공통코드:DMS219 */
+               ,SUBSTR(F.BODY_ST,0,2)  AS  BODY_ST                                              /* 몸체미세휨 공통코드:DMS220 */
+               ,SUBSTR(F.DMB_ST,0,2)  AS  DMB_ST                                                /* DMB안테나손상 공통코드:DMS221 */
+               ,SUBSTR(F.LCGLS_ST,0,2)  AS  LCGLS_ST                                            /* 액정유리 공통코드:DMS222 */
+               ,SUBSTR(F.CHIP_ST,0,2)  AS  CHIP_ST                                              /* 이나감 공통코드:DMS223 */
+			   ,SUBSTR(F.FGSC_ST,0,2)  AS  FGSC_ST                                              /* 지문인식 공통코드:DMS261 */
+               ,SUBSTR(F.CAMR_WINDO_ST,0,2)  AS  CAMR_WINDO_ST                                  /* 카메라윈도우손상 공통코드:DMS260 */
+               ,SUBSTR(F.EDGE_ST,0,2)  AS  EDGE_ST                                              /* 테두리및몸체 공통코드:DMS224 */
+               ,SUBSTR(F.BACK_ST,0,2)  AS  BACK_ST                                              /* 매입불가 공통코드:DMS225 */
+               ,DECODE(F.BACK_CL,1,'Y','')  AS  BACK_CL                                         /* 매입불가여부 */
+               ,F.EQP_ST_RMK                                                                    /* 대표오감정사유 */                  
+          FROM  TB_EP_CST_CONSULT_MGMT  A
+               ,TB_EP_CST_PRCHS_MGMT  B
+               ,TB_DEALCO  C
+               ,TB_EQP_MDL  D
+               ,TB_EP_BAS_DEAL_CO_MARKETING  E 
+               ,TB_EP_CST_SALE_EQP  F
+         WHERE  A.CNSL_DEALCO_CD = C.DEALCO_CD
+           AND  C.EFF_STA_DT <= A.CNSL_DT                                                       /* 유효시작일자 */
+           AND  C.EFF_END_DT >= A.CNSL_DT                                                       /* 유효종료일자 */
+           AND  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+           AND  A.EQP_MDL_CD = D.EQP_MDL_CD 
+           AND  C.UKEY_AGN_CD  = E.UKEY_AGN_CD(+)
+           AND  A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+           AND  A.DEL_YN = 'N'
+           AND  B.DEL_YN(+) = 'N'
+           AND  C.DEL_YN = 'N'
+           AND  D.DEL_YN = 'N' 
+           AND  E.DEL_YN(+) = 'N' 
+           AND  NVL(E.STA_DT,A.CNSL_DT) <= A.CNSL_DT
+           AND  NVL(E.END_DT,A.CNSL_DT) >= A.CNSL_DT 
+           AND  A.SKN_CL = 'Y'
+           AND  B.SKN_CL(+) = 'Y' 
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[
+           AND  A.CNSL_DT BETWEEN #FROM_DT# AND #TO_DT#                                         /* 상담일자 */
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[
+           AND  B.TLY_DT BETWEEN #FROM_DT# AND #TO_DT#                                          /* 검수일자 */
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="3"><![CDATA[
+           AND  B.SKN_PROC_DT BETWEEN #FROM_DT# AND #TO_DT#                                     /* 검수확인일*/
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="4"><![CDATA[
+           AND  A.IN_CONF_DT BETWEEN #FROM_DT# AND #TO_DT#                                      /* 입고일자 */
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="5"><![CDATA[ 
+           AND  A.CLCT_DT BETWEEN #FROM_DT# AND #TO_DT#                                         /* 회수일자 */
+]]></isEqual><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN_CD"><![CDATA[
+                C.AFFIL_AGN = #AFFIL_AGN_CD#                                                    /* 소속 대리점코드(팀코드) */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[
+                A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#                                             /* 상담 거래처코드(상담처) */
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                A.EQP_MDL_CD = #EQP_MDL_CD#                                                     /* 단말기 모델코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+                A.EQP_SER_NO = #EQP_SER_NO#                                                     /* 단말기 일련번호 */
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[
+                A.DPSTR_ENPT = #DPSTR_ENPT#                                                     /* 고객명 암호화*/
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[
+                A.CNSL_MGMT_NO = #CNSL_MGMT_NO#                                                 /* 상담관리번호 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="PRE_DC_CL" compareValue="A"><![CDATA[
+]]><isEqual property="SRH_GB" compareValue="1"><![CDATA[
+           AND  NVL(A.PRE_DC_CL,'N') = #PRE_DC_CL#                                              /* 선할인 구분 */
+]]></isEqual><![CDATA[
+]]><isEqual property="SRH_GB" compareValue="2"><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="N"><![CDATA[
+           AND  A.ASIANA_CARD_NO IS NULL                                                        /* 아시아나 카드 여부 */
+]]></isEqual><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="Y"><![CDATA[
+           AND  A.ASIANA_CARD_NO IS NOT NULL                                                    /* 아시아나 카드 여부 */
+]]></isEqual><![CDATA[
+]]></isEqual><![CDATA[
+]]><isEqual property="SRH_GB" compareValue="3"><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="N"><![CDATA[
+           AND  NVL(B.SCRB_MTHD,'A') != 'T'                                                     /* 클럽T 여부 */
+]]></isEqual><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="Y"><![CDATA[
+           AND  NVL(B.SCRB_MTHD,'A') = 'T'                                                      /* 클럽T 여부 */
+]]></isEqual><![CDATA[
+]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="SCRB_MTHD" compareValue="%"><![CDATA[
+           AND  NVL(A.SCRB_MTHD,'A') = #SCRB_MTHD#                                              /* 가입방법 */
+]]></isNotEqual><![CDATA[
+        )PA
+  WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SRJdgPrstListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgInveMgmt.SRJdgPrstListTotCnt 재감정현황총건수 */
+/* IO: 정동현,2015-12-02T10:47:54(정동현,2015-09-01T11:14:37) */
+SELECT COUNT(*)  AS  TOTAL_CNT
+  FROM  TB_EP_CST_CONSULT_MGMT  A
+       ,TB_EP_CST_PRCHS_MGMT  B
+       ,TB_DEALCO  C
+       ,TB_EQP_MDL  D
+       ,TB_EP_BAS_DEAL_CO_MARKETING E
+       ,TB_EP_CST_SALE_EQP  F
+ WHERE  A.CNSL_DEALCO_CD = C.DEALCO_CD
+   AND  C.EFF_STA_DT <= A.CNSL_DT                                                       /* 유효시작일자 */
+   AND  C.EFF_END_DT >= A.CNSL_DT                                                       /* 유효종료일자 */
+   AND  A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+   AND  A.EQP_MDL_CD = D.EQP_MDL_CD 
+   AND  C.UKEY_AGN_CD  = E.UKEY_AGN_CD(+)
+   AND  A.CNSL_MGMT_NO = F.CNSL_MGMT_NO(+)
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN(+) = 'N'
+   AND  C.DEL_YN = 'N'
+   AND  D.DEL_YN = 'N' 
+   AND  E.DEL_YN(+) = 'N' 
+   AND  NVL(E.STA_DT,A.CNSL_DT) <= A.CNSL_DT
+   AND  NVL(E.END_DT,A.CNSL_DT) >= A.CNSL_DT 
+   AND  A.SKN_CL = 'Y'
+   AND  B.SKN_CL(+) = 'Y' 
+]]><isEqual property="DT_GB" compareValue="1"><![CDATA[
+   AND  A.CNSL_DT BETWEEN #FROM_DT# AND #TO_DT#                                         /* 상담일자 */
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="2"><![CDATA[
+   AND  B.TLY_DT BETWEEN #FROM_DT# AND #TO_DT#                                          /* 검수일자 */
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="3"><![CDATA[
+   AND  B.SKN_PROC_DT BETWEEN #FROM_DT# AND #TO_DT#                                     /* 검수확인일*/
+]]></isEqual><![CDATA[
+]]><isEqual property="DT_GB" compareValue="4"><![CDATA[
+   AND  A.IN_CONF_DT BETWEEN #FROM_DT# AND #TO_DT#                                      /* 입고일자 */
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DT_GB" compareValue="5"><![CDATA[ 
+   AND  A.CLCT_DT BETWEEN #FROM_DT# AND #TO_DT#                                         /* 회수일자 */
+]]></isEqual><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN_CD"><![CDATA[
+        C.AFFIL_AGN = #AFFIL_AGN_CD#                                                    /* 소속 대리점코드(팀코드) */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[
+        A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#                                             /* 상담 거래처코드(상담처) */
+]]></isNotEmpty><![CDATA[	
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#                                                     /* 단말기 모델코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+        A.EQP_SER_NO = #EQP_SER_NO#                                                     /* 단말기 일련번호 */
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[
+        A.DPSTR_ENPT = #DPSTR_ENPT#                                                     /* 고객명 암호화*/
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[
+        A.CNSL_MGMT_NO = #CNSL_MGMT_NO#                                                 /* 상담관리번호 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="PRE_DC_CL" compareValue="A"><![CDATA[
+]]><isEqual property="SRH_GB" compareValue="1"><![CDATA[
+   AND  NVL(A.PRE_DC_CL,'N') = #PRE_DC_CL#                                              /* 선할인 여부 */
+]]></isEqual><![CDATA[
+]]><isEqual property="SRH_GB" compareValue="2"><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="N"><![CDATA[
+   AND  A.ASIANA_CARD_NO IS NULL                                                        /* 아시아나 여부 */
+]]></isEqual><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="Y"><![CDATA[
+   AND  A.ASIANA_CARD_NO IS NOT NULL                                                    /* 아시아나 여부 */
+]]></isEqual><![CDATA[
+]]></isEqual><![CDATA[
+]]><isEqual property="SRH_GB" compareValue="3"><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="N"><![CDATA[
+   AND  NVL(B.SCRB_MTHD,'A') != 'T'                                                     /* 클럽T 여부 */
+]]></isEqual><![CDATA[
+]]><isEqual property="PRE_DC_CL" compareValue="Y"><![CDATA[
+   AND  NVL(B.SCRB_MTHD,'A') = 'T'                                                      /* 클럽T 여부 */
+]]></isEqual><![CDATA[
+]]></isEqual><![CDATA[
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="SCRB_MTHD" compareValue="%"><![CDATA[
+   AND  NVL(A.SCRB_MTHD,'A') = #SCRB_MTHD#                                              /* 가입방법 */
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SRJdgInveCnclPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgInveMgmt.SRJdgInveCnclPaging 재감정재고취소목록페이징조회 */
+/* IO: 김윤환,2015-09-21T16:52:14(김윤환,2015-09-21T10:11:41) */
+SELECT
+	   PA.*
+  FROM (
+		 SELECT 
+		 		ROW_NUMBER() OVER(ORDER BY A.CNSL_MGMT_NO ) AS ROWNO
+				,A.CNSL_MGMT_NO 							/* 상담관리번호 */
+				,A.EQP_SER_NO 								/* 단말기 일련 번호 */
+				,A.EQP_MDL_CD 								/* 단말기 모델 코드 */     
+				,D.EQP_MDL_NM 								/* 단말기 모델 명 */     
+				,A.EQP_COLOR_CD 							/* 단말기 색상 코드 */     
+				,A.SKN_CL 									/* SKN 구분 */
+				,A.PROGR_ST     
+				,A.SKN_PROC_DT  							/* SKN 처리 일자 */
+				,C.EQP_SER_NO AS G_EQP_SER_NO    
+		   FROM TB_EP_CST_PRCHS_MGMT A
+				,TB_EP_DIS_DIS B
+				,TB_EP_DIS_PROD_DIS C
+				,TB_EQP_MDL D
+		  WHERE A.EQP_MDL_CD = D.EQP_MDL_CD
+			AND A.EQP_MDL_CD = B.EQP_MDL_CD
+			AND A.EQP_SER_NO = B.EQP_SER_NO
+			AND A.EQP_COLOR_CD = B.EQP_COLOR_CD
+			AND B.EQP_MDL_CD = C.EQP_MDL_CD
+			AND B.EQP_SER_NO = C.BF_SER_NO
+			AND B.EQP_COLOR_CD = C.EQP_COLOR_CD
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[			
+			AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[			
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+		    AND A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[			
+			AND A.PROGR_ST = '35' 
+			AND C.IN_OUT_CL = '100'  						/* 입고 출고 구분 */
+			AND C.IN_OUT_DTL_CL = '114'  					/* 입고 출고 상세 구분 */
+			AND A.SKN_CL = 'Y'
+			AND A.DEL_YN = 'N'
+			AND B.DEL_YN = 'N'
+			AND C.DEL_YN = 'N'
+			AND D.DEL_YN = 'N'
+	   ) PA
+ WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SRJdgInveCnclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgInveMgmt.SRJdgInveCnclTotCnt 재감정재고취소목록총건수 */
+/* IO: 김윤환,2015-09-21T16:56:16(김윤환,2015-09-21T10:12:53) */
+SELECT 
+	   COUNT(*) AS TOTAL_CNT 				/*전체건수*/
+  FROM TB_EP_CST_PRCHS_MGMT A
+	   ,TB_EP_DIS_DIS B
+	   ,TB_EP_DIS_PROD_DIS C
+	   ,TB_EQP_MDL D
+ WHERE A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND A.EQP_SER_NO = B.EQP_SER_NO
+   AND A.EQP_COLOR_CD = B.EQP_COLOR_CD
+   AND B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND B.EQP_SER_NO = C.BF_SER_NO
+   AND B.EQP_COLOR_CD = C.EQP_COLOR_CD
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[			
+   AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[			
+]]><isNotEmpty property="BOX_NO"><![CDATA[
+   AND A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[   
+   AND A.PROGR_ST = '35' 
+   AND C.IN_OUT_CL = '100'  				/* 입고 출고 구분 */
+   AND C.IN_OUT_DTL_CL = '114'  			/* 입고 출고 상세 구분 */
+   AND A.SKN_CL = 'Y'
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN = 'N']]>
+	</select>
+	<update id="DTbEpDisDis" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgInveMgmt.DTbEpDisDis 재고삭제 */
+/* IO: 김윤환,2015-09-21T10:14:07(김윤환,2015-09-21T10:14:07) */
+UPDATE TB_EP_DIS_DIS  
+   SET DEL_YN      = 'Y'
+       ,UPDATE_COUNT     = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #USER_ID#
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND LAST_IN_OUT_DT = #SKN_PROC_DT# 		/* 최종 입고 출고 일자 */
+   AND IN_OUT_CL = '200'  					/* 입고 출고 구분 */
+   AND IN_OUT_DTL_CL = '213'  				/* 입고 출고 상세 구분 */]]>
+	</update>
+	<update id="DTbEpDisDisAmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgInveMgmt.DTbEpDisDisAmt 재고금액삭제 */
+/* IO: 김윤환,2015-09-21T10:14:55(김윤환,2015-09-21T10:14:55) */
+UPDATE TB_EP_DIS_DIS_AMT 
+   SET DEL_YN      = 'Y'
+       ,UPDATE_COUNT     = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #USER_ID#
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND OCCR_DT = #SKN_PROC_DT#  			/* 발생일자 */]]>
+	</update>
+	<update id="DTbEpDisProdDis" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgInveMgmt.DTbEpDisProdDis 상품재고삭제 */
+/* IO: 김윤환,2015-09-21T10:15:49(김윤환,2015-09-21T10:15:49) */
+UPDATE TB_EP_DIS_PROD_DIS
+   SET DEL_YN      = 'Y'
+       ,UPDATE_COUNT     = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #USER_ID#
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND BF_SER_NO = #EQP_SER_NO# 				/* 이전 일련 번호 */
+   AND IN_OUT_CL = '100'  						/* 입고 출고 구분 */
+   AND IN_OUT_DTL_CL = '114'  					/* 입고 출고 상세 구분 */]]>
+	</update>
+	<update id="UTbEpCstPrchsProgrSt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPRJdgInveMgmt.UTbEpCstPrchsProgrSt 매입관리진행상태수정 */
+/* IO: 김윤환,2015-09-21T10:17:59(김윤환,2015-09-21T10:17:59) */
+UPDATE TB_EP_CST_PRCHS_MGMT
+   SET PROGR_ST = '13'  					/* 진행상태 */
+       ,SKN_PROC_YN = '' 					/* SKN 처리 여부 */
+       ,SKN_PROC_DT = '' 					/* SKN 처리 일자 */
+ WHERE CNSL_MGMT_NO = #CNSL_MGMT_NO#  		/* 상담관리번호 */
+   AND DEL_YN = 'N'
+   AND SKN_CL = 'Y' 						/* SKN 구분 */]]>
+	</update>
+</sqlMap>

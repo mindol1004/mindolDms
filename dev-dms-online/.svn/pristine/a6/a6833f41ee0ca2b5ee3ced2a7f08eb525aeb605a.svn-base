@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPREqpTransportMgmt">
+	<select id="SEqpTransInfoLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpTransportMgmt.SEqpTransInfoLstTotCnt 단말기운송정보조회총건수 */
+/* IO: 이준우,2015-08-05T13:06:45(이준우,2015-07-14T20:56:54) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_WAYBIL B
+       ,TB_EQP_MDL C
+       ,TB_DEALCO D
+ WHERE  A.EQP_MDL_CD = C.EQP_MDL_CD (+)
+   AND  A.ASSET_NO = B.ASSET_NO
+   AND  B.HDLVCO_CD = D.DEALCO_CD (+)
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N' 
+]]><isNotEmpty property="ST_DT"><![CDATA[
+   AND  B.EQP_RCV_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT"><![CDATA[
+   AND  B.EQP_RCV_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ST_DT_SEND"><![CDATA[
+   AND  B.HDLV_SND_DT >= #ST_DT_SEND#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT_SEND"><![CDATA[
+   AND  B.HDLV_SND_DT <= #ED_DT_SEND#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+   AND  B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+   AND  B.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="WAYBIL_NO"><![CDATA[
+   AND  B.WAYBIL_NO = #WAYBIL_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HDLV_SNDR_NM"><![CDATA[
+   AND  B.HDLV_SNDR_NM = #HDLV_SNDR_NM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+   AND  A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SEqpTransInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpTransportMgmt.SEqpTransInfoLstPaging 단말기운송정보조회목록 */
+/* IO: 이준우,2015-11-25T10:59:54(이준우,2015-07-15T12:35:58) */
+SELECT *
+  FROM (SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD, A.EQP_SER_NO, B.EQP_RCV_DT, A.ASSET_NO ) AS ROWNO
+               ,A.OP_CL_CD						/*업무구분코드*/
+			   ,A.INVE_ST_CD					/*재고상태코드*/
+			   ,A.FST_IN_DT						/*최초입고일자*/
+			   ,A.EQP_PRCH_DT AS PRCH_DT 		/*단말기매입일자*/
+			   ,A.DEL_YN	
+			   ,A.EQP_PRCH_AMT AS PRCH_AMT      /*단말기매입금액*/
+               ,A.LAST_EXPART_DT      			/*최종교품일자*/
+               ,A.LAST_IN_OUT_NO               /*최종입출고번호*/       
+               ,A.EQP_LOSS_DT AS LOSS_DT       /*단말기분실일자*/
+               ,A.BOX_NO       					/*박스번호*/
+               ,A.EQP_COLOR_CD                 /*단말기색상코드*/  
+               ,A.EQP_IMEI_NO                  /*단말기IMEI번호*/   
+               ,DECODE (SUBSTR (A.LAST_IN_OUT_NO, 1,2), 'EI', A.LAST_IN_OUT_NO, '') AS EQP_IN_NO	               /*입고번호*/	               /*입고번호*/
+               ,B.ASSET_NO                     /*자산번호*/
+               ,B.EQP_WAYBIL_NO 				/*단말기운송장번호*/
+               ,B.EQP_MDL_CD
+               ,B.EQP_SER_NO
+               ,B.EQP_RCV_DT					/*단말기수령일자*/
+               ,B.WAYBIL_NO						/*단말기운송장번호*/
+               ,B.HDLVCO_CD						/*택배사코드*/
+               ,B.HDLV_AMT						/*택배금액*/
+               ,B.HDLV_SNDR_NM					/*택배발송자명*/
+               ,B.HDLV_SND_DT					/*택배발송일자*/
+               ,B.HDLV_SND_RSN					/*택배발송사유*/
+               ,B.EQP_RCV_DT AS IN_SCHD_DT     /*입고예정일자 --회수일자*/
+               ,C.EQP_MDL_NM		           /*단말기모델명*/               
+               ,D.DEALCO_NM AS HDLVCO_NM		/*택배사*/
+               ,'' AS EQP_CLCT_OBJ_NO          /*단말기입고대상번호*/         
+               ,'' AS EQP_IN_DT                /*입고일자 */   
+               ,'' AS AGN_CD                   /*대리점코드 */
+               ,'' AS RTN_REG_DT               /*반납등록일자 */             
+               ,'' AS IN_OBJ_DTL_CD            /*회수구분코드*/                
+               ,(SELECT  MAX(E.EQP_OUT_NO)
+                   FROM  TB_EQP_OUT E 
+                  WHERE  E.ASSET_NO = A.ASSET_NO
+                    AND  E.DEL_YN = 'N') AS EQP_OUT_NO /* 출고번호 */
+               ,'' AS IN_DTL_CD                /* 입고상태코드 */
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_WAYBIL B
+               ,TB_EQP_MDL C
+               ,TB_DEALCO D
+         WHERE  A.EQP_MDL_CD = C.EQP_MDL_CD (+)
+           AND  A.ASSET_NO = B.ASSET_NO
+           AND  B.HDLVCO_CD = D.DEALCO_CD (+)
+           AND  A.DEL_YN = 'N'
+           AND  B.DEL_YN = 'N' 
+]]><isNotEmpty property="ST_DT"><![CDATA[
+           AND  B.EQP_RCV_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT"><![CDATA[
+           AND  B.EQP_RCV_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ST_DT_SEND"><![CDATA[
+           AND  B.HDLV_SND_DT >= #ST_DT_SEND#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT_SEND"><![CDATA[
+           AND  B.HDLV_SND_DT <= #ED_DT_SEND#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[
+           AND  B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[
+           AND  B.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="WAYBIL_NO"><![CDATA[
+           AND  B.WAYBIL_NO = #WAYBIL_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="HDLV_SNDR_NM"><![CDATA[
+           AND  B.HDLV_SNDR_NM = #HDLV_SNDR_NM#         /*택배발송자명*/
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%"><![CDATA[
+           AND  A.INVE_ST_CD = #INVE_ST_CD#              /*재고상태코드*/
+]]></isNotEqual><![CDATA[
+        )
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<update id="UEqpTransInfo" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpTransportMgmt.UEqpTransInfo 단말기운송정보수정 */
+/* IO: 이준우,2015-11-25T10:54:03(이준우,2015-07-17T14:51:17) */
+UPDATE  TB_EQP_WAYBIL
+   SET  ASSET_NO = #ASSET_NO#
+       ,EQP_MDL_CD = #EQP_MDL_CD#
+       ,EQP_SER_NO = #EQP_SER_NO#
+       ,EQP_RCV_DT = #EQP_RCV_DT#			/*단말기수령일자*/
+       ,WAYBIL_NO = #WAYBIL_NO#				/*단말기운송장번호*/
+       ,HDLVCO_CD = #HDLVCO_CD#				/*택배사코드*/
+       ,HDLV_AMT = #HDLV_AMT#				/*택배금액*/
+       ,HDLV_SNDR_NM = #HDLV_SNDR_NM#		/*택배발송자명*/
+       ,HDLV_SND_DT = #HDLV_SND_DT#			/*택배발송일자*/
+       ,HDLV_SND_RSN = #HDLV_SND_RSN#		/*택배발송사유*/
+       ,DEL_YN = #DEL_YN#
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM   = SYSDATE
+ WHERE  EQP_WAYBIL_NO = #EQP_WAYBIL_NO#]]>
+	</update>
+	<insert id="IEqpTransInfo" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpTransportMgmt.IEqpTransInfo 단말기운송정보입력 */
+/* IO: 이준우,2015-11-25T11:03:07(이준우,2015-07-20T13:06:46) */
+INSERT
+INTO TB_EQP_WAYBIL
+  (
+     EQP_WAYBIL_NO		
+    ,ASSET_NO
+    ,EQP_MDL_CD
+    ,EQP_SER_NO
+    ,EQP_RCV_DT			
+    ,WAYBIL_NO			
+	,HDLVCO_CD			
+	,HDLV_AMT			
+	,HDLV_SNDR_NM		
+	,HDLV_SND_DT		
+	,HDLV_SND_RSN		
+    ,DEL_YN
+	,FS_REG_USER_ID    
+	,FS_REG_DTM
+	,LS_CHG_USER_ID
+	,LS_CHG_DTM
+  ) VALUES
+  (
+     #EQP_WAYBIL_NO#           /*단말기운송장번호*/    
+    ,#ASSET_NO#                                
+    ,#EQP_MDL_CD#                              
+    ,#EQP_SER_NO#                              
+    ,#EQP_RCV_DT#              /*단말기수령일자*/     
+    ,#WAYBIL_NO#               /*운송장번호*/       
+	,#HDLVCO_CD#               /*택배사코드*/       
+	,#HDLV_AMT#                /*택배금액       */ 
+	,#HDLV_SNDR_NM#            /*택배발송자명   */   
+	,#HDLV_SND_DT#             /*택배발송일자   */   
+	,#HDLV_SND_RSN#            /*택배발송사유   */   
+    ,#DEL_YN#
+    ,#FS_REG_USER_ID#
+    ,SYSDATE
+    ,#LS_CHG_USER_ID#
+    ,SYSDATE
+  )]]>
+	</insert>
+	<select id="SEqpTransInfoSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpTransportMgmt.SEqpTransInfoLstSeq 단말기운송정보등록번호 채번 */
+/* IO: 이준우,2015-08-04T17:19:59(이준우,2015-07-28T10:17:37) */
+SELECT  'EW'||LPAD(SQ01_TB_EQP_WAYBIL.NEXTVAL,10,'0') AS EQP_WAYBIL_NO
+  FROM  DUAL]]>
+	</select>
+	<select id="SEqpTransInfoGetAssetNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpTransportMgmt.SEqpTransInfoGetAssetNo 자산번호 채번 */
+/* IO: 이준우,2015-08-07T13:54:06(이준우,2015-07-28T10:17:37) */
+SELECT  ASSET_NO
+  FROM  TB_EQP_ASSET
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EQP_SER_NO = #EQP_SER_NO#]]>
+	</select>
+	<select id="SResqpClctInSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPREqpTransportMgmt.SResqpClctInSeq 임대폰회수입고등록번호채번 */
+/* IO: 이준우,2015-08-12T17:30:01(이준우,2015-07-28T10:17:37) */
+SELECT  'EC'||LPAD(SQ01_TB_EQP_CLCT_OBJ.NEXTVAL,10,'0') AS EQP_CLCT_OBJ_NO
+  FROM  DUAL]]>
+	</select>
+</sqlMap>

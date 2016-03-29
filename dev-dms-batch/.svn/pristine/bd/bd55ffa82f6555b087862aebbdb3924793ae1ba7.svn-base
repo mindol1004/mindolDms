@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR012">
+	<select id="SFpaCmmsLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR012.SFpaCmmsLst FPA수수료 대상조회 */
+/* IO: 문재웅,2015-10-14T14:45:34(문재웅,2015-10-14T14:19:56) */
+/* ■ CASE 1 계약자료 산출 ■ */
+WITH
+TB_CNTRT_DATA AS
+(
+SELECT  A.CNTRT_NO
+       ,#XCL_YM# AS XCL_YM  
+       ,MONTHS_BETWEEN(TO_DATE(#XCL_YM#,'YYYYMM'),TO_DATE(SUBSTR(B.RENTAL_CNTRT_STA_DT,1,6),'YYYYMM') ) + 1 AS DEPR_DTL_TS /* 차수(월수) */
+       ,CASE WHEN A.OP_TYP_CD = '07' THEN
+          MONTHS_BETWEEN(TO_DATE(#XCL_YM#,'YYYYMM'),TO_DATE(SUBSTR(A.OP_PROC_DT,1,6),'YYYYMM') ) + 1 
+        ELSE 0 END AS MID_TERM_TS /* 업무처리일자 중도해지(월수) */
+       ,A.OP_TYP_CD 
+       ,C.ASSET_SLIP_NO AS SLIP_NO
+       ,B.RENTAL_CNTRT_STA_DT
+       ,B.RENTAL_CNTRT_END_DT
+       ,A.OP_PROC_DT
+ FROM  TB_NR_CNTRT A      /* NR_신규R계약 */
+      ,TB_RENTAL_CNTRT B  /* PR_렌탈계약  */
+      ,(SELECT TB.CNTRT_NO, TA.* FROM TB_ASSET_SLIP TA, TB_EQP_CNTRT TB
+         WHERE (TA.ASSET_NO, TA.ASSET_SLIP_SEQ) IN (SELECT  ASSET_NO, MAX(ASSET_SLIP_SEQ)
+                                                      FROM  TB_ASSET_SLIP
+                                                     WHERE  ASSET_SLIP_CL_CD = 'AA' /* 향후 코드값확인 */
+                                                     GROUP  BY ASSET_NO)
+           AND  TA.ASSET_NO =  TB.ASSET_NO
+       ) C
+ WHERE  A.CNTRT_NO       = B.CNTRT_NO
+   AND  A.CNTRT_NO       = C.CNTRT_NO(+)
+   AND  SUBSTR(A.NEW_CNTRT_DT,0,6) <= #XCL_YM#    /* 계약일 = 렌타탈시작일  */
+   AND  A.OP_TYP_CD IN('01','03','04','06','07' ) /* 가입:'01','03','04'/ 중도해지:06,07 */
+)
+/* ■ CASE 2.1 해약자료 ■ */
+SELECT  A.* 
+       ,A.MID_TERM_TS * 3500 AS MID_TERM_CMMS  /* 중도해지 수수료 */
+       ,0 AS NORM_END_CMMS                     /* 정상종료 수수료 */
+       ,0 AS EXTNS_CMMS                        /* 연장 수수료 */
+  FROM  TB_CNTRT_DATA A
+ WHERE  A.OP_TYP_CD IN('06', '07' )            /* 반품해지/기변철회, 중도해지 */
+   AND  #XCL_YM# BETWEEN SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) AND  SUBSTR(A.RENTAL_CNTRT_END_DT,0,6)
+UNION 
+/* ■ CASE 2.1 정상종료, 연장 ■ */
+SELECT  A.* 
+       ,0 AS MID_TERM_CMMS                     /* 중도해지 수수료 */
+       ,CASE WHEN A.DEPR_DTL_TS > 12 THEN
+              (12*3500)                        /* 최대정상종료 수수료 */
+          ELSE A.DEPR_DTL_TS*3500              /* 정상종료 수수료 */
+          END AS NORM_END_CMMS    
+       ,CASE WHEN A.DEPR_DTL_TS > 12 THEN
+              (A.DEPR_DTL_TS-12)*2000
+          ELSE 0 END AS EXTNS_CMMS             /* 연장 수수료 */
+  FROM  TB_CNTRT_DATA A 
+ WHERE  A.OP_TYP_CD IN('01','03','04')]]>
+	</select>
+	<insert id="IFpaCmms" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.IFpaCmms FPA수수료등록 */
+/* IO: 문재웅,2015-10-14T14:32:38(문재웅,2015-10-14T14:31:43) */
+INSERT INTO TB_FPA_CMMS
+         (
+            CNTRT_NO	    /* 계약번호 */
+           ,XCL_YM	        /* 정산년월 */
+           ,MID_TERM_CMMS	/* 중도해지수수료 */
+           ,NORM_END_CMMS	/* 정상종료수수료 */
+           ,EXTNS_CMMS	    /* 연장수수료 */
+           ,SLIP_NO	      	/* 전표번호 */
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+     	   ,LS_CHG_USER_ID
+       	   ,LS_CHG_DTM
+         )
+  VALUES (
+            #CNTRT_NO#	    /* 계약번호 */
+           ,#XCL_YM#	    /* 정산년월 */
+           ,#MID_TERM_CMMS#	/* 중도해지수수료 */
+           ,#NORM_END_CMMS#	/* 정상종료수수료 */
+           ,#EXTNS_CMMS#	/* 연장수수료 */
+           ,#SLIP_NO#	    /* 전표번호 */
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+           ,NVL(#USER_NO#,'BAT')
+           ,SYSDATE
+         )]]>
+	</insert>
+	<delete id="DBatFPACmms" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR012.DBatFPACmms 기준년월 FPA수수료 배치전삭제 */
+/* IO: 문재웅,2015-10-13T17:47:05(문재웅,2015-08-20T15:10:25) */
+DELETE  FROM TB_FPA_CMMS
+ WHERE  XCL_YM = NVL(#XCL_YM#, TO_CHAR(SYSDATE, 'YYYYMM'))]]>
+	</delete>
+</sqlMap>

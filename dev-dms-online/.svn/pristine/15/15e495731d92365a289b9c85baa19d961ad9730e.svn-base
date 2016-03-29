@@ -1,0 +1,598 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPSktCmmsMgmt">
+	<select id="SSktCmmsDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.SSktCmmsDtlLst SKT수수료상세목록 */
+/* IO: 김윤환,2015-10-16T13:57:44(김윤환,2015-10-13T16:21:45) */
+SELECT 
+	   A.CMMS_STRD_YM						/* 수수료 기준 년월 */
+	   ,B.DEDC_TYP_CD						/* 중고폰 공제유형구분 */
+	   ,B.INVE_TYP_CD						/* 중고폰 재고유형 구분 */
+	   ,A.CMMS_SLIP_DT						/* 수수료 전표 일자 */
+	   ,A.CMMS_SLIP_NO						/* 수수료 전표 번호 */
+	   ,NVL(A.CMMS_SLIP_ST,'00') AS CMMS_SLIP_ST /* 수수료 전표 상태 */
+	   ,A.CMMS_CNCL_SLIP_DT					/* 수수료 취소 전표 일자 */
+	   ,A.CMMS_CNCL_SLIP_NO					/* 수수료 취소 전표 번호 */
+	   ,COUNT(B.CMMS_XCL_NO) AS CMMS_COUNT	/* 수수료 건수*/
+	   ,SUM(B.XCL_AMT) AS XCL_AMT			/* 수수료 금액*/
+	   ,NVL(C.SLIP_ST_CD,'00') AS SLIP_ST_CD /* 전표 상태 */
+  FROM TB_EP_CMMS_XCL A
+	   ,TB_EP_CMMS_XCL_DTL B
+	   ,TB_SLIP C
+ WHERE A.CMMS_XCL_NO = B.CMMS_XCL_NO
+   AND A.CMMS_SLIP_NO = C.SLIP_NO(+)
+   AND A.CMMS_STRD_YM = #CMMS_DT#
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+ GROUP BY A.CMMS_STRD_YM
+          ,B.DEDC_TYP_CD
+          ,B.INVE_TYP_CD
+          ,A.CMMS_SLIP_DT	
+          ,A.CMMS_SLIP_NO
+          ,C.SLIP_ST_CD	
+          ,A.CMMS_SLIP_ST	
+          ,A.CMMS_CNCL_SLIP_DT
+          ,A.CMMS_CNCL_SLIP_NO
+ ORDER BY B.DEDC_TYP_CD
+          ,B.INVE_TYP_CD]]>
+	</select>
+	<insert id="IPreDcSktCmms" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.IPreDcSktCmms 선할인SKT수수료집계 */
+/* IO: 김윤환,2015-10-16T15:43:37(김윤환,2015-10-15T11:20:07) */
+INSERT 
+  INTO TB_EP_CMMS_XCL_DTL
+  (
+     CMMS_XCL_NO				/* 수수료 정산 번호 */
+     ,CMMS_XCL_DTL_SEQ			/* 수수료 정산 상세 순번 */
+     ,DEDC_TYP_CD				/* 공제 유형 코드 */
+     ,INVE_TYP_CD				/* 재고 유형 코드 */
+     ,CNSL_MGMT_NO				/* 상담 관리 번호 */
+     ,PRCH_MGMT_NO				/* 매입 관리 번호 */
+     ,CNSL_DT					/* 상담 일자 */
+     ,PRCH_DT					/* 매입 일자 */
+     ,XCL_AMT					/* 정산 금액 */
+     ,DEL_YN					/* 삭제 여부 */
+     ,FS_REG_USER_ID			/* 최초등록사용자ID */
+     ,FS_REG_DTM				/* 최초등록일시 */
+     ,LS_CHG_USER_ID			/* 최종변경사용자ID */
+     ,LS_CHG_DTM				/* 최종변경일시 */
+) 
+	SELECT 
+     	   #CMMS_XCL_NO# AS CMMS_XCL_NO
+     	   ,(ROWNUM+#CMMS_XCL_DTL_SEQ#) AS CMMS_XCL_DTL_SEQ
+     	   ,A.DEDC_TYP_CD
+     	   ,A.INVE_TYP_CD
+     	   ,B.CNSL_MGMT_NO
+     	   ,B.PRCH_MGMT_NO
+     	   ,B.CNSL_DT						/* 상담 일자 */
+     	   ,B.PRCH_DT						/* 매입 일자 */
+     	   ,NVL(D.CNSL_AMT,0) AS XCL_AMT  	/* 선할인 금액 */
+     	   ,'N' AS DEL_YN
+     	   ,#USER_ID# AS FS_REG_USER_ID
+     	   ,SYSDATE
+     	   ,#USER_ID# AS LS_CHG_USER_ID
+     	   ,SYSDATE
+     FROM TB_EP_INVE_XCL A 
+     	  ,TB_EP_INVE_XCL_DTL B
+     	  ,TB_SLIP C
+     	  ,TB_EP_CST_CONSULT_MGMT D
+    WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+      AND A.INVE_SLIP_NO = C.SLIP_NO(+)
+      AND B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+      AND A.DEDC_TYP_CD = '02'  			/* 02:선할인 */
+      AND A.INVE_TYP_CD = '20' 				/* 20:미착재고 */
+      AND C.SLIP_ST_CD(+) = '20' 				/* 20:회계팀승인(승인완료) */ 
+      AND A.DEL_YN = 'N'
+      AND B.DEL_YN = 'N'
+      AND D.DEL_YN = 'N'
+      /*AND TO_CHAR(TO_DATE(A.INVE_SLIP_DT),'YYYYMM') = CMMS_DT 추후 검색조건*/]]>
+	</insert>
+	<insert id="IAccoRmtRpetJdgSktCmms" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.IAccoRmtRpetJdgSktCmms 계좌송금현장감정SKT수수료집계 */
+/* IO: 김윤환,2015-10-15T16:26:30(김윤환,2015-10-06T18:55:00) */
+INSERT 
+  INTO TB_EP_CMMS_XCL_DTL
+  	 (
+	   CMMS_XCL_NO	/* 수수료 정산 번호 */
+	   ,CMMS_XCL_DTL_SEQ	/* 수수료 정산 상세 순번 */
+	   ,DEDC_TYP_CD	/* 공제 유형 코드 */
+	   ,INVE_TYP_CD	/* 재고 유형 코드 */
+	   ,CNSL_MGMT_NO	/* 상담 관리 번호 */
+	   ,PRCH_MGMT_NO	/* 매입 관리 번호 */
+	   ,CNSL_DT	/* 상담 일자 */
+	   ,PRCH_DT	/* 매입 일자 */
+	   ,XCL_AMT	/* 정산 금액 */
+	   ,DEL_YN	/* 삭제 여부 */
+	   ,FS_REG_USER_ID	/* 최초등록사용자ID */
+	   ,FS_REG_DTM	/* 최초등록일시 */
+	   ,LS_CHG_USER_ID	/* 최종변경사용자ID */
+	   ,LS_CHG_DTM	/* 최종변경일시 */
+	 ) 
+	   SELECT 
+			  #CMMS_XCL_NO# AS CMMS_XCL_NO
+			  ,(ROWNUM+#CMMS_XCL_DTL_SEQ#) AS CMMS_XCL_DTL_SEQ
+			  ,A.DEDC_TYP_CD
+			  ,A.INVE_TYP_CD
+			  ,B.CNSL_MGMT_NO
+			  ,B.PRCH_MGMT_NO
+			  ,B.CNSL_DT	/* 상담 일자 */
+			  ,B.PRCH_DT	/* 매입 일자 */
+			  ,NVL(D.UKEY_EQP_PRC,0) AS XCL_AMT  /*계좌송금 현장금액 */
+			  ,'N' AS DEL_YN
+			  ,#USER_ID# AS FS_REG_USER_ID
+			  ,SYSDATE
+			  ,#USER_ID# AS LS_CHG_USER_ID
+			  ,SYSDATE
+	     FROM TB_EP_INVE_XCL A 
+			  ,TB_EP_INVE_XCL_DTL B
+			  ,TB_SLIP C
+			  ,TB_EP_CST_PRCHS_MGMT D
+	    WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = C.SLIP_NO
+          AND B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+          AND A.DEDC_TYP_CD = '01'  /* 01:계좌송급 */
+          AND A.INVE_TYP_CD = '20' /* 20:미착재고 */
+          AND C.SLIP_ST_CD = '20' /* 20:회계팀승인(승인완료) */ 
+          AND D.SKN_CL = 'Y'  /* 현장감정: Y */
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND D.DEL_YN = 'N'
+          AND TO_CHAR(TO_DATE(D.RMT_DT),'YYYYMM') = #CMMS_DT#]]>
+	</insert>
+	<insert id="IAccoRmtGnrlJdgSktCmms" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.IAccoRmtGnrlJdgSktCmms 계좌송금비현장감정SKT수수료집계 */
+/* IO: 김윤환,2015-10-15T16:28:26(김윤환,2015-10-15T13:04:50) */
+INSERT 
+  INTO TB_EP_CMMS_XCL_DTL
+  	 (
+	   CMMS_XCL_NO	/* 수수료 정산 번호 */
+	   ,CMMS_XCL_DTL_SEQ	/* 수수료 정산 상세 순번 */
+	   ,DEDC_TYP_CD	/* 공제 유형 코드 */
+	   ,INVE_TYP_CD	/* 재고 유형 코드 */
+	   ,CNSL_MGMT_NO	/* 상담 관리 번호 */
+	   ,PRCH_MGMT_NO	/* 매입 관리 번호 */
+	   ,CNSL_DT	/* 상담 일자 */
+	   ,PRCH_DT	/* 매입 일자 */
+	   ,XCL_AMT	/* 정산 금액 */
+	   ,DEL_YN	/* 삭제 여부 */
+	   ,FS_REG_USER_ID	/* 최초등록사용자ID */
+	   ,FS_REG_DTM	/* 최초등록일시 */
+	   ,LS_CHG_USER_ID	/* 최종변경사용자ID */
+	   ,LS_CHG_DTM	/* 최종변경일시 */
+	 ) 
+	   SELECT 
+			  #CMMS_XCL_NO# AS CMMS_XCL_NO
+			  ,(ROWNUM+#CMMS_XCL_DTL_SEQ#) AS CMMS_XCL_DTL_SEQ
+			  ,A.DEDC_TYP_CD
+			  ,A.INVE_TYP_CD
+			  ,B.CNSL_MGMT_NO
+			  ,B.PRCH_MGMT_NO
+			  ,B.CNSL_DT	/* 상담 일자 */
+			  ,B.PRCH_DT	/* 매입 일자 */
+			  ,NVL(D.PRCH_AMT,0) AS XCL_AMT  /*계좌송금 비현장금액 */
+			  ,'N' AS DEL_YN
+			  ,#USER_ID# AS FS_REG_USER_ID
+			  ,SYSDATE
+			  ,#USER_ID# AS LS_CHG_USER_ID
+			  ,SYSDATE
+	     FROM TB_EP_INVE_XCL A 
+			  ,TB_EP_INVE_XCL_DTL B
+			  ,TB_SLIP C
+			  ,TB_EP_CST_PRCHS_MGMT D
+	    WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+          AND A.INVE_SLIP_NO = C.SLIP_NO
+          AND B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+          AND A.DEDC_TYP_CD = '01'  	/* 01:계좌송급 */
+          AND A.INVE_TYP_CD = '10' 		/* 10:확정재고 */
+          AND C.SLIP_ST_CD = '20' 		/* 20:회계팀승인(승인완료) */ 
+          AND D.SKN_CL = 'N'  			/* 비현장감정: N */
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND D.DEL_YN = 'N'
+          AND TO_CHAR(TO_DATE(D.RMT_DT),'YYYYMM') = #CMMS_DT#]]>
+	</insert>
+	<insert id="IFeePpayGnrlJdgSktCmms" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.IFeePpayGnrlJdgSktCmms 요금선납비현장SKT수수료집계 */
+/* IO: 김윤환,2015-10-15T17:05:17(김윤환,2015-10-06T18:58:52) */
+INSERT 
+  INTO TB_EP_CMMS_XCL_DTL
+  	 (
+	   CMMS_XCL_NO				/* 수수료 정산 번호 */
+       ,CMMS_XCL_DTL_SEQ		/* 수수료 정산 상세 순번 */
+       ,DEDC_TYP_CD				/* 공제 유형 코드 */
+       ,INVE_TYP_CD				/* 재고 유형 코드 */
+       ,CNSL_MGMT_NO			/* 상담 관리 번호 */
+       ,PRCH_MGMT_NO			/* 매입 관리 번호 */
+       ,CNSL_DT					/* 상담 일자 */
+       ,PRCH_DT					/* 매입 일자 */
+       ,XCL_AMT					/* 정산 금액 */
+       ,DEL_YN					/* 삭제 여부 */
+       ,FS_REG_USER_ID			/* 최초등록사용자ID */
+       ,FS_REG_DTM				/* 최초등록일시 */
+       ,LS_CHG_USER_ID			/* 최종변경사용자ID */
+       ,LS_CHG_DTM				/* 최종변경일시 */
+	 ) 
+	   SELECT 
+			  #CMMS_XCL_NO# AS CMMS_XCL_NO
+			  ,(ROWNUM+#CMMS_XCL_DTL_SEQ#) AS CMMS_XCL_DTL_SEQ
+			  ,A.DEDC_TYP_CD
+			  ,A.INVE_TYP_CD
+			  ,B.CNSL_MGMT_NO
+			  ,B.PRCH_MGMT_NO
+			  ,B.CNSL_DT						/* 상담 일자 */
+			  ,B.PRCH_DT						/* 매입 일자 */
+			  ,NVL(D.PRCH_AMT,0) AS XCL_AMT  	/* 요금선납 비현장금액 */
+			  ,'N' AS DEL_YN
+			  ,#USER_ID# AS FS_REG_USER_ID
+			  ,SYSDATE
+			  ,#USER_ID# AS LS_CHG_USER_ID
+			  ,SYSDATE
+		 FROM TB_EP_INVE_XCL A 
+			  ,TB_EP_INVE_XCL_DTL B
+			  ,TB_SLIP C
+			  ,TB_EP_CST_PRCHS_MGMT D
+	    WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+		  AND A.INVE_SLIP_NO = C.SLIP_NO
+		  AND B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+		  AND A.DEDC_TYP_CD = '03'  			/* 03:요금선납 */
+		  AND A.INVE_TYP_CD = '10' 				/* 10:확정재고 */
+		  AND C.SLIP_ST_CD = '20' 				/* 20:회계팀승인(승인완료) */ 
+		  AND D.SKN_CL = 'N'  					/* 비현장감정: N */
+		  AND A.DEL_YN = 'N'
+		  AND B.DEL_YN = 'N'
+		  AND D.DEL_YN = 'N'
+		  AND TO_CHAR(TO_DATE(D.FEE_DEDC_PROC_DT),'YYYYMM') = #CMMS_DT#]]>
+	</insert>
+	<insert id="IFeePpayRpetJdgSktCmms" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.IFeePpayRpetJdgSktCmms 요금선납현장SKT수수료집계 */
+/* IO: 김윤환,2015-10-15T17:03:02(김윤환,2015-10-15T11:28:50) */
+INSERT 
+  INTO TB_EP_CMMS_XCL_DTL
+  	 (
+	   CMMS_XCL_NO				/* 수수료 정산 번호 */
+       ,CMMS_XCL_DTL_SEQ		/* 수수료 정산 상세 순번 */
+       ,DEDC_TYP_CD				/* 공제 유형 코드 */
+       ,INVE_TYP_CD				/* 재고 유형 코드 */
+       ,CNSL_MGMT_NO			/* 상담 관리 번호 */
+       ,PRCH_MGMT_NO			/* 매입 관리 번호 */
+       ,CNSL_DT					/* 상담 일자 */
+       ,PRCH_DT					/* 매입 일자 */
+       ,XCL_AMT					/* 정산 금액 */
+       ,DEL_YN					/* 삭제 여부 */
+       ,FS_REG_USER_ID			/* 최초등록사용자ID */
+       ,FS_REG_DTM				/* 최초등록일시 */
+       ,LS_CHG_USER_ID			/* 최종변경사용자ID */
+       ,LS_CHG_DTM				/* 최종변경일시 */
+	 ) 
+	   SELECT 
+			   #CMMS_XCL_NO# AS CMMS_XCL_NO
+			   ,(ROWNUM+#CMMS_XCL_DTL_SEQ#) AS CMMS_XCL_DTL_SEQ
+			   ,A.DEDC_TYP_CD
+			   ,A.INVE_TYP_CD
+			   ,B.CNSL_MGMT_NO
+			   ,B.PRCH_MGMT_NO
+			   ,B.CNSL_DT							/* 상담 일자 */
+			   ,B.PRCH_DT							/* 매입 일자 */
+			   ,NVL(D.UKEY_EQP_PRC,0) AS XCL_AMT  	/* 요금선납 현장금액 */
+			   ,'N' AS DEL_YN
+			   ,#USER_ID# AS FS_REG_USER_ID
+			   ,SYSDATE
+			   ,#USER_ID# AS LS_CHG_USER_ID
+			   ,SYSDATE
+		  FROM TB_EP_INVE_XCL A 
+			   ,TB_EP_INVE_XCL_DTL B
+			   ,TB_SLIP C
+			   ,TB_EP_CST_PRCHS_MGMT D
+		 WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+		   AND A.INVE_SLIP_NO = C.SLIP_NO
+		   AND B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+		   AND A.DEDC_TYP_CD = '03'  			/* 03:요금선납 */
+		   AND A.INVE_TYP_CD = '20' 			/* 20:미착재고 */
+		   AND C.SLIP_ST_CD = '20' 				/* 20:회계팀승인(승인완료) */ 
+		   AND D.SKN_CL = 'Y'  					/* 현장감정: Y */
+		   AND A.DEL_YN = 'N'
+		   AND B.DEL_YN = 'N'
+		   AND D.DEL_YN = 'N'
+		   AND TO_CHAR(TO_DATE(D.FEE_DEDC_PROC_DT),'YYYYMM') = #CMMS_DT#]]>
+	</insert>
+	<select id="SPreDcSktCmms" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.SPreDcSktCmms 선할인SKT수수료목록조회 */
+/* IO: 김윤환,2015-10-16T10:15:47(김윤환,2015-10-12T15:26:53) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT 
+				ROW_NUMBER() OVER(ORDER BY C.CNSL_MGMT_NO ) AS ROWNO
+				,COUNT(*) OVER (PARTITION BY A.CMMS_STRD_YM,B.DEDC_TYP_CD,B.INVE_TYP_CD ) AS EXCEL_TOTAL_CNT
+				,A.CMMS_XCL_NO													/* 수수료 정산 번호 */
+				,A.CMMS_STRD_YM													/* 정산 기준 년월 */
+				,B.DEDC_TYP_CD  												/* 공제 유형 코드 */
+				,B.INVE_TYP_CD  												/* 재고 유형 코드 */
+				,C.CNSL_MGMT_NO 												/* 상담관리번호 */
+				,C.CNSL_DT 														/* 상담일자 */
+				,C.DPSTR														/* 고객명 */
+				,C.EQP_MDL_CD													/* 단말기 모델 코드 */
+				,D.EQP_MDL_NM 													/* 단말기 모델명 */
+				,C.EQP_SER_NO													/* 단말기 일련 번호 */
+				,C.EQP_ST														/* 단말기 상태 */
+				,NVL(C.CNSL_AMT,0) AS CNSL_AMT 									/* 상담 금액 */
+				,B.XCL_AMT														/* 정산 금액 */
+        		,C.PROGR_ST 													/* 진행상태 */
+        		,C.LS_CHG_DTM 													/* 변경일자 */
+        		,C.SCRB_MTHD  													/* 가입방법 */
+        		,C.FST_RGSTR													/* 최초 등록자 */
+        		,(SELECT USER_NM FROM TB_USER WHERE USER_NO = C.FST_RGSTR) AS FST_RGSTR_NM 		/* 최초 등록자명 */
+        		,F.HEADQ_NM                                                                 	/* 본부 명 */      
+        		,E.AFFIL_ORG_ID 															    /* 소속조직코드(조직) */
+        		,(SELECT ORG_NM 
+    		    	FROM TB_EP_BAS_ORG_MGMT 
+	        	   WHERE ORG_ID = E.AFFIL_ORG_ID AND DEL_YN = 'N') AS AFFIL_ORG_NM       		/* 소속조직명(조직) */	
+        		,E.AFFIL_AGN                                                                	/* 소속대리점코드 */
+        		,(SELECT DEALCO_NM 
+    	    		FROM TB_DEALCO 
+    	    	   WHERE DEALCO_CD = E.AFFIL_AGN AND DEL_YN = 'N' ) AS AFFIL_AGN_NM 			/* 소속 대리점명(팀명) */   
+        		,C.PAY_MTHD 																	/* 지급방법 */
+        		,C.PAY_DT	 																	/* 지급 일자 */    
+        		,G.SKN_EQP_ST   																/* 재감정등급 */
+        		,G.SKN_JDG_AMT																	/* SKN 감정 금액 */
+        		,G.SKN_SMPL_JDG_DAMT															/* SKN 샘플 감정 차액 */
+		  FROM TB_EP_CMMS_XCL A
+               ,TB_EP_CMMS_XCL_DTL B  
+			   ,TB_EP_CST_CONSULT_MGMT C
+			   ,TB_EQP_MDL D
+         	   ,TB_DEALCO E
+               ,TB_EP_BAS_DEAL_CO_MARKETING F
+               ,TB_EP_CST_PRCHS_MGMT G
+		 WHERE A.CMMS_XCL_NO = B.CMMS_XCL_NO 
+           AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+           AND C.CNSL_MGMT_NO = G.CNSL_MGMT_NO(+)
+		   AND C.EQP_MDL_CD = D.EQP_MDL_CD
+           AND C.CNSL_DEALCO_CD = E.DEALCO_CD(+)
+           AND E.UKEY_AGN_CD  = F.UKEY_AGN_CD(+)          
+		   AND B.DEDC_TYP_CD = '02'
+		   AND B.INVE_TYP_CD = '20'
+		   AND A.CMMS_STRD_YM = #CMMS_STRD_YM#
+		   AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+		   AND C.DEL_YN = 'N'
+		   AND D.DEL_YN = 'N'
+           AND E.DEL_YN(+) = 'N'
+           AND F.DEL_YN(+) = 'N'
+           AND G.DEL_YN(+) = 'N'
+           AND NVL(F.STA_DT,C.CNSL_DT) <= C.CNSL_DT
+		   AND NVL(F.END_DT,C.CNSL_DT) >= C.CNSL_DT       
+	  ) PA
+WHERE PA.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<update id="DTbEpCmmsXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.DTbEpCmmsXcl 수수료정산삭제 */
+/* IO: 김윤환,2015-10-14T14:12:53(김윤환,2015-10-14T13:19:43) */
+UPDATE TB_EP_CMMS_XCL
+   SET DEL_YN = 'Y'
+	   ,LS_CHG_USER_ID	= #USER_ID#
+	   ,LS_CHG_DTM	= SYSDATE 
+ WHERE CMMS_STRD_YM = #CMMS_STRD_YM# 
+   AND DEL_YN = 'N']]>
+	</update>
+	<select id="SAccoRmtGnrlJdgCmms" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.SAccoRmtGnrlJdgCmms 계좌송금비현장SKT수수료목록조회 */
+/* IO: 김윤환,2015-10-16T10:24:10(김윤환,2015-10-08T13:18:38) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT 
+			   ROW_NUMBER() OVER(ORDER BY B.CNSL_MGMT_NO ) AS ROWNO
+			   ,COUNT(*) OVER (PARTITION BY A.CMMS_STRD_YM,B.DEDC_TYP_CD,B.INVE_TYP_CD ) AS EXCEL_TOTAL_CNT
+			   ,A.CMMS_XCL_NO							/* 수수료 정산 번호 */
+			   ,A.CMMS_STRD_YM							/* 정산 기준 년월 */
+			   ,B.DEDC_TYP_CD  							/* 공제 유형 코드 */
+			   ,B.INVE_TYP_CD  							/* 재고 유형 코드 */
+			   ,B.CNSL_MGMT_NO 							/* 상담관리번호 */
+			   ,C.CNSL_DT 								/* 상담일자 */
+			   ,C.RMT_DT 								/* 송금일자 */
+			   ,C.DPSTR									/* 고객명 */
+			   ,C.EQP_MDL_CD							/* 단말기 모델 코드 */
+			   ,D.EQP_MDL_NM 							/* 단말기 모델명 */
+			   ,C.EQP_SER_NO							/* 단말기 일련 번호 */
+			   ,C.EQP_ST								/* 단말기 상태 */
+			   ,NVL(C.PRCH_AMT,0) AS PRCH_AMT 			/*계좌송금 비현장 금액 */
+			   ,B.XCL_AMT								/* 정산 금액 */
+	      FROM TB_EP_CMMS_XCL A
+               ,TB_EP_CMMS_XCL_DTL B
+			   ,TB_EP_CST_PRCHS_MGMT C
+			   ,TB_EQP_MDL D
+		 WHERE A.CMMS_XCL_NO = B.CMMS_XCL_NO       
+		   AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+           AND B.PRCH_MGMT_NO = C.PRCH_MGMT_NO
+		   AND C.EQP_MDL_CD = D.EQP_MDL_CD
+		   AND B.DEDC_TYP_CD = '01'
+		   AND B.INVE_TYP_CD = '10'
+		   AND A.CMMS_STRD_YM = #CMMS_STRD_YM#
+		   AND A.DEL_YN = 'N'
+       	   AND B.DEL_YN = 'N'
+		   AND C.DEL_YN = 'N'
+		   AND D.DEL_YN = 'N'
+	  ) PA
+WHERE PA.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<select id="SAccoRmtRpetJdgSktCmms" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.SAccoRmtRpetJdgSktCmms 계좌송금현장SKT수수료목록조회 */
+/* IO: 김윤환,2015-10-16T10:23:27(김윤환,2015-10-16T10:22:39) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT 
+			   ROW_NUMBER() OVER(ORDER BY B.CNSL_MGMT_NO ) AS ROWNO
+			   ,COUNT(*) OVER (PARTITION BY A.CMMS_STRD_YM,B.DEDC_TYP_CD,B.INVE_TYP_CD ) AS EXCEL_TOTAL_CNT
+			   ,A.CMMS_XCL_NO								/* 수수료 정산 번호 */
+			   ,A.CMMS_STRD_YM								/* 정산 기준 년월 */
+			   ,B.DEDC_TYP_CD  								/* 공제 유형 코드 */
+			   ,B.INVE_TYP_CD  								/* 재고 유형 코드 */
+			   ,B.CNSL_MGMT_NO 								/* 상담관리번호 */
+			   ,C.CNSL_DT 									/* 상담일자 */
+			   ,C.RMT_DT 									/* 송금일자 */
+			   ,C.DPSTR										/* 고객명 */
+			   ,C.EQP_MDL_CD								/* 단말기 모델 코드 */
+			   ,D.EQP_MDL_NM 								/* 단말기 모델명 */
+			   ,C.EQP_SER_NO								/* 단말기 일련 번호 */
+			   ,C.EQP_ST									/* 단말기 상태 */
+			   ,NVL(C.UKEY_EQP_PRC,0) AS PRCH_AMT 			/* 계좌송금 현장 금액 */
+			   ,B.XCL_AMT									/* 정산 금액 */
+	      FROM TB_EP_CMMS_XCL A
+               ,TB_EP_CMMS_XCL_DTL B
+			   ,TB_EP_CST_PRCHS_MGMT C
+			   ,TB_EQP_MDL D
+		 WHERE A.CMMS_XCL_NO = B.CMMS_XCL_NO       
+		   AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+           AND B.PRCH_MGMT_NO = C.PRCH_MGMT_NO
+		   AND C.EQP_MDL_CD = D.EQP_MDL_CD
+		   AND B.DEDC_TYP_CD = '01'
+		   AND B.INVE_TYP_CD = '20'
+		   AND A.CMMS_STRD_YM = #CMMS_STRD_YM#
+		   AND A.DEL_YN = 'N'
+       	   AND B.DEL_YN = 'N'
+		   AND C.DEL_YN = 'N'
+		   AND D.DEL_YN = 'N'
+	  ) PA
+WHERE PA.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<select id="SFeePpayGnrlJdgSktCmms" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.SFeePpayGnrlJdgSktCmms 요금선납비현장SKT수수료목록조회 */
+/* IO: 김윤환,2015-10-16T10:25:14(김윤환,2015-10-16T10:24:52) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT 
+			   ROW_NUMBER() OVER(ORDER BY B.CNSL_MGMT_NO ) AS ROWNO
+			   ,COUNT(*) OVER (PARTITION BY A.CMMS_STRD_YM,B.DEDC_TYP_CD,B.INVE_TYP_CD ) AS EXCEL_TOTAL_CNT
+			   ,A.CMMS_XCL_NO							/* 수수료 정산 번호 */
+			   ,A.CMMS_STRD_YM							/* 정산 기준 년월 */
+			   ,B.DEDC_TYP_CD  							/* 공제 유형 코드 */
+			   ,B.INVE_TYP_CD  							/* 재고 유형 코드 */
+			   ,B.CNSL_MGMT_NO 							/* 상담관리번호 */
+			   ,C.CNSL_DT 								/* 상담일자 */
+			   ,C.RMT_DT 								/* 송금일자 */
+			   ,C.DPSTR									/* 고객명 */
+			   ,C.EQP_MDL_CD							/* 단말기 모델 코드 */
+			   ,D.EQP_MDL_NM 							/* 단말기 모델명 */
+			   ,C.EQP_SER_NO							/* 단말기 일련 번호 */
+			   ,C.EQP_ST								/* 단말기 상태 */
+			   ,NVL(C.PRCH_AMT,0) AS PRCH_AMT 			/* 요금선납 비현장 금액 */
+			   ,B.XCL_AMT								/* 정산 금액 */
+	      FROM TB_EP_CMMS_XCL A
+               ,TB_EP_CMMS_XCL_DTL B
+			   ,TB_EP_CST_PRCHS_MGMT C
+			   ,TB_EQP_MDL D
+		 WHERE A.CMMS_XCL_NO = B.CMMS_XCL_NO       
+		   AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+           AND B.PRCH_MGMT_NO = C.PRCH_MGMT_NO
+		   AND C.EQP_MDL_CD = D.EQP_MDL_CD
+		   AND B.DEDC_TYP_CD = '03'
+		   AND B.INVE_TYP_CD = '10'
+		   AND A.CMMS_STRD_YM = #CMMS_STRD_YM#
+		   AND A.DEL_YN = 'N'
+       	   AND B.DEL_YN = 'N'
+		   AND C.DEL_YN = 'N'
+		   AND D.DEL_YN = 'N'
+	  ) PA
+WHERE PA.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<select id="SFeePpayRpetJdgSktCmms" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.SFeePpayRpetJdgSktCmms 요금선납현장SKT수수료집계목록조회 */
+/* IO: 김윤환,2015-10-16T10:26:16(김윤환,2015-10-16T10:25:48) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT 
+			   ROW_NUMBER() OVER(ORDER BY B.CNSL_MGMT_NO ) AS ROWNO
+			   ,COUNT(*) OVER (PARTITION BY A.CMMS_STRD_YM,B.DEDC_TYP_CD,B.INVE_TYP_CD ) AS EXCEL_TOTAL_CNT
+			   ,A.CMMS_XCL_NO								/* 수수료 정산 번호 */
+			   ,A.CMMS_STRD_YM								/* 정산 기준 년월 */
+			   ,B.DEDC_TYP_CD  								/* 공제 유형 코드 */
+			   ,B.INVE_TYP_CD  								/* 재고 유형 코드 */
+			   ,B.CNSL_MGMT_NO 								/* 상담관리번호 */
+			   ,C.CNSL_DT 									/* 상담일자 */
+			   ,C.RMT_DT 									/* 송금일자 */
+			   ,C.DPSTR										/* 고객명 */
+			   ,C.EQP_MDL_CD								/* 단말기 모델 코드 */
+			   ,D.EQP_MDL_NM 								/* 단말기 모델명 */
+			   ,C.EQP_SER_NO								/* 단말기 일련 번호 */
+			   ,C.EQP_ST									/* 단말기 상태 */
+			   ,NVL(C.UKEY_EQP_PRC,0) AS PRCH_AMT 			/* 요금선납 현장 금액 */
+			   ,B.XCL_AMT									/* 정산 금액 */
+	      FROM TB_EP_CMMS_XCL A
+               ,TB_EP_CMMS_XCL_DTL B
+			   ,TB_EP_CST_PRCHS_MGMT C
+			   ,TB_EQP_MDL D
+		 WHERE A.CMMS_XCL_NO = B.CMMS_XCL_NO       
+		   AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+           AND B.PRCH_MGMT_NO = C.PRCH_MGMT_NO
+		   AND C.EQP_MDL_CD = D.EQP_MDL_CD
+		   AND B.DEDC_TYP_CD = '03'
+		   AND B.INVE_TYP_CD = '20'
+		   AND A.CMMS_STRD_YM = #CMMS_STRD_YM#
+		   AND A.DEL_YN = 'N'
+       	   AND B.DEL_YN = 'N'
+		   AND C.DEL_YN = 'N'
+		   AND D.DEL_YN = 'N'
+	  ) PA
+WHERE PA.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<select id="SSktCmmsLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.SSktCmmsLst SKT수수료목록 */
+/* IO: 김윤환,2015-10-16T15:48:07(김윤환,2015-10-13T16:25:43) */
+SELECT 
+       A.CMMS_XCL_NO				/* 수수료 정산 번호 */
+       ,A.CMMS_STRD_YM			/* 수수료 기준 년월 */
+       ,A.OP_PROC_CMMS_AMT		/* 업무 처리 수수료 금액 */
+       ,A.CUST_MGMT_SYS_USE_AMT	/* 고객 관리 시스템 사용 금액 */
+       ,A.CMMS_AMT				/* 수수료 금액 */
+       ,A.CMMS_XCL_CNT			/* 수수료 정산 건수 */
+       ,A.CMMS_SLIP_DT			/* 수수료 전표 일자 */
+       ,A.CMMS_SLIP_NO			/* 수수료 전표 번호 */
+       ,NVL(A.CMMS_SLIP_ST,'00') AS CMMS_SLIP_ST			/* 수수료 전표 상태 */
+       ,A.CMMS_CNCL_SLIP_DT		/* 수수료 취소 전표 일자 */
+       ,A.CMMS_CNCL_SLIP_NO		/* 수수료 취소 전표 번호 */
+       ,B.SLIP_NO				/* 전표번호 */
+       ,NVL(B.SLIP_ST_CD,'00') AS SLIP_ST_CD  			/* 전표상태코드 */
+  FROM TB_EP_CMMS_XCL A 
+       ,TB_SLIP B
+ WHERE A.CMMS_SLIP_NO = B.SLIP_NO(+)
+   AND A.CMMS_STRD_YM = #CMMS_DT#
+   AND A.DEL_YN = 'N']]>
+	</select>
+	<select id="SCmmsXclNoSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.SCmmsXclNoSeq 수수료정산번호조회 */
+/* IO: 김윤환,2015-10-13T17:41:25(김윤환,2015-10-13T17:41:25) */
+SELECT SQ01_TB_EP_CMMS_XCL.NEXTVAL AS CMMS_XCL_NO FROM DUAL]]>
+	</select>
+	<insert id="ITbEpCmmsXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.ITbEpCmmsXcl 수수료정산등록 */
+/* IO: 김윤환,2015-10-15T10:11:28(김윤환,2015-10-15T10:11:28) */
+INSERT 
+  INTO TB_EP_CMMS_XCL
+  (
+	CMMS_XCL_NO				/* 수수료 정산 번호 */
+	,CMMS_STRD_YM			/* 수수료 기준 년월 */
+	,OP_PROC_CMMS_AMT		/* 업무 처리 수수료 금액 */
+	,CUST_MGMT_SYS_USE_AMT	/* 고객 관리 시스템 사용 금액 */
+	,CMMS_AMT				/* 수수료 금액 */
+	,CMMS_XCL_CNT			/* 수수료 정산 건수 */
+	,CMMS_CNCL_SLIP_DT		/* 수수료 취소 전표 일자 */
+	,CMMS_CNCL_SLIP_NO		/* 수수료 취소 전표 번호 */
+	,DEL_YN					/* 삭제 여부 */
+	,FS_REG_USER_ID			/* 최초등록사용자ID */
+	,FS_REG_DTM				/* 최초등록일시 */
+	,LS_CHG_USER_ID			/* 최종변경사용자ID */
+	,LS_CHG_DTM				/* 최종변경일시 */
+  )VALUES(
+	#CMMS_XCL_NO#			/* 수수료 정산 번호 */
+	,#CMMS_STRD_YM#			/* 수수료 기준 년월 */
+	,#OP_PROC_CMMS_AMT#		/* 업무 처리 수수료 금액 */
+	,#CUST_MGMT_SYS_USE_AMT#/* 고객 관리 시스템 사용 금액 */
+	,#CMMS_AMT#				/* 수수료 금액 */
+	,#CMMS_XCL_CNT#			/* 수수료 정산 건수 */
+	,#CMMS_CNCL_SLIP_DT#	/* 수수료 취소 전표 일자 */
+	,#CMMS_CNCL_SLIP_NO#	/* 수수료 취소 전표 번호 */
+	,'N'					/* 삭제 여부 */
+	,#USER_ID#				/* 최초등록사용자ID */
+	,SYSDATE				/* 최초등록일시 */
+	,#USER_ID#				/* 최종변경사용자ID */
+	,SYSDATE				/* 최종변경일시 */
+  )]]>
+	</insert>
+	<update id="DTbEpCmmsXclDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSktCmmsMgmt.DTbEpCmmsXclDtl 수수료정산상세삭제 */
+/* IO: 김윤환,2015-10-14T14:12:35(김윤환,2015-10-14T14:01:15) */
+UPDATE TB_EP_CMMS_XCL_DTL
+   SET DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE CMMS_XCL_NO = #CMMS_XCL_NO#
+   AND DEL_YN = 'N']]>
+	</update>
+</sqlMap>

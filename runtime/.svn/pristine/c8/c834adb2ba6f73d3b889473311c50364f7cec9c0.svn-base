@@ -1,0 +1,62 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="nexcore.framework.core.Constants"%>
+<%@ page import="nexcore.framework.core.util.BaseUtils"%>
+<%@ page import="nexcore.framework.core.data.user.IUserInfo"%>
+<%@ page import="nexcore.framework.online.channel.util.WebUtils"%>
+<%@page import="java.util.*" %>
+<%@page import="java.text.*" %>
+<%@page import="nexcore.framework.core.data.IDataSet" %>
+<%@page import="nexcore.framework.core.data.IRecordSet" %>
+<%@page import="nexcore.framework.core.data.IRecord" %>
+<%@page import="nexcore.framework.core.data.IResultMessage" %>
+<%@page import="nexcore.framework.core.util.BaseUtils" %>
+<%@page import="nexcore.framework.core.util.ExceptionUtil" %>
+<%@page import="nexcore.framework.core.code.ICode"%>
+<%@page import="fwk.utils.HpcUtils"%>
+<%@page import="fwk.code.HpcCodeManager"%>
+<%@page import="fwk.code.internal.HpcCode"%>
+<%@page import="fwk.common.CommonArea"%>
+<!DOCTYPE html>
+<html>
+<head>
+	<jsp:include page="./include/libraryList.jsp"/>
+	<script>
+		function openChgPwdPopup(){
+			var pop = window.open("/jsp/chgPwdPopup.jsp","pop","width=570,height=420, scrollbars=yes, resizable=yes"); 
+		}
+	</script>
+</head>
+<body>
+<form name="logout" action="<%=request.getContextPath()%>/login.cmd" method="post" target="_self" onsubmit="">
+	<input type="hidden" name="<%= Constants.TRANSACTION_ID %>" value ="PSCLginOp_pLgout" />
+	<input type="hidden" name="<%= Constants.TARGET %>" value="forward:jsp/login.jsp" />
+</form>
+</body>
+<%
+
+	//get data
+	IDataSet responseData = WebUtils.getResultDataSet(request);
+	IResultMessage resultMessage = responseData.getResultMessage();
+	String Message = BaseUtils.getMessage(resultMessage.getMessageId(), resultMessage.getMessageParams());
+	
+	//로그인성공여부 확인 
+	if(resultMessage.getStatus() != IResultMessage.FAIL){  
+	    out.println( "<script>");
+	    out.println( " location.href='jsp/SknCrdLstM.jsp';");
+	    out.println( "</script>"); 
+	} else {
+	    //로그인여부에 따라 분기처리 
+ 	    if(resultMessage.getMessageId()=="DMS00011"){
+ 	       out.println( "<script>");
+		    out.println( "alert('"+Message+"');");
+		    out.println( "openChgPwdPopup();");
+		    out.println( "</script>"); 
+	    } else { 
+		    out.println( "<script>");
+		    out.println( "alert('"+Message+"');");
+		    out.println( " location.href='jsp/login.jsp';");
+		    out.println( "</script>"); 
+	    }
+	}
+%>
+</html>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR014">
+	<select id="SFpaDspslPrc" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR014.SFpaDspslPrc FPA매각가산정조회 */
+/* IO: 문재웅,2015-10-20T19:52:12(문재웅,2015-10-20T10:09:40) */
+/* ■CASE 1 계약데이터의 출시일기준 잔존월(M1~12)을 산출 ■ */  
+WITH RENTAL_CNTRT_DATA AS
+(
+SELECT  TC.CNTRT_NO
+       ,TA.EQP_MDL_CD 
+       ,MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1 AS MONTH_TS              /* 잔존가월:출시월-계약월 */
+       ,CASE WHEN MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1 > 12 THEN '12' /* 최대월로~~*/
+          ELSE 
+            (SELECT  CM_CD_ID 
+               FROM  TB_CM_CD 
+              WHERE  CM_GRP_CD_ID  		 = 'DMS248' 
+                AND  TO_NUMBER(CM_CD_ID) = MONTHS_BETWEEN(TO_DATE(SUBSTR(TC.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM'), TO_DATE(SUBSTR(TA.LAUNC_DT,0,6),'YYYYMM') ) + 1
+            )
+          END MONTH_CD
+       ,TC.RENTAL_POLY_NO
+       ,TC.RENTAL_CNTRT_STA_DT
+       ,TC.RENTAL_CNTRT_END_DT
+  FROM  TB_EQP_MDL TA
+       ,TB_RENTAL_CNTRT TC
+ WHERE  TA.EQP_MDL_CD =  TC.EQP_MDL_CD
+   AND  TA.LAUNC_DT IS NOT NULL
+   AND  OP_CL_CD = 'NR'
+)
+
+/* ■CASE 2 계약데이터의 M+12~23 잔존가:매각가 산출 ■ */  
+SELECT  B.CNTRT_NO              /* 계약번호 */  
+       ,#DSPSL_YM# AS DSPSL_YM  /* 매각년월 */
+        /*,A.EQP_PRCH_AMT       매입가 = 출고가 */ 
+       ,E.OUT_PRC      	        /* 출고가 */ 
+       ,E.EXPT_DSPSL_PRC        /* 예상매각가격 */
+       ,CASE MONTHS_BETWEEN(TO_DATE(#DSPSL_YM#,'YYYYMM'),TO_DATE(SUBSTR(C.RENTAL_CNTRT_STA_DT,0,6),'YYYYMM') ) + 1  
+          WHEN 1  THEN NVL(F.MM_12,0)  WHEN 2  THEN NVL(F.MM_13,0)
+          WHEN 3  THEN NVL(F.MM_14,0)  WHEN 4  THEN NVL(F.MM_15,0)
+          WHEN 5  THEN NVL(F.MM_16,0)  WHEN 6  THEN NVL(F.MM_17,0)
+          WHEN 7  THEN NVL(F.MM_18,0)  WHEN 8  THEN NVL(F.MM_19,0)
+          WHEN 9  THEN NVL(F.MM_20,0)  WHEN 10 THEN NVL(F.MM_21,0)
+          WHEN 11 THEN NVL(F.MM_22,0)  WHEN 12 THEN NVL(F.MM_23,0)
+        ELSE NVL(F.MM_23,0) END AS DSPSL_PRC /* 매각가격        */
+  FROM  TB_EQP_ASSET     A   /* PR_단말기자산 */
+       ,TB_EQP_CNTRT     B   /* PR_단말기계약 */
+       ,RENTAL_CNTRT_DATA C
+       ,TB_NR_CNTRT      D   /* NR_신규R계약 */
+       ,TB_RENTAL_POLY   E   /* NR_렌탈정책   */
+       ,TB_EQP_REMPRC    F   /* NR_단말기잔존가 */
+ WHERE  A.ASSET_NO       = B.ASSET_NO 
+   AND  B.CNTRT_NO       = C.CNTRT_NO
+   AND  B.CNTRT_NO       = D.CNTRT_NO
+   AND  A.OP_CL_CD       = 'NR'
+   AND  A.INVE_ST_CD IN ('60','61')
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  C.EQP_MDL_CD     = F.EQP_MDL_CD
+   AND  C.MONTH_CD       = F.REMPRC_STRD_MM_CD     /* 출시월(M1~12) */
+   AND  SUBSTR(A.DSPSL_DT,0,6) = #DSPSL_YM#]]>
+	</select>
+	<insert id="IFpaDspslPrc" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR014.IFpaDspslPrc FPA매각가격등록 */
+/* IO: 문재웅,2015-10-21T13:32:18(문재웅,2015-10-20T10:08:05) */
+INSERT
+  INTO TB_FPA_DSPSL_PRC
+  (
+    CNTRT_NO	   /* 계약번호 */
+   ,DSPSL_YM	   /* 매각년월 */
+   ,OUT_PRC	       /* 출고가격 */
+   ,EXPT_DSPSL_PRC /* 예상매각가격 */
+   ,DSPSL_PRC	   /* 매각가격 */
+   ,DAMT	       /* 차액 */
+   ,FS_REG_USER_ID /* 최초등록사용자ID */
+   ,FS_REG_DTM	   /* 최초등록일시 */
+   ,LS_CHG_USER_ID /* 최종변경사용자ID */
+   ,LS_CHG_DTM	   /* 최종변경일시 */
+  )
+  VALUES
+  (
+    #CNTRT_NO#	   /* 계약번호 */
+   ,#DSPSL_YM#	   /* 매각년월 */
+   ,#OUT_PRC#	   /* 출고가격 */
+   ,#EXPT_DSPSL_PRC# /* 예상매각가격 */
+   ,#DSPSL_PRC#	   /* 매각가격 */
+   ,TO_NUMBER(NVL(#EXPT_DSPSL_PRC#,0))-TO_NUMBER(NVL(#DSPSL_PRC#,0)) /*차액 */
+   ,#USER_NO#	   /* 최초등록사용자ID */
+   ,SYSDATE		   /* 최초등록일시 */
+   ,#USER_NO#	   /* 최종변경사용자ID */
+   ,SYSDATE		   /* 최종변경일시 */
+  )]]>
+	</insert>
+	<delete id="DBatFpaDspslPrc" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR014.DBatFpaDspslPrc FPA매각가격 배치전삭제 */
+/* IO: 문재웅,2015-10-20T19:50:05(문재웅,2015-10-20T10:07:37) */
+DELETE  FROM TB_FPA_DSPSL_PRC
+ WHERE  DSPSL_YM = NVL(#DSPSL_YM#, TO_CHAR(SYSDATE, 'YYYYMM'))]]>
+	</delete>
+</sqlMap>

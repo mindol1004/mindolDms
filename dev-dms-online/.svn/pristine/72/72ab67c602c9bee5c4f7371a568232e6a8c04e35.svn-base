@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRAgnEqpStlMgmt">
+	<select id="SAgnEqpStlLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlLstPaging 대리점단말기정산정보조회 */
+/* IO: 이민재,2015-08-20T18:51:53(이민재,2015-08-18T10:08:52) */
+SELECT PA.*
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY A.XCL_PROC_DT DESC, A.PRCHCO_CD) AS ROWNO  
+               ,A.*
+          FROM (
+                SELECT  IA.PRCHCO_CD                                             /* 대리점코드 */
+                       ,ID.DEALCO_NM AS PRCHCO_NM                                /* 대리점명 */
+                       ,TO_CHAR(TO_DATE(IA.XCL_PROC_DT),'YYYYMM') AS XCL_PROC_DT /* 정산월 */
+                       ,'' AS SLIP_TS                                            /* 전표처리차수 */
+                       ,IB.SLIP_NO                                               /* 전표번호 */
+                       ,IB.SLIP_DT                                               /* 전표처리일 */
+                       ,SUM(IA.PRCH_AMT) AS PRCH_AMT                             /* 매입금 */
+                       ,IC.PAY_YM                                                /* 지급년월 */
+                       ,SUM(IC.AGN_CRD_AMT) AS AGN_CRD_AMT                       /* 대리점여신금액 */
+                       ,SUM(IC.AGN_SALE_AMT) AS AGN_SALE_AMT                     /* 대리점매출금액 */ 
+                       ,SUM(IC.CRD_SALE_DAMT) AS CRD_SALE_DAMT                   /* 여신매출차액 */
+                  FROM  TB_PRCH IA
+                       ,TB_SLIP IB
+                       ,TB_NR_SKN_CRD IC
+                       ,TB_DEALCO ID
+                 WHERE  IA.PRCH_SLIP_NO = IB.SLIP_NO(+)
+                   AND  IA.PRCHCO_CD = IC.AGN_CD(+)
+                   AND  IA.PRCHCO_CD = ID.DEALCO_CD(+)
+                   AND  TO_CHAR(TO_DATE(IA.XCL_PROC_DT),'YYYYMM') = IC.PAY_YM(+)
+                   AND  IA.OP_CL_CD = 'NR'
+                   AND  TO_CHAR(TO_DATE(IA.XCL_PROC_DT),'YYYYMM') = #XCL_PROC_DT#
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                        IA.PRCHCO_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="SLIP_TS" prepend="AND" compareValue="%"><![CDATA[
+                        IA.SLIP_TS = #SLIP_TS#
+]]></isNotEqual><![CDATA[
+		         GROUP  BY IA.PRCHCO_CD
+		               ,ID.DEALCO_NM
+		               ,TO_CHAR(TO_DATE(IA.XCL_PROC_DT),'YYYYMM')
+		               ,''
+		               ,IB.SLIP_NO
+		               ,IB.SLIP_DT
+                       ,IC.PAY_YM
+                ) A
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAgnEqpStlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlTotCnt 대리점단말기정산정보총건수 */
+/* IO: 이민재,2015-08-20T18:53:56(이민재,2015-08-18T10:09:48) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM (
+        SELECT  IA.PRCHCO_CD                                             /* 대리점코드 */
+               ,ID.DEALCO_NM AS PRCHCO_NM                                /* 대리점명 */
+               ,TO_CHAR(TO_DATE(IA.XCL_PROC_DT),'YYYYMM') AS XCL_PROC_DT /* 정산월 */
+               ,'' AS SLIP_TS                                            /* 전표처리차수 */
+               ,IB.SLIP_NO                                               /* 전표번호 */
+               ,IB.SLIP_DT                                               /* 전표처리일 */
+               ,SUM(IA.PRCH_AMT) AS PRCH_AMT                             /* 매입금 */
+               ,IC.PAY_YM                                                /* 지급년월 */
+               ,SUM(IC.AGN_CRD_AMT) AS AGN_CRD_AMT                       /* 대리점여신금액 */
+               ,SUM(IC.AGN_SALE_AMT) AS AGN_SALE_AMT                     /* 대리점매출금액 */ 
+               ,SUM(IC.CRD_SALE_DAMT) AS CRD_SALE_DAMT                   /* 여신매출차액 */
+          FROM  TB_PRCH IA
+               ,TB_SLIP IB
+               ,TB_NR_SKN_CRD IC
+               ,TB_DEALCO ID
+         WHERE  IA.PRCH_SLIP_NO = IB.SLIP_NO(+)
+           AND  IA.PRCHCO_CD = IC.AGN_CD(+)
+           AND  IA.PRCHCO_CD = ID.DEALCO_CD(+)
+           AND  TO_CHAR(TO_DATE(IA.XCL_PROC_DT),'YYYYMM') = IC.PAY_YM(+)
+           AND  IA.OP_CL_CD = 'NR'
+           AND  TO_CHAR(TO_DATE(IA.XCL_PROC_DT),'YYYYMM') = #XCL_PROC_DT#        
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                IA.PRCHCO_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="SLIP_TS" prepend="AND" compareValue="%"><![CDATA[
+                IA.SLIP_TS = #SLIP_TS#
+]]></isNotEqual><![CDATA[
+		 GROUP  BY IA.PRCHCO_CD
+		       ,ID.DEALCO_NM
+		       ,TO_CHAR(TO_DATE(IA.XCL_PROC_DT),'YYYYMM')
+		       ,''
+		       ,IB.SLIP_NO
+		       ,IB.SLIP_DT
+               ,IC.PAY_YM
+       )]]>
+	</select>
+	<select id="SAgnEqpStlDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnEqpStlMgmt.SAgnEqpStlDtl 대리점단말기정산정보상세 */
+/* IO: 이민재,2015-08-18T13:18:02(이민재,2015-08-18T10:10:25) */
+SELECT  A.EQP_SER_NO       /* 일련번호 */
+       ,A.EQP_MDL_CD       /* 모델코드 */
+       ,C.EQP_MDL_NM       /* 모델명 */
+       ,B.EQP_COLOR_CD     /* 색상코드 */
+       ,A.PRCH_DT          /* 매입일자 */
+       ,A.PRCH_AMT         /* 매입금액 */
+  FROM  TB_PRCH A
+       ,TB_EQP_ASSET B
+       ,TB_EQP_MDL C
+ WHERE  A.PRCH_NO  = B.PRCH_NO
+   AND  A.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND  A.OP_CL_CD = 'NR'
+   AND  TO_CHAR(TO_DATE(A.XCL_PROC_DT),'YYYYMM') = #XCL_PROC_DT#
+   AND  A.PRCHCO_CD  = #PRCHCO_CD#
+ ORDER  BY A.PRCH_DT DESC, A.EQP_MDL_CD]]>
+	</select>
+</sqlMap>

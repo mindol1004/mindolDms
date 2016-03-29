@@ -1,0 +1,795 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEpEqpDisMgmt">
+	<select id="SInqDisOutMgmtNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.SInqDisOutMgmtNo 출고관리번호채번 */
+/* IO: 양재석,2015-10-05T11:03:23(양재석,2015-10-05T11:03:23) */
+SELECT 'OT' || TO_CHAR(SYSDATE, 'YYYYMMDD') || TO_CHAR(SQ01_TB_EP_DIS_OUT_M.NEXTVAL,'FM0000000') AS OUT_MGMT_NO
+  FROM DUAL]]>
+	</select>
+	<insert id="IEpEqpDisOutRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpDisOutRgst 중고단말기재고출고등록 */
+/* IO: 양재석,2015-10-05T13:32:11(양재석,2015-10-05T13:32:11) */
+INSERT INTO TB_EP_DIS_OUT_M
+       ( OUT_MGMT_NO 
+       , OUT_CL
+       , OUT_SCHD_DT
+       , OUT_DEALCO_ID
+       , IN_DEALCO_ID
+       , OUT_CONF_DT
+       , OUT_CONF_YN
+       , RMK
+       , DEL_YN 
+       , UPDATE_COUNT 
+       , FS_REG_DTM
+       , FS_REG_USER_ID
+       , LS_CHG_DTM
+       , LS_CHG_USER_ID
+       )
+VALUES 
+       ( #OUT_MGMT_NO#
+       , #OUT_CL#
+       , #OUT_SCHD_DT#
+       , #OUT_DEALCO_ID#
+       , #IN_DEALCO_ID#
+       , #OUT_CONF_DT# 
+       , #OUT_CONF_YN#
+       , #RMK#
+       , 'N'
+       , 0
+       , SYSDATE
+       , #FS_REG_USER_ID#
+       , SYSDATE
+       , #LS_CHG_USER_ID#
+       )]]>
+	</insert>
+	<select id="SInqEpEqpDisOutDtlSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.SInqEpEqpDisOutDtlSeq 중고단말기재고출고상세일련번호채번 */
+/* IO: 양재석,2015-10-05T13:44:55(양재석,2015-10-05T13:44:55) */
+SELECT NVL(MAX(OUT_SEQ), 0) + 1  AS OUT_SEQ
+  FROM TB_EP_DIS_OUT_DTL_D
+ WHERE OUT_MGMT_NO = #OUT_MGMT_NO#]]>
+	</select>
+	<insert id="IEpEqpDisOutDtlRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpDisOutDtlRgst 중고단말기재고출고상세등록 */
+/* IO: 양재석,2015-10-05T14:27:37(양재석,2015-10-05T14:18:06) */
+INSERT INTO TB_EP_DIS_OUT_DTL_D
+       ( OUT_MGMT_NO
+       , OUT_SEQ
+       , EQP_MDL_CD
+       , EQP_COLOR_CD
+       , EQP_SER_NO
+       , EQP_ST
+       , INVE_ST
+       , OUT_QTY
+       , UPRC
+       , AMT
+       , UPDATE_COUNT
+       , DEL_YN
+       , FS_REG_USER_ID
+       , FS_REG_DTM
+       , LS_CHG_USER_ID
+       , LS_CHG_DTM
+       )
+VALUES 
+       ( #OUT_MGMT_NO#
+       , #OUT_SEQ#
+       , #EQP_MDL_CD#
+       , #EQP_COLOR_CD#
+       , #EQP_SER_NO#
+       , #EQP_ST#
+       , #INVE_ST#
+       , NVL(#OUT_QTY# , 0)
+       , NVL(#UPRC#, 0)
+       , NVL(#AMT#, 0)
+       , 0
+       , 'N'
+       , #FS_REG_USER_ID#
+       , SYSDATE
+       , #LS_CHG_USER_ID#
+       , SYSDATE
+       )]]>
+	</insert>
+	<update id="UEpEqpDisLastInOutUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.UEpEqpDisLastInOutUpd 중고단말기최종입출고수정 */
+/* IO: 양재석,2015-10-05T15:16:46(양재석,2015-10-05T15:16:27) */
+UPDATE TB_EP_DIS_DIS
+   SET LAST_IN_OUT_DT     = TO_CHAR(SYSDATE, 'yyyymmdd') /* 최종입출고일자 */ 
+       ,IN_OUT_CL         = #IN_OUT_CL#              /* 최종입출고구분 */
+       ,IN_OUT_DTL_CL     = #IN_OUT_DTL_CL#          /* 최종입출고상세구분 */
+       ,UPDATE_COUNT      = UPDATE_COUNT+1 				      /* UPDATE COUNT */
+       ,LS_CHG_DTM        = SYSDATE
+       ,LS_CHG_USER_ID    = #LS_CHG_USER_ID#	
+ WHERE DEL_YN   = 'N'
+   AND EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO   = #EQP_SER_NO#]]>
+	</update>
+	<insert id="IEpEqpDisHstOutRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpDisHstOutRgst 중고단말기재고이력출고기준등록 */
+/* IO: 양재석,2015-10-05T15:37:09(양재석,2015-10-05T15:37:09) */
+INSERT 
+  INTO TB_EP_DIS_DIS_HST
+       (
+       INOUT_MGMT_NO  /* 입고 출고 관리 번호 */
+       ,EQP_MDL_CD  /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD  /* 단말기 색상 코드 */
+       ,EQP_SER_NO  /* 단말기 일련 번호 */
+       ,HLD_DEALCO_ID  /* 보유 거래처 ID */
+       ,EQP_ST  /* 단말기 상태 */
+       ,INVE_ST  /* 재고 상태 */
+       ,LAST_IN_OUT_DT  /* 최종 입고 출고 일자 */
+       ,IN_OUT_CL  /* 입고 출고 구분 */
+       ,IN_OUT_DTL_CL  /* 입고 출고 상세 구분 */
+       ,FST_IN_CONF_DT  /* 최초 입고 확정 일자 */
+       ,FST_IN_DEALCO_ID  /* 최초 입고 거래처 ID */
+       ,PRCHCO_ID  /* 매입처 ID */
+       ,LAST_MOV_IN_DT  /* 최종 이동 입고 일자 */
+       ,INVE_AMT  /* 재고 금액 */
+       ,HOLD_AMT  /* 유보 금액 */
+       ,DEL_YN  /* 삭제 여부 */
+       ,UPDATE_COUNT  /* UPDATE COUNT */
+       ,FS_REG_USER_ID  /* 최초등록사용자ID */
+       ,FS_REG_DTM  /* 최초등록일시 */
+       ,LS_CHG_USER_ID  /* 최종변경사용자ID */
+       ,LS_CHG_DTM  /* 최종변경일시 */       
+       )
+SELECT #OUT_MGMT_NO#
+       ,EQP_MDL_CD  /* 단말기 모델 코드 */
+       ,EQP_COLOR_CD  /* 단말기 색상 코드 */
+       ,EQP_SER_NO  /* 단말기 일련 번호 */
+       ,HLD_DEALCO_ID  /* 보유 거래처 ID */
+       ,EQP_ST  /* 단말기 상태 */
+       ,INVE_ST  /* 재고 상태 */
+       ,LAST_IN_OUT_DT  /* 최종 입고 출고 일자 */
+       ,IN_OUT_CL  /* 입고 출고 구분 */
+       ,IN_OUT_DTL_CL  /* 입고 출고 상세 구분 */
+       ,FST_IN_CONF_DT  /* 최초 입고 확정 일자 */
+       ,FST_IN_DEALCO_ID  /* 최초 입고 거래처 ID */
+       ,PRCHCO_ID  /* 매입처 ID */
+       ,LAST_MOV_IN_DT  /* 최종 이동 입고 일자 */
+       ,INVE_AMT  /* 재고 금액 */
+       ,HOLD_AMT  /* 유보 금액 */
+       ,'N'  /* 삭제 여부 */
+       ,0  /* UPDATE COUNT */
+       ,#FS_REG_USER_ID#  /* 최초등록사용자ID */
+       ,SYSDATE  /* 최초등록일시 */
+       ,#LS_CHG_USER_ID#  /* 최종변경사용자ID */
+       ,SYSDATE  /* 최종변경일시 */       
+  FROM TB_EP_DIS_DIS
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#]]>
+	</insert>
+	<insert id="IEpEqpProdDisRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpProdDisRgst 중고단말기상품재고등록 */
+/* IO: 양재석,2015-10-13T12:46:52(양재석,2015-10-05T19:03:27) */
+INSERT 
+  INTO TB_EP_DIS_PROD_DIS
+       ( EQP_MDL_CD 
+       , EQP_COLOR_CD
+       , EQP_SER_NO
+       , BF_SER_NO
+       , HLD_DEALCO_ID
+       , INVE_ST
+       , EQP_ST
+       , LAST_IN_OUT_DT
+       , IN_OUT_CL
+       , IN_OUT_DTL_CL
+       , FST_IN_CONF_DT
+       , FST_IN_DEALCO_ID
+       , PRCHCO_ID
+       , LAST_MOV_IN_DT
+       , CONF_SELL_AMT
+       , INVE_AMT
+       , CONF_SELL_DT
+       , SELL_YN
+       , RMK
+       , DEL_YN 
+       , UPDATE_COUNT 
+       , FS_REG_DTM 
+       , FS_REG_USER_ID 
+       , LS_CHG_DTM 
+       , LS_CHG_USER_ID
+       , CNSL_MGMT_NO
+       , HOLD_AMT
+       , TRMS_YN
+       , TRMS_CL
+       , CNSGN_SELL_YN
+       )
+VALUES
+       ( #EQP_MDL_CD#
+       , #EQP_COLOR_CD#
+       , #PROD_DIS_SER_NO#
+       , #BF_SER_NO#
+       , #HLD_DEALCO_ID#
+       , #INVE_ST#
+       , #EQP_ST#
+       , #LAST_IN_OUT_DT#
+       , #IN_OUT_CL#
+       , #IN_OUT_DTL_CL#
+       , #FST_IN_CONF_DT#
+       , #FST_IN_DEALCO_ID#
+       , #PRCHCO_ID#
+       , #LAST_MOV_IN_DT#
+       , #CONF_SELL_AMT#+NVL((SELECT CM_CD_ID
+                                FROM TB_CM_CD
+                               WHERE USE_YN = 'Y'
+                                 AND CM_GRP_CD_ID = 'DMS182'
+                                 AND MGMT_ITEM_CD1 <= #CNSL_DT#
+                                 AND MGMT_ITEM_CD2 >= #CNSL_DT#),0)
+       , #INVE_AMT#
+       , #CONF_SELL_DT#
+       , #SELL_YN#
+       , #RMK#
+       , 'N'
+       , 0
+       , SYSDATE
+       , #FS_REG_USER_ID#
+       , SYSDATE
+       , #LS_CHG_USER_ID#
+       , #CNSL_MGMT_NO#
+       , NVL((SELECT CM_CD_ID
+                FROM TB_CM_CD
+               WHERE USE_YN = 'Y'
+                 AND CM_GRP_CD_ID = 'DMS182'
+                 AND MGMT_ITEM_CD1 <= #CNSL_DT#
+                 AND MGMT_ITEM_CD2 >= #CNSL_DT#),0)
+       , 'N'
+       , 'N'
+       , 'N'
+       )]]>
+	</insert>
+	<select id="SInqEpEqpProdDisSerNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.SInqEpEqpProdDisSerNo 중고단말기상품재고일련번호채번 */
+/* IO: 양재석,2015-10-05T19:16:12(양재석,2015-10-05T19:14:57) */
+SELECT 'G' || LPAD(NVL(TO_NUMBER(MAX(SUBSTR(EQP_SER_NO,2))) ,0) + 1 ,7 ,'0') AS PROD_DIS_SER_NO 
+  FROM TB_EP_DIS_PROD_DIS 
+ WHERE SUBSTR(EQP_SER_NO,1,1) = 'G']]>
+	</select>
+	<insert id="IEpEqpProdDisUnitPrcRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpProdDisUnitPrcRgst 중고단말기상품단가등록 */
+/* IO: 양재석,2015-10-05T19:33:11(양재석,2015-10-05T19:33:11) */
+INSERT 
+  INTO TB_EP_DIS_PROD_UNIT_PRC
+       (EQP_MDL_CD 
+       , EQP_COLOR_CD
+       , EQP_SER_NO
+       , PROD_UPRC_SEQ
+       , OCCR_CL
+       , OCCR_DT
+       , AMT
+       , DEL_YN 
+       , UPDATE_COUNT 
+       , FS_REG_DTM 
+       , FS_REG_USER_ID 
+       , LS_CHG_DTM 
+       , LS_CHG_USER_ID
+       , RMK)
+VALUES
+       ( #EQP_MDL_CD#
+       , #EQP_COLOR_CD#
+       , #PROD_DIS_SER_NO#
+       , (SELECT NVL(MAX(CMPT_SER_NO),0) + 1
+            FROM TB_EP_DIS_PROD_CPNT
+           WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+             AND EQP_COLOR_CD = #EQP_COLOR_CD#
+             AND EQP_SER_NO  = #PROD_DIS_SER_NO#
+          )
+       , #OCCR_CL#
+       , #OCCR_DT#
+       , #AMT#
+       , 'N'
+       , 0
+       , SYSDATE
+       , #FS_REG_USER_ID#
+       , SYSDATE
+       , #LS_CHG_USER_ID#
+       , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')||';'||#LS_CHG_USER_ID#||'IEpEqpProdDisUnitPrcRgst'||';'||';'||#AMT#
+       )]]>
+	</insert>
+	<insert id="IEpEqpProdDisInoutHstRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpProdDisInoutHstRgst 중고단말기상품재고입출고이력등록 */
+/* IO: 양재석,2015-10-05T20:25:07(양재석,2015-10-05T20:23:17) */
+INSERT 
+  INTO TB_EP_DIS_PROD_INOUT_HST
+       ( EQP_MDL_CD 
+       , EQP_COLOR_CD
+       , EQP_SER_NO
+       , IN_OUT_SEQ
+       , PROD_IN_MGMT_NO
+       , PROD_IN_SEQ
+       , PROD_OUT_MGMT_NO
+       , PROD_OUT_SEQ
+       , IN_OUT_DT
+       , IN_OUT_CL
+       , IN_OUT_DTL_CL
+       , PRCH_DEALCO_ID
+       , OUT_DEALCO_ID
+       , IN_DEALCO_ID
+       , DEL_YN
+       , UPDATE_COUNT 
+       , FS_REG_DTM 
+       , FS_REG_USER_ID 
+       , LS_CHG_DTM 
+       , LS_CHG_USER_ID)
+VALUES
+       ( #EQP_MDL_CD#
+       , #EQP_COLOR_CD#
+       , #PROD_DIS_SER_NO#
+       , #IN_OUT_SEQ#
+       , #IN_MGMT_NO#
+       , #IN_SEQ#
+       , #OUT_MGMT_NO#
+       , #OUT_SEQ#
+       , #IN_OUT_DT#
+       , #IN_OUT_CL#
+       , #IN_OUT_DTL_CL#
+       , #PRCH_DEALCO_ID#
+       , #OUT_DEALCO_ID#
+       , #IN_DEALCO_ID#
+       , 'N'
+       , 0
+       , SYSDATE
+       , #FS_REG_USER_ID#
+       , SYSDATE
+       , #LS_CHG_USER_ID#
+       )]]>
+	</insert>
+	<select id="SInqEpEqpCnclObjProdDis" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.SInqEpEqpCnclObjProdDis 중고단말기취소대상상품재고조회 */
+/* IO: 양재석,2015-10-06T10:04:42(양재석,2015-10-06T10:04:42) */
+SELECT EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,INVE_ST
+       ,IN_OUT_CL
+       ,IN_OUT_DTL_CL
+       ,BF_SER_NO
+       ,UPDATE_COUNT
+  FROM TB_EP_DIS_PROD_DIS
+ WHERE EQP_MDL_CD    = #EQP_MDL_CD#
+   AND EQP_COLOR_CD  = #EQP_COLOR_CD#
+   AND BF_SER_NO     = #EQP_SER_NO#
+   AND INVE_ST       = '01'            /* 재고상태 : 01 가용 */
+   AND IN_OUT_CL     = '100'           /* 마지막입출고구분 : 100 입고, 200 출고, 300 이동출고 */
+   AND IN_OUT_DTL_CL IN ('101','114')  /* 마지막입출고상세구분 : 101 구매입고 114 매입입고*/
+   AND DEL_YN        = 'N']]>
+	</select>
+	<update id="DEpEqpProdDisDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpProdDisDel 중고단말기상품재고삭제 */
+/* IO: 양재석,2015-10-06T14:43:25(양재석,2015-10-06T13:03:04) */
+UPDATE TB_EP_DIS_PROD_DIS
+   SET INVE_ST  = '02'
+       ,DEL_YN  = 'Y'
+   	   ,RMK    = RMK || '[상품취소]'
+       ,UPDATE_COUNT = UPDATE_COUNT + 1
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND DEL_YN  = 'N']]>
+	</update>
+	<update id="DEpEqpProdDisUnitPrcDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpProdDisUnitPrcDel 중고폰상품재고단가삭제 */
+/* IO: 양재석,2015-10-06T14:43:41(양재석,2015-10-06T13:14:27) */
+UPDATE TB_EP_DIS_PROD_UNIT_PRC
+   SET DEL_YN  = 'Y'
+       ,UPDATE_COUNT = UPDATE_COUNT + 1
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND DEL_YN  = 'N']]>
+	</update>
+	<update id="DEpEqpProdDisCpntDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpProdDisCpntDel 중고단말기상품재고구성품삭제 */
+/* IO: 양재석,2015-10-06T14:43:07(양재석,2015-10-06T13:18:36) */
+UPDATE TB_EP_DIS_PROD_CPNT
+   SET DEL_YN  = 'Y'
+       ,UPDATE_COUNT = UPDATE_COUNT + 1
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND DEL_YN  = 'N']]>
+	</update>
+	<update id="DEpEqpProdDisInoutHstDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpProdDisInoutHstDel 중고단말기상품재고입출고이력삭제 */
+/* IO: 양재석,2015-10-06T14:43:33(양재석,2015-10-06T13:25:12) */
+UPDATE TB_EP_DIS_PROD_INOUT_HST
+   SET DEL_YN  = 'Y'
+       ,UPDATE_COUNT = UPDATE_COUNT + 1
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND DEL_YN  = 'N']]>
+	</update>
+	<select id="SInqEpEqpDisLastHst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.SInqEpEqpDisLastHst 중고단말기최종입출고이력조회 */
+/* IO: 양재석,2015-10-06T14:18:04(양재석,2015-10-06T14:18:04) */
+SELECT EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,IN_OUT_SEQ
+       ,IN_MGMT_NO	/*입고 관리 번호*/
+       ,OUT_MGMT_NO	/*출고 관리 번호*/
+       ,IN_OUT_CL	/*입고 출고 구분*/
+       ,IN_OUT_DTL_CL	/*입고 출고 상세 구분*/
+  FROM TB_EP_DIS_DIS_INOUT_HST
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND DEL_YN = 'N'
+   AND IN_OUT_SEQ = (SELECT MAX(IN_OUT_SEQ) 
+                       FROM TB_EP_DIS_DIS_INOUT_HST
+                      WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+                        AND EQP_COLOR_CD = #EQP_COLOR_CD#
+                        AND EQP_SER_NO  = #EQP_SER_NO#
+                        AND DEL_YN = 'N'
+                    )]]>
+	</select>
+	<select id="SInqEpEqpDisLastInHst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.SInqEpEqpDisLastInHst 중고단말기최종입고이력조회 */
+/* IO: 양재석,2015-10-06T14:49:12(양재석,2015-10-06T14:49:12) */
+SELECT IN_MGMT_NO
+       ,IN_SEQ
+       ,IN_OUT_SEQ
+  FROM TB_EP_DIS_DIS_INOUT_HST a
+ WHERE DEL_YN    = 'N'
+   AND EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND IN_OUT_SEQ = (SELECT MAX(IN_OUT_SEQ)
+                          FROM TB_EP_DIS_DIS_INOUT_HST
+                         WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+                           AND EQP_COLOR_CD = #EQP_COLOR_CD#
+                           AND EQP_SER_NO  = #EQP_SER_NO#
+                           AND IN_OUT_CL = '100'
+                           AND DEL_YN  = 'N'
+                         GROUP BY EQP_MDL_CD, EQP_COLOR_CD, EQP_SER_NO)]]>
+	</select>
+	<insert id="IEpEqpDisOutCnclInProc" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpDisOutCnclInProc 중고단말기재고출고취소입고처리 */
+/* IO: 양재석,2015-10-06T15:54:13(양재석,2015-10-06T15:21:43) */
+INSERT 
+  INTO TB_EP_DIS_IN_M
+       (IN_MGMT_NO /*입고 관리 번호*/
+       ,ORD_MGMT_NO /*발주 관리 번호*/
+       ,PRCH_MGMT_NO /*매입 관리 번호*/
+       ,OUT_MGMT_NO	/*출고관리번호*/
+       ,IN_SCHD_DT /*입고 예정 일자*/
+       ,PRCHCO_ID /*매입처 ID*/
+       ,IN_DEALCO_ID /*입고 거래처 ID*/
+       ,IN_TS /*입고 차수*/
+       ,IN_CL /*입고 구분*/
+       ,IN_CONF_DT /*입고 확정 일자*/
+       ,IN_ST /*입고 상태*/
+       ,RMK /*비고*/
+       ,DEL_YN /*삭제 여부*/
+       ,UPDATE_COUNT /*UPDATE COUNT*/
+       ,FS_REG_USER_ID /*최초등록사용자ID*/
+       ,FS_REG_DTM /*최초등록일시*/
+       ,LS_CHG_USER_ID /*최종변경사용자ID*/
+       ,LS_CHG_DTM /*최종변경일시*/
+       )
+SELECT #IN_MGMT_NO#
+       ,A.ORD_MGMT_NO
+       ,A.PRCH_MGMT_NO
+       ,A.OUT_MGMT_NO
+       ,#CURR_DT#        /* IN_SCHD_DT */
+       ,A.PRCHCO_ID
+       ,A.IN_DEALCO_ID
+       ,(SELECT NVL(MAX(IN_TS),0) + 1 
+           FROM TB_EP_DIS_IN_M
+          WHERE IN_SCHD_DT = #CURR_DT#
+            AND PRCHCO_ID = A.PRCHCO_ID
+            AND IN_DEALCO_ID = A.IN_DEALCO_ID)
+       ,A.IN_CL
+       ,#CURR_DT#        /* IN_CONF_DT */
+       ,A.IN_ST
+       ,''               /* RMK */
+       ,'N'
+       ,0
+       ,#FS_REG_USER_ID#
+	   ,SYSDATE
+	   ,#LS_CHG_USER_ID#
+	   ,SYSDATE
+  FROM TB_EP_DIS_IN_M A
+ WHERE A.IN_MGMT_NO = #LAST_IN_MGMT_NO#]]>
+	</insert>
+	<insert id="IEpEqpDisOutCnclInDtlProc" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpDisOutCnclInDtlProc 중고단말기재고출고취소입고상세처리 */
+/* IO: 양재석,2015-10-07T10:06:52(양재석,2015-10-07T10:06:52) */
+INSERT 
+  INTO TB_EP_DIS_IN_DTL_D
+       (IN_MGMT_NO
+       ,IN_SEQ
+       ,EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,IN_QTY
+       ,IN_CONF_DT
+       ,IN_CONF_YN
+       ,IN_CONF_QTY
+       ,IN_AMT
+       ,PRCH_MGMT_NO
+       ,CNCL_YN
+       ,DEL_YN
+       ,UPDATE_COUNT
+       ,FS_REG_DTM
+       ,FS_REG_USER_ID
+       ,LS_CHG_DTM
+       ,LS_CHG_USER_ID
+       )
+SELECT #IN_MGMT_NO#
+       ,#IN_SEQ#
+       ,EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,IN_QTY
+       ,#CURR_DT#
+       ,IN_CONF_YN
+       ,IN_CONF_QTY
+       ,IN_AMT
+       ,PRCH_MGMT_NO
+       ,'N'
+       ,'N'
+       ,0
+       ,SYSDATE
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+  FROM TB_EP_DIS_IN_DTL_D        
+ WHERE IN_MGMT_NO = #LAST_IN_MGMT_NO#
+   AND IN_SEQ     = #LAST_IN_SEQ#]]>
+	</insert>
+	<insert id="IEpEqpDisOutCnclInCpntProc" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpDisOutCnclInCpntProc 중고단말기재고출고취소구성품입고처리 */
+/* IO: 양재석,2015-10-07T10:07:35(양재석,2015-10-07T10:07:35) */
+INSERT 
+  INTO TB_EP_DIS_IN_CPNT
+       (IN_MGMT_NO
+       ,IN_SEQ
+       ,CMPT_SEQ
+       ,EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,IN_QTY
+       ,IN_AMT
+       ,UPRC
+       ,OUTS_MCN_CL
+       ,CNCL_YN
+       ,DEL_YN
+       ,UPDATE_COUNT
+       ,FS_REG_DTM
+       ,FS_REG_USER_ID
+       ,LS_CHG_DTM
+       ,LS_CHG_USER_ID
+       )
+SELECT #IN_MGMT_NO#
+       ,#IN_SEQ#
+       ,CMPT_SEQ
+       ,EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,IN_QTY
+       ,IN_AMT
+       ,UPRC
+       ,OUTS_MCN_CL
+       ,'N'            /* CNCL_YN  */
+       ,'N'            /* DEL_YN   */
+       ,0              /* UPDATE_COUNT  */
+       ,SYSDATE
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+  FROM TB_EP_DIS_IN_CPNT
+ WHERE IN_MGMT_NO = #LAST_IN_MGMT_NO#
+   AND IN_SEQ     = #LAST_IN_SEQ#]]>
+	</insert>
+	<update id="UEpEqpDisDelCnclUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.UEpEqpDisDelCnclUpd 중고단말기재고삭제취소 */
+/* IO: 양재석,2015-10-07T10:08:12(양재석,2015-10-07T10:08:12) */
+UPDATE TB_EP_DIS_DIS
+   SET LAST_IN_OUT_DT = #CURR_DT#
+       ,IN_OUT_CL = #IN_OUT_CL#
+       ,IN_OUT_DTL_CL = #IN_OUT_DTL_CL#
+       ,LAST_MOV_IN_DT = #CURR_DT#
+       ,DEL_YN = 'N'
+       ,UPDATE_COUNT = UPDATE_COUNT + 1
+       ,LS_CHG_DTM = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#]]>
+	</update>
+	<insert id="IEpEqpDisDelCnclInoutHstRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpDisDelCnclInoutHstRgst 중고단말기재고삭제취소입출고이력등록 */
+/* IO: 양재석,2015-10-07T10:10:09(양재석,2015-10-07T10:10:09) */
+INSERT 
+  INTO TB_EP_DIS_DIS_INOUT_HST
+       (
+       EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,IN_OUT_SEQ
+       ,IN_MGMT_NO
+       ,IN_SEQ
+       ,OUT_MGMT_NO
+       ,OUT_SEQ
+       ,IN_OUT_DT
+       ,IN_OUT_CL
+       ,IN_OUT_DTL_CL
+       ,PRCH_DEALCO_ID
+       ,OUT_DEALCO_ID
+       ,IN_DEALCO_ID
+       ,DEL_YN
+       ,UPDATE_COUNT
+       ,FS_REG_DTM
+       ,FS_REG_USER_ID
+       ,LS_CHG_DTM
+       ,LS_CHG_USER_ID
+       )
+SELECT A.EQP_MDL_CD
+       ,A.EQP_COLOR_CD
+       ,A.EQP_SER_NO
+       ,(SELECT NVL(MAX(IN_OUT_SEQ),0) + 1 
+           FROM TB_EP_DIS_DIS_INOUT_HST
+          WHERE EQP_MDL_CD   = A.EQP_MDL_CD
+            AND EQP_COLOR_CD  = A.EQP_COLOR_CD
+            AND EQP_SER_NO   = A.EQP_SER_NO)
+       ,#IN_MGMT_NO#
+       ,#IN_SEQ#
+       ,A.OUT_MGMT_NO
+       ,A.OUT_SEQ
+       ,#CURR_DT#
+       ,#IN_OUT_CL#
+       ,#IN_OUT_DTL_CL#
+       ,A.PRCH_DEALCO_ID
+       ,A.OUT_DEALCO_ID
+       ,A.IN_DEALCO_ID
+       ,'N'
+       ,0
+       ,SYSDATE
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+  FROM TB_EP_DIS_DIS_INOUT_HST A
+ WHERE A.EQP_MDL_CD   = #EQP_MDL_CD#
+   AND A.EQP_COLOR_CD  = #EQP_COLOR_CD#
+   AND A.EQP_SER_NO   = #EQP_SER_NO#
+   AND A.IN_OUT_SEQ = #LAST_IN_OUT_SEQ#]]>
+	</insert>
+	<insert id="IEpEqpDisOutCnclHstRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.IEpEqpDisOutCnclHstRgst 중고단말기재고출고취소이력등록 */
+/* IO: 양재석,2015-10-07T13:15:08(양재석,2015-10-07T13:15:08) */
+INSERT 
+  INTO TB_EP_DIS_DIS_HST
+       (EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,INOUT_MGMT_NO
+       ,HLD_DEALCO_ID
+       ,INVE_ST
+       ,EQP_ST
+       ,LAST_IN_OUT_DT
+       ,IN_OUT_CL
+       ,IN_OUT_DTL_CL
+       ,FST_IN_CONF_DT
+       ,FST_IN_DEALCO_ID
+       ,PRCHCO_ID
+       ,LAST_MOV_IN_DT
+       ,INVE_AMT
+       ,HOLD_AMT
+       ,DEL_YN
+       ,UPDATE_COUNT
+       ,FS_REG_DTM
+       ,FS_REG_USER_ID
+       ,LS_CHG_DTM
+       ,LS_CHG_USER_ID
+       )
+SELECT EQP_MDL_CD
+       ,EQP_COLOR_CD
+       ,EQP_SER_NO
+       ,#IN_MGMT_NO#
+       ,HLD_DEALCO_ID
+       ,INVE_ST
+       ,EQP_ST
+       ,LAST_IN_OUT_DT
+       ,IN_OUT_CL
+       ,IN_OUT_DTL_CL
+       ,FST_IN_CONF_DT
+       ,FST_IN_DEALCO_ID
+       ,PRCHCO_ID
+       ,LAST_MOV_IN_DT
+       ,INVE_AMT
+       ,HOLD_AMT
+       ,'N'
+       ,0
+       ,SYSDATE
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+  FROM TB_EP_DIS_DIS_HST
+ WHERE EQP_MDL_CD  = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO  = #EQP_SER_NO#
+   AND INOUT_MGMT_NO = #INOUT_MGMT_NO#]]>
+	</insert>
+	<select id="SInqEpEqpDisList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.SInqEpEqpDisList 중고단말기재고조회 */
+/* IO: 양재석,2015-10-13T13:00:12(양재석,2015-10-13T13:00:12) */
+SELECT HLD_DEALCO_ID
+       , UPDATE_COUNT
+       , INVE_ST
+       , EQP_ST
+       , PRCHCO_ID
+       , INVE_AMT
+       , EQP_SER_NO
+       , EQP_MDL_CD
+       , EQP_COLOR_CD
+  FROM TB_EP_DIS_DIS
+ WHERE EQP_SER_NO = #EQP_SER_NO#
+   AND EQP_MDL_CD = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND DEL_YN = 'N']]>
+	</select>
+	<update id="DEpEqpDisInDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpDisInDel 중고단말기재고입고삭제 */
+/* IO: 양재석,2015-11-02T13:23:37(양재석,2015-11-02T13:23:37) */
+UPDATE TB_EP_DIS_IN_M
+   SET DEL_YN          = 'Y'
+       ,UPDATE_COUNT   = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE IN_MGMT_NO = #IN_MGMT_NO#]]>
+	</update>
+	<update id="DEpEqpDisInDtlDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpDisInDtlDel 중고단말기재고입고상세삭제 */
+/* IO: 양재석,2015-11-02T13:25:16(양재석,2015-11-02T13:25:16) */
+UPDATE TB_EP_DIS_IN_DTL_D
+   SET DEL_YN          = 'Y'
+       ,UPDATE_COUNT   = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE IN_MGMT_NO = #IN_MGMT_NO#
+   AND IN_SEQ     = #IN_SEQ#]]>
+	</update>
+	<update id="DEpEqpDisInCpntDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpDisInCpntDel 중고단말기재고입고구성품삭제 */
+/* IO: 양재석,2015-11-02T13:26:40(양재석,2015-11-02T13:26:40) */
+UPDATE TB_EP_DIS_IN_CPNT
+   SET DEL_YN          = 'Y'
+       ,UPDATE_COUNT   = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE IN_MGMT_NO = #IN_MGMT_NO#
+   AND IN_SEQ     = #IN_SEQ#]]>
+	</update>
+	<update id="DEpEqpDisDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpDisDel 중고단말기재고삭제 */
+/* IO: 양재석,2015-11-02T13:28:58(양재석,2015-11-02T13:28:58) */
+UPDATE TB_EP_DIS_DIS
+   SET DEL_YN          = 'Y'
+       ,UPDATE_COUNT   = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO = #EQP_SER_NO#]]>
+	</update>
+	<update id="DEpEqpDisAmtDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpDisAmtDel 중고단말기재고금액삭제 */
+/* IO: 양재석,2015-11-02T13:30:13(양재석,2015-11-02T13:30:13) */
+UPDATE TB_EP_DIS_DIS_AMT
+   SET DEL_YN          = 'Y'
+       ,UPDATE_COUNT   = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO = #EQP_SER_NO#]]>
+	</update>
+	<update id="DEpEqpDisInoutHstDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpDisInoutHstDel 중고단말기재고입출고이력삭제 */
+/* IO: 양재석,2015-11-02T13:33:28(양재석,2015-11-02T13:33:28) */
+UPDATE TB_EP_DIS_DIS_INOUT_HST
+   SET DEL_YN          = 'Y'
+       ,UPDATE_COUNT   = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO = #EQP_SER_NO#
+   AND IN_MGMT_NO = #IN_MGMT_NO#
+   AND IN_SEQ = #IN_SEQ#]]>
+	</update>
+	<update id="DEpEqpDisHstDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEpEqpDisMgmt.DEpEqpDisHstDel 중고단말기재고이력삭제 */
+/* IO: 양재석,2015-11-02T13:34:44(양재석,2015-11-02T13:34:44) */
+UPDATE TB_EP_DIS_DIS_HST
+   SET DEL_YN          = 'Y'
+       ,UPDATE_COUNT   = UPDATE_COUNT + 1
+       ,LS_CHG_DTM     = SYSDATE
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+ WHERE EQP_MDL_CD = #EQP_MDL_CD#
+   AND EQP_COLOR_CD = #EQP_COLOR_CD#
+   AND EQP_SER_NO = #EQP_SER_NO#
+   AND INOUT_MGMT_NO = #IN_MGMT_NO#]]>
+	</update>
+</sqlMap>

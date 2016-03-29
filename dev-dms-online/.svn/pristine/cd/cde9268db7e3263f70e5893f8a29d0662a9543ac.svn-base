@@ -1,0 +1,122 @@
+package dms.nr.nrbcmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]SKN여신관리</li>
+ * <li>설  명 : <pre>[PU]SKN여신관리</pre></li>
+ * <li>작성일 : 2015-07-22 18:20:28</li>
+ * <li>작성자 : 박홍서 (uni9401)</li>
+ * </ul>
+ *
+ * @author 박홍서 (uni9401)
+ */
+public class PNRLoanMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRLoanMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>SKN여신 리스트 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-22 18:20:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : AGN_NM [대리점명]
+	 *	- field : PAY_FR_YM [기준시작년월]
+	 *	- field : PAY_TO_YM [기준종료년월]
+	 *	- field : PAY_YM_TS [지급차수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKN_PG
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : PAY_YM [지급년월]
+	 *		- field : PAY_YM_TS [지급년월차수]
+	 *		- field : AGN_NM [대리점명]
+	 *		- field : CRD_AMT [여신금액]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqSKNLoanLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 1. FM 호출 ("RS_SKN_PG")
+            responseData = callSharedBizComponentByDirect("nr.NRSCMBase", "fInqSKNLoanLst", requestData, onlineCtx);
+            // 2. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>모든 SKN여신 리스트 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-22 18:20:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : AGN_NM [대리점명]
+	 *	- field : PAY_FR_YM [기준시작년월]
+	 *	- field : PAY_TO_YM [기준종료년월]
+	 *	- field : PAY_YM_TS [지급차수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKN_LST
+	 *		- field : AGN_CD [대리점코드]
+	 *		- field : PAY_YM [지급년월]
+	 *		- field : PAY_YM_TS [지급년월차수]
+	 *		- field : AGN_NM [대리점명]
+	 *		- field : CRD_AMT [여신금액]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqAllSKNLoanLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 1. FM 호출 ("RS_SKN_LST")
+            responseData = callSharedBizComponentByDirect("nr.NRSCMBase", "fInqAllSKNLoanLst", requestData, onlineCtx);
+            // 2. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR017">
+	<select id="SIFInsuScrbChg" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR017.SIFInsuScrbChg 인터페이스테이블 UKEY보증보험정보 조회 */
+/* IO: 안한모,2015-10-16T16:15:15(안진갑,2015-08-20T12:54:59) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,OP_PROC_CL_CD
+       ,CUST_TYP_CD
+       ,CUST_NM
+       ,CUST_NM_ENPT
+       ,CTZ_COPREG_NO
+       ,CTZ_COPREG_NO_ENPT
+       ,BLICENS_NO
+       ,INSU_MGMT_NO
+       ,INSU_SVC_NO
+       ,SVC_MGMT_NO
+       ,RENTAL_SER_NO
+       ,RENTAL_SCRB_DT
+       ,RENTAL_TERM_DT
+       ,TTUL_CHG_DT
+       ,INSU_SCUR_NO
+       ,INSU_SCRB_AMT
+       ,INSU_STA_DT
+       ,INSU_END_DT
+       ,INSU_TERM_RSN_CD
+       ,INSU_SCRB_ST_CD
+       ,TEEN_YN
+  FROM  TF_INSU_SCRB_CHG
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UIFInsuScrbChg" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR017.UIFInsuScrbChg 인터페이스테이블상태변경 */
+/* IO: 안진갑,2015-10-05T12:41:52(안진갑,2015-08-20T12:58:13) */
+UPDATE  TF_INSU_SCRB_CHG
+   SET  PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #PROC_DT#]]>
+	</update>
+	<insert id="IInsuUkey" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR017.IInsuUkey 보증보험Ukey정보등록 */
+/* IO: 안진갑,2015-10-15T14:27:40(안진갑,2015-08-20T13:01:14) */
+INSERT INTO TB_INSU_UKEY
+(
+  UKEY_INSU_NO
+ ,CNTRT_NO
+ ,OP_TYP_CD
+ ,UKEY_CUST_CL
+ ,UKEY_CUST_NM
+ ,UKEY_CUST_NM_ENPT
+ ,UKEY_CTZ_COPREG_NO
+ ,UKEY_CTZ_COPREG_NO_ENPT
+ ,UKEY_BIZ_REG_NO
+ ,UKEY_INSURE_MGMT_NO
+ ,UKEY_SVC_NO
+ ,UKEY_SVC_MGMT_NO
+ ,RENTAL_SER_NO
+ ,RENTAL_SCRB_DT
+ ,RENTAL_TERM_DT
+ ,TTUL_CHG_DT
+ ,UKEY_INSURE_SCUR_NO
+ ,UKEY_INSURE_SCRB_AMT
+ ,UKEY_INSURE_FEE
+ ,UKEY_INSURE_STA_DT
+ ,UKEY_INSURE_END_DT
+ ,INSURE_TERM_RSN_CD
+ ,INSUCO_SCRB_ST_CD 
+ ,TEEN_YN
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM 
+)
+SELECT  'IU'||LPAD(SQ01_TB_INSU_UKEY.NEXTVAL,10,'0')
+       ,(SELECT CNTRT_NO FROM TB_NR_CNTRT WHERE SVC_MGMT_NO = #SVC_MGMT_NO# AND RENTAL_SER_NO = #RENTAL_SER_NO#)
+       ,#OP_PROC_CL_CD#
+       ,#CUST_TYP_CD#
+       ,#CUST_NM#
+	   ,#CUST_NM_ENPT#
+	   ,#CTZ_COPREG_NO#
+	   ,#CTZ_COPREG_NO_ENPT#
+	   ,#BLICENS_NO#
+	   ,#INSU_MGMT_NO#
+	   ,#INSU_SVC_NO#
+	   ,#SVC_MGMT_NO#
+	   ,#RENTAL_SER_NO#
+	   ,#RENTAL_SCRB_DT#
+	   ,#RENTAL_TERM_DT#
+	   ,#TTUL_CHG_DT#
+	   ,#INSU_SCUR_NO#
+	   ,(SELECT  PRCH_AMT
+  		   FROM  TB_NR_CNTRT A
+                ,TB_EQP_CNTRT B
+                ,TB_EQP_ASSET C
+       			,TB_PRCH D
+		  WHERE  A.CNTRT_NO = B.CNTRT_NO
+   			AND  B.ASSET_NO = C.ASSET_NO
+   			AND  C.PRCH_NO = D.PRCH_NO
+   			AND  A.SVC_MGMT_NO = #SVC_MGMT_NO# 
+   			AND  A.RENTAL_SER_NO = #RENTAL_SER_NO#)
+	   ,#INSU_SCRB_AMT#
+	   ,#INSU_STA_DT#
+	   ,#INSU_END_DT#
+	   ,#INSU_TERM_RSN_CD#
+	   ,#INSU_SCRB_ST_CD#
+	   ,#TEEN_YN#
+	   ,'BAT'
+	   ,SYSDATE
+	   ,'BAT'
+	   ,SYSDATE
+  FROM  DUAL]]>
+	</insert>
+</sqlMap>

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPPriceListMgmt">
+	<select id="SEpBasProdFixPriceMstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.SEpBasProdFixPriceMstPaging 상품고정가격관리목록조회 */
+/* IO: 김윤환,2015-08-19T15:29:14(김윤환,2015-08-19T15:08:19) */
+SELECT 
+	   PA.*
+  FROM (
+		SELECT 
+				ROW_NUMBER() OVER(ORDER BY A.PRCLST_MGMT_NO ) AS ROWNO
+				,A.PRCLST_MGMT_NO	/* 가격표 관리 번호 */
+				,A.STA_DT			/* 시작 일자 */
+				,A.PRCLST_QTY		/* 가격표 수량 */
+				,A.RMK				/* 비고 */
+		  FROM TB_EP_BAS_PROD_FIX_PRICE_MST A
+		 WHERE A.DEL_YN = 'N'
+]]><isNotEmpty property="STA_DT" prepend="AND"><![CDATA[
+			   A.STA_DT LIKE #STA_DT#||'%' 
+]]></isNotEmpty><![CDATA[
+		 ORDER BY STA_DT DESC
+	    ) PA
+WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEpBasProdFixPriceMstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.SEpBasProdFixPriceMstTotCnt 상품고정가격관리목록총건수 */
+/* IO: 김윤환,2015-08-19T15:28:43(김윤환,2015-08-19T15:20:02) */
+SELECT 
+	   COUNT(*) AS TOTAL_CNT /*전체건수*/				
+  FROM TB_EP_BAS_PROD_FIX_PRICE_MST A
+ WHERE A.DEL_YN = 'N'
+]]><isNotEmpty property="STA_DT" prepend="AND"><![CDATA[
+	   A.STA_DT LIKE #STA_DT#||'%' 
+]]></isNotEmpty><![CDATA[
+ ORDER BY STA_DT DESC]]>
+	</select>
+	<select id="SPriceStrdAmtLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.SPriceStrdAmtLst 가격표기준금액조회 */
+/* IO: 김윤환,2015-08-20T14:32:06(김윤환,2015-08-20T14:32:06) */
+SELECT 
+	   DECODE(A.CNT,0,'Y','N') AS IN_YN
+  FROM (
+		SELECT 
+			   COUNT(*) AS CNT     
+		  FROM TB_EP_BAS_PROD_FIX_PRICE
+		 WHERE EQP_MDL_CD = #EQP_MDL_CD#
+		   AND TO_CHAR(TO_DATE(#STRD_DT#,'YYYYMMDD')-1 ,'YYYYMMDD') BETWEEN FRDT AND TODT
+		   AND TODT != '99991231'
+		   AND DEL_YN = 'N'
+		) A ]]>
+	</select>
+	<select id="SPrclstMgmtNoSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.SPrclstMgmtNoSeq 가격표관리번호조회 */
+/* IO: 김윤환,2015-08-21T11:17:11(김윤환,2015-08-21T10:59:02) */
+SELECT 
+	   'P'||LPAD(NVL(MAX(TO_NUMBER(SUBSTR(PRCLST_MGMT_NO,2,9))),0)+1,9,'0') AS PRCLST_MGMT_NO
+  FROM TB_EP_BAS_PROD_FIX_PRICE_MST]]>
+	</select>
+	<update id="UPriceTodt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.UPriceTodt 가격종료일자수정 */
+/* IO: 김윤환,2015-08-21T11:31:01(김윤환,2015-08-21T11:31:01) */
+UPDATE TB_EP_BAS_PROD_FIX_PRICE
+   SET TODT = TO_CHAR(TO_DATE(#STRD_DT#,'YYYYMMDD')-1,'YYYYMMDD')
+ WHERE TODT = '99991231'
+   AND EQP_MDL_CD = #EQP_MDL_CD#
+   AND DEL_YN = 'N']]>
+	</update>
+	<insert id="IEpBasProdFixPrice" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.IEpBasProdFixPrice 상품고정가격등록 */
+/* IO: 김윤환,2015-08-31T16:24:57(김윤환,2015-08-21T13:08:31) */
+INSERT 
+  INTO TB_EP_BAS_PROD_FIX_PRICE 
+       ( 
+           EQP_MDL_CD, 			/* 단말기 모델 코드 */
+           SEQ,					/* 순번 */
+           GRADE,				/* 등급 */
+           UPRC,				/* 단가 */
+           RMK,					/* 비고 */
+           DEL_YN,				/* 삭제 여부 */
+           UPDATE_COUNT,		/* UPDATE COUNT */
+           FS_REG_DTM,			/* 최초 등록 일시 */
+           FS_REG_USER_ID,		/* 최초 등록 사용자 ID */
+           LS_CHG_DTM,		/* 최종 변경 사용자 ID */
+           LS_CHG_USER_ID,	/* 최종 변경 일시 */
+           FRDT,				/* 시작일 */
+           TODT,				/* 종료일 */
+           PRCLST_MGMT_NO,		/* 가격표 관리 번호 */
+           STRD_INCEN			/* 기준 인센티브 */
+       ) 
+       VALUES 
+       ( 
+           #EQP_MDL_CD# 
+           , (SELECT NVL(MAX(SEQ),0)+1
+                FROM TB_EP_BAS_PROD_FIX_PRICE
+                WHERE EQP_MDL_CD = #EQP_MDL_CD#)
+           , #GRADE#
+           , #UPRC#
+           , ''
+           , 'N' 
+	       , 0 
+	       , SYSDATE
+	       , #FST_REG_USER_ID# 
+	       , SYSDATE
+	       , #LAST_CHG_USER_ID#
+           , #FRDT#
+           , '99991231'
+           , #PRCLST_MGMT_NO#
+           , CASE
+				WHEN TO_NUMBER(#UPRC#) < 30000 THEN 0
+                WHEN TO_NUMBER(#UPRC#) BETWEEN 30000 AND 49999 THEN 10000
+                WHEN TO_NUMBER(#UPRC#) BETWEEN 50000 AND 99999 THEN 10000
+                WHEN TO_NUMBER(#UPRC#) BETWEEN 100000 AND 199999 THEN 20000
+                ELSE 30000
+             END
+       )]]>
+	</insert>
+	<insert id="IEpBasProdFixPriceMst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.IEpBasProdFixPriceMst 상품고정가격관리등록 */
+/* IO: 김윤환,2015-08-31T16:26:12(김윤환,2015-08-21T13:22:38) */
+INSERT 
+  INTO TB_EP_BAS_PROD_FIX_PRICE_MST 
+       ( 
+           PRCLST_MGMT_NO,		/* 가격표 관리 번호 */
+           STA_DT,				/* 시작 일자 */
+           PRCLST_QTY,			/* 가격표 수량 */
+           RMK,					/* 비고 */
+           DEL_YN,				/* 삭제 여부 */
+           UPDATE_COUNT,		/* UPDATE COUNT */
+           FS_REG_DTM,			/* 최초 등록 일시 */
+           FS_REG_USER_ID,		/* 최초 등록 사용자 ID */
+           LS_CHG_DTM,		/* 최종 변경 일시 */
+           LS_CHG_USER_ID 	/* 최종 변경 사용자 ID */
+       ) 
+       VALUES 
+       ( 
+           #PRCLST_MGMT_NO#
+           , #STRD_DT# 
+           , #PRCLST_QTY# 
+           , #RMK#
+           , 'N' 
+	       , 0 
+	       , SYSDATE
+	       , #FST_REG_USER_ID# 
+	       , SYSDATE
+	       , #LAST_CHG_USER_ID#
+       )]]>
+	</insert>
+	<select id="SProdPriceAmtLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.SProdPriceAmtLst 상품가격표금액조회 */
+/* IO: 김윤환,2015-08-21T19:39:06(김윤환,2015-08-21T17:20:15) */
+SELECT A.EQP_MDL_NM,					/* 단말기모델명 */
+       A.EQP_MDL_CD, 					/* 단말기모델코드 */
+       SUM(A.N_GRADE) AS N_GRADE,		/* N등급 가격 */ 
+       SUM(A.A_GRADE) AS A_GRADE, 		/* A등급 가격 */ 
+       SUM(A.B_GRADE) AS B_GRADE, 		/* B등급 가격 */ 
+       SUM(A.C_GRADE) AS C_GRADE, 		/* C등급 가격 */ 
+       SUM(A.D_GRADE) AS D_GRADE, 		/* D등급 가격 */ 
+       SUM(A.E_GRADE) AS E_GRADE,		/* E등급 가격 */ 
+       MAX(A.FRDT)   AS FRDT,			/* 시작일자 */ 
+       MAX(A.TODT)   AS TODT			/* 종료일자 */ 
+  FROM 
+       (SELECT 
+       		   IB.EQP_MDL_NM,
+       		   IA.EQP_MDL_CD, 
+               DECODE(IA.GRADE,'N',IA.UPRC,0) AS N_GRADE, 
+               DECODE(IA.GRADE,'A',IA.UPRC,0) AS A_GRADE, 
+               DECODE(IA.GRADE,'B',IA.UPRC,0) AS B_GRADE, 
+               DECODE(IA.GRADE,'C',IA.UPRC,0) AS C_GRADE, 
+               DECODE(IA.GRADE,'D',IA.UPRC,0) AS D_GRADE, 
+               DECODE(IA.GRADE,'E',IA.UPRC,0) AS E_GRADE,
+               IA.FRDT,
+               IA.TODT                
+         FROM TB_EP_BAS_PROD_FIX_PRICE IA
+              ,TB_EQP_MDL IB
+        WHERE IA.DEL_YN = 'N'
+          AND IA.EQP_MDL_CD = IB.EQP_MDL_CD 
+]]><isNotEmpty property="PRCLST_MGMT_NO" prepend="AND"><![CDATA[
+			  IA.PRCLST_MGMT_NO = #PRCLST_MGMT_NO#
+]]></isNotEmpty><![CDATA[            
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+			  IA.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[        
+       ) A
+ GROUP BY A.EQP_MDL_NM, 
+          A.EQP_MDL_CD]]>
+	</select>
+	<update id="DEpBasProdFixPriceMst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.DEpBasProdFixPriceMst 상품고정가격관리삭제 */
+/* IO: 김윤환,2015-08-31T16:26:28(김윤환,2015-08-24T09:02:12) */
+UPDATE TB_EP_BAS_PROD_FIX_PRICE_MST
+   SET DEL_YN = 'Y'
+     , UPDATE_COUNT = UPDATE_COUNT+1
+     , LS_CHG_DTM = SYSDATE
+     , LS_CHG_USER_ID = #LAST_CHG_USER_ID#
+ WHERE PRCLST_MGMT_NO = #PRCLST_MGMT_NO#
+   AND DEL_YN = 'N']]>
+	</update>
+	<delete id="DEpBasProdFixPrice" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.DEpBasProdFixPrice 상품고정가격삭제 */
+/* IO: 김윤환,2015-08-31T16:26:59(김윤환,2015-08-24T09:03:12) */
+UPDATE TB_EP_BAS_PROD_FIX_PRICE
+   SET DEL_YN = 'Y'
+     , UPDATE_COUNT = UPDATE_COUNT+1
+     , LS_CHG_DTM = SYSDATE
+     , LS_CHG_USER_ID = #LAST_CHG_USER_ID#
+ WHERE PRCLST_MGMT_NO = #PRCLST_MGMT_NO#
+   AND DEL_YN = 'N']]>
+	</delete>
+	<update id="UEpBasProdFixPriceTodt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.UEpBasProdFixPriceTodt 상품고정가격종료일자수정 */
+/* IO: 김윤환,2015-08-31T16:26:41(김윤환,2015-08-24T09:05:28) */
+UPDATE TB_EP_BAS_PROD_FIX_PRICE
+   SET TODT = '99991231'
+     , UPDATE_COUNT = UPDATE_COUNT+1
+     , LS_CHG_DTM = SYSDATE
+     , LS_CHG_USER_ID = #LAST_CHG_USER_ID#
+ WHERE EQP_MDL_CD = #EQP_MDL_CD#
+   AND TODT = TO_CHAR(TO_DATE(#STA_DT#,'YYYYMMDD')-1,'YYYYMMDD')
+   AND DEL_YN = 'N']]>
+	</update>
+	<select id="SPriceEqpCdErrExmn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPPriceListMgmt.SPriceEqpCdErrExmn 가격표상품코드오류검사 */
+/* IO: 정동현,2015-09-02T20:26:23(정동현,2015-09-02T19:41:10) */
+SELECT  DECODE(A.CNT,0,'N','Y')  AS  IS_YN
+  FROM  (
+         SELECT  COUNT(*)  AS  CNT
+           FROM  TB_EQP_MDL
+          WHERE  EQP_MDL_CD = #EQP_MDL_CD#  /* 단말기모델 */  
+        )  A]]>
+	</select>
+</sqlMap>

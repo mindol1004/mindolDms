@@ -1,0 +1,336 @@
+package dms.ep.epbsxbase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]대리점수수료관리</li>
+ * <li>설  명 : <pre>[PU]대리점수수료관리</pre></li>
+ * <li>작성일 : 2015-10-05 10:35:55</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class PEPSktCmmsMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPSktCmmsMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]SKT수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:35:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_CMMS_LIST
+	 *		- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *		- field : CMMS_STRD_YM [수수료 기준 년월]
+	 *		- field : OP_PROC_CMMS_AMT [업무 처리 수수료 금액]
+	 *		- field : CUST_MGMT_SYS_USE_AMT [고객 관리 시스템 사용 금액]
+	 *		- field : CMMS_AMT [수수료 금액]
+	 *		- field : CMMS_XCL_CNT [수수료 정산 건수]
+	 *		- field : CMMS_SLIP_DT [수수료 전표 일자]
+	 *		- field : CMMS_SLIP_NO [수수료 전표 번호]
+	 *		- field : CMMS_SLIP_ST [수수료 전표 상태]
+	 *		- field : CMMS_CNCL_SLIP_DT [수수료 취소 전표 일자]
+	 *		- field : CMMS_CNCL_SLIP_NO [수수료 취소 전표 번호]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 *	- record : RS_SKT_CMMS_DTL_LIST
+	 *		- field : CMMS_STRD_YM [수수료 기준 년월]
+	 *		- field : DEDC_TYP_CD [중고폰 공제유형구분]
+	 *		- field : INVE_TYP_CD [중고폰 재고유형 구분]
+	 *		- field : CMMS_SLIP_DT [수수료 전표 일자]
+	 *		- field : CMMS_SLIP_NO [수수료 전표 번호]
+	 *		- field : CMMS_SLIP_ST [수수료 전표 상태]
+	 *		- field : CMMS_CNCL_SLIP_DT [수수료 취소 전표 일자]
+	 *		- field : CMMS_CNCL_SLIP_NO [수수료 취소 전표 번호]
+	 *		- field : CMMS_COUNT [수수료 건수]
+	 *		- field : XCL_AMT [수수료 금액]
+	 * </pre>
+	 */
+	public IDataSet pSSktCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출            
+            responseData.putRecordSet(callSharedBizComponentByDirect("ep.EPSSXBase", "fSSktCmmsLst", requestData, onlineCtx).getRecordSet("RS_SKT_CMMS_LIST"));  // SKT수수료목록조회
+            responseData.putRecordSet(callSharedBizComponentByDirect("ep.EPSSXBase", "fSSktCmmsDtlLst", requestData, onlineCtx).getRecordSet("RS_SKT_CMMS_DTL_LIST"));   // SKT수수료상세목록조회
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]SKT수수료재집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:35:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산연월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_RESULT
+	 *		- field : INSERT_ROW [등록건수]
+	 * </pre>
+	 */
+	public IDataSet pSaveSktCmmsRpetCalc(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet rowDelDs = new DataSet();  // 정산 수수료 삭제대상 데이터셋. 
+        IDataSet rowInstDs = new DataSet(); // 정산 수수료 등록대상 데이터셋.
+        
+        CommonArea ca = getCommonArea(onlineCtx);
+        Log logger = LogManager.getFwkLog();
+        
+        IRecord rec = null;
+        
+        // 재집계 처리 후 리턴 시켜줄 레코드셋 생성.
+        IRecordSet rsReturn = new RecordSet("RS_RESULT", new String[]{"INSERT_ROW"});
+        
+        // 수수료정산 데이터 변수.
+        int insertRow = 0;  // 수수료집계 건수
+        int opProcCmmsAmt = 0;  // 업무 처리 수수료 금액
+        int custMgmtSysUseAmt = 0;  // 고객관리 시스템 사용금액
+        int cmmsAmt = 0;    // 수수료 금액
+        String cmmsXclNo = "";  // 수수료정산번호
+        String cmmsSlipDt = "";  // 수수료 전표 일자
+        String cmmsSlipNo = "";  // 수수료 전표 번호
+        
+        try {                                                                                 
+            // 1. 기준연월로 재집계시 기존 대상 데이터 조회.
+            IRecordSet rsCmmsList = callSharedBizComponentByDirect("ep.EPSSXBase", "fSSktCmmsLst", requestData, onlineCtx).getRecordSet("RS_SKT_CMMS_LIST");
+            
+            if(null != rsCmmsList && rsCmmsList.getRecordCount()>0){
+                // 기존에 재집계하여 등록된 수수료 정산관리 데이터가 존재시. ==> 기존 데이터 삭제.
+                rec = rsCmmsList.getRecord(0);
+                rowDelDs.putFieldMap(rec);
+                rowDelDs.putField("USER_ID", ca.getUserNo());
+                
+                if (logger.isDebugEnabled()) {                 
+                    logger.debug("#### 수수료 기준 년월 #### =======>> "+StringUtils.nvlObject(rowDelDs.getField("CMMS_STRD_YM"),"")+"\n");
+                    logger.debug("#### 수수료 정산 번호 #### =======>> "+StringUtils.nvlObject(rowDelDs.getField("CMMS_XCL_NO"),"")+"\n");
+                    logger.debug("#### 수수료 전표 일자 #### =======>> "+StringUtils.nvlObject(rowDelDs.getField("CMMS_SLIP_DT"),"")+"\n");
+                    logger.debug("#### 수수료 전표 번호 #### =======>> "+StringUtils.nvlObject(rowDelDs.getField("CMMS_SLIP_NO"),"")+"\n");
+                    logger.debug("#### 전표 상태 #### =======>> "+StringUtils.nvlObject(rowDelDs.getField("SLIP_ST_CD"),"")+"\n");
+                }
+                
+                // 1.1 수수료 정산 삭제
+                callSharedBizComponentByDirect("ep.EPSSXBase", "fDTbEpCmmsXcl", rowDelDs, onlineCtx);
+                // 1.2 수수료 정산상세 삭제
+                callSharedBizComponentByDirect("ep.EPSSXBase", "fDTbEpCmmsXclDtl", rowDelDs, onlineCtx);
+                
+                // 1.3 기존전표 삭제 및 취소후 재집계 일 경우 데이터등록시 사용.                
+                if("05".equals(StringUtils.nvlObject(rowDelDs.getField("SLIP_ST_CD"),""))){
+                    //05: 전표삭제(삭제된전표)
+                    cmmsSlipDt = StringUtils.nvlObject(rowDelDs.getField("CMMS_SLIP_DT"),"");
+                    cmmsSlipNo = StringUtils.nvlObject(rowDelDs.getField("CMMS_SLIP_NO"),"");                    
+                }                                                                
+            }
+            
+            // 2. 신규 재집계 수수료정산번호조회
+            cmmsXclNo = callSharedBizComponentByDirect("ep.EPSSXBase", "fSCmmsXclNoSeq", requestData, onlineCtx).getField("CMMS_XCL_NO");            
+            if (logger.isDebugEnabled()) {                 
+                logger.debug("#### 수수료정산번호조회 #### =======>> "+cmmsXclNo+"\n");
+            }
+            
+            // 2.신규 재집계 수수료정산상세 데이터 등록.
+            rowInstDs.putField("CMMS_DT", StringUtils.nvlObject(requestData.getField("CMMS_DT"),""));   // 정산년월
+            rowInstDs.putField("USER_ID", ca.getUserNo());   // 로그인 ID
+            rowInstDs.putField("CMMS_XCL_NO", cmmsXclNo);     // 수수료 정산 번호
+            rowInstDs.putField("CMMS_XCL_DTL_SEQ", "0");      // 수수료 정산 상세 순번     
+            if (logger.isDebugEnabled()) {                 
+                logger.debug("#### 수수료 정산 상세 데이터 #### =======>> "+rowInstDs.toString()+"\n");
+            }
+            // 2.1 선할인 SKT수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIPreDcSktCmms", rowInstDs, onlineCtx).getField("insertRow"));
+            rowInstDs.putField("CMMS_XCL_DTL_SEQ", insertRow);      // 선할인 대상 이후_수수료 정산 상세 순번
+            // 2.2 계좌송금 비현장감정 SKT수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIAccoRmtGnrlJdgSktCmms", rowInstDs, onlineCtx).getField("insertRow"));
+            rowInstDs.putField("CMMS_XCL_DTL_SEQ", insertRow);      // 계좌송금확정재고 대상 이후_수수료 정산 상세 순번
+            // 2.3 계좌송금 현장감정 SKT수수료집계fIAccoRmtGnrlJdgSktCmms
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIAccoRmtRpetJdgSktCmms", rowInstDs, onlineCtx).getField("insertRow"));
+            rowInstDs.putField("CMMS_XCL_DTL_SEQ", insertRow);      // 계좌송금미착재고 대상 이후_수수료 정산 상세 순번
+            // 2.4 요금선납 비현장감정 SKT수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIFeePpayGnrlJdgSktCmms", rowInstDs, onlineCtx).getField("insertRow"));
+            rowInstDs.putField("CMMS_XCL_DTL_SEQ", insertRow);      // 요금선납확정재고 대상 이후_수수료 정산 상세 순번
+            // 2.5 요금선납 현장감정 SKT수수료집계
+            insertRow += Integer.parseInt(callSharedBizComponentByDirect("ep.EPSSXBase", "fIFeePpayRpetJdgSktCmms", requestData, onlineCtx).getField("insertRow"));
+            
+            // 3.신규 재집계 수수료정산 데이터 등록.
+            if(insertRow > 0){                
+                // 3.1 SKT수수료 계산.
+                opProcCmmsAmt = insertRow * 870;    // 업무처리 수수료 금액 = 수수료 집계 총건수 * 870(고정데이터)
+                custMgmtSysUseAmt = 4220000;    // 고객관리시스템 사용료 = 4220000(고정데이터)
+                cmmsAmt = opProcCmmsAmt + custMgmtSysUseAmt ;   // 수수료총액 = 업무처리수수료 + 고객관리시스템 사용료
+                
+                // 3.2 수수료정산상세 데이터가 등록시에 수수료정산 테이블에 데이터 등록.
+                rowInstDs.putField("CMMS_XCL_NO", cmmsXclNo);   // 수수료 정산 번호
+                rowInstDs.putField("CMMS_STRD_YM", StringUtils.nvlObject(requestData.getField("CMMS_DT"),""));  // 수수료 기준 년월
+                rowInstDs.putField("OP_PROC_CMMS_AMT", opProcCmmsAmt);   // 업무 처리 수수료 금액
+                rowInstDs.putField("CUST_MGMT_SYS_USE_AMT", custMgmtSysUseAmt);   // 고객 관리 시스템 사용 금액
+                rowInstDs.putField("CMMS_AMT", cmmsAmt);   // 수수료 금액
+                rowInstDs.putField("CMMS_XCL_CNT", insertRow);   // 수수료 정산 건수
+                rowInstDs.putField("CMMS_CNCL_SLIP_DT", cmmsSlipDt);   // 수수료 취소 전표 일자
+                rowInstDs.putField("CMMS_CNCL_SLIP_NO", cmmsSlipNo);   // 수수료 취소 전표 번호
+                rowInstDs.putField("USER_ID", ca.getUserNo());   // 로그인 ID
+                
+                if (logger.isDebugEnabled()) {                 
+                    logger.debug("#### 수수료 정산 데이터 #### =======>> "+rowInstDs.toString()+"\n");
+                }
+                
+                callSharedBizComponentByDirect("ep.EPSSXBase", "fITbEpCmmsXcl", rowInstDs, onlineCtx);
+                                
+            }
+                                                                                                            
+            IRecord record = rsReturn.newRecord();
+            record.set("INSERT_ROW", insertRow);  
+            
+            responseData.putRecordSet("RS_RESULT", rsReturn);   
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]SKT수수료상세목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:35:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_STRD_YM [필드1]
+	 *	- field : DEDC_TYP_CD [필드2]
+	 *	- field : INVE_TYP_CD [필드3]
+	 *	- field : EXCEL_FIRST [필드4]
+	 *	- field : EXCEL_LAST [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_DTL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [전체건수]
+	 *		- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *		- field : CMMS_STRD_YM [정산 기준 년월]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : FEE_DEDC_PROC_DT [공제처리일자]
+	 *		- field : RMT_DT [송금일자]
+	 *		- field : DPSTR [고객명]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : PRCH_AMT [계좌송금 비현장 금액]
+	 *		- field : UKEY_EQP_PRC [요금선납 비현장 금액]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : LS_CHG_DTM [변경일자]
+	 *		- field : SCRB_MTHD [가입방법]
+	 *		- field : FST_RGSTR [최초 등록자]
+	 *		- field : FST_RGSTR_NM [최초 등록자명]
+	 *		- field : HEADQ_NM [본부 명]
+	 *		- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *		- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *		- field : AFFIL_AGN [소속대리점코드]
+	 *		- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *		- field : PAY_MTHD [지급방법]
+	 *		- field : PAY_DT [지급 일자]
+	 *		- field : SKN_EQP_ST [재감정등급]
+	 *		- field : SKN_JDG_AMT [SKN 감정 금액]
+	 *		- field : SKN_SMPL_JDG_DAMT [SKN 샘플 감정 차액]
+	 * </pre>
+	 */
+	public IDataSet pSSktCmmsDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        Log logger = LogManager.getFwkLog();
+        
+        try {
+            
+            if (logger.isDebugEnabled()) {                 
+                logger.debug("#### 공제유형코드 #### =======>> "+StringUtils.nvlObject(requestData.getField("DEDC_TYP_CD"),"")+"\n");
+                logger.debug("#### 재고유형코드 #### =======>> "+StringUtils.nvlObject(requestData.getField("INVE_TYP_CD"),"")+"\n");
+            }
+            
+            if("01".equals(StringUtils.nvlObject(requestData.getField("DEDC_TYP_CD"),"")) && "10".equals(StringUtils.nvlObject(requestData.getField("INVE_TYP_CD"),""))){
+                // FM 호출 : [FM]계좌송금확정재고SKT수수료목록조회 호출
+                responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSAccoRmtConfSktCmmsLst", requestData, onlineCtx);
+            }else if("01".equals(StringUtils.nvlObject(requestData.getField("DEDC_TYP_CD"),"")) && "20".equals(StringUtils.nvlObject(requestData.getField("INVE_TYP_CD"),""))){
+                // FM 호출 : [FM]계좌송금미착재고SKT수수료목록조회 호출 
+                responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSAccoRmtNonConffSktCmmsLst", requestData, onlineCtx);
+            }else if("02".equals(StringUtils.nvlObject(requestData.getField("DEDC_TYP_CD"),"")) && "20".equals(StringUtils.nvlObject(requestData.getField("INVE_TYP_CD"),""))){
+                // FM 호출 : [FM]선할인SKT수수료목록조회 호출
+                responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSPreDcSktCmmsLst", requestData, onlineCtx);
+            }else if("03".equals(StringUtils.nvlObject(requestData.getField("DEDC_TYP_CD"),"")) && "10".equals(StringUtils.nvlObject(requestData.getField("INVE_TYP_CD"),""))){
+                // FM 호출 : [FM]요금선납확정재고SKT수수료목록조회 호출 
+                responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSFeePpayConfSktCmmsLst", requestData, onlineCtx);
+            }else if("03".equals(StringUtils.nvlObject(requestData.getField("DEDC_TYP_CD"),"")) && "20".equals(StringUtils.nvlObject(requestData.getField("INVE_TYP_CD"),""))){
+                // FM 호출 : [FM]요금선납미착재고SKT수수료집계목록조회 호출 
+                responseData = callSharedBizComponentByDirect("ep.EPSSXBase", "fSFeePpayNonConffSktCmmsLst", requestData, onlineCtx);
+            }
+        
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+  
+}

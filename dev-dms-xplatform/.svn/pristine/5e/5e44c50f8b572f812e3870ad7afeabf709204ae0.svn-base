@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 중고폰 업무 공통
+ * 02. js :  comEpBiz.xjs
+ * 03. js 설명 : 중고폰 업무 관련 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 김윤환 
+ * 06. 작성일 : 2015.09.10
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.09.10    김윤환    최초 작성
+*************************************************************************************************/
+
+/************************************************************************************************
+ * gfn_tlyRgst                        : 중고폰 일반감정, 재감정 검수등록 화면 호출.
+ * gfn_sellGrRgst                     : 중고폰 판매등급등록 화면 호출.
+************************************************************************************************/
+
+/*********************************************************************************************************
+ * Function : 중고폰 일반감정, 재감정 검수등록 화면 호출.
+ * @param   : formId - 해당 화면ID
+ * @param   : arrArgs - Param Object  
+			: sEqpMdlCd	: 단말기모델코드 (*필수입력값)
+			: sCnslMgmtNo : 상담관리번호 (*필수입력값)
+			: sCnslDt : 상담일자
+			: sScrbMthd : 가입방법	
+			: sPrgGb : 검수대상구분 (*필수입력값)
+			: sJdcCl : 감정구분 (*필수입력값)    NO: 일반감정, RE: 재감정
+			: Ex.> var arrArgs = {sEqpMdlCd:sEqpMdlCd, sCnslMgmtNo:sCnslMgmtNo, sCnslDt:sCnslDt, sScrbMthd:sScrbMthd, sPrgGb:sPrgGb, sJdcCl:sJdcCl}							
+ * @param   : objColList - Dataset의 trim 대상 컬럼 (구분자 ",") 입력값이 없는 경우는 전체 컬럼 대상
+ * Return   : void
+ * 작성자  : 김윤환
+*********************************************************************************************************/
+function gfn_tlyRgst(formId,arrArgs){
+		/*
+		trace("sEqpMdlCd ==> "+arrArgs.sEqpMdlCd);
+		trace("sCnslMgmtNo ==> "+arrArgs.sCnslMgmtNo);
+		trace("sCnslDt ==> "+arrArgs.sCnslDt);
+		trace("sScrbMthd ==> "+arrArgs.sScrbMthd);
+		trace("sPrgGb ==> "+arrArgs.sPrgGb);
+		trace("sJdcCl ==> "+arrArgs.sJdcCl);		
+		*/
+		var sEqpMdlCd = arrArgs.sEqpMdlCd;		// 단말기모델코드
+		var sCnslMgmtNo = arrArgs.sCnslMgmtNo;	// 상담관리번호
+		var sCnslDt = arrArgs.sCnslDt;			// 상담일자
+		var sScrbMthd = arrArgs.sScrbMthd;		// 가입방법
+		var sPrgGb = arrArgs.sPrgGb;			// 검수대상구분
+		var sJdcCl = arrArgs.sJdcCl;			// 감정구분
+		var jdcClFormId = "";					// 검수등록 화면 ID
+		
+		if(gfn_isNull(sEqpMdlCd)){
+			gfn_message("A","DMS00002","W","","단말기모델 코드"); /*필수입력항목 {0}이/가 누락되었습니다. */
+			return false;
+		}else if(gfn_isNull(sCnslMgmtNo)){
+			gfn_message("A","DMS00002","W","","상담관리번호"); /*필수입력항목 {0}이/가 누락되었습니다. */
+			return false;
+		}else if(gfn_isNull(sPrgGb)){
+			gfn_message("A","DMS00002","W","","가입방법"); /*필수입력항목 {0}이/가 누락되었습니다. */
+			return false;
+		}else if(gfn_isNull(sJdcCl)){
+			gfn_message("A","DMS00002","W","","감정구분"); /*필수입력항목 {0}이/가 누락되었습니다. */
+			return false;
+		}else if(gfn_isNull(formId)){
+			gfn_message("A","DMS00002","W","","화면ID"); /*필수입력항목 {0}이/가 누락되었습니다. */
+			return false;
+		}
+		/* 동적 데이터셋 생성*/
+		var dsParam = gfn_makeDataSet("ds_param");				
+		dsParam.addColumn( "EQP_MDL_CD", "string");
+		dsParam.addColumn( "CNSL_MGMT_NO", "string");
+		dsParam.addColumn( "CNSL_DT", "string");
+		dsParam.addColumn( "SCRB_MTHD", "string");
+		dsParam.addColumn( "PRG_GB", "string");
+		dsParam.addColumn( "JDC_CL", "string");
+		
+		/* 동적 데이터셋 데이터 등록*/				
+		dsParam.clearData();
+		var sRow = dsParam.addRow();	
+		if(sRow > -1){
+			dsParam.setColumn(sRow,"EQP_MDL_CD",sEqpMdlCd);		
+			dsParam.setColumn(sRow,"CNSL_MGMT_NO",sCnslMgmtNo);	
+			dsParam.setColumn(sRow,"CNSL_DT",sCnslDt);			
+			dsParam.setColumn(sRow,"SCRB_MTHD",sScrbMthd);		
+			dsParam.setColumn(sRow,"PRG_GB",sPrgGb);			
+			dsParam.setColumn(sRow,"JDC_CL",sJdcCl);
+		}			
+		
+		gv_preFormId = formId;	// 글로벌변수: 해당 화면 ID 		
+		
+		if("NO" == sJdcCl){
+			// 검수구분이 일반감정일 경우
+			jdcClFormId = "FEP006D";
+		}else if("RE" == sJdcCl){
+			// 검수구분이 재감정일 경우
+			jdcClFormId = "FEP041D"; // 추후 화면 개발.
+		}		
+				
+		var vForm = gfn_getFrm(jdcClFormId);	// 해당 검수등록 화면 활성화 유무 검사 및 소스 읽어들임.
+		
+		if (!gfn_isNull(vForm)){			
+			vForm.fn_reOnload(vForm);						
+		}				
+		gfn_openFrm(jdcClFormId); // 해당 검수등록 화면 활성화
+}
+/*********************************************************************************************************
+ * Function : 중고폰 판매등급등록 화면 호출
+ * @param   : formId - 해당 화면ID
+ * @param   : arrArgs - Param Object
+			: sCnslMgmtNo : 상담관리번호   (*필수입력값)
+			: sScrbMthd   : 가입방법
+			: sSknEqpSt   : 현장감정등급
+			: sPrcGb      : 중고폰검수등록대상구분
+			: Ex.> var arrArgs = {sCnslMgmtNo:sCnslMgmtNo, sScrbMthd:sScrbMthd, sSknEqpSt:sSknEqpSt, sPrcGb:sPrcGb}							
+ * @param   : objColList - Dataset의 trim 대상 컬럼 (구분자 ",") 입력값이 없는 경우는 전체 컬럼 대상
+ * Return   : sRtnVal - Param Object
+            : sellGrade   : 판매등급
+			: eqpSt       : 매입등급
+			: eqpE        : EQP_E
+ * 작성자  : 정동현
+*********************************************************************************************************/
+function gfn_sellGrRgst(formId,arrParams){
+	var sCnslMgmtNo = arrParams.sCnslMgmtNo;		// 상담관리번호
+	var sScrbMthd = arrParams.sScrbMthd;	        // 가입방법
+	var sSknEqpSt = arrParams.sSknEqpSt;			// 현장감정등급
+	var sPrcGb = arrParams.sPrcGb;			        // 중고폰검수등록대상구분
+
+	if(gfn_isNull(sCnslMgmtNo)){
+		gfn_message("A","DMS00002","W","","상담관리번호 코드");       /*필수입력항목 {0}이/가 누락되었습니다. */
+		return false;
+	}
+
+	var arrArgs = {argAutoSelect:true, argCallProgram:formId, sCnslMgmtNo:sCnslMgmtNo, sScrbMthd:gfn_emptyVal(sScrbMthd,null), sSknEqpSt:gfn_emptyVal(sSknEqpSt,null), sPrcGb:gfn_emptyVal(sPrcGb,null)};
+	var sRtnVal = gfn_dialog("FEP007P", arrArgs);       //판매등급등록  팝업 활성화
+	
+	return sRtnVal;
+}]]></Script>

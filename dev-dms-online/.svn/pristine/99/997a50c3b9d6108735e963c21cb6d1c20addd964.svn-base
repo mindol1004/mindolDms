@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPInveProdDisMgmt">
+	<select id="SInveProdDisPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveProdDisMgmt.SInveProdDisPaging 재고상품조회 */
+/* IO: 김상오,2016-03-11T17:28:07(이민재,2015-09-08T14:42:43) */
+SELECT  PA.*
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD, A.EQP_COLOR_CD, A.EQP_SER_NO) AS ROWNO
+                ,A.EQP_MDL_CD                /* 모델코드 */
+                ,A.EQP_COLOR_CD              /* 모델색상 */ 
+                ,A.EQP_SER_NO AS PROD_SER_NO /* 상품일련번호 */
+                ,A.BF_SER_NO AS EQP_SER_NO   /* 일련번호 */
+                ,A.EQP_ST                    /* 단말기상태 */
+                ,A.INVE_ST                   /* 재고상태 */
+                ,A.HLD_DEALCO_ID             /* 보유거래처ID */
+                ,(SELECT  DEALCO_NM 
+                    FROM  TB_DEALCO 
+                   WHERE  DEALCO_CD = A.HLD_DEALCO_ID) AS HLD_DEALCO_NM /* 보유거래처명 */
+                ,A.UPDATE_COUNT              /* UPDATE COUNT */
+                ,A.CNSL_MGMT_NO              /* 상담관리번호 */
+                ,B.PROD_CL                   /* 상품구분 */
+                ,B.MFACT_CD                  /* 제조사코드 */
+                ,B.EQP_MDL_NM                /* 모델명 */
+                ,B.LAUNC_DT                  /* 출시일 */
+                ,C.PRCH_MGMT_NO              /* 매입관리번호 */ 
+                ,C.BOX_NO                    /* BOX NO */
+                ,'01' AS SELL_CHG_HST_CL     /* 구분 */
+                ,'1' AS SALE_QTY             /* 판매수량 */
+                ,'N' AS FIX_PRC_YN           /* 고정가여부 */
+                ,D.SELL_PCOST                /* 판매원가 */ 
+                ,D.SELL_UPRC                 /* 판매단가 */ 
+                ,D.SELL_MRGN                 /* 판매마진 */   
+                ,D.SELL_CMMS                 /* 판매수수료 */
+                ,D.SURTAX                    /* 부가세 */ 
+                ,DECODE(#SELL_TYP#,'04',A.CONF_SELL_AMT,((D.SELL_UPRC)*1)+D.SURTAX) AS SELL_AMT /* 판매가(부가세포함), 확정판매금액 */
+           FROM  TB_EP_DIS_PROD_DIS A
+                ,TB_EQP_MDL B
+                ,TB_EP_CST_PRCHS_MGMT C
+                ,(SELECT  A.EQP_MDL_CD 
+                         ,A.EQP_SER_NO
+                         ,A.EQP_COLOR_CD
+                         ,A.SELL_PCOST
+                         ,A.SELL_MRGN
+                         ,A.SELL_CMMS
+                         ,A.SELL_PCOST + A.SELL_MRGN + A.SELL_CMMS AS SELL_UPRC
+                         ,(A.SELL_PCOST) * 1 * 0.1 AS SURTAX
+                    FROM  (SELECT  IA.EQP_MDL_CD 
+                                  ,IA.EQP_SER_NO
+                                  ,IA.EQP_COLOR_CD
+                                  ,'0' AS SELL_MRGN
+                                  ,'0' AS SELL_CMMS
+                                  ,NVL(SUM(DECODE(IA.OCCR_CL, '01', 1, '05', -1) * IA.AMT),0) + IB.HOLD_AMT AS SELL_PCOST
+                             FROM  TB_EP_DIS_PROD_UNIT_PRC IA
+                                  ,TB_EP_DIS_PROD_DIS IB
+                            WHERE  IA.EQP_MDL_CD = IB.EQP_MDL_CD
+                              AND  IA.EQP_SER_NO = IB.EQP_SER_NO
+                              AND  IA.EQP_COLOR_CD = IB.EQP_COLOR_CD
+                              AND  IA.DEL_YN = 'N'
+                              AND  IB.DEL_YN = 'N'
+                            GROUP  BY IA.EQP_MDL_CD, IA.EQP_SER_NO ,IA.EQP_COLOR_CD, '0', '0', IB.HOLD_AMT
+                          ) A
+                 ) D
+                 ,(SELECT  B.CNSL_MGMT_NO
+                        ,B.XCL_AMT  AS FIX_XCL_AMT /* 상담금액(확정AP매입금액) */
+                        ,A.DEDC_TYP_CD  AS FIX_DEDC_TYP_CD /* 확정공제유형코드 ( AP유형) */
+                        ,A.INVE_SLIP_NO AS FIX_INVE_SLIP_NO /* 확정AP번호 */
+                        ,A.INVE_SLIP_DT AS FIX_INVE_SLIP_DT /* 확정AP기산일 */
+                        ,A.INVE_TYP_CD  AS FIX_INVE_TYP_CD /* 확정AP처리구분 */  
+                   FROM  TB_EP_INVE_XCL A 
+                        ,TB_EP_INVE_XCL_DTL B
+                  WHERE  A.INVE_XCL_NO = B.INVE_XCL_NO
+                    AND  A.INVE_SLIP_NO > ' '
+                    AND  A.DEL_YN = 'N'
+                    AND  B.DEL_YN = 'N'
+                    AND  A.INVE_TYP_CD = '10'
+                    AND  A.CNCL_SLIP_YN = 'N'
+                    AND  A.INVE_XCL_NO = (SELECT  MAX(IA.INVE_XCL_NO)
+                                            FROM  TB_EP_INVE_XCL IA
+                                                 ,TB_EP_INVE_XCL_DTL IB
+                                           WHERE  IA.INVE_XCL_NO = IB.INVE_XCL_NO
+                                             AND  IB.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                                             AND  IA.INVE_TYP_CD = '10'
+                                             AND  IA.DEL_YN = 'N'
+                                             AND  IB.DEL_YN = 'N')) E
+          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+            AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+            AND  A.CNSL_MGMT_NO = E.CNSL_MGMT_NO
+            AND  A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+            AND  A.EQP_SER_NO = D.EQP_SER_NO(+)
+            AND  A.EQP_COLOR_CD = D.EQP_COLOR_CD(+)
+            AND  A.HLD_DEALCO_ID = #HLD_DEALCO_ID#
+            AND  A.DEL_YN = 'N'
+            AND  A.SELL_YN = 'N'
+            AND  A.INVE_ST = '01'
+            AND  (( A.TRMS_YN = 'N' AND (A.TRMS_CL = 'N')) OR (A.TRMS_YN = 'Y') OR (A.TRMS_YN = 'X'))
+            AND  C.DEL_YN = 'N'
+            AND  C.PROGR_ST > '13'      /* 검수완료 이상 */                
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+                 UPPER(A.EQP_SER_NO) LIKE UPPER(#PROD_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+                 UPPER(A.BF_SER_NO) LIKE UPPER(#EQP_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+                 A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MFACT_CD" prepend="AND"><![CDATA[
+                 B.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO" prepend="AND"><![CDATA[
+                 C.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+       ) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInveProdDisTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveProdDisMgmt.SInveProdDisTotCnt 재고상품조회총건수 */
+/* IO: 김상오,2016-03-11T17:28:23(이민재,2015-09-08T16:12:12) */
+SELECT  COUNT(*) AS TOTAL_CNT /*전체건수*/ 
+  FROM  TB_EP_DIS_PROD_DIS A
+       ,TB_EQP_MDL B
+       ,TB_EP_CST_PRCHS_MGMT C
+       ,(SELECT  A.EQP_MDL_CD 
+                ,A.EQP_SER_NO
+                ,A.EQP_COLOR_CD
+                ,A.SELL_PCOST
+                ,A.SELL_MRGN
+                ,A.SELL_CMMS
+                ,A.SELL_PCOST + A.SELL_MRGN + A.SELL_CMMS AS SELL_UNIT_PRC
+                ,(A.SELL_PCOST) * 1 * 0.1 AS SURTAX
+           FROM  (SELECT  IA.EQP_MDL_CD 
+                         ,IA.EQP_SER_NO
+                         ,IA.EQP_COLOR_CD
+                         ,'0' AS SELL_MRGN
+                         ,'0' AS SELL_CMMS
+                         ,NVL(SUM(DECODE(IA.OCCR_CL, '01', 1, '05', -1) * IA.AMT),0) + IB.HOLD_AMT AS SELL_PCOST
+                    FROM  TB_EP_DIS_PROD_UNIT_PRC IA
+                         ,TB_EP_DIS_PROD_DIS IB
+                   WHERE  IA.EQP_MDL_CD = IB.EQP_MDL_CD
+                     AND  IA.EQP_SER_NO = IB.EQP_SER_NO
+                     AND  IA.EQP_COLOR_CD = IB.EQP_COLOR_CD
+                     AND  IA.DEL_YN = 'N'
+                     AND  IB.DEL_YN = 'N'
+                   GROUP  BY IA.EQP_MDL_CD, IA.EQP_SER_NO ,IA.EQP_COLOR_CD, '0', '0', IB.HOLD_AMT
+                 ) A
+        ) D
+        ,(SELECT  B.CNSL_MGMT_NO
+                        ,B.XCL_AMT  AS FIX_XCL_AMT /* 상담금액(확정AP매입금액) */
+                        ,A.DEDC_TYP_CD  AS FIX_DEDC_TYP_CD /* 확정공제유형코드 ( AP유형) */
+                        ,A.INVE_SLIP_NO AS FIX_INVE_SLIP_NO /* 확정AP번호 */
+                        ,A.INVE_SLIP_DT AS FIX_INVE_SLIP_DT /* 확정AP기산일 */
+                        ,A.INVE_TYP_CD  AS FIX_INVE_TYP_CD /* 확정AP처리구분 */  
+                   FROM  TB_EP_INVE_XCL A 
+                        ,TB_EP_INVE_XCL_DTL B
+                  WHERE  A.INVE_XCL_NO = B.INVE_XCL_NO
+                    AND  A.DEL_YN = 'N'
+                    AND  B.DEL_YN = 'N'
+                    AND  A.INVE_TYP_CD = '10'
+                    AND  A.CNCL_SLIP_YN = 'N'
+                    AND  A.INVE_SLIP_NO > ' '
+                    AND  A.INVE_XCL_NO = (SELECT  MAX(IA.INVE_XCL_NO)
+                                            FROM  TB_EP_INVE_XCL IA
+                                                 ,TB_EP_INVE_XCL_DTL IB
+                                           WHERE  IA.INVE_XCL_NO = IB.INVE_XCL_NO
+                                             AND  IB.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+                                             AND  IA.INVE_TYP_CD = '10'
+                                             AND  IA.DEL_YN = 'N'
+                                             AND  IB.DEL_YN = 'N')) E
+ WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND  A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+   AND  A.CNSL_MGMT_NO = E.CNSL_MGMT_NO
+   AND  A.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   AND  A.EQP_SER_NO = D.EQP_SER_NO(+)
+   AND  A.EQP_COLOR_CD = D.EQP_COLOR_CD(+)
+   AND  A.HLD_DEALCO_ID = #HLD_DEALCO_ID#
+   AND  A.DEL_YN = 'N'
+   AND  A.SELL_YN = 'N'   
+   AND  A.INVE_ST = '01'
+   AND  (( A.TRMS_YN = 'N' AND (A.TRMS_CL = 'N')) OR (A.TRMS_YN = 'Y') OR (A.TRMS_YN = 'X'))
+   AND  C.DEL_YN = 'N'  
+   AND  C.PROGR_ST > '13'      /* 검수완료 이상 */ 
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+        UPPER(A.EQP_SER_NO) LIKE UPPER(#PROD_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+        UPPER(A.BF_SER_NO) LIKE UPPER(#EQP_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+        A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MFACT_CD" prepend="AND"><![CDATA[
+        B.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO" prepend="AND"><![CDATA[
+        C.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInveProdDisChkList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPInveProdDisMgmt.SInveProdDisChkList 재고상품체크 */
+/* IO: 이하나,2016-03-08T16:27:28(이민재,2015-09-09T16:17:44) */
+SELECT  EQP_MDL_CD                   /* 모델코드 */
+	   ,EQP_COLOR_CD                 /* 모델색상 */
+       ,EQP_SER_NO                   /* 일련번호 */
+       ,INVE_ST                      /* 재고상태 */ 
+       ,TRMS_YN                      /* 전송여부 */
+       ,NVL(TRMS_CL,'N') AS TRMS_CL  /* 전송구분 */
+  FROM  TB_EP_DIS_PROD_DIS
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EQP_SER_NO = #PROD_SER_NO#
+   AND  DEL_YN = 'N'
+   AND  SELL_YN = 'N']]>
+	</select>
+</sqlMap>

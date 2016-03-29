@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR012">
+	<select id="SUnrtnTermReq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR012.SUnrtnTermReq 해지요청 */
+/* IO: 문재웅,2015-09-15T17:30:10(문재웅,2015-08-18T14:24:43) */
+/* ■해약요청등록시 계약:손해배상금 & 렌탈위약금:반납지연위약금을 등록한다■
+  1.1 추가로직(9/14기준):[메일] 손해배상금(미반납) 월할계산로직 관련_2015.09.14.docx
+    손해배상금(미반납) : [출고가 * (36-사용월수)/36]*1.005
+  1.2 사용월수* : 해지일(D)+31일–가입일 = 사용기간(일)을 역에 의해 월할 계산>>>>DATEDIF함수가 없음으로 ORACLE CEIL(올림)으로 계산함
+      엑셀계산식:IF(DATEDIF(A1,B1+1,"md")=30,29,IF(DATEDIF(A1,B1+1,"md")<0,0,DATEDIF(A1,B1+1,"md")))&"일"  [A1: 시작일, B1 : 종료일]
+      (단, 단말기 반납기일이 공휴일인 경우 익영업일을 단말기 반납기일로 함), 역에 따라 계산하되 1월 미만의 일수는 1월로 함
+  2.반납지연위약금 산출(계약종료일:D+30일)  
+  3.해약요청조건:계약상태 가입,변경된건중 종료일+30 경우/ 정상해지건중 다말기반납예정(S) 처리건 */
+  
+/* ■■CASE 1 계약의 미반납,반납지연위약금 금액세팅 DATA 산출 ■■ */  
+WITH
+UNRTN_AMT_DATA AS
+(
+  SELECT  CNTRT_NO
+         ,PEN_POLY_NO
+         ,RENTAL_POLY_NO
+         ,DCP_NO              
+         ,RENTAL_CNTRT_STA_DT
+         ,RENTAL_CNTRT_END_DT
+         ,RENTAL_CNTRT_END_DT_30 AS PEN_OCCR_DT     /* 위약금발생일자    */
+         ,RENTAL_CNTRT_END_DT_31 AS DMG_CMP_PROC_DT /* 손해배상금처리일자 */
+         ,CEIL(MONTHS_BETWEEN(TO_DATE(RENTAL_CNTRT_END_DT_31,'YYYYMMDD') +1,TO_DATE(RENTAL_CNTRT_STA_DT,'YYYYMMDD')))  AS MONTH_DIFF              /* 손해배상금계산 월수 */
+         ,OUT_PRC
+         ,TRUNC(( OUT_PRC * (36 - CEIL(MONTHS_BETWEEN(TO_DATE(RENTAL_CNTRT_END_DT_31,'YYYYMMDD') +1,TO_DATE(RENTAL_CNTRT_STA_DT,'YYYYMMDD'))) ) / 36 ) *1.005, 0) AS UNRTN_AMT  /* 손해배상금(미반납금액) */
+         ,SVC_MGMT_NO
+         ,RENTAL_SER_NO
+         ,TO_DATE(RENTAL_CNTRT_END_DT_30,'YYYYMMDD') - (TO_DATE(RENTAL_CNTRT_END_DT,'YYYYMMDD') + 1) + 1 AS RTN_DLY_PEN_DAY
+         ,TRUNC( ((RENTAL_PRN/365)*(DAY_RENTAL_FEE_RT/100)) * (TO_DATE(RENTAL_CNTRT_END_DT_30,'YYYYMMDD') - RTN_DLY_PEN_FR_DT), -1) AS RTN_DLY_PEN  /* 반납지연위약금 최대30 */
+    FROM  (SELECT  B.CNTRT_NO            /* 계약번호 */
+                  ,B.PEN_POLY_NO         /* 위약금정책번호 */
+                  ,A.RENTAL_POLY_NO      /* 렌탈정책번호 */
+                  ,B.DCP_NO              /* 손해배상금정책번호 */
+                  ,B.RENTAL_CNTRT_STA_DT /* 렌탈계약시작일자 */
+                  ,B.RENTAL_CNTRT_END_DT /* 렌탈계약종료일자 */
+                  ,TO_DATE(B.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 1 AS RTN_DLY_PEN_FR_DT /* 반납지연위약금 시작일자 */
+                  ,(SELECT  MIN(SCARL_DT) FROM  TB_HOLY 
+                     WHERE  SCARL_DT >= TO_CHAR(TO_DATE(B.RENTAL_CNTRT_END_DT) + 30,'YYYYMMDD') AND  HOLY_YN = 'N'  /* 렌탈계약종료일자+30(영업일) 날자대상 */
+                   ) AS RENTAL_CNTRT_END_DT_30          /* 계약종료 후 D+30이 해당하는 월 기준(해당일이 휴일일 경우 가장 일찍 도래하는 영업일 기준):반납지연위약금 산정기준 */
+                  ,CASE WHEN C.OP_TYP_CD != '07' THEN   /* 중도해지 는 업무처리일자 기준 */
+                             (SELECT  MIN(SCARL_DT) FROM  TB_HOLY WHERE  SCARL_DT >= TO_CHAR(TO_DATE(B.RENTAL_CNTRT_END_DT) + 31,'YYYYMMDD') AND  HOLY_YN = 'N' )    /* 렌탈계약종료일자+31(영업일) 날자대상 */
+                        ELSE (SELECT  MIN(SCARL_DT) FROM  TB_HOLY WHERE  SCARL_DT >= TO_CHAR(TO_DATE(C.OP_PROC_DT) + 31,'YYYYMMDD') AND  HOLY_YN = 'N' )             /* 업무처리일자+31(영업일) 날자대상 */
+                   END AS RENTAL_CNTRT_END_DT_31          /* 위약금발생일자: 계약종료(업무처리일) 후 D+31이 해당하는 월 기준(해당일이 휴일일 경우 가장 일찍 도래하는 영업일 기준):손해배상금(미반납) 산정기준 */
+                  ,ROUND(A.OUT_PRC*(100/110)) AS OUT_PRC  /* 출고가격 */
+                  ,C.SVC_MGMT_NO                          /* 서비스관리번호 */
+                  ,C.RENTAL_SER_NO                        /* 렌탈일련번호   */
+                  ,D.DAY_RENTAL_FEE_RT                    /* 일렌탈요금비율 */
+                  ,E.RENTAL_PRN*(100/110) AS RENTAL_PRN   /* 렌탈원금 */
+             FROM  TB_RENTAL_POLY A     /* 렌탈정책   */
+                  ,TB_RENTAL_CNTRT B    /* PR_렌탈계약 */
+                  ,TB_NR_CNTRT C        /* NR_신규R계약 */
+                  ,TB_PEN_POLY D        /* NR_위약금정책*/
+                  ,TB_RENTAL_POLY E     /* NR_렌탈정책 */
+            WHERE  A.RENTAL_POLY_NO = B.RENTAL_POLY_NO   
+              AND  B.CNTRT_NO       =  C.CNTRT_NO
+              AND  C.OP_TYP_CD IN('01','04','02','07')   /* 가입,변경,정상해지,중도해지 */
+              AND  B.PEN_POLY_NO 	  = D.PEN_POLY_NO
+              AND  B.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+              /* TF_UNRTN_TERM_REQ(IF_미반납해지요청) 진행데이터 제외 */         
+              AND  NOT EXISTS(SELECT  * FROM TF_UNRTN_TERM_REQ 
+                                   WHERE  C.SVC_MGMT_NO   = SVC_MGMT_NO 
+                                     AND  C.RENTAL_SER_NO = RENTAL_SER_NO)       
+         )  TA       
+)
+/* ■■CASE 2.1 계약상태 가입,변경된건중 종료일+30(영업일)  ■■ */  
+SELECT  A.SVC_MGMT_NO       /* 서비스관리번호 */
+       ,UA.PEN_POLY_NO      /* 위약금정책번호 */
+       ,A.RENTAL_SER_NO     /* 렌탈일련번호   */
+       ,A.CNTRT_NO
+       ,UA.DCP_NO           /* 손해배상금정책번호 */
+       ,B.RENTAL_CNTRT_END_DT
+       ,UA.UNRTN_AMT        /* 손해배상금(미반납금액) */
+       ,UA.DMG_CMP_PROC_DT  /* 손해배상금처리일자 */
+       ,UA.RTN_DLY_PEN      /* 반납지연위약금 */
+       ,UA.PEN_OCCR_DT      /* 위약금발생일자  */
+  FROM  TB_NR_CNTRT     A
+       ,TB_RENTAL_CNTRT B
+       ,UNRTN_AMT_DATA  UA
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  A.OP_TYP_CD IN('01','04')   /* 가입,변경 */
+   AND  TO_CHAR(SYSDATE, 'YYYYMMDD') >=
+        (SELECT  MIN(SCARL_DT) 
+           FROM  TB_HOLY 
+          WHERE  SCARL_DT >= (SELECT TO_CHAR(TO_DATE(B.RENTAL_CNTRT_END_DT) + 30,'YYYYMMDD') FROM DUAL) 
+            AND  HOLY_YN = 'N'
+        )  /* 렌탈계약종료일자+30(영업일)대상 */
+   AND  A.SVC_MGMT_NO   = UA.SVC_MGMT_NO
+   AND  A.RENTAL_SER_NO = UA.RENTAL_SER_NO
+UNION   
+/* ■■CASE 2.2 중도해지건중 미반납건(P,N)중 업무처리일자+30(영업일) ■■ */  
+SELECT  A.SVC_MGMT_NO       /* 서비스관리번호 */
+       ,UA.PEN_POLY_NO      /* 위약금정책번호 */
+       ,A.RENTAL_SER_NO     /* 렌탈일련번호   */
+       ,A.CNTRT_NO
+       ,UA.DCP_NO           /* 손해배상금정책번호 */
+       ,UA.RENTAL_CNTRT_END_DT
+       ,UA.UNRTN_AMT        /* 손해배상금(미반납금액) */
+       ,UA.DMG_CMP_PROC_DT  /* 손해배상금처리일자 */
+       ,UA.RTN_DLY_PEN      /* 반납지연위약금 */
+       ,UA.PEN_OCCR_DT      /* 위약금발생일자  */
+  FROM  TB_NR_CNTRT     A
+       ,UNRTN_AMT_DATA  UA  
+ WHERE  A.OP_TYP_CD   IN ('07') /* 중도해지 */
+   AND  A.EQP_RTN_YN  IN ('P','N')  /* 단말기반납여부상태:해지상태나 단말기는 미반납상태, 미반납 */
+   AND  TO_CHAR(SYSDATE, 'YYYYMMDD') >=
+        (SELECT  MIN(SCARL_DT) 
+           FROM  TB_HOLY 
+          WHERE  SCARL_DT >= (SELECT TO_CHAR(TO_DATE(A.OP_PROC_DT) + 30,'YYYYMMDD') FROM DUAL) 
+            AND  HOLY_YN = 'N'
+        )  /* 업무처리일자+30(영업일)대상 */
+   AND  A.SVC_MGMT_NO   = UA.SVC_MGMT_NO
+   AND  A.RENTAL_SER_NO = UA.RENTAL_SER_NO  
+UNION   
+/* ■■CASE 2.3 정상해지건중 다말기반납예정(P,N) ■■ */  
+SELECT  A.SVC_MGMT_NO       /* 서비스관리번호 */
+       ,UA.PEN_POLY_NO      /* 위약금정책번호 */
+       ,A.RENTAL_SER_NO     /* 렌탈일련번호   */
+       ,A.CNTRT_NO
+       ,UA.DCP_NO           /* 손해배상금정책번호 */
+       ,UA.RENTAL_CNTRT_END_DT
+       ,UA.UNRTN_AMT        /* 손해배상금(미반납금액) */
+       ,UA.DMG_CMP_PROC_DT  /* 손해배상금처리일자 */
+       ,UA.RTN_DLY_PEN      /* 반납지연위약금 */
+       ,UA.PEN_OCCR_DT      /* 위약금발생일자  */
+  FROM  TB_NR_CNTRT     A
+       ,UNRTN_AMT_DATA  UA
+ WHERE  A.OP_TYP_CD   IN ('02') /* 정상해지,중도해지 */
+   AND  A.EQP_RTN_YN  IN ('P','N')  /* 단말기반납여부상태:해지상태나 단말기는 미반납상태,미반납 */
+   AND  A.SVC_MGMT_NO   = UA.SVC_MGMT_NO
+   AND  A.RENTAL_SER_NO = UA.RENTAL_SER_NO]]>
+	</select>
+	<insert id="IUnrtnTermReq" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR012.IUnrtnTermReq 해지요청I/F저장 */
+/* IO: 문재웅,2015-08-27T10:32:19(문재웅,2015-08-18T14:22:20) */
+INSERT
+  INTO  TF_UNRTN_TERM_REQ /* IF_미반납해지요청 */ 
+       (
+        IF_PROC_DT          /* IF_처리일자 */
+       ,IF_FILE_NM          /* IF_파일명 */
+       ,IF_SEQ              /* IF_순번 */
+       ,SVC_MGMT_NO         /* 서비스관리번호 */
+       ,RENTAL_SER_NO       /* 렌탈일련번호 */
+       ,PROC_ST_CD          /* 처리상태코드 */
+       ,FS_REG_USER_ID      /* 최초등록사용자ID */
+       ,FS_REG_DTM          /* 최초등록일시 */
+       ,LS_CHG_USER_ID      /* 최종변경사용자ID */
+       ,LS_CHG_DTM          /* 최종변경일시 */
+       )
+VALUES
+       (
+       	#IF_PROC_DT#        /* IF_처리일자 */
+       ,#IF_FILE_NM#        /* IF_파일명 */
+       ,#IF_SEQ#            /* IF_순번 */
+       ,#SVC_MGMT_NO#       /* 서비스관리번호 */
+       ,#RENTAL_SER_NO#     /* 렌탈일련번호 */
+       ,#PROC_ST_CD#        /* 처리상태코드 */
+       ,'BAT'               /* 최초등록사용자ID */
+       ,SYSDATE             /* 최초등록일시 */
+       ,'BAT'               /* 최종변경사용자ID */
+       ,SYSDATE             /* 최종변경일시 */
+       )]]>
+	</insert>
+	<update id="UTbNrCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR012.UTbNrCntrt NR_신규R계약 손해배상금 등록 */
+/* IO: 문재웅,2015-09-10T15:08:32(문재웅,2015-09-10T14:13:01) */
+/* ■ 계약 손해비상금 미반납금액 등록 ■ */
+  UPDATE  TB_NR_CNTRT
+     SET  TERM_PROC_REQS_DT = TO_CHAR(SYSDATE,'YYYYMMDD') /* 해지처리요청일자 */
+     	 ,UNRTN_AMT         = #UNRTN_AMT# 	              /* 손해배상금(미반납금액) */
+         ,LS_CHG_USER_ID 	= 'BAT'			              /* 최종변경사용자ID */
+         ,LS_CHG_DTM 		= SYSDATE			          /* 최종변경일시 */
+  WHERE  SVC_MGMT_NO    	= #SVC_MGMT_NO#               /* 서비스관리번호 */
+    AND  RENTAL_SER_NO  	= #RENTAL_SER_NO#             /* 렌탈일련번호   */]]>
+	</update>
+	<update id="UTbRentalPen" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR012.UTbRentalPen NR_렌탈위약금 반납지연위약금 등록 */
+/* IO: 문재웅,2015-09-15T17:29:25(문재웅,2015-09-10T15:01:54) */
+/* ■ NR_렌탈위약금:반납지연위약금 등록 ■ */  
+MERGE INTO  TB_RENTAL_PEN USING  DUAL
+        ON (PEN_POLY_NO = #PEN_POLY_NO#
+       AND  CNTRT_NO    = #CNTRT_NO#
+           )
+WHEN  MATCHED THEN
+      UPDATE  SET  LS_CHG_USER_ID = 'BAT',
+                   LS_CHG_DTM     = SYSDATE
+WHEN  NOT MATCHED THEN
+    INSERT(
+            PEN_POLY_NO
+           ,CNTRT_NO
+           ,PEN_POLY_CL
+           ,PEN_OCCR_DT
+           ,DMS_PEN_AMT
+           ,PEN_PROC_DT
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+         )
+  VALUES(
+            #PEN_POLY_NO#     /* 위약금정책번호 */
+           ,#CNTRT_NO#        /* 계약번호       */
+           ,'02'              /* 위약금정책구분:반납지연 */
+           ,TO_CHAR(SYSDATE,'YYYYMMDD') /* 위약금발생일자 */
+           ,#RTN_DLY_PEN#     /* DMS위약금금액:반납지연위약금 최대30 */
+           ,#PEN_PROC_DT#     /* 위약금처리일자 */
+           ,'BAT'             /* 최초등록사용자ID */
+           ,SYSDATE           /* 최초등록일시 */
+           ,'BAT'             /* 최종변경사용자ID */
+           ,SYSDATE           /* 최종변경일시 */
+         )]]>
+	</update>
+	<update id="UTbRentalDcp" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR012.UTbRentalDcp NR_렌탈손해배상금 DMS손해배상금 등록 */
+/* IO: 문재웅,2015-09-15T17:24:36(문재웅,2015-09-10T15:02:56) */
+/* ■ NR_렌탈손해배상금 DMS손해배상금금액 등록 ■ */  
+MERGE INTO  TB_RENTAL_DCP USING  DUAL /* NR_렌탈손해배상금 */ 
+        ON (DCP_NO          = #DCP_NO#
+       AND  CNTRT_NO        = #CNTRT_NO#
+       AND  DCP_CL          = '02'    /*손해배상금정책구분:미반납*/
+       AND  DMG_CMP_OCCR_DT = #DMG_CMP_OCCR_DT#
+           )
+WHEN  MATCHED THEN
+      UPDATE  SET  
+            DMS_DMG_CMP_AMT = #UNRTN_AMT#       /* DMS손해배상금금액 */
+           ,DMG_CMP_PROC_DT = #DMG_CMP_PROC_DT# /* 손해배상금처리일자 */
+           ,LS_CHG_USER_ID  = 'BAT'
+           ,LS_CHG_DTM      = SYSDATE
+WHEN  NOT MATCHED THEN
+    INSERT(
+            DCP_NO            /* 손해배상금정책번호 */
+           ,CNTRT_NO          /* 계약번호 */
+           ,DCP_CL            /* 손해배상금정책구분 */
+           ,DMG_CMP_OCCR_DT   /* 손해배상금발생일자 */
+           ,DMS_DMG_CMP_AMT   /* DMS손해배상금금액 */
+           ,DMG_CMP_PROC_DT   /* 손해배상금처리일자 */
+           ,FS_REG_USER_ID    /* 최초등록사용자ID */
+           ,FS_REG_DTM        /* 최초등록일시 */
+           ,LS_CHG_USER_ID    /* 최종변경사용자ID */
+           ,LS_CHG_DTM        /* 최종변경일시 */
+          )
+   VALUES(
+            #DCP_NO#            /* 손해배상금정책번호 */
+           ,#CNTRT_NO#          /* 계약번호 */
+           ,'02'                /* 손해배상금정책구분:미반납*/
+           ,TO_CHAR(SYSDATE,'YYYYMMDD') /* 손해배상금발생일자 */
+           ,#UNRTN_AMT#         /* DMS손해배상금금액 */
+           ,#DMG_CMP_PROC_DT#   /* 손해배상금처리일자 */
+           ,'BAT'               /* 최초등록사용자ID */
+           ,SYSDATE             /* 최초등록일시 */
+           ,'BAT'               /* 최종변경사용자ID */
+           ,SYSDATE             /* 최종변경일시 */
+         )]]>
+	</update>
+</sqlMap>

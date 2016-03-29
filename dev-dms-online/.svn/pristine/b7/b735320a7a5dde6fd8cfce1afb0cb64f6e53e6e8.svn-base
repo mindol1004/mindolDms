@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRLoanMgmt">
+	<select id="SSKNLoanLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanLst SKN여신 조회 */
+/* IO: 박홍서,2015-07-23T15:12:15(박홍서,2015-07-23T09:21:21) */
+SELECT  AGN_CD
+       ,PAY_YM
+       ,PAY_YM_TS
+       ,AGN_NM
+       ,CRD_AMT
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TB_NR_SKN_CRD
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PAY_YM_TS" compareValue="%"><![CDATA[
+        PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+        PAY_YM >= #PAY_FR_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_TO_YM"><![CDATA[
+        PAY_YM <= #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[
+ ORDER BY PAY_YM DESC, PAY_YM_TS ASC, AGN_CD ASC]]>
+	</select>
+	<select id="SSKNLoanPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanPaging SKN여신 페이징 조회 */
+/* IO: 박홍서,2015-07-23T09:40:40(박홍서,2015-07-23T09:40:40) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY PAY_YM DESC, PAY_YM_TS ASC, AGN_CD ASC) AS ROWNO
+               ,AGN_CD
+               ,PAY_YM
+               ,PAY_YM_TS
+               ,AGN_NM
+               ,CRD_AMT
+               ,FS_REG_USER_ID
+               ,FS_REG_DTM
+               ,LS_CHG_USER_ID
+               ,LS_CHG_DTM
+          FROM  TB_NR_SKN_CRD
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PAY_YM_TS" compareValue="%"><![CDATA[
+                PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+                PAY_YM >= #PAY_FR_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_TO_YM"><![CDATA[
+                PAY_YM <= #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSKNLoanTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanTotCnt SKN여신 총건수 조회 */
+/* IO: 박홍서,2015-07-23T09:42:39(박홍서,2015-07-23T09:42:39) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_NR_SKN_CRD
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property=""><![CDATA[
+        AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="PAY_YM_TS" compareValue="%"><![CDATA[
+        PAY_YM_TS = #PAY_YM_TS#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_FR_YM"><![CDATA[
+        PAY_YM >= #PAY_FR_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PAY_TO_YM"><![CDATA[
+        PAY_YM <= #PAY_TO_YM#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SSKNLoanDtlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanDtlPaging SKN여신 상세 페이징 조회 */
+/* IO: 박홍서,2015-07-28T09:30:32(박홍서,2015-07-23T15:08:56) */
+SELECT  * 
+  FROM (
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.AGN_CD, A.CNTRT_NO) AS ROWNO
+               ,A.AGN_CD AS SALE_AGN_CD
+               ,B.DEAL_CO_NM AS SALE_AGN_NM
+               ,SUBSTR(A.CNTRT_DT,0,6) AS CNTRT_YM
+               ,A.SVC_MGMT_NO
+               ,CASE WHEN TO_NUMBER(SUBSTR(A.CNTRT_DT,7)) > 23 THEN '02'
+                ELSE '01'
+                END AS CNTRT_YM_TS
+               ,A.SCRBR_NM
+               ,A.RENTAL_SNO
+               ,A.CNTRT_DT
+               ,FLOOR(MONTHS_BETWEEN(SYSDATE,TO_DATE(A.CNTRT_DT,'YYYYMMDD')))||' 개월' AS CNTRT_MTH
+               ,A.OUT_PRC
+               ,A.FS_REG_USER_ID
+               ,A.FS_REG_DTM
+               ,A.LS_CHG_USER_ID
+               ,A.LS_CHG_DTM
+               ,'' AS SUM_PRC
+          FROM  TB_NR_CNTRT A
+               ,TB_DEAL_CO B
+         WHERE  A.AGN_CD = B.DEAL_CO_CD
+]]><isNotEmpty prepend="AND" property="SALE_AGN_CD"><![CDATA[
+                A.AGN_CD = #SALE_AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SCRBR_NM"><![CDATA[
+                A.SCRBR_NM LIKE '%'||#SCRBR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_FR_DTM"><![CDATA[
+                A.CNTRT_DT >= #CNTRT_FR_DTM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_TO_DTM"><![CDATA[
+                A.CNTRT_DT <= #CNTRT_TO_DTM#
+]]></isNotEmpty><![CDATA[
+       ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSKNLoanDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanDtlLst SKN여신 상세 조회 */
+/* IO: 박홍서,2015-07-28T09:30:26(박홍서,2015-07-23T15:10:47) */
+SELECT  A.AGN_CD AS SALE_AGN_CD
+       ,B.DEAL_CO_NM AS SALE_AGN_NM
+       ,SUBSTR(A.CNTRT_DT,0,6) AS CNTRT_YM
+       ,A.SVC_MGMT_NO
+       ,CASE WHEN TO_NUMBER(SUBSTR(A.CNTRT_DT,7)) > 23 THEN '02'
+        ELSE '01'
+        END AS CNTRT_YM_TS
+       ,A.SCRBR_NM
+       ,A.RENTAL_SNO
+       ,A.CNTRT_DT
+       ,FLOOR(MONTHS_BETWEEN(SYSDATE,TO_DATE(A.CNTRT_DT,'YYYYMMDD')))||' 개월' AS CNTRT_MTH
+       ,A.OUT_PRC
+       ,A.FS_REG_USER_ID
+       ,A.FS_REG_DTM
+       ,A.LS_CHG_USER_ID
+       ,A.LS_CHG_DTM
+  FROM  TB_NR_CNTRT A
+       ,TB_DEAL_CO B
+ WHERE  A.AGN_CD = B.DEAL_CO_CD
+]]><isNotEmpty prepend="AND" property="SALE_AGN_CD"><![CDATA[
+        A.AGN_CD = #SALE_AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SCRBR_NM"><![CDATA[
+        A.SCRBR_NM LIKE '%'||#SCRBR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_FR_DTM"><![CDATA[
+        A.CNTRT_DT >= #CNTRT_FR_DTM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_TO_DTM"><![CDATA[
+        A.CNTRT_DT <= #CNTRT_TO_DTM#
+]]></isNotEmpty><![CDATA[
+ ORDER BY A.AGN_CD, A.CNTRT_NO]]>
+	</select>
+	<select id="SSKNLoanDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrscmbase.db.DNRLoanMgmt.SSKNLoanDtlTotCnt SKN여신 상세 총건수 조회 */
+/* IO: 박홍서,2015-07-27T09:25:53(박홍서,2015-07-23T15:13:23) */
+SELECT  COUNT(1) AS TOTAL_CNT
+       ,NVL(SUM(A.OUT_PRC),0) AS SUM_OUT_PRC
+  FROM  TB_NR_CNTRT A
+       ,TB_DEAL_CO B
+ WHERE  A.AGN_CD = B.DEAL_CO_CD
+]]><isNotEmpty prepend="AND" property="SALE_AGN_CD"><![CDATA[
+        A.AGN_CD = #SALE_AGN_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+        A.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SCRBR_NM"><![CDATA[
+        A.SCRBR_NM LIKE '%'||#SCRBR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_FR_DTM"><![CDATA[
+        A.CNTRT_DT >= #CNTRT_FR_DTM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_TO_DTM"><![CDATA[
+        A.CNTRT_DT <= #CNTRT_TO_DTM#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPSaleXclMgmt">
+	<select id="SSaleXclMgmtList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPSaleXclMgmt.SSaleXclMgmtList 판매정산관리조회 */
+/* IO: 이민재,2016-02-03T10:40:16(이민재,2015-09-03T11:33:11) */
+SELECT  A.GNRL_SELL_NO                                                                        /* 일반판매번호 */
+       ,A.GNRL_SELL_CHG_SEQ                                                                   /* 일반판매변경순번 */
+	   ,A.SELL_CHG_HST_CL                                                                     /* 판매변경이력구분 */
+       ,A.XCL_DEALCO_CD                                                                       /* 정산거래처코드 */
+       ,A.SELL_DTM                                                                            /* 판매일자 */
+	   ,A.SELL_CHG_DTM                                                                        /* 변경일자 */
+       ,A.SALEPLC                                                                             /* 매출처코드 */
+       ,E.DEALCO_NM AS SALEPLC_NM                                                             /* 매출처 */
+       ,E.DEALCO_BLICENS_NO AS SALEPLC_BLICENS_NO                                             /* 매출처사업자번호 */
+       ,E.UKEY_AGN_CD AS SALEPLC_UKEY                                                         /* 매출처U.KEY코드 */
+       ,D.DEALCO_NM  AS SELL_DEALCO_CD_NM                                                     /* 판매처 */
+       ,D.DEALCO_BLICENS_NO AS SELL_BLICENS_NO                                                /* 판매처사업자번호 */
+       ,D.UKEY_AGN_CD AS SELL_DEALCO_CD_UKEY                                                  /* 판매처U.KEY코드 */
+	   ,'1' AS PROD_CL                                                                        /* 상품구분 */
+       ,B.SELL_QTY AS SALE_QTY                                                                /* 수량 */
+	   ,B.SELL_PRC                                                                            /* 판매가 */
+	   ,B.SELL_PCOST                                                                          /* 매입가 */
+	   ,B.SURTAX                                                                              /* 부가세 */
+       ,(B.SELL_PRC - B.SURTAX) AS SELL_UPRC                                                  /* 공급가액 */
+       ,C.SELL_PRC_CASH_RECV_AMT AS SELL_PRC_CASH_RECV_AMT                                    /* 현금금액 */
+	   ,NVL(C.SELL_PRC_CCARD_RECV_AMT_1, 0) AS SELL_PRC_CCARD_RECV_AMT_1                      /* 변경전신용카드수납금액1 */
+	   ,NVL(C.SELL_PRC_CCARD_RECV_AMT_2, 0) AS SELL_PRC_CCARD_RECV_AMT_2                      /* 변경전신용카드수납금액2 */ 
+	   ,NVL(C.SELL_PRC_CCARD_RECV_AMT_1, 0) AS CRDTCRD_PAY_AMT                                /* 카드금액 */
+	   ,NVL(C.SELL_PRC_CASH_RECV_AMT, 0) + NVL(C.SELL_PRC_CCARD_RECV_AMT_1, 0) AS TOT_PAY_AMT /* 수납계 */
+	   ,D.AFFIL_AGN                                                                           /* 소속대리점 */
+	   ,D.AFFIL_ORG_ID                                                                        /* 소속조직ID*/
+       ,(SELECT  ORG_NM 
+           FROM  TB_EP_BAS_ORG_MGMT 
+          WHERE  ORG_ID = D.AFFIL_ORG_ID) AS ORG_NM                                           /* 조직명 */
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = D.AGN_ORG_CD 
+            AND  DEALCO_CL_1 = 'A1') AS AGN_ORG_NM                                            /* U.KEY 대리점 */
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = D.AFFIL_AGN) AS AFFIL_AGN_NM                                     /* 팀(소속대리점) */
+       ,F.XCL_SLIP_DT AS SLIP_DT                                                              /* 전표일자 */
+       ,F.XCL_SLIP_NO AS SLIP_NO                                                              /* 전표번호 */
+       ,NVL(F.XCL_SLIP_ST,'00') AS SLIP_ST                                                    /* 전표상태 */
+       ,F.XCL_CNCL_SLIP_DT AS CNCL_SLIP_DT                                                    /* 취소전표일자 */
+       ,F.XCL_CNCL_SLIP_NO AS CNCL_SLIP_NO                                                    /* 취소전표번호 */ 
+       ,F.INVE_PCOST_SLIP_NO                                                                  /* 원가전표번호 */
+       ,NVL(H.SLIP_ST_CD,'00') AS SLIP_ST_CD                                                  /* 원가전표상태 */
+       ,DECODE(A.SELL_CL_CD,'20','EP_YU','EP_YE') AS SLIP_TYPE                                /* 전표항목구분 */
+       ,A.SELL_CL_CD																	      /* 판매구분 */
+       ,G.CUR_CL_CD                                                                           /* 화폐 구분 코드 */
+       ,G.XRATE_APPLY_AMT                                                                     /* 환율 적용 금액 */
+       ,G.XRATE_APPLY_DT                                                                      /* 환율 적용 일자 */
+       ,A.SELL_TYP                                                                            /* 판매구분 */
+  FROM  TB_EP_SAL_GNRL_SALE A 
+       ,(SELECT  GNRL_SELL_NO 
+                ,GNRL_SELL_CHG_SEQ
+		        ,NVL(COUNT(GNRL_SELL_NO),0) AS SELL_QTY
+                ,ROUND(NVL(SUM(SELL_PRC),0)) AS SELL_PRC
+                ,ROUND(NVL(SUM(SELL_PCOST),0)) AS SELL_PCOST
+                ,ROUND(NVL(SUM(SURTAX),0)) AS SURTAX
+                ,ROUND(NVL(SUM(SELL_UPRC),0)) AS SELL_UPRC
+		       FROM  TB_EP_SAL_EQUIPMENT_SALE
+          WHERE  DEL_YN = 'N'
+          GROUP  BY GNRL_SELL_NO ,GNRL_SELL_CHG_SEQ) B
+       ,(SELECT  GNRL_SELL_NO
+		        ,NVL(SUM(SELL_PRC_CASH_RECV_AMT),0) AS SELL_PRC_CASH_RECV_AMT
+		        ,NVL(SUM(SELL_PRC_CCARD_RECV_AMT_1),0) - NVL(SUM(BCHG_CCARD_RECV_AMT_1),0) AS SELL_PRC_CCARD_RECV_AMT_1
+		        ,NVL(SUM(SELL_PRC_CCARD_RECV_AMT_2),0) - NVL(SUM(BCHG_CCARD_RECV_AMT_2),0) AS SELL_PRC_CCARD_RECV_AMT_2
+		       FROM  TB_EP_SAL_PAYMENT
+          WHERE  DEL_YN = 'N'
+          GROUP  BY GNRL_SELL_NO) C
+       ,TB_DEALCO D
+       ,TB_DEALCO E
+       ,TB_EP_EQP_SALE F
+       ,TB_EP_SAL_SALE_AMT G
+       ,TB_SLIP H
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  A.GNRL_SELL_NO = C.GNRL_SELL_NO
+   AND  A.SELL_DEALCO_CD = D.DEALCO_CD
+   AND  A.SALEPLC = E.DEALCO_CD(+)
+   AND  A.GNRL_SELL_NO = F.GNRL_SELL_NO(+)
+   AND  A.GNRL_SELL_CHG_SEQ = F.GNRL_SELL_CHG_SEQ(+)
+   AND  A.GNRL_SELL_NO = G.GNRL_SELL_NO(+)
+   AND  A.GNRL_SELL_CHG_SEQ = G.GNRL_SELL_CHG_SEQ(+)
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+	                             FROM  TB_EP_SAL_GNRL_SALE
+		  					    WHERE  GNRL_SELL_NO = A.GNRL_SELL_NO)
+   AND  F.INVE_PCOST_SLIP_NO = H.SLIP_NO(+)		  					    
+   AND  A.SELL_TYP IN ('01', '03')
+   AND  A.SELL_CHG_HST_CL NOT IN ('07','08')	
+   AND  A.DEL_YN = 'N'
+   AND  SUBSTR(A.SELL_DTM,0,8) BETWEEN #SELL_STA_DTM# AND #SELL_END_DTM#
+]]><isNotEmpty property="SELL_DEALCO_CD" prepend="AND"><![CDATA[
+        A.SELL_DEALCO_CD = #SELL_DEALCO_CD#  
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="AFFIL_AGN" prepend="AND"><![CDATA[
+        D.AFFIL_AGN = #AFFIL_AGN#      
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="SALEPLC" prepend="AND"><![CDATA[
+        A.SALEPLC = #SALEPLC#      
+]]></isNotEmpty><![CDATA[
+ ORDER  BY F.XCL_SLIP_DT DESC ,SELL_DTM DESC 
+       ,SALEPLC_NM DESC]]>
+	</select>
+</sqlMap>

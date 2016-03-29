@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCMenuMgmt">
+	<select id="SMenuLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCMenuMgmt.SMenuLst 메뉴목록조회 */
+/* IO: 심상준,2014-10-01T11:21:14(심상준,2014-09-25T09:57:59) */
+SELECT 
+         A.MENU_ID       /* 메뉴ID */
+        ,A.MENU_NM       /* 메뉴명 */
+        ,A.MENU_DESC     /* 메뉴설명 */ 
+        ,A.MENU_LV       /* 메뉴레벨 */
+        ,A.MENU_SORT_ORD /* 메뉴정렬순서 */ 
+        ,A.FRM_ID        /* 화면 ID*/
+        ,B.FRM_NM        /* 화면명 */
+        ,A.SUP_MENU_ID   /* 상위메뉴ID */ 
+   FROM  TB_MENU A       /* SC_메뉴 */
+        ,TB_FRM B        /* SC_화면 */
+  WHERE  A.FRM_ID = B.FRM_ID(+)
+  START  WITH A.MENU_LV = 0
+CONNECT  BY PRIOR A.MENU_ID = A.SUP_MENU_ID 
+  ORDER  SIBLINGS BY A.MENU_LV
+                    ,A.MENU_SORT_ORD ASC]]>
+	</select>
+	<update id="UMenu" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCMenuMgmt.UMenu 메뉴수정 */
+/* IO: 심상준,2014-10-02T18:41:48(심상준,2014-07-31T16:22:35) */
+UPDATE  TB_MENU                            /* sc메뉴*/
+   SET 
+        MENU_NM =#MENU_NM#                 /* 메뉴명 */
+       ,MENU_DESC =#MENU_DESC#             /* 메뉴설명 */  
+       ,MENU_LV = #MENU_LV#                /* 메뉴레벨 */
+       ,MENU_SORT_ORD =#MENU_SORT_ORD#     /* 메뉴정렬순서 */ 
+       ,FRM_ID =#FRM_ID#                   /* 화면ID */
+       ,SUP_MENU_ID = #SUP_MENU_ID#        /* 상위메뉴ID */ 
+       ,LS_CHG_USER_ID =#USER_NO#           /* 최종등록자ID */
+       ,LS_CHG_DTM = sysdate               /* 최종등록일시 */   
+ WHERE  MENU_ID= #MENU_ID#]]>
+	</update>
+	<insert id="IMenu" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCMenuMgmt.IMenu 메뉴등록 */
+/* IO: 심상준,2014-10-02T18:40:05(심상준,2014-07-31T16:23:36) */
+INSERT 
+  INTO  TB_MENU
+       (
+        MENU_ID        /* 메뉴 ID */
+       ,MENU_NM        /* 메뉴 명 */ 
+       ,MENU_DESC      /* 메뉴 설명 */
+       ,MENU_LV        /* 메뉴 레벨 */
+       ,MENU_SORT_ORD  /* 메뉴 정렬순서 */
+       ,FRM_ID         /* 화면ID */ 
+       ,SUP_MENU_ID    /* 상위메뉴 ID */
+       ,FS_REG_USER_ID /* 최초등록자 ID */
+       ,FS_REG_DTM     /* 최초등록일시 */  
+       ,LS_CHG_USER_ID /* 최종등록자 ID */
+       ,LS_CHG_DTM     /* 최종등록일시*/
+       )
+VALUES
+       (
+        #MENU_ID#       /* 메뉴 ID */        
+       ,#MENU_NM#       /* 메뉴 명 */        
+       ,#MENU_DESC#     /* 메뉴 설명 */      
+       ,#MENU_LV#       /* 메뉴 레벨 */      
+       ,#MENU_SORT_ORD# /* 메뉴 정렬순서 */
+       ,#FRM_ID#        /* 화면ID */         
+       ,#SUP_MENU_ID#   /* 상위메뉴 ID */    
+       ,#USER_NO#        /* 최초등록자 ID */  
+       ,sysdate         /* 최초등록일시 */   
+       ,#USER_NO#        /* 최종등록자 ID */  
+       ,sysdate         /* 최종등록일시*/    
+       )]]>
+	</insert>
+	<delete id="DMenu" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCMenuMgmt.DMenu 메뉴삭제 */
+/* IO: 심상준,2014-09-29T13:10:20(심상준,2014-08-08T17:28:20) */
+DELETE
+  FROM  TB_MENU   /* SC_메뉴 */
+ WHERE  MENU_ID = #MENU_ID#]]>
+	</delete>
+	<select id="SMenuValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCMenuMgmt.SMenuValidate 메뉴저장사전체크 */
+/* IO: 심상준,2014-09-29T13:10:44(심상준,2014-09-01T11:22:37) */
+SELECT  
+        COUNT(1) AS ROW_CNT  /* 메뉴저장사전체크 */
+  FROM  TB_MENU              /* SC_메뉴 */
+ WHERE  MENU_ID = #MENU_ID#]]>
+	</select>
+</sqlMap>

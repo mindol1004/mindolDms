@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRErpIf">
+	<insert id="ISlipData" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.ISlipData 전표데이터등록 */
+/* IO: 진병수,2015-08-25T16:11:13(진병수,2015-08-20T14:46:28) */
+INSERT INTO TB_SLIP
+            (
+               SLIP_NO
+             , PRPSL_DEPT_CD
+             , SLIP_DT
+             , PRPSR
+             , PRPSL_DT
+             , DEAL_TYP_CD
+             , SLIP_APRV_DEPT_CD
+             , SLIP_APRVR
+             , SLIP_APRV_DT
+             , DEBIT_TOT
+             , CR_TOT
+             , PRF_CD
+             , SLIP_APLY
+             , SLIP_TRMS_YN
+             , ORGL_SLIP_NO
+             , SLIP_NORM_CNCL_CL
+             , SLIP_RTNR
+             , SLIP_RETUR_DT
+             , TAX_BILL_NO
+             , SLIP_CL_CD
+             , FISCL_SYS_SEQ      
+             , FS_REG_USER_ID
+             , FS_REG_DTM    
+             , LS_CHG_USER_ID
+             , LS_CHG_DTM    
+            )   
+     VALUES 
+            (
+               #SLIP_NO#
+             , #PRPSL_DEPT_CD#
+             , #SLIP_DT#
+             , #PRPSR#
+             , #PRPSL_DT#
+             , NVL(#DEAL_TYP_CD#, ' ')
+             , #SLIP_APRV_DEPT_CD#
+             , #SLIP_APRVR#
+             , #SLIP_APRV_DT#
+             , NVL(#DEBIT_TOT# , 0)
+             , NVL(#CR_TOT#    , 0)
+             , #PRF_CD#
+             , #SLIP_APLY#
+             , #SLIP_TRMS_YN#
+             , #ORGL_SLIP_NO#
+             , #SLIP_NORM_CNCL_CL#
+             , #SLIP_RTNR#
+             , #SLIP_RETUR_DT#
+             , #TAX_BILL_NO#
+             , #SLIP_CL_CD#
+             , #FISCL_SYS_SEQ#
+             , 'BAT'
+             , SYSDATE
+             , 'BAT'
+             , SYSDATE
+            )]]>
+	</insert>
+	<update id="USlipStatus" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.USlipStatus 전표상태수정 */
+/* IO: 진병수,2015-08-31T09:29:17(진병수,2015-08-25T16:46:31) */
+UPDATE TB_SLIP
+   SET SLIP_ST_CD = #SLIP_ST_CD#
+ WHERE SLIP_NO    = #SLIP_NO#]]>
+	</update>
+	<select id="SSlipSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.SSlipSeq 전표시퀀스조회 */
+/* IO: 진병수,2015-08-31T09:25:19(진병수,2015-08-28T20:11:23) */
+SELECT LPAD(SQ01_TB_SLIP.NEXTVAL,10,'0') AS SLIP_NO  
+  FROM DUAL]]>
+	</select>
+</sqlMap>

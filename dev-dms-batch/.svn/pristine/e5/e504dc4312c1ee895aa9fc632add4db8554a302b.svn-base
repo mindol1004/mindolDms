@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.BNR011">
+	<select id="SDeprDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR401.SDeprDtl 감가상각상세조회_회계 */
+/* IO: 진병수,2015-08-05T09:58:51(진병수,2015-08-04T19:15:23) */
+SELECT 'AC'   AS RDM_CL
+     ,  TO_CHAR(SYSDATE -1, 'YYYYMM') AS DEPR_STRD_YM
+     ,  '501802'                      AS DEPR_DEPT_CD
+     ,  A.ASSET_NO
+     ,  A.EQP_SRV_LIFE                AS DEPR_DTL_CTT_YR_CNT
+     ,  DECODE(A.EQP_REM_PRC_AMT, 0, A.EQP_PRCH_AMT, A.EQP_REM_PRC_AMT)  AS DEPR_OBJ_AMT/* 기준금액 */
+     ,  DECODE(A.EQP_REM_PRC_AMT, 0, A.EQP_PRCH_AMT, A.EQP_REM_PRC_AMT) -  DECODE(A.EQP_REM_PRC_AMT, 0, A.EQP_PRCH_AMT, A.EQP_REM_PRC_AMT) / NVL(A.EQP_SRV_LIFE, 24) AS DEPR_DTL_REM_PRC_AMT/* 기준금액 */
+     ,  DECODE(A.EQP_REM_PRC_AMT, 0, A.EQP_PRCH_AMT, A.EQP_REM_PRC_AMT) / NVL(A.EQP_SRV_LIFE,24) AS DEPR_DTL_AMT
+     ,  NVL((SELECT SUM(DEPR_DTL_AMT) FROM TB_CLS_DEPR_DTL WHERE ASSET_NO = A.ASSET_NO),0) AS DEPR_DTL_SUM_AMT
+     , 'BAT'                          AS FS_REG_USER_ID
+     , SYSDATE                        AS FS_REG_DTM
+     , 'BAT'                          AS LS_CHG_USER_ID
+     , SYSDATE                        AS LS_CHG_DTM     
+   FROM TB_EQP_ASSET A
+  WHERE A.DEL_YN   = 'N'
+    AND A.OP_CL_CD = 'NR']]>
+	</select>
+	<insert id="IDeprDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR401.IDeprDtl 감가상각상세등록 */
+/* IO: 진병수,2015-08-04T20:37:05(진병수,2015-08-04T20:37:05) */
+INSERT INTO TB_CLS_DEPR_DTL
+            (
+               DEPR_STRD_YM
+             , DEPR_DEPT_CD
+             , ASSET_NO
+             , DEPR_DTL_CTT_YR_CNT
+             , DEPR_OBJ_AMT
+             , DEPR_DTL_REM_PRC_AMT
+             , DEPR_DTL_AMT
+             , DEPR_DTL_SUM_AMT
+             , FS_REG_USER_ID
+             , FS_REG_DTM
+             , LS_CHG_USER_ID
+             , LS_CHG_DTM
+            )
+            VALUES
+            (
+                #DEPR_STRD_YM#
+              , #DEPR_DEPT_CD#
+              , #ASSET_NO#
+              , #DEPR_DTL_CTT_YR_CNT#
+              , #DEPR_OBJ_AMT#
+              , #DEPR_DTL_REM_PRC_AMT#
+              , #DEPR_DTL_AMT#
+              , #DEPR_DTL_SUM_AMT#
+              , #FS_REG_USER_ID#
+              , #FS_REG_DTM#
+              , #LS_CHG_USER_ID#
+              , #LS_CHG_DTM#
+            )]]>
+	</insert>
+</sqlMap>

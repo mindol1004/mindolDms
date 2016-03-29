@@ -1,0 +1,207 @@
+package dms.sc;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.bat.util.SAMFileTool;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/시스템공통</li>
+ * <li>서브 업무명 : BSC002</li>
+ * <li>설  명 : <pre>DMS_DB2File</pre></li>
+ * <li>작성일 : 2015-07-30 15:18:31</li>
+ * <li>작성자 : 이영진 (newnofixing)</li>
+ * </ul>
+ */
+public class BSC002 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+    
+    /**
+     * 배치 생성자. 
+     * 상위클래스 생성자 호출
+     */
+    public BSC002() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        Log log = getLog(context);
+        
+        processCnt = 0;
+        taskNo = "";
+        procFileName = "";
+        
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+        taskNo = resDS.getField("TASK_NO");
+        
+        reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "SC");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+        
+        OutputStream fout = null;
+        
+        try {
+            File file = new File(context.getInParameter("FILE_LOC") + "/" 
+                + context.getInParameter("TASK_ID")+".SKCC."+context.getInParameter("PROC_DT")+".dat"); // input file을 파라미터에서 가져온다.
+            procFileName = file.getName();
+            fout = new BufferedOutputStream(new FileOutputStream(file));
+            
+            SAMFileTool header = new SAMFileTool();
+            header.setOutputStream(fout);
+            header.setEncoding("UTF-8");
+            header.addColumnInfo("REC_CL_CD",     1, SAMFileTool.TYPE_STRING);
+            header.addColumnInfo("FILE_NM",       30, SAMFileTool.TYPE_STRING);
+            header.addColumnInfo("PROC_DT",       8, SAMFileTool.TYPE_STRING);
+            header.initialize();
+            
+            Map<String, String> headerMap = new HashMap<String, String>();
+            headerMap.put("REC_CL_CD", "H");
+            headerMap.put("FILE_NM", "R003.SKCC.20150807_01");
+            headerMap.put("PROC_DT", "20150807");
+
+            header.writeMapToOut(headerMap);
+            
+            // 진행률 표시 설정
+            IRecord rec = dbSelectSingle("S001", new HashMap(), context);
+            context.setProgressTotal(rec.getLong(0));
+            
+            SAMFileTool samTool = new SAMFileTool();
+            samTool.setOutputStream(fout);
+            // 파일 레이아웃 정의
+            samTool.setEncoding("UTF-8");
+            samTool.addColumnInfo("ID", 10, SAMFileTool.TYPE_STRING);
+            samTool.addColumnInfo("NAME", 20, SAMFileTool.TYPE_STRING);
+            samTool.initialize();
+            
+            dbSelect("S002", new HashMap<String, String>(), makeRecordHandler(samTool), context);  //DB 조회
+            
+         // SAM 파일 꼬리부 레이아웃 정의
+            SAMFileTool tail = new SAMFileTool();
+            tail.setOutputStream(fout);
+            tail.setEncoding("UTF-8");
+            tail.addColumnInfo("REC_CL_CD",     1, SAMFileTool.TYPE_STRING);
+            tail.addColumnInfo("FILE_NM",       30, SAMFileTool.TYPE_STRING);
+            tail.addColumnInfo("TOT_REC_CNT",   10, SAMFileTool.TYPE_STRING);
+            tail.initialize();
+            
+            Map<String, String> tailMap = new HashMap<String, String>();
+            tailMap.put("REC_CL_CD", "T");
+            tailMap.put("FILE_NM", "R003.SKCC.20150807_01");
+            tailMap.put("TOT_REC_CNT", "0000000003");
+            
+            tail.writeMapToOut(headerMap);
+        } catch (FileNotFoundException e) {
+            throw new BizRuntimeException("M00009", e);
+        } catch (Exception e) {
+            throw new BizRuntimeException("M00001", e);
+        } finally {
+            try {
+                if (fout != null) fout.close();
+            } catch (Exception e) {
+                throw new BizRuntimeException("M00001", e);
+            }
+        }
+    }
+    
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_CNT", ""+processCnt);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        }else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+        }
+        
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fUpdBatTaskOpHst", reqDS, onlineCtx);
+
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+    
+    /**
+     * 레코드 핸들러
+     */
+    public AbsRecordHandler makeRecordHandler(final SAMFileTool samTool) {
+        
+        AbsRecordHandler rh = new AbsRecordHandler(batchContext) {
+            
+            @Override
+            public void handleRecord(IRecord arg0) {
+                try {
+                    // 필요시 데이터 가공...
+                    
+                    batchContext.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시 설정
+                    samTool.writeRecordToOut(arg0); // file write...
+                   // samTool.writeMapToOut(arg0);
+                    processCnt++;
+                    
+                } catch (Exception e) {
+                    throw new BizRuntimeException("M00001", e); //오류가 발생했습니다.
+                }
+            }
+        };
+        
+        return rh;
+    }
+
+}

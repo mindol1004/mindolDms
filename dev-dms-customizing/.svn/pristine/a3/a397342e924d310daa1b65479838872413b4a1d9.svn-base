@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Deploy NEXCORE EarContent" default="deploy.EarContent.all" basedir="..">
+
+	<!-- ################################################################## -->
+	<!-- ## [NEXCORE_HOME] common build property ########################## -->
+	<!-- ################################################################## -->
+	<!-- default build.properties -->
+	<property file="${NEXCORE_HOME_ANT}/script/build/nexcore.build.properties" />
+
+	<!-- default for CI tool (Continuous Integration : quickBuild etc) -->
+	<property file="${ant.home}/nexcore.build.properties" />
+
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ../EarContent                                           ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent                              ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.EarContent.all" description="" >
+		<echo>NEXCORE_HOME =${NEXCORE_HOME}</echo>
+		<echo>WORKSPACE_HOME =${WORKSPACE_HOME}</echo>
+
+		<copy todir="${NEXCORE_HOME}/EarContent" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent">
+				<include name="*.ser"/>
+			</fileset>
+		</copy>
+		
+		<copy todir="${NEXCORE_HOME}/EarContent/APP-INF" preservelastmodified="${preservelastmodified}" includeemptydirs="true" >
+			<fileset dir="${WORKSPACE_HOME}/EarContent/APP-INF">
+				<exclude name="**/.svn/**" />
+				<exclude name="nexcore-jboss-service.xml"/>
+			</fileset>
+		</copy>
+
+		<copy todir="${NEXCORE_HOME}/EarContent/webapp/web.war" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/webapp/web.war">
+				<exclude name="**/.svn/**" />
+				<exclude name="**/debug/**" />
+				<exclude name="**/Welcome.jsp" />
+			</fileset>
+		</copy>
+
+		<copy todir="${NEXCORE_HOME}/EarContent/META-INF" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/META-INF">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+
+		<copy todir="${NEXCORE_HOME}/EarContent/ejb" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/ejb">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+
+		<copy todir="${NEXCORE_HOME}/lib" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/lib">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+
+		<copy todir="${NEXCORE_HOME}/script" preservelastmodified="true" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/script">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		
+		<antcall target="checkAvailableDirs"/>
+		<antcall target="mkBuildFolder"/>
+		<ant antfile="${PROPERTY_HOME}/build-biz-sftp.xml" target="putRuntime" />
+	</target>
+
+	
+	<target name="checkAvailableDirs">
+		<available file="${NEXCORE_HOME}/business-component" type="dir" property="dir.present"/>
+	</target>
+	<target name="mkBuildFolder" unless="${dir.present}">
+		<mkdir dir="${NEXCORE_HOME}/business-component"/>
+	</target>
+
+		
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/APP-INF                                   ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent/APP-INF                      ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.EarContent.app-inf" description="" >
+		<copy todir="${NEXCORE_HOME}/EarContent/APP-INF" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/APP-INF">
+				<exclude name="**/.svn/**" />
+				<exclude name="nexcore-jboss-service.xml"/>
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/webapp/web.war                   ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent/webapp/web.war      ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.EarContent.web.war" description="copy and paste web.war" >
+		<copy todir="${NEXCORE_HOME}/EarContent/webapp/web.war" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/webapp/web.war">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/classes                   ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/business-component                   ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent/classes      ## -->
+	<!-- ##      ${NEXCORE_HOME}/EarContent/business-component      ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.EarContent.App.Source" description="copy and paste App Source" >
+		<copy todir="${NEXCORE_HOME}/EarContent/classes" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/EarContent/classes">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		<copy todir="${NEXCORE_HOME}/business-component" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/business-component">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		<copy todir="${NEXCORE_HOME}/batch" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/batch">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- ################################################################## -->
+	<!-- ## copy                                                         ## -->
+	<!-- ##   [from]                                                     ## -->
+	<!-- ##      ${WORKSPACE_HOME}/EarContent/webapp/web.war/kokr                   ## -->
+	<!-- ##   [to]                                                       ## -->
+	<!-- ##      ${NEXCORE_HOME}/WebContent/kokr      ## -->
+	<!-- ################################################################## -->
+	<target name="deploy.XPlatform.source" description="copy and paste XPlatform">
+		<copy todir="${NEXCORE_HOME}${XPLATFORM_HOME}" preservelastmodified="${preservelastmodified}" includeemptydirs="true">
+			<fileset dir="${WORKSPACE_HOME}/WebContent/kokr">
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		<ant antfile="${PROPERTY_HOME}/build-biz-sftp.xml" target="putUI" />
+	</target>
+	
+	<target name="refresh.deploy.source" description="delete deployed source">
+		<delete includeemptydirs="true">
+			<fileset dir="${DEL_PATH}" includes="**/*" />
+		</delete>
+	</target>
+	
+	<!--<target name="refresh.deploy.source.sshexec" description="delete deployed source">
+		<sshexec host="${SERVER_IP}" username="${USER_ID}" password="${PASSWORD}" 
+						command="cd ${DEL_PATH}; find ./ ! \( -path './__stage__' -prune \) -exec rm -rf {} \;" 
+						trust="true" />
+	</target>-->
+	<target name="was.control.sshexec" description="WAS startup or shutdown">
+			<sshexec host="${SERVER_IP}" username="${USER_ID}" password="${PASSWORD}" 
+							command="cd ${WAS_PATH}; ./${SH_NAME}" 
+							trust="true" />
+	</target>
+</project>

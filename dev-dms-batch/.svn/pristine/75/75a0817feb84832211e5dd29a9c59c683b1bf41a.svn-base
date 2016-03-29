@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.BNR001">
+	<select id="SSaleAsmpt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR001.SSaleAsmpt 매출추정조회 */
+/* IO: 진병수,2015-08-04T15:01:21(진병수,2015-08-04T15:01:21) */
+SELECT 'AS'                           AS SALE_ASMPT_FIX_CL  -- 매출확정추정구분 
+     , TO_CHAR(SYSDATE, 'YYYYMM')     AS SALE_ASMPT_YM      -- 매출 년월
+     , 1                              AS SALE_ASMPT_YM_TS   --매출추정년월차수
+     , ROWNUM                         AS SALE_ASMPT_SEQ     -- 추정순번
+     , TO_CHAR(SYSDATE-1, 'YYYYMMDD') AS SALE_ASMPT_STRD_DT -- 기준일자
+     , 'RENT'                         AS ACNT_CD            -- 매출구분코드
+     , 'NR'                           AS CNTRT_ST           -- 업무유형코드
+     , C.EQP_MDL_CD                   AS EQP_MDL_CD         --단말기모델코드
+     , A.AGN_CD                       AS AGN_CD             -- 대리점코드
+     , A.SVC_NO                       AS SVN_NO             --서비스번호 (서비스관리번호로 변경예정
+     , ''                             AS SCRBR_NM           --고객성명
+     , B.RENTAL_CNTRT_STA_DT          AS CNTRT_STA_DT
+     , B.RENTAL_CNTRT_END_DT          AS CNTRT_END_DT  
+     , CEIL(MONTHS_BETWEEN(SYSDATE-1, TO_DATE(B.RENTAL_CNTRT_STA_DT))) AS RENTAL_TS
+     , CASE WHEN SUBSTR(B.RENTAL_CNTRT_END_DT,1,6) = TO_CHAR(SYSDATE -1, 'YYYYMM')
+            THEN TO_DATE(B.RENTAL_CNTRT_END_DT, 'YYYYMMDD') - TO_DATE(TO_CHAR(SYSDATE -1, 'YYYYMM') || '01')
+            ELSE C.RENTAL_FEE
+       END 
+       AS SALE_AMT
+     , SYSDATE                        AS FS_REG_DTM
+     , 'BAT'                          AS FS_REG_USER_ID
+     , SYSDATE                        AS LS_CHG_DTM
+     , 'BAT'                          AS LS_CHG_USER_ID
+  FROM PS_MNG.TB_NR_CNTRT     A --계약
+     , PS_MNG.TB_RENTAL_CNTRT B --렌탈계약
+     , PS_MNG.TB_RENTAL_POLY  C --정책
+ WHERE 1=1
+   AND B.CNTRT_NO       = A.CNTRT_NO
+   AND C.RENTAL_POLY_NO = B.RENTAL_POLY_NO]]>
+	</select>
+	<insert id="ISaleAsmpt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR001.ISaleAsmpt 매출추정등록 */
+/* IO: 진병수,2015-08-04T15:05:38(진병수,2015-08-04T15:05:26) */
+INSERT INTO PS_MNG.TB_SALE_ASMPT
+            (
+               SALE_ASMPT_FIX_CL
+             , SALE_ASMPT_YM
+             , SALE_ASMPT_YM_TS
+             , SALE_ASMPT_SEQ
+             , SALE_ASMPT_STRD_DT
+             , ACNT_CD
+             , CNTRT_ST
+             , EQP_MDL_CD
+             , AGN_CD
+             , SVC_NO
+             , SCRBR_NM
+             , CNTRT_STA_DT
+             , CNTRT_END_DT
+             , RENTAL_TS
+             , SALE_AMT
+             , FS_REG_DTM
+             , LS_CHG_USER_ID
+             , LS_CHG_DTM
+             , FS_REG_USER_ID
+            )
+            VALUES
+            (
+                #SALE_ASMPT_FIX_CL#
+              , #SALE_ASMPT_YM#
+              , #SALE_ASMPT_YM_TS#
+              , #SALE_ASMPT_SEQ#
+              , #SALE_ASMPT_STRD_DT#
+              , #ACNT_CD#
+              , #CNTRT_ST#
+              , #EQP_MDL_CD#
+              , #AGN_CD#
+              , #SVC_NO#
+              , #SCRBR_NM#
+              , #CNTRT_STA_DT#
+              , #CNTRT_END_DT#
+              , #RENTAL_TS#
+              , #SALE_AMT#
+              , #FS_REG_DTM#
+              , #LS_CHG_USER_ID#
+              , #LS_CHG_DTM#
+              , #FS_REG_USER_ID#
+            )]]>
+	</insert>
+</sqlMap>

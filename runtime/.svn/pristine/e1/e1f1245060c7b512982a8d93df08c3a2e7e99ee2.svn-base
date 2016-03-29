@@ -1,0 +1,70 @@
+<!DOCTYPE jboss PUBLIC "-//JBoss//DTD JBOSS 4.0//EN" "http://www.jboss.org/j2ee/dtd/jboss_4_0.dtd">
+<jboss>
+ <loader-repository>nexcore.framework:loader=application</loader-repository>
+ <enterprise-beans>
+  <session>
+   <ejb-name>nexcore.online.ServiceInit</ejb-name>
+   <jndi-name>ejb/nexcore/online/ServiceInit</jndi-name>
+   <local-jndi-name>ejb/nexcore/online/ServiceInitLocal</local-jndi-name>
+   <configuration-name>ServiceInit Pool</configuration-name>
+   <method-attributes>
+    <method>
+     <method-name>*</method-name>
+     <transaction-timeout>600</transaction-timeout>
+    </method>
+   </method-attributes>
+  </session>
+  <session>
+   <ejb-name>nexcore.online.PojoServiceFacade</ejb-name>
+   <jndi-name>ejb/nexcore/online/PojoServiceFacade</jndi-name>
+   <local-jndi-name>ejb/nexcore/online/PojoServiceFacadeLocal</local-jndi-name>
+   <configuration-name>PojoServiceFacade Pool</configuration-name>
+   <method-attributes>
+    <method>
+     <method-name>*</method-name>
+     <transaction-timeout>600</transaction-timeout>
+    </method>
+   </method-attributes>
+  </session>
+  <session>
+   <ejb-name>nexcore.online.FrontService</ejb-name>
+   <jndi-name>ejb/nexcore/online/FrontService</jndi-name>
+   <local-jndi-name>ejb/nexcore/online/FrontServiceLocal</local-jndi-name>
+   <configuration-name>FrontService Pool</configuration-name>
+   <method-attributes>
+    <method>
+     <method-name>*</method-name>
+     <transaction-timeout>600</transaction-timeout>
+    </method>
+   </method-attributes>
+  </session>
+ </enterprise-beans>
+
+
+ <container-configurations>
+  <container-configuration extends="Standard Stateless SessionBean">
+   <container-name>ServiceInit Pool</container-name>
+   <instance-pool>org.jboss.ejb.plugins.StatelessSessionInstancePool</instance-pool>
+   <container-pool-conf>
+    <MinimumSize>1</MinimumSize>
+    <MaximumSize>1</MaximumSize>
+   </container-pool-conf>
+  </container-configuration>
+  <container-configuration extends="Standard Stateless SessionBean">
+   <container-name>PojoServiceFacade Pool</container-name>
+   <container-pool-conf>
+    <MinimumSize>20</MinimumSize>
+    <MaximumSize>100</MaximumSize>
+   </container-pool-conf>
+  </container-configuration>
+  <container-configuration extends="Standard Stateless SessionBean">
+   <container-name>FrontService Pool</container-name>
+   <container-pool-conf>
+    <MinimumSize>20</MinimumSize>
+    <MaximumSize>100</MaximumSize>
+   </container-pool-conf>
+  </container-configuration>
+ </container-configurations>
+
+</jboss>
+

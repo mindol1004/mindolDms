@@ -1,0 +1,127 @@
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Random;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.PaddableDataOutputStream;
+import fwk.common.internal.ImplFlatHeader;
+import fwk.constants.DmsConstants;
+import fwk.flat.EaiFlatHeaderSpec;
+import fwk.flat.FlatHeaderHelper;
+import fwk.flat.FlatHeaderSpec;
+
+/*
+ * fixedlength를 테스트 하기 위한 클래스.
+ *
+ * 1. http로 전송할 전문을 파일로 write한다.
+ * 2. wget 을 이용하여 해당 URL로 전송한다.
+ */
+public class SendEaiFlatDocToNexcore {
+
+	static Random r = new Random(); // multi instance 에 대해서 무작위 분산을 위해.
+	static String txId;
+
+
+
+	public static byte[] callServer(String url, int timeoutInSecond, byte[] inputData) throws Exception {
+		HttpURLConnection conn = null;
+		try {
+			conn = (HttpURLConnection) new URL(url).openConnection();
+			conn.setDoInput(true);
+			conn.setDoOutput(true);
+			conn.setUseCaches(false);
+
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("User-Agent", "ETC");
+			conn.setRequestProperty("Content-Type", "application/octet-stream");
+			conn.setRequestProperty("Connection", "close");
+			conn.setRequestProperty("Content-Length", String.valueOf(inputData.length));
+
+			conn.setConnectTimeout(timeoutInSecond * 1000);
+			conn.setReadTimeout(timeoutInSecond * 1000);
+			OutputStream out = conn.getOutputStream();
+			out.write(inputData);
+			out.flush();
+
+			int result = conn.getResponseCode();
+			if (result != 200) {
+				throw new IOException("Fail to call NEXCORE. code=[" + result + "].\n" + conn.getResponseMessage());
+			}
+
+			ByteArrayOutputStream bout = new ByteArrayOutputStream(Math.max(conn.getContentLength(), 100)); // getContentLength() 가 -1 일 수도 있으므로
+			byte[] buffer = new byte[64]; //64 byte 버퍼를 두고 읽는다.
+			InputStream resStream = conn.getInputStream();
+			int readLen = -1;
+			while ((readLen = resStream.read(buffer)) != -1) {
+				bout.write(buffer, 0, readLen);
+			}
+			return bout.toByteArray();
+		} finally {
+			conn.disconnect();
+		}
+	}
+
+//	public static byte[] callFrontService(byte[] inputData) throws Exception {
+//		Hashtable<String, String> env = new Hashtable<String, String>();
+//		env.put(Context.INITIAL_CONTEXT_FACTORY, "jeus.jndi.JNSContextFactory");
+//		env.put(Context.URL_PKG_PREFIXES, "jeus.jndi.jns.url");
+//
+//		env.put(Context.PROVIDER_URL, "localhost:9736");
+//		env.put(Context.SECURITY_PRINCIPAL, "administrator");
+//		env.put(Context.SECURITY_CREDENTIALS, "password");
+//		// env.put(Context.SECURITY_CREDENTIALS, "jeusadmin");
+//
+//		InitialContext ic = new InitialContext(env);
+//		Object facadeHome = ic.lookup("ejb/nexcore/online/FrontService");
+//
+//		Method facedeMethodCreate = facadeHome.getClass().getMethod("create", new Class[0]);
+//		Object facade = facedeMethodCreate.invoke(facadeHome, new Object[0]);
+//
+//		Method facadeMethod = facade.getClass().getMethod("call", new Class[] { byte[].class });
+//		byte[] outputData = (byte[]) facadeMethod.invoke(facade, new Object[] { inputData });
+//
+//		return outputData;
+//	}
+
+
+	public static void main(String args[]) throws Exception {
+		String plainText = "0000034120140630171148BILL-PC_1711480200     QSY20140630171148PXYZTEaiSample_pEaiInbound                                  "
+				+ "PCGWSAP_PCERPHR_SS054                           D01020                                                                                "
+				+ "<data><record><import><PERNR>2110253</PERNR><DATUM>20140627</DATUM></import></record></data>@@";
+		// localhost
+//		String url = "http://localhost:7001/web/eai.fmd";
+//		String url = "http://10.0.9.223:8001/web/eai.fmd";//Bo
+		String url = "http://10.0.9.223:8002/web/eai.fmd";//ap
+//		String url = "http://10.0.9.223:8003/web/eai.fmd";//Bat
+		
+
+		byte[] request = plainText.getBytes();
+
+		System.out.println("------------- REQ --------------------------------");
+		System.out.write(request);
+		System.out.println("\n---------------------------------------------");
+		byte[] response = callServer(url, 300, request);
+//		validateResponse(response);
+		//        byte[] response = callFrontService(request);
+
+		System.out.println("\n\n------------- RES --------------------------------");
+		System.out.println(new String(response, "ms949"));
+
+            
+		//LogManager.getFwkLog().debug(response);
+	}
+}

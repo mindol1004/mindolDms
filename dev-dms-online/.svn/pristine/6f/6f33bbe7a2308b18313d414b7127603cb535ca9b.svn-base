@@ -1,0 +1,221 @@
+package dms.bi.bibbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+import org.apache.commons.logging.Log;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/기준정보</li>
+ * <li>단위업무명: [FU]박스바코드관리</li>
+ * <li>설  명 : <pre>박스바코드관리</pre></li>
+ * <li>작성일 : 2015-06-29 11:00:38</li>
+ * <li>작성자 : 개발자 (developer)</li>
+ * </ul>
+ *
+ * @author 개발자 (developer)
+ */
+public class FBIBoxBarcdMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FBIBoxBarcdMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>박스바코드 상세 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-09 15:17:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet fInqBoxBarcdDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+    	try {
+    		// 1. DU lookup
+    		DBIBoxBarcdMgmt dBIBoxBarcdMgmt = (DBIBoxBarcdMgmt) lookupDataUnit(DBIBoxBarcdMgmt.class);
+    		// 3. LISTDM호출
+    		responseData = dBIBoxBarcdMgmt.dSBoxBarcdDtlLst(requestData, onlineCtx);
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	}
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>박스바코드 세팅</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-09 15:17:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet fUpdBoxBarcdSet(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        String S_GB = "";
+        
+        try {    		       	
+        	// 1. DU lookup
+        	DBIBoxBarcdMgmt dBIBoxBarcdMgmt = (DBIBoxBarcdMgmt) lookupDataUnit(DBIBoxBarcdMgmt.class);
+    		
+        	IRecordSet rs = requestData.getRecordSet("RS_BOXDTL_LST");
+    		// 2. 입력 RS설정
+            for (int i=0; i<rs.getRecordCount(); i++) {
+                requestData.putFieldMap(rs.getRecordMap(i));
+                // 2. DM호출 : 박스재고 update
+                responseData = dBIBoxBarcdMgmt.dUBoxBarcd(requestData, onlineCtx);
+                
+                // 3. 업무 DM호출 : 박스번호생성 - 공통
+                responseData = dBIBoxBarcdMgmt.dUBoxBarcdSet(requestData, onlineCtx);
+            }
+    		
+    		// 4. 업무 FM호출 : 박스번호생성 - 중고폰   		
+    		S_GB = requestData.getField("S_GB");
+    		if ((S_GB != "")||(S_GB != null)){        		
+    			/**
+    			 * 상담,매입 테이블 BOX_NO 업데이트 
+    			 */
+    			callSharedBizComponentByDirect("ep.EPSBIBase", "fBoxBarcdPrchsInfo", requestData, onlineCtx);
+    			callSharedBizComponentByDirect("ep.EPSBIBase", "fBoxBarcdConsultInfo", requestData, onlineCtx);
+        			
+    		}
+    		
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	}
+        return responseData;
+    }
+    
+    /**
+     * <pre>박스바코드 입력</pre>
+     *
+     * @author 박홍서 (uni9401)
+     * @since 2015-07-09 15:17:59
+     *
+     * @param requestData 요청정보 DataSet 객체
+     * @param onlineCtx   요청 컨텍스트 정보
+     * @return 처리결과 DataSet 객체
+     */
+    public IDataSet fRegBoxBarcd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        Object map = null;
+        try {      	
+            // 1. DU lookup
+            DBIBoxBarcdMgmt dBIBoxBarcdMgmt = (DBIBoxBarcdMgmt) lookupDataUnit(DBIBoxBarcdMgmt.class);
+            // 2. 공지사항번호 채번
+            IDataSet seqNoDs = dBIBoxBarcdMgmt.dSBoxBarcdSeq(requestData, onlineCtx);
+            requestData.putField("BOX_BAR_CD", seqNoDs.getField("BOX_BAR_CD"));
+            // 3. 업무 DM호출
+            dBIBoxBarcdMgmt.dIBoxBarcd(requestData, onlineCtx);
+            // 4. 출력RS세팅
+            IRecordSet rs = new RecordSet("RS_BOXBAR", new String[]{"BOX_BAR_CD","OP_CL_CD","BOX_ST_CD","BOX_ST_SCL_CD","MAX_QTY"});
+            IRecord record = rs.newRecord();
+            record.set("BOX_BAR_CD", seqNoDs.getField("BOX_BAR_CD"));
+            record.set("OP_CL_CD", requestData.getField("OP_CL_CD"));
+            record.set("BOX_ST_CD", requestData.getField("BOX_ST_CD"));
+            record.set("BOX_ST_SCL_CD", requestData.getField("BOX_ST_SCL_CD"));
+            record.set("MAX_QTY", requestData.getField("MAX_QTY"));
+            
+            responseData.putRecordSet(rs);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>박스바코드 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-13 09:56:54
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqBoxBarcd(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DBIBoxBarcdMgmt dBIBoxBarcdMgmt = (DBIBoxBarcdMgmt) lookupDataUnit(DBIBoxBarcdMgmt.class);
+            // 3. LISTDM호출
+            responseData = dBIBoxBarcdMgmt.dSBoxBarcd(requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 이영진 (newnofixing)
+	 * @since 2015-07-09 15:17:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqEqpseq(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            // 1. DU lookup
+            DBIBoxBarcdMgmt dBIBoxBarcdMgmt = (DBIBoxBarcdMgmt) lookupDataUnit(DBIBoxBarcdMgmt.class);
+            // 3. LISTDM호출
+            responseData = dBIBoxBarcdMgmt.dSEqpseq(requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+	/**
+	 *
+	 *
+	 * @author 이하나 (hana526)
+	 * @since 2015-09-14 18:19:42
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fGetProdInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+        try {
+            // 1. DU lookup
+            DBIBoxBarcdMgmt dBIBoxBarcdMgmt = (DBIBoxBarcdMgmt) lookupDataUnit(DBIBoxBarcdMgmt.class);
+            // 2. LISTDM호출
+            responseData = dBIBoxBarcdMgmt.dSProdInfo(requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+	
+	    return responseData;
+	}
+}

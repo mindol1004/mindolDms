@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPBarCodePrchsInfoMgmt">
+	<select id="SInqBarCodePrchsInfoList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBarCodePrchsInfoMgmt.SInqBarCodePrchsInfoList 바코드매입정보조회 */
+/* IO: 양재석,2015-08-28T10:31:16(양재석,2015-08-26T19:07:34) */
+SELECT B.AGN_ORG_CD 
+       ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM /*대리점명*/
+       , D.CNSL_DEALCO_CD
+       , B.DEALCO_NM CNSL_DEALCO_NM
+       , B.DEALCO_NM
+       , B.UKEY_SUB_CD
+       , B.DEALCO_ADDR
+       , NVL(A.EQP_MDL_CD, D.EQP_MDL_CD) EQP_MDL_CD
+       , (SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = NVL(A.EQP_MDL_CD,D.EQP_MDL_CD)) EQP_MDL_NM
+       , NVL(A.EQP_COLOR_CD, D.EQP_COLOR_CD) EQP_COLOR_CD
+       , NVL(A.CNSL_MGMT_SER_NO, D.CNSL_MGMT_SER_NO) CNSL_MGMT_SER_NO
+       , NVL(A.IMEI, D.IMEI) IMEI
+       , A.EQP_ST
+       , DECODE(A.EQP_ST,'N','N','E','E',A.EQP_ST_DTAIL) AS EQP_ST_DTAIL
+       , A.PRCH_AMT
+       , NVL(A.DPSTR, D.DPSTR) DPSTR
+       , NVL(A.BANK_CD, D.BANK_CD) BANK_CD
+       , NVL(A.ACCO_NO, D.ACCO_NO) ACCO_NO
+       , NVL(A.SVC_NO, D.SVC_NO) SVC_NO
+       , NVL(A.SVC_MGMT_NO, D.SVC_MGMT_NO) SVC_MGMT_NO
+       , D.CNSL_MGMT_NO
+       , D.CNSL_DT
+       , D.ONING_DT
+       , (SELECT COMC FROM TB_EQP_MDL WHERE EQP_MDL_CD = NVL(A.EQP_MDL_CD,D.EQP_MDL_CD)) COMC
+       , (SELECT PROD_CHRTIC_1 FROM TB_EQP_MDL WHERE EQP_MDL_CD = NVL(A.EQP_MDL_CD,D.EQP_MDL_CD)) PROD_CHRTIC_1
+       , NVL(A.TEL_NO, D.TEL_NO) TEL_NO
+       , NVL(A.FEE_DEDC_YN, D.FEE_DEDC_YN) FEE_DEDC_YN
+       , A.PRCH_MGMT_NO
+  FROM TB_EP_CST_PRCHS_MGMT A
+       , TB_DEALCO B
+       , TB_EP_CST_CONSULT_MGMT D
+ WHERE D.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND B.EFF_STA_DT <= D.CNSL_DT
+   AND B.EFF_END_DT >= D.CNSL_DT
+   AND D.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND A.DEL_YN(+) = 'N'
+   AND B.DEL_YN = 'N'
+   AND D.DEL_YN = 'N'
+   AND D.CNSL_MGMT_NO = A.CNSL_MGMT_NO(+)]]>
+	</select>
+	<select id="SInqBarCodePrchsDtlList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBarCodePrchsInfoMgmt.SInqBarCodePrchsDtlList 바코드매입상세조회(구성품) */
+/* IO: 양재석,2015-08-27T09:34:22(양재석,2015-08-27T09:34:22) */
+SELECT DTL_CL,    /* DMS183 중고폰단말기부가상품 참조*/
+       NVL(HLD_QTY,0) HLD_QTY, 
+       PRCH_MGMT_NO 
+  FROM TB_EP_CST_PRCHS_DTL
+ WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO#
+   AND DEL_YN = 'N']]>
+	</select>
+	<select id="SInqBarCodePrchsRDData" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsbibase.db.DEPBarCodePrchsInfoMgmt.SInqBarCodePrchsRDData 바코드매입RD데이터조회 */
+/* IO: 양재석,2015-08-27T11:09:40(양재석,2015-08-27T11:09:40) */
+SELECT NVL(B.CNSL_MGMT_SER_NO,A.CNSL_MGMT_SER_NO) CNSL_MGMT_SER_NO,
+       NVL(B.CNSL_DT,A.CNSL_DT) CNSL_DT ,
+       NVL(B.SKN_EQP_ST, A.SKN_EQP_ST) SKN_EQP_ST ,
+       NVL(B.SKN_CL, A.SKN_CL) SKN_CL ,
+       NVL(B.CNSL_MGMT_NO, A.CNSL_MGMT_NO) CNSL_MGMT_NO  ,
+       (SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE EQP_MDL_CD = NVL(A.EQP_MDL_CD,B.EQP_MDL_CD)) AS EQP_MDL_NM
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,TB_EP_CST_PRCHS_MGMT B
+ WHERE A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)        
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN(+) = 'N']]>
+	</select>
+</sqlMap>

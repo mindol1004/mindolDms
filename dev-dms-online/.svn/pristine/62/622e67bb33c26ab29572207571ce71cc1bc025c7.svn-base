@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInsuFeeMgmt">
+	<select id="SInsuScrbFeeLstDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuScrbFeeLstDtl 보증보험료정산상세조회(가입) */
+/* IO: 안진갑,2015-10-28T13:48:38(장미진,2015-10-13T16:46:57) */
+SELECT  SUBSTR(A.XCL_DT,0,6) AS YYYYMM
+       ,D.SGI_SVC_MGMT_NO
+       ,C.EQP_MDL_NM
+       ,B.RENTAL_CNTRT_STA_DT
+       ,D.SGI_INSURE_MGMT_NO
+       ,D.SGI_INSURE_STA_DT
+       ,NVL(A.XCL_UKEY_INV_AMT,0) AS UKEY_INSURE_FEE
+       ,NVL(A.XCL_AMT,0) AS SGI_INSURE_FEE
+       ,DECODE(A.XCL_UKEY_INV_AMT-A.XCL_AMT,0,'Y','N') AS MATCHED_YN
+       ,A.XCL_SLIP_NO AS SLIP_NO
+       ,F.SLIP_ST_CD          
+  FROM  TB_ETC_XCL A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_MDL C
+       ,TB_INSU_SGI D
+       ,TB_INSU_UKEY E
+       ,TB_SLIP F
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  A.CNTRT_NO = E.CNTRT_NO
+   AND  A.XCL_SLIP_NO = F.SLIP_NO(+)
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CD = 'IP'
+   AND  E.OP_TYP_CD ='01'
+   AND  D.OP_TYP_CD ='A1'
+   AND  A.ETC_XCL_TS = #TS#
+   AND  A.XCL_DT BETWEEN #FEE_YM#||'01' AND #FEE_YM#||'31'
+]]><isNotEmpty prepend="AND" property="INSURE_MGMT_NO"><![CDATA[
+		D.SGI_INSURE_MGMT_NO = #INSURE_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInsuScrbFeeLstSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuScrbFeeLstSlip 보증보험료정산전표조회(가입) */
+/* IO: 안진갑,2015-10-28T17:36:15(장미진,2015-10-13T16:48:20) */
+SELECT  A.DEBT_XCL_YM AS YYYYMM
+	   ,SUBSTR(A.DEBT_XCL_YM,0,4) AS YYYY
+       ,A.DEBT_PRCH_TS AS TS
+       ,C.CNT AS M_CNT
+       ,C.DMS_AMT_SUM 
+       ,A.DEBT_ITM_AMT AS M_PRC
+       ,A.DEBT_SLIP_NO AS SLIP_NO
+       ,B.SLIP_ST_CD
+       ,A.DEBT_SLIP_DT AS SLIP_DT
+       ,C.MATCHED_YN
+       ,A.DEBT_DEALCO_CD AS DEALCO_CD
+       ,A.DEBT_BIZ_REG_NO AS BIZ_REG_NO
+  FROM  TB_XCL_DEBT A
+       ,TB_SLIP B
+       ,(SELECT  SUBSTR(XCL_DT,0,6) AS XCL_YM
+                ,XCL_ITM_CD
+                ,ETC_XCL_TS 
+                ,COUNT(ETC_XCL_NO)     AS CNT
+                ,NVL(SUM(XCL_AMT),0)          AS SGI_AMT_SUM
+                ,NVL(SUM(XCL_UKEY_INV_AMT),0) AS DMS_AMT_SUM
+                ,MIN(DECODE(XCL_AMT-XCL_UKEY_INV_AMT,0,'Y','N')) AS MATCHED_YN
+           FROM  TB_ETC_XCL
+          WHERE  XCL_ITM_CD = 'IP'
+          GROUP  BY SUBSTR(XCL_DT,0,6), XCL_ITM_CD, ETC_XCL_TS
+        ) C
+ WHERE  A.DEBT_SLIP_NO = B.SLIP_NO(+)
+   AND  A.DEBT_XCL_YM = C.XCL_YM
+   AND  A.XCL_ITM_CL = C.XCL_ITM_CD
+   AND  A.DEBT_PRCH_TS = C.ETC_XCL_TS 
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CL = 'IP'     
+   AND  A.DEBT_XCL_YM = #FEE_YM#]]>
+	</select>
+	<select id="SInsuScrbFeeSlipLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuScrbFeeSlipLstTotCnt 보증보험료정산조회합계(가입) */
+/* IO: 안진갑,2015-10-22T17:35:02(장미진,2015-10-13T16:50:20) */
+SELECT  SUM(A.DEBT_ITM_AMT) AS TOTAL_SUM
+       ,B.CNT AS TOTAL_CNT
+  FROM  TB_XCL_DEBT A
+       ,(SELECT  SUBSTR(XCL_DT,0,6) AS XCL_YM
+                ,XCL_ITM_CD
+                ,ETC_XCL_TS
+                ,COUNT(ETC_XCL_NO)     AS CNT
+           FROM  TB_ETC_XCL
+          WHERE  XCL_ITM_CD = 'IP'
+          GROUP  BY SUBSTR(XCL_DT,0,6), XCL_ITM_CD, ETC_XCL_TS
+        ) B
+ WHERE  A.DEBT_XCL_YM = B.XCL_YM
+   AND  A.XCL_ITM_CL = B.XCL_ITM_CD
+   AND  A.DEBT_PRCH_TS = B.ETC_XCL_TS 
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CL = 'IP'
+   AND  A.DEBT_XCL_YM = #FEE_YM#
+ GROUP  BY B.CNT]]>
+	</select>
+	<select id="SInsuScrbFeeAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuScrbFeeAllExcel 보증보험료정산전체엑셀(가입) */
+/* IO: 안진갑,2015-11-02T10:47:47(장미진,2015-10-14T15:56:51) */
+SELECT  SUBSTR(A.XCL_DT,0,6) AS "정산년월"
+       ,D.SGI_SVC_MGMT_NO AS "서비스관리번호"
+       ,C.EQP_MDL_NM AS "모델명"
+       ,B.RENTAL_CNTRT_STA_DT AS "계약일자"
+       ,D.SGI_INSURE_MGMT_NO AS "보험관리번호"
+       ,D.SGI_INSURE_STA_DT AS "가입일자" 
+       ,A.ETC_XCL_TS AS "차수"
+       ,NVL(A.XCL_UKEY_INV_AMT,0) AS "DSM보험료"
+       ,NVL(A.XCL_AMT,0) AS "SGI보험료"
+       ,DECODE(A.XCL_UKEY_INV_AMT-A.XCL_AMT,0,'일치','미일치') AS "보험료 일치여부"
+       ,A.XCL_SLIP_NO AS "전표번호"
+       ,H.CM_CD_NM AS "전표상태"          
+  FROM  TB_ETC_XCL A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_MDL C
+       ,TB_INSU_SGI D
+       ,TB_INSU_UKEY E
+       ,TB_SLIP F
+       ,TB_CM_CD H
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  A.CNTRT_NO = E.CNTRT_NO
+   AND  A.XCL_SLIP_NO = F.SLIP_NO(+)
+   AND  F.SLIP_ST_CD = H.CM_CD_ID(+)
+   AND  H.CM_GRP_CD_ID (+)= 'DMS153'   
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CD = 'IP'
+   AND  E.OP_TYP_CD ='01'
+   AND  D.OP_TYP_CD ='A1'   
+   AND  A.XCL_DT BETWEEN #FEE_YM#||'01' AND #FEE_YM#||'31']]>
+	</select>
+	<select id="SInsuTermFeeLstDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuTermFeeLstDtl 보증보험료정산상세조회(해지) */
+/* IO: 안진갑,2015-10-28T13:21:27(안진갑,2015-10-19T14:14:32) */
+SELECT  SUBSTR(A.XCL_DT,0,6) AS YYYYMM
+       ,D.SGI_SVC_MGMT_NO
+       ,C.EQP_MDL_NM
+       ,B.RENTAL_CNTRT_STA_DT
+       ,D.SGI_INSURE_MGMT_NO
+       ,D.SGI_INSURE_STA_DT
+       ,NVL(A.XCL_UKEY_INV_AMT,0) AS UKEY_INSURE_FEE
+       ,NVL(A.XCL_AMT,0) AS SGI_INSURE_FEE
+       ,DECODE(A.XCL_UKEY_INV_AMT-A.XCL_AMT,0,'Y','N') AS MATCHED_YN
+       ,A.XCL_SLIP_NO AS SLIP_NO
+       ,F.SLIP_ST_CD          
+  FROM  TB_ETC_XCL A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_MDL C
+       ,TB_INSU_SGI D
+       ,TB_INSU_UKEY E
+       ,TB_SLIP F
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  A.CNTRT_NO = E.CNTRT_NO
+   AND  A.XCL_SLIP_NO = F.SLIP_NO(+)
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CD = 'IC'
+   AND  E.OP_TYP_CD ='03'
+   AND  D.OP_TYP_CD ='Z1'   
+   AND  A.ETC_XCL_TS = #TS#
+]]><isNotEmpty prepend="AND" property="FEE_YM"><![CDATA[
+   		A.XCL_DT BETWEEN #FEE_YM#||'01' AND #FEE_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="INSURE_MGMT_NO"><![CDATA[
+		D.SGI_INSURE_MGMT_NO = #INSURE_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInsuTermFeeAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuTermFeeAllExcel 보증보험료정산전체엑셀(해지) */
+/* IO: 안진갑,2015-11-02T10:51:59(안진갑,2015-10-19T14:15:43) */
+SELECT  SUBSTR(A.XCL_DT,0,6) AS "정산년월"
+       ,D.SGI_SVC_MGMT_NO AS "서비스관리번호"
+       ,C.EQP_MDL_NM AS "모델명"
+       ,B.RENTAL_CNTRT_STA_DT AS "계약일자"
+       ,D.SGI_INSURE_MGMT_NO AS "보험관리번호"
+       ,D.SGI_INSURE_STA_DT AS "가입일자" 
+       ,NVL(A.XCL_UKEY_INV_AMT,0) AS "DSM보험료"
+       ,NVL(A.XCL_AMT,0) AS "SGI보험료"
+       ,DECODE(A.XCL_UKEY_INV_AMT-A.XCL_AMT,0,'일치','미일치') AS "보험료 일치여부"
+       ,A.XCL_SLIP_NO AS "전표번호"
+       ,H.CM_CD_NM AS "전표상태"          
+  FROM  TB_ETC_XCL A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_MDL C
+       ,TB_INSU_SGI D
+       ,TB_INSU_UKEY E
+       ,TB_SLIP F
+       ,TB_CM_CD H
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  A.CNTRT_NO = E.CNTRT_NO
+   AND  A.XCL_SLIP_NO = F.SLIP_NO(+)
+   AND  F.SLIP_ST_CD = H.CM_CD_ID(+)
+   AND  H.CM_GRP_CD_ID (+)= 'DMS153'   
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CD = 'IC'
+   AND  E.OP_TYP_CD ='03'
+   AND  D.OP_TYP_CD ='Z1'      
+   AND  A.XCL_DT BETWEEN #FEE_YM#||'01' AND #FEE_YM#||'31']]>
+	</select>
+	<select id="SInsuTermFeeSlipLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuTermFeeSlipLstTotCnt 보증보험료정산조회합계(해지) */
+/* IO: 안진갑,2015-10-23T10:32:36(안진갑,2015-10-19T16:44:32) */
+SELECT  SUM(A.BOND_ITM_AMT) AS TOTAL_SUM
+       ,B.CNT AS TOTAL_CNT
+  FROM  TB_XCL_BOND A
+       ,(SELECT  SUBSTR(XCL_DT,0,6) AS XCL_YM
+                ,XCL_ITM_CD
+                ,ETC_XCL_TS
+                ,COUNT(ETC_XCL_NO)     AS CNT
+           FROM  TB_ETC_XCL
+          WHERE  XCL_ITM_CD = 'IC'
+          GROUP  BY SUBSTR(XCL_DT,0,6), XCL_ITM_CD, ETC_XCL_TS
+        ) B
+ WHERE  A.BOND_XCL_YM = B.XCL_YM
+   AND  A.XCL_ITM_CL = B.XCL_ITM_CD
+   AND  A.BOND_SALE_TS = B.ETC_XCL_TS 
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CL = 'IC'
+   AND  A.BOND_XCL_YM = #FEE_YM#
+ GROUP  BY B.CNT]]>
+	</select>
+	<select id="SInsuTermFeeLstSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuTermFeeLstSlip 보증보험료정산전표조회(해지) */
+/* IO: 안진갑,2015-10-28T17:37:49(안진갑,2015-10-19T16:45:15) */
+SELECT  A.BOND_XCL_YM AS YYYYMM
+       ,SUBSTR(A.BOND_XCL_YM,0,4) AS YYYY
+       ,A.BOND_SALE_TS AS TS
+       ,C.CNT AS M_CNT
+       ,C.DMS_AMT_SUM 
+       ,A.BOND_ITM_AMT AS M_PRC
+       ,A.BOND_SLIP_NO AS SLIP_NO
+       ,B.SLIP_ST_CD
+       ,A.BOND_SLIP_DT AS SLIP_DT
+       ,C.MATCHED_YN
+       ,A.BOND_DEALCO_CD AS DEALCO_CD
+       ,A.BOND_BIZ_REG_NO AS BIZ_REG_NO
+  FROM  TB_XCL_BOND A
+       ,TB_SLIP B
+       ,(SELECT  SUBSTR(XCL_DT,0,6) AS XCL_YM
+                ,XCL_ITM_CD
+                ,ETC_XCL_TS
+                ,COUNT(ETC_XCL_NO)     AS CNT
+                ,NVL(SUM(XCL_AMT),0)          AS SGI_AMT_SUM
+                ,NVL(SUM(XCL_UKEY_INV_AMT),0) AS DMS_AMT_SUM
+                ,MIN(DECODE(XCL_AMT-XCL_UKEY_INV_AMT,0,'Y','N')) AS MATCHED_YN
+           FROM  TB_ETC_XCL
+          GROUP  BY SUBSTR(XCL_DT,0,6), XCL_ITM_CD, ETC_XCL_TS
+        ) C
+ WHERE  A.BOND_SLIP_NO = B.SLIP_NO(+)
+   AND  A.BOND_XCL_YM = C.XCL_YM
+   AND  A.XCL_ITM_CL = C.XCL_ITM_CD
+   AND  A.BOND_SALE_TS = C.ETC_XCL_TS 
+   AND  A.OP_CL_CD = 'NR' 
+   AND  A.XCL_ITM_CL = 'IC'
+   AND  A.BOND_XCL_YM = #FEE_YM#]]>
+	</select>
+	<select id="SInsuScrbFeeLstDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuScrbFeeLstDtlTotCnt 보증보험료정산상세조회합계(가입) */
+/* IO: 안진갑,2015-10-23T10:22:20(안진갑,2015-10-21T13:53:02) */
+SELECT  COUNT(A.ETC_XCL_NO) AS TOTAL_CNT
+       ,NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS UKEY_FEE_SUM
+       ,NVL(SUM(A.XCL_AMT),0) AS SGI_FEE_SUM     
+  FROM  TB_ETC_XCL A
+ WHERE  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CD = 'IP'
+   AND  A.ETC_XCL_TS = #TS#
+   AND  A.XCL_DT BETWEEN #FEE_YM#||'01' AND #FEE_YM#||'31']]>
+	</select>
+	<select id="SInsuTermFeeDtlLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuTermFeeDtlLstTotCnt 보증보험료정산상세조회합계(해지) */
+/* IO: 안진갑,2015-10-23T14:45:34(안진갑,2015-10-21T13:53:57) */
+SELECT  NVL(SUM(A.XCL_UKEY_INV_AMT),0) AS DSM_FEE_SUM
+       ,NVL(SUM(A.XCL_AMT),0) AS SGI_FEE_SUM
+       ,COUNT(A.ETC_XCL_NO) AS TOTAL_CNT 
+  FROM  TB_ETC_XCL A
+ WHERE  A.OP_CL_CD = 'NR'
+   AND  A.XCL_ITM_CD = 'IC'
+   AND  A.ETC_XCL_TS = #TS#
+   AND  A.XCL_DT BETWEEN #FEE_YM#||'01' AND #FEE_YM#||'31']]>
+	</select>
+</sqlMap>

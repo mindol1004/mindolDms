@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR008">
+	<select id="SEqpEvalInfoReg" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR008.SEqpEvalInfoReg 단말기평가정보 */
+/* IO: 문재웅,2015-11-04T17:59:38(문재웅,2015-08-18T14:24:43) */
+SELECT  A.SVC_MGMT_NO       /* 서비스관리번호 */
+       ,A.RENTAL_SER_NO     /* 렌탈일련번호   */
+       ,CASE WHEN D.EQP_JDG_RSLT_CD = '03' THEN NVL(D.EQP_CMP_REVIS_AMT,0)
+        ELSE 0 END AS EQP_BKAG_INDF_AMT 	/* 단말기배상금액합계 >>단말기파손변상금액 ::파손경우 금액,나머지 0 */
+  FROM  TB_NR_CNTRT A     	/* NR_신규R계약   */
+       ,TB_RENTAL_CNTRT B 	/* PR_렌탈계약     */
+       ,TB_EQP_CNTRT C    	/* PR_단말기계약  */
+       ,TB_EQP_JDG D      	/* PR_단말기감정  */
+WHERE A.CNTRT_NO = B.CNTRT_NO
+  AND B.CNTRT_NO = C.CNTRT_NO
+  AND C.ASSET_NO = D.ASSET_NO   
+  /* 단말기감정일자:오늘날짜-4(순수영업일만) */
+   AND D.EQP_JDG_DT <= (SELECT  MIN(SCARL_DT)  
+                          FROM (SELECT  SCARL_DT, RANK() OVER(ORDER  BY SCARL_DT DESC) AS RANK_NUM FROM TB_HOLY 
+                                 WHERE  SCARL_DT <= TO_CHAR(SYSDATE,'YYYYMMDD')
+                                   AND  HOLY_YN = 'N' 
+                                )
+                         WHERE  RANK_NUM <= 5
+                       )             
+  /* TF_NR_EQP_EVAL_INFO_REG(IF_신규_단말기평가정보등록) 진행데이터 제외 */         
+  AND  NOT EXISTS(SELECT  * FROM TF_NR_EQP_EVAL_INFO_REG 
+                       WHERE  A.SVC_MGMT_NO   = SVC_MGMT_NO 
+                         AND  A.RENTAL_SER_NO = RENTAL_SER_NO)]]>
+	</select>
+	<insert id="IEqpEvalInfoReg" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR008.IEqpEvalInfoReg 단말평가정보I/F저장 */
+/* IO: 문재웅,2015-08-19T14:59:36(문재웅,2015-08-18T14:22:20) */
+INSERT
+  INTO  TF_NR_EQP_EVAL_INFO_REG /* 신규_단말기평가정보등록 I/F */ 
+       (
+        IF_PROC_DT          /* IF_처리일자 */
+       ,IF_FILE_NM          /* IF_파일명 */
+       ,IF_SEQ              /* IF_순번 */
+       ,SVC_MGMT_NO         /* 서비스관리번호 */
+       ,RENTAL_SER_NO       /* 렌탈일련번호 */
+       ,EQP_BKAG_INDF_AMT   /* 단말기파손변상금액 */
+       ,PROC_ST_CD          /* 처리상태코드 */
+       ,FS_REG_USER_ID      /* 최초등록사용자ID */
+       ,FS_REG_DTM          /* 최초등록일시 */
+       ,LS_CHG_USER_ID      /* 최종변경사용자ID */
+       ,LS_CHG_DTM          /* 최종변경일시 */
+       )
+VALUES
+       (
+       	#IF_PROC_DT#        /* IF_처리일자 */
+       ,#IF_FILE_NM#        /* IF_파일명 */
+       ,#IF_SEQ#            /* IF_순번 */
+       ,#SVC_MGMT_NO#       /* 서비스관리번호 */
+       ,#RENTAL_SER_NO#     /* 렌탈일련번호 */
+       ,#EQP_BKAG_INDF_AMT# /* 단말기파손변상금액 */
+       ,#PROC_ST_CD#        /* 처리상태코드 */
+       ,'BAT'               /* 최초등록사용자ID */
+       ,SYSDATE             /* 최초등록일시 */
+       ,'BAT'               /* 최종변경사용자ID */
+       ,SYSDATE             /* 최종변경일시 */
+       )]]>
+	</insert>
+</sqlMap>

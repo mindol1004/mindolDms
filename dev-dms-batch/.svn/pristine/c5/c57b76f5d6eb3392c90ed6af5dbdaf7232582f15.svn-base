@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.inf.EPR011">
+	<update id="USlipStatus" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.USlipStatus 전표상태수정 */
+/* IO: 진병수,2015-08-31T14:02:52(진병수,2015-08-25T16:46:31) */
+UPDATE TB_SLIP
+   SET SLIP_ST_CD = #SLIP_ST_CD#
+     , LS_CHG_USER_ID = NVL(#USER_NO#, LS_CHG_USER_ID)
+     , LS_CHG_DTM	  = SYSDATE
+ WHERE SLIP_NO    = #SLIP_NO#]]>
+	</update>
+	<select id="SSlipInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRErpIf.SSlipInfo 전표정보조회 */
+/* IO: 진병수,2015-09-04T19:13:31(진병수,2015-09-04T19:12:33) */
+SELECT *
+  FROM TB_SLIP
+ WHERE SLIP_NO = #SLIP_NO#]]>
+	</select>
+	<update id="UAssetSlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UAssetSlipInfo 단말자산전표취소처리 */
+/* IO: 진병수,2015-09-14T18:14:37(장미진,2015-08-28T13:54:15) */
+UPDATE  TB_ASSET_SLIP
+   SET  ASSET_SLIP_ST = '05'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM     = SYSDATE
+ WHERE  ASSET_SLIP_NO = NVL(#ASSET_SLIP_NO#,#SLIP_NO#)]]>
+	</update>
+	<update id="UAsmptSlipInfo" parameterClass="map" ><![CDATA[/* Biz: dms.inf.EPR011.UAsmptSlipInfo 매출추정전표취소처리 */
+/* IO: 진병수,2015-09-30T16:54:41(장미진,2015-08-28T13:54:15) */
+UPDATE  TB_SALE_ASMPT
+   SET  ASMPT_SLIP_ST = '05'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM     = SYSDATE
+ WHERE  ASMPT_SLIP_NO = NVL(#ASMPT_SLIP_NO#,#SLIP_NO#)]]>
+	</update>
+</sqlMap>

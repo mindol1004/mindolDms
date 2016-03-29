@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCmpXclMgmt">
+	<select id="SCmpXclLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclLstPaging 손해배상금정산정보조회 */
+/* IO: 정동현,2015-08-17T14:46:00(정동현,2015-08-11T14:31:15) */
+SELECT *
+  FROM(SELECT  ROW_NUMBER() OVER (ORDER BY A.EQP_MDL_CD ASC) AS ROWNO
+              ,A.*
+         FROM  (SELECT  ID.EQP_MDL_CD                                              /* 단말기모델코드*/
+                       ,IF.EQP_MDL_NM                                              /* 단말기모델명 */
+                       ,SUM(IE.EQP_CMP_AMT_TOT)  AS  EQP_CMP_AMT_TOT               /* DMS금액 */
+                       ,TO_CHAR(TO_DATE(IB.OP_PROC_DT),'YYYYMM') AS OP_PROC_DT     /* 업무처리일자 */
+                  FROM  TB_RENTAL_CNTRT  IA
+                       ,TB_NR_CNTRT  IB
+                       ,TB_EQP_CNTRT  IC
+                       ,TB_EQP_ASSET  ID
+                       ,TB_EQP_JDG  IE
+                       ,TB_EQP_MDL  IF
+                 WHERE  IA.CNTRT_NO = IB.CNTRT_NO
+                   AND  IA.CNTRT_NO = IC.CNTRT_NO
+                   AND  IC.ASSET_NO = ID.ASSET_NO
+                   AND  ID.ASSET_NO = IE.ASSET_NO
+                   AND  IF.EQP_MDL_CD = ID.EQP_MDL_CD(+)
+                   AND  IB.OP_TYP_CD = '02'                                        /* 업무유형코드 01:가입, 02:해지, 03:교품, 04:변경, 05:해지후반납, 06:보험해지 */
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                        IB.OP_PROC_DT BETWEEN #XCL_YM#||'01' AND #XCL_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                        ID.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+                        IF.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[
+                 GROUP  BY ID.EQP_MDL_CD
+                          ,IF.EQP_MDL_NM
+                          ,TO_CHAR(TO_DATE(IB.OP_PROC_DT),'YYYYMM')
+                ) A
+       ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCmpXclLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclLstTotCnt 손해배상금정산정보조회총건수 */
+/* IO: 정동현,2015-08-17T14:45:49(정동현,2015-08-11T13:16:22) */
+SELECT  COUNT(*) AS TOTAL_CNT
+FROM(
+     SELECT  D.EQP_MDL_CD
+       FROM  TB_RENTAL_CNTRT  A
+            ,TB_NR_CNTRT  B
+            ,TB_EQP_CNTRT  C
+            ,TB_EQP_ASSET  D
+            ,TB_EQP_JDG  E
+            ,TB_EQP_MDL  F
+      WHERE  A.CNTRT_NO = B.CNTRT_NO
+        AND  A.CNTRT_NO = C.CNTRT_NO
+        AND  C.ASSET_NO = D.ASSET_NO
+        AND  D.ASSET_NO = E.ASSET_NO
+        AND  F.EQP_MDL_CD = D.EQP_MDL_CD(+)
+        AND  B.OP_TYP_CD = '02'          /* 업무유형코드 01:가입, 02:해지, 03:교품, 04:변경, 05:해지후반납, 06:보험해지 */
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+             B.OP_PROC_DT BETWEEN #XCL_YM#||'01' AND #XCL_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+             D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+             F.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[
+      GROUP  BY D.EQP_MDL_CD
+               ,F.EQP_MDL_NM
+               ,TO_CHAR(TO_DATE(B.OP_PROC_DT),'YYYYMM')
+     )]]>
+	</select>
+	<select id="SCmpXclDtlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclDtlPaging 손해배상금정산정보상세 */
+/* IO: 정동현,2015-08-17T14:46:51(정동현,2015-08-11T14:11:16) */
+SELECT *
+  FROM(SELECT  ROW_NUMBER() OVER (ORDER BY A.CNTRT_NO ASC) AS ROWNO
+              ,D.EQP_MDL_CD                                         /* 단말기모델코드*/
+              ,F.EQP_MDL_NM                                         /* 단말기모델명 */
+              ,E.EQP_CMP_AMT_TOT                                    /* DMS금액 */
+              ,B.OP_PROC_DT                                         /* 업무처리일자 */
+              ,B.SVC_NO                                             /* 이동전화번호 */
+              ,B.SVC_MGMT_NO                                        /* 서비스번호 */
+              ,D.EQP_SER_NO                                         /* 일련번호 */
+              ,E.EQP_IN_DT                                          /* 단말기입고일자 */
+              ,E.JDG_APRV_DT                                        /* 감정승인일자 */
+              ,E.EQP_JDG_RSLT_CD                                    /* 감정결과코드  10:재상품화, 20:불량*/
+              ,A.RENTAL_CNTRT_STA_DT                                /* 렌탈계약시작일자 */   
+              ,A.RENTAL_CNTRT_END_DT                                /* 렌탈계약종료일자 */
+         FROM  TB_RENTAL_CNTRT  A
+              ,TB_NR_CNTRT  B
+              ,TB_EQP_CNTRT  C
+              ,TB_EQP_ASSET  D
+              ,TB_EQP_JDG  E
+              ,TB_EQP_MDL  F
+        WHERE  A.CNTRT_NO = B.CNTRT_NO
+          AND  A.CNTRT_NO = C.CNTRT_NO
+          AND  C.ASSET_NO = D.ASSET_NO
+          AND  D.ASSET_NO = E.ASSET_NO
+          AND  F.EQP_MDL_CD = D.EQP_MDL_CD(+)
+          AND  B.OP_TYP_CD = '02'                                   /* 업무유형코드 01:가입, 02:해지, 03:교품, 04:변경, 05:해지후반납, 06:보험해지 */
+          AND  E.JDG_APRV_YN = 'Y'                                  /* 감정승인여부 */
+          AND  E.DEL_YN = 'N'                                       /* 삭제여부 */
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+               B.OP_PROC_DT BETWEEN #XCL_YM#||'01' AND #XCL_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+               D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+               F.EQP_MDL_NM = #EQP_MDL_NM#'
+]]></isNotEmpty><![CDATA[
+       ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCmpXclDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRCmpXclMgmt.SCmpXclDtlTotCnt 손해배상금정상정보상세총건수 */
+/* IO: 정동현,2015-08-17T14:46:33(정동현,2015-08-11T10:05:28) */
+SELECT  COUNT(*)  AS TOTAL_CNT
+  FROM  TB_RENTAL_CNTRT  A
+       ,TB_NR_CNTRT  B
+       ,TB_EQP_CNTRT  C
+       ,TB_EQP_ASSET  D
+       ,TB_EQP_JDG  E
+       ,TB_EQP_MDL  F
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  A.CNTRT_NO = C.CNTRT_NO
+   AND  C.ASSET_NO = D.ASSET_NO
+   AND  D.ASSET_NO = E.ASSET_NO
+   AND  F.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   AND  B.OP_TYP_CD = '02'                                   /* 업무유형코드 01:가입, 02:해지, 03:교품, 04:변경, 05:해지후반납, 06:보험해지 */
+   AND  E.JDG_APRV_YN = 'Y'                                  /* 감정승인여부 */
+   AND  E.DEL_YN = 'N'                                       /* 삭제여부 */
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+        B.OP_PROC_DT BETWEEN #XCL_YM#||'01' AND #XCL_YM#||'31'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        D.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+        F.EQP_MDL_NM = #EQP_MDL_NM#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,340 @@
+package dms.pr.prbpmbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]단말기입고관리</li>
+ * <li>설  명 : <pre>단말기입고관리PU</pre></li>
+ * <li>작성일 : 2015-07-10 11:29:30</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ *
+ * @author 김상오 (myneti99)
+ */
+public class PPREqpReqpInMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PPREqpReqpInMgmt(){
+
+		super();
+	}
+
+	/**
+	 * <pre>단말기입고등록</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 11:29:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_EQP_LIST
+	 *		- field : FST_IN_DT [입고일자]
+	 *		- field : IN_DEALCO_CD [매입처코드]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : DEPT_CD [담당부서코드]
+	 *		- field : PRCH_AMT [매입단가]
+	 *		- field : EQP_IMEI_NO [IMEI]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 *		- field : EQP_IN_NUM [단말기입고번호]
+	 *		- field : BOX_NO [BOX NO]
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : PAR_NO [구성품연계용번호]
+	 *		- field : IN_DTL_CD [입고상세코드]
+	 *	- record : CMPT_OUT
+	 *		- field : PAR_NO [구성품연계용번호]
+	 *		- field : CHECKED [출고체크]
+	 *		- field : CMPT_CD [구성품코드]
+	 *		- field : CMPT_USE_QTY [구성품사용수량]
+	 *		- field : OUT_DTL_CD [출고상세코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveEqpReqpIn(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IRecordSet rs = requestData.getRecordSet("RQ_EQP_LIST");
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    
+
+		try {
+			// 1. 레코드셋 상태에 따른 분기
+			for (int i=0; i<rs.getRecordCount(); i++) {
+				requestData.putFieldMap(rs.getRecordMap(i));
+				requestData.putField("FS_REG_USER_ID", ca.getUserNo());
+				requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+				
+				if(requestData.getField("DEL_YN") == null) {
+					requestData.putField("DEL_YN", "N");
+				}
+				if(requestData.getField("OP_CL_CD") == null) {
+					requestData.putField("OP_CL_CD", "PR");
+				}
+				if(requestData.getField("INVE_ST_CD") == null) {
+					requestData.putField("INVE_ST_CD", "10");
+				}
+                if(requestData.getField("IN_DTL_CD") == null) {
+                    requestData.putField("IN_DTL_CD", "10");
+                }
+				
+				if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // INSERT
+					callSharedBizComponentByDirect("pr.PRSPMBase", "fRegEqpReqpIn", requestData, onlineCtx);
+				} else if ( "D".equals(ca.getTrnPtrnDvcd()) ) { // DELETE
+					callSharedBizComponentByDirect("pr.PRSPMBase", "fDelInEqpLst", requestData, onlineCtx);
+				} 
+			}
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 4. 결과값 리턴
+		responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기입고조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 11:29:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [입고시작일자]
+	 *	- field : IN_TO_DT [입고종료일자]
+	 *	- field : IN_DEALCO_CD [매입처코드]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : BOX_NO [박스NO]
+	 *	- field : INVE_ST_CD [상태]
+	 *	- field : OP_CL_CD [업무구분코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_REQP_IN_LIST
+	 *		- field : IN_DT [입고일자]
+	 *		- field : IN_DEALCO_CD [매입처코드]
+	 *		- field : DEAL_CO_NM [매입처명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : SUM_QTY [수량]
+	 *		- field : SUM_AMT [매입금액]
+	 *		- field : BOX_NO [BOX_NO]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpReqpInLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    try {
+            // 2. FM 호출
+            responseData = callSharedBizComponentByDirect("pr.PRSPMBase", "fInqEqpReqpInLst", requestData, onlineCtx);
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+	}
+
+	/**
+	 * <pre>단말기입고상세조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 11:29:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_DT [입고일자]
+	 *	- field : IN_DEALCO_CD [매입처코드]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_COLOR_CD [색상]
+	 *	- field : BOX_NO [BOX_NO]
+	 *	- field : INVE_ST_CD [재고상태코드]
+	 *	- field : OP_CL_CD [업무구분코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_REQP_IN_DTL
+	 *		- field : IN_DT [입고일자]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : DEAL_CO_NM [매입처명]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : PRCH_AMT [매입단가]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_IMEI_NO [IMEI번호]
+	 *		- field : INVE_ST_CD [상태]
+	 *		- field : BOX_NO [BOX NO]
+	 *		- field : EQP_OUT_CNT [단말기출고건수]
+	 *		- field : EQP_CNTRT_CNT [단말기계약건수]
+	 *	- record : CMPT_OUT_LIST
+	 *		- field : CMPT_OUT_NO [구성품출고번호]
+	 *		- field : OUT_DTL_CD [출고상세코드]
+	 *		- field : CMPT_CD [구성품코드]
+	 *		- field : CMPT_USE_QTY [구성품사용수량]
+	 *		- field : CMPT_OUT_DT [구성품출고일자]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : CHECKED [CHECKED]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpReqpInDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet rsCmpt = new DataSet();
+        IDataSet rqCmptTemp = new DataSet();
+        IDataSet rsCmptTemp = new DataSet();
+	    try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("pr.PRSPMBase", "fInqEqpReqpInDtlLst", requestData, onlineCtx);
+            // 2.각 자산별 매칭구성품 호출
+            IRecordSet rs = responseData.getRecordSet("RS_EQP_REQP_IN_DTL");
+            for(int i = 0; i < rs.getRecordCount(); i++){
+                rqCmptTemp.putFieldMap(rs.getRecordMap(i));
+                rsCmptTemp = callSharedBizComponentByDirect("pr.PRSPMBase", "fInqCmptOutLst", rqCmptTemp, onlineCtx);
+                if(rsCmptTemp != null && rsCmptTemp.getRecordSetCount() > 0){
+                    if(rsCmpt == null || rsCmpt.getRecordSetCount() <= 0){
+                        rsCmpt.putRecordSet(rsCmptTemp.getRecordSet("CMPT_OUT_LIST"));
+                    }else{
+                        for(int j = 0; j < rsCmptTemp.getRecordSet("CMPT_OUT_LIST").getRecordCount(); j++){
+                            rsCmpt.getRecordSet("CMPT_OUT_LIST").addRecord(rsCmptTemp.getRecordSet("CMPT_OUT_LIST").getRecord(j));
+                        }
+                    }
+                }
+            }
+            if(rsCmpt != null){
+                responseData.putRecordSet(rsCmpt.getRecordSet("CMPT_OUT_LIST"));
+            }
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+	    return responseData;
+	}
+
+    /**
+	 * <pre>[PM]자산단말기이동내역조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-10 11:29:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_MOV_DTL
+	 *		- field : ROWNO [ROWNO]
+	 *		- field : IN_OUT_GB [입출고구분]
+	 *		- field : IN_OUT_DTL_NM [입출고상세구분]
+	 *		- field : IN_OUT_DT [입출고일자]
+	 *		- field : IN_OUT_PLC_NM [입출고처]
+	 *	- record : RS_ASSET_EQP_DTL_INFO
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_IMEI_NO [단말기IMEI번호]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : IN_PLC_NM [매입처명]
+	 *		- field : CMPHS_CNTRT_NM [계약명]
+	 * </pre>
+	 */
+	public IDataSet pInqAssetEqpMovDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet responseDtlData = new DataSet();
+    
+        try {
+            // 1. 이동내역 FM 호출
+            responseData = callSharedBizComponentByDirect("pr.PRSPMBase", "fInqAssetEqpMovDtl", requestData, onlineCtx);
+            // 2. 상세정보 FM 호출
+            responseDtlData = callSharedBizComponentByDirect("pr.PRSPMBase", "fInqAssetEqpDtlInfo", requestData, onlineCtx);
+            // 3. 결과값 리턴
+            responseData.putRecordSet(responseDtlData.getRecordSet("RS_ASSET_EQP_DTL_INFO"));
+            responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기자산 시리얼 IMEI 중복체크</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:29:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_ASSET_CHK
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_IMEI_NO [IMEI번호]
+	 *		- field : EQP_SER_CNT [일련번호중복건수]
+	 *		- field : EQP_IMEI_CNT [IMEI중복건수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_ASSET_CHK
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_IMEI_NO [IMEI번호]
+	 *		- field : EQP_SER_CNT [일련번호중복건수]
+	 *		- field : EQP_IMEI_CNT [IMEI중복건수]
+	 * </pre>
+	 */
+	public IDataSet pChkEqpAssetSerImei(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 2. FM 호출
+            responseData = callSharedBizComponentByDirect("pr.PRSPMBase", "fChkEqpAssetSerImei", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+        return responseData;
+    }
+  
+}

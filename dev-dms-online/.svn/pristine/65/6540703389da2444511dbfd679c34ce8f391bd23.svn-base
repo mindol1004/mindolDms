@@ -1,0 +1,694 @@
+package dms.ep.epssxbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]SKT수수료관리</li>
+ * <li>설  명 : <pre>[FU]SKT수수료관리</pre></li>
+ * <li>작성일 : 2015-10-05 10:36:10</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class FEPSktCmmsMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPSktCmmsMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]SKT수수료상세목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_CMMS_DTL_LIST
+	 *		- field : CMMS_STRD_YM [수수료 기준 년월]
+	 *		- field : DEDC_TYP_CD [중고폰 공제유형구분]
+	 *		- field : INVE_TYP_CD [중고폰 재고유형 구분]
+	 *		- field : CMMS_SLIP_DT [수수료 전표 일자]
+	 *		- field : CMMS_SLIP_NO [수수료 전표 번호]
+	 *		- field : CMMS_SLIP_ST [수수료 전표 상태]
+	 *		- field : CMMS_CNCL_SLIP_DT [수수료 취소 전표 일자]
+	 *		- field : CMMS_CNCL_SLIP_NO [수수료 취소 전표 번호]
+	 *		- field : CMMS_COUNT [수수료 건수]
+	 *		- field : XCL_AMT [수수료 금액]
+	 *		- field : SLIP_ST_CD [전표 상태]
+	 * </pre>
+	 */
+	public IDataSet fSSktCmmsDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSSktCmmsDtlLst(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]선할인SKT수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 *	- field : USER_ID [로그인 ID]
+	 *	- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *	- field : CMMS_XCL_DTL_SEQ [수수료 정산 상세 순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIPreDcSktCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIPreDcSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]계좌송금비현장감정SKT수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 *	- field : USER_ID [로그인 ID]
+	 *	- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *	- field : CMMS_XCL_DTL_SEQ [수수료 정산 상세 순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIAccoRmtGnrlJdgSktCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIAccoRmtGnrlJdgSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]계좌송금현장감정SKT수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 *	- field : USER_ID [로그인 ID]
+	 *	- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *	- field : CMMS_XCL_DTL_SEQ [수수료 정산 상세 순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIAccoRmtRpetJdgSktCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIAccoRmtRpetJdgSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]요금선납비현장SKT수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 *	- field : USER_ID [로그인 ID]
+	 *	- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *	- field : CMMS_XCL_DTL_SEQ [수수료 정산 상세 순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIFeePpayGnrlJdgSktCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIFeePpayGnrlJdgSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]요금선납현장SKT수수료집계</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 *	- field : USER_ID [로그인 ID]
+	 *	- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *	- field : CMMS_XCL_DTL_SEQ [수수료 정산 상세 순번]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : insertRow [등록건수]
+	 * </pre>
+	 */
+	public IDataSet fIFeePpayRpetJdgSktCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dIFeePpayRpetJdgSktCmms(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]선할인SKT수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_STRD_YM [정산기준년월]
+	 *	- field : DEDC_TYP_CD [공제유형]
+	 *	- field : INVE_TYP_CD [재고유형]
+	 *	- field : EXCEL_FIRST [목록첫번째위치]
+	 *	- field : EXCEL_LAST [목록마지막번째위치]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_DTL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [전체건수]
+	 *		- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *		- field : CMMS_STRD_YM [정산 기준 년월]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : FEE_DEDC_PROC_DT [공제처리일자]
+	 *		- field : RMT_DT [송금일자]
+	 *		- field : DPSTR [고객명]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : PRCH_AMT [계좌송금 비현장 금액]
+	 *		- field : UKEY_EQP_PRC [요금선납 비현장 금액]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : LS_CHG_DTM [변경일자]
+	 *		- field : SCRB_MTHD [가입방법]
+	 *		- field : FST_RGSTR [최초 등록자]
+	 *		- field : FST_RGSTR_NM [최초 등록자명]
+	 *		- field : HEADQ_NM [본부 명]
+	 *		- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *		- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *		- field : AFFIL_AGN [소속대리점코드]
+	 *		- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *		- field : PAY_MTHD [지급방법]
+	 *		- field : PAY_DT [지급 일자]
+	 *		- field : SKN_EQP_ST [재감정등급]
+	 *		- field : SKN_JDG_AMT [SKN 감정 금액]
+	 *		- field : SKN_SMPL_JDG_DAMT [SKN 샘플 감정 차액]
+	 *		- field : CLCT_DT [회수일자]
+	 * </pre>
+	 */
+	public IDataSet fSPreDcSktCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSPreDcSktCmmsLst(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]수수료정산삭제</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_STRD_YM [수수료 기준 년월]
+	 *	- field : USER_ID [로그인 ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDTbEpCmmsXcl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dDTbEpCmmsXcl(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]계좌송금비현장SKT수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_STRD_YM [정산기준년월]
+	 *	- field : DEDC_TYP_CD [공제유형]
+	 *	- field : INVE_TYP_CD [재고유형]
+	 *	- field : EXCEL_FIRST [목록첫번째위치]
+	 *	- field : EXCEL_LAST [목록마지막번째위치]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_DTL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [전체건수]
+	 *		- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *		- field : XCL_STRD_YM [정산 기준 년월]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : FEE_DEDC_PROC_DT [공제처리일자]
+	 *		- field : RMT_DT [송금일자]
+	 *		- field : DPSTR [고객명]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : PRCH_AMT [계좌송금 비현장 금액]
+	 *		- field : UKEY_EQP_PRC [요금선납 비현장 금액]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : CLCT_DT [회수일자]
+	 * </pre>
+	 */
+	public IDataSet fSAccoRmtGnrlJdgSktCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSAccoRmtGnrlJdgSktCmmsLst(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]계좌송금현장SKT수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_STRD_YM [정산기준년월]
+	 *	- field : DEDC_TYP_CD [공제유형]
+	 *	- field : INVE_TYP_CD [재고유형]
+	 *	- field : EXCEL_FIRST [목록첫번째위치]
+	 *	- field : EXCEL_LAST [목록마지막번째위치]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_DTL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [전체건수]
+	 *		- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *		- field : XCL_STRD_YM [정산 기준 년월]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : FEE_DEDC_PROC_DT [공제처리일자]
+	 *		- field : RMT_DT [송금일자]
+	 *		- field : DPSTR [고객명]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : PRCH_AMT [계좌송금 비현장 금액]
+	 *		- field : UKEY_EQP_PRC [요금선납 비현장 금액]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : CLCT_DT [회수일자]
+	 * </pre>
+	 */
+	public IDataSet fSAccoRmtRpetJdgSktCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSAccoRmtRpetJdgSktCmmsLst(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]요금선납비현장SKT수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_STRD_YM [정산기준년월]
+	 *	- field : DEDC_TYP_CD [공제유형]
+	 *	- field : INVE_TYP_CD [재고유형]
+	 *	- field : EXCEL_FIRST [목록첫번째위치]
+	 *	- field : EXCEL_LAST [목록마지막번째위치]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_DTL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [전체건수]
+	 *		- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *		- field : XCL_STRD_YM [정산 기준 년월]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : FEE_DEDC_PROC_DT [공제처리일자]
+	 *		- field : RMT_DT [송금일자]
+	 *		- field : DPSTR [고객명]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : PRCH_AMT [계좌송금 비현장 금액]
+	 *		- field : UKEY_EQP_PRC [요금선납 비현장 금액]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : CLCT_DT [회수일자]
+	 * </pre>
+	 */
+	public IDataSet fSFeePpayGnrlJdgCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSFeePpayGnrlJdgCmmsLst(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]요금선납현장SKT수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_STRD_YM [정산기준년월]
+	 *	- field : DEDC_TYP_CD [공제유형]
+	 *	- field : INVE_TYP_CD [재고유형]
+	 *	- field : EXCEL_FIRST [목록첫번째위치]
+	 *	- field : EXCEL_LAST [목록마지막번째위치]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_DTL_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : EXCEL_TOTAL_CNT [전체건수]
+	 *		- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *		- field : XCL_STRD_YM [정산 기준 년월]
+	 *		- field : DEDC_TYP_CD [공제 유형 코드]
+	 *		- field : INVE_TYP_CD [재고 유형 코드]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : FEE_DEDC_PROC_DT [공제처리일자]
+	 *		- field : RMT_DT [송금일자]
+	 *		- field : DPSTR [고객명]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : CNSL_AMT [상담 금액]
+	 *		- field : PRCH_AMT [계좌송금 비현장 금액]
+	 *		- field : UKEY_EQP_PRC [요금선납 비현장 금액]
+	 *		- field : XCL_AMT [정산 금액]
+	 *		- field : CLCT_DT [회수일자]
+	 * </pre>
+	 */
+	public IDataSet fSFeePpayRpetJdgSktCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSFeePpayRpetJdgSktCmmsLst(requestData, onlineCtx);            
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]SKT수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_DT [정산년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SKT_CMMS_LIST
+	 *		- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *		- field : CMMS_STRD_YM [수수료 기준 년월]
+	 *		- field : OP_PROC_CMMS_AMT [업무 처리 수수료 금액]
+	 *		- field : CUST_MGMT_SYS_USE_AMT [고객 관리 시스템 사용 금액]
+	 *		- field : CMMS_AMT [수수료 금액]
+	 *		- field : CMMS_XCL_CNT [수수료 정산 건수]
+	 *		- field : CMMS_SLIP_DT [수수료 전표 일자]
+	 *		- field : CMMS_SLIP_NO [수수료 전표 번호]
+	 *		- field : CMMS_SLIP_ST [수수료 전표 상태]
+	 *		- field : CMMS_CNCL_SLIP_DT [수수료 취소 전표 일자]
+	 *		- field : CMMS_CNCL_SLIP_NO [수수료 취소 전표 번호]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 * </pre>
+	 */
+	public IDataSet fSSktCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSSktCmmsLst(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]수수료정산번호조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_XCL_NO [수수료 정산 번호]
+	 * </pre>
+	 */
+	public IDataSet fSCmmsXclNoSeq(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dSCmmsXclNoSeq(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }  
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]수수료정산등록</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *	- field : CMMS_STRD_YM [수수료 기준 년월]
+	 *	- field : OP_PROC_CMMS_AMT [업무 처리 수수료 금액]
+	 *	- field : CUST_MGMT_SYS_USE_AMT [고객 관리 시스템 사용 금액]
+	 *	- field : CMMS_AMT [수수료 금액]
+	 *	- field : SPLY_PRC [공급가격]
+	 *	- field : SURTAX_AMT [부가세금액]
+	 *	- field : CMMS_XCL_CNT [수수료 정산 건수]
+	 *	- field : CMMS_CNCL_SLIP_DT [수수료 취소 전표 일자]
+	 *	- field : CMMS_CNCL_SLIP_NO [수수료 취소 전표 번호]
+	 *	- field : USER_ID [로그인 ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fITbEpCmmsXcl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dITbEpCmmsXcl(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]수수료정산상세삭제</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-05 10:36:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CMMS_XCL_NO [수수료 정산 번호]
+	 *	- field : USER_ID [로그인ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDTbEpCmmsXclDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+        try {
+            DEPSktCmmsMgmt dEPAgnCmmsMgmt = (DEPSktCmmsMgmt) lookupDataUnit(DEPSktCmmsMgmt.class);
+            responseData = dEPAgnCmmsMgmt.dDTbEpCmmsXclDtl(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+  
+}

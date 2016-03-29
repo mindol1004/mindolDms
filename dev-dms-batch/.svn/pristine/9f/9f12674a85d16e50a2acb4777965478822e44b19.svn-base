@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.BPR008">
+	<select id="SIfRpkgAprvInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR008.SIfRpkgAprvInfo 리페키징승인정보조회 */
+/* IO: 양재석,2015-08-12T10:40:11(양재석,2015-08-11T10:05:57) */
+SELECT IF_PROC_DT	/* IF처리일자 */
+       ,IF_FILE_NM	/* IF파일명 */
+       ,IF_SEQ	/* IF순번 */
+       ,EQP_MDL_CD	/* 단말기모델코드 */
+       ,EQP_SER_NO	/* 단말기일련번호 */
+       ,APRV_CL_CD	/* 승인구분코드 */
+       ,APRV_PROC_DT	/* 승인처리일자 */
+       ,APRV_YN	/* 승인여부 */
+       ,APRV_PROC_DT	/* 승인일자 */
+       ,PROC_ST_CD	/* 처리상태코드 */
+       ,FS_REG_USER_ID	/* 최초등록사용자ID */
+       ,FS_REG_DTM	/* 최초등록일시 */
+       ,LS_CHG_USER_ID	/* 최종변경사용자ID */
+       ,LS_CHG_DTM	/* 최종변경일시 */
+  FROM TF_RPKG_APRV_INFO
+ WHERE PROC_ST_CD = '09']]>
+	</select>
+	<select id="SInqEqpAssetNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR008.SInqEqpAssetNo 단말기자산번호조회 */
+/* IO: 양재석,2015-08-12T10:40:40(양재석,2015-08-11T10:48:29) */
+SELECT ASSET_NO
+       ,EQP_MDL_CD
+       ,EQP_SER_NO
+  FROM TB_EQP_ASSET
+ WHERE EQP_SER_NO = #EQP_SER_NO#]]>
+	</select>
+	<select id="SEqpCntrtInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR008.SEqpCntrtInfo 단말기계약정보조회 */
+/* IO: 양재석,2015-08-12T10:39:49(양재석,2015-08-11T11:09:56) */
+SELECT A.ASSET_NO /* 자산번호 */
+       ,B.CNTRT_NO /* 계약번호 */
+       ,C.MM_RENTAL_FEE /* 월렌탈료 */
+       ,C.RENTAL_CNTRT_PRD /* 렌탈계약기간 */
+  FROM TB_EQP_ASSET A
+       ,(SELECT IA.* 
+           FROM TB_EQP_CNTRT IA 
+          WHERE IA.DEL_YN = 'N'
+            AND CNTRT_NO = (SELECT MAX(CNTRT_NO) FROM TB_EQP_CNTRT WHERE ASSET_NO = IA.ASSET_NO AND DEL_YN = 'N')
+       ) B
+       ,TB_RENTAL_CNTRT C
+ WHERE A.EQP_SER_NO = #EQP_SER_NO#
+   AND A.ASSET_NO = B.ASSET_NO
+   AND B.CNTRT_NO = C.CNTRT_NO
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N']]>
+	</select>
+	<update id="UEqpCntrtInfoUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR008.UEqpCntrtInfoUpd 단말기계약정보수정 */
+/* IO: 양재석,2015-08-11T12:21:33(양재석,2015-08-11T11:34:58) */
+UPDATE TB_EQP_CNTRT
+   SET RENT_STA_DT = #APRV_DT#
+       ,RENT_END_SCHD_DT = #RENT_END_SCHD_DT#
+       ,RENT_APRV_YN = #APRV_YN#
+  	   ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE DEL_YN = 'N'
+   AND ASSET_NO = #ASSET_NO#
+   AND CNTRT_NO = #CNTRT_NO#]]>
+	</update>
+	<select id="SInqEqpOutSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR008.SInqEqpOutSeq 단말기출고일련번호조회 */
+/* IO: 양재석,2015-08-11T13:04:50(양재석,2015-08-11T13:02:19) */
+SELECT 'EO'||LPAD(SQ01_TB_EQP_OUT.NEXTVAL,10,'0') AS EQP_OUT_NO
+  FROM DUAL]]>
+	</select>
+	<insert id="IEqpOutReg" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR008.IEqpOutReg 단말기출고등록 */
+/* IO: 양재석,2015-08-12T10:43:12(양재석,2015-08-11T13:10:25) */
+INSERT
+  INTO TB_EQP_OUT
+       (
+       EQP_OUT_NO,
+       ASSET_NO,
+       EQP_MDL_CD,
+       EQP_SER_NO,
+       EQP_OUT_DT,
+       OUT_DTL_CD,
+       OUT_DEALCO_CD,
+       DEL_YN,
+       FS_REG_USER_ID,
+       FS_REG_DTM,
+       LS_CHG_USER_ID,
+       LS_CHG_DTM
+       )
+VALUES
+       (
+       #EQP_OUT_NO#,
+       #ASSET_NO#,
+       #EQP_MDL_CD#,
+       #EQP_SER_NO#,
+       #EQP_OUT_DT#,
+       #OUT_DTL_CD#,
+       #OUT_DEALCO_CD#,
+       'N',
+       'BAT',
+       SYSDATE,
+       'BAT',
+       SYSDATE
+       )]]>
+	</insert>
+	<update id="UIfRpkgAprvInfoUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR008.UIfRpkgAprvInfoUpd 리페키징승인정보IF상태변경 */
+/* IO: 양재석,2015-08-11T13:39:36(양재석,2015-08-11T13:39:36) */
+UPDATE TF_RPKG_APRV_INFO
+   SET PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) */
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<insert id="IEqpCntrtDtlReg" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR008.IEqpCntrtDtlReg 단말기계약상세등록 */
+/* IO: 양재석,2015-08-12T10:41:57(양재석,2015-08-11T14:31:33) */
+INSERT
+  INTO TB_EQP_CNTRT_DTL
+       (
+       ASSET_NO,           /* 자산번호 */
+       CNTRT_NO,           /* 계약번호 */
+       RENT_YM,            /* 렌트년월 */
+       RENTAL_FEE,         /* 렌탈료   */
+       DEL_YN,             /* 삭제여부          */
+       FS_REG_USER_ID,     /* 최초등록사용자ID  */
+       FS_REG_DTM,         /* 최초등록일시      */
+       LS_CHG_USER_ID,     /* 최종변경사용자ID  */
+       LS_CHG_DTM          /* 최종변경일시      */
+       )
+VALUES
+       (
+       #ASSET_NO#,
+       #CNTRT_NO#,
+       #RENT_YM#,
+       #RENTAL_FEE#,
+       'N',
+       'BAT',
+       SYSDATE,
+       'BAT',
+       SYSDATE
+       )]]>
+	</insert>
+	<update id="UEqpCntrtInfoStatUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR008.UEqpCntrtInfoStatUpd 단말기계약정보상태수정 */
+/* IO: 양재석,2015-08-12T09:18:41(양재석,2015-08-12T09:18:41) */
+UPDATE TB_EQP_CNTRT
+   SET RENT_APRV_YN = #APRV_YN#
+  	   ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE DEL_YN = 'N'
+   AND ASSET_NO = #ASSET_NO#
+   AND CNTRT_NO = #CNTRT_NO#]]>
+	</update>
+	<update id="UEqpJdgAprvStatUpd" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR008.UEqpJdgAprvStatUpd 단말기감정승인상태수정 */
+/* IO: 양재석,2015-08-12T10:08:31(양재석,2015-08-12T10:05:27) */
+UPDATE TB_EQP_JDG
+   SET JDG_APRV_YN = #APRV_YN#	/* 감정승인여부 */
+       ,JDG_APRV_DT = #APRV_PROC_DT#	/* 감정승인일자 */
+ WHERE DEL_YN = 'N'
+   AND ASSET_NO = #ASSET_NO#
+   AND EQP_JDG_SEQ = (SELECT MAX(EQP_JDG_SEQ) FROM TB_EQP_JDG WHERE DEL_YN = 'N' AND ASSET_NO = #ASSET_NO#)]]>
+	</update>
+</sqlMap>

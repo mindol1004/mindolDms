@@ -1,0 +1,760 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPInveXclMgmt">
+	<select id="SInqEpEqpInveXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.SInqEpEqpInveXclList 중고단말기재고정산조회 */
+/* IO: 양재석,2015-10-16T15:31:15(양재석,2015-10-14T10:16:10) */
+SELECT INVE_XCL_NO           /* 재고 정산 번호      */
+       ,XCL_STRD_DT          /* 정산 기준 일자      */
+       ,INVE_CL_CD	         /* 재고 구분 코드      */
+       ,DEDC_TYP_CD          /* 공제 유형 코드      */
+       ,INVE_TYP_CD          /* 재고 유형 코드      */
+       ,XCL_AMT              /* 정산 금액           */
+       ,INVE_XCL_CNT         /* 재고 정산 건수      */
+       ,INVE_SLIP_DT         /* 재고 전표 일자      */
+       ,INVE_SLIP_NO         /* 재고 전표 번호      */
+       ,INVE_SLIP_ST         /* 재고 전표 상태      */
+       ,'0' CHECKED
+  FROM TB_EP_INVE_XCL
+ WHERE SUBSTR(XCL_STRD_DT,0,6) = #STRD_MTH#
+   AND DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="OP_GB_CD"><![CDATA[   
+       INVE_TYP_CD = #OP_GB_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqEpEqpInveXclSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.SInqEpEqpInveXclSeq 중고단말기재고정산일련번호채번 */
+/* IO: 양재석,2015-10-15T15:59:11(양재석,2015-10-15T15:50:56) */
+SELECT TO_CHAR(LPAD(SQ01_TB_EP_INVE_XCL.NEXTVAL,10,0)) INVE_XCL_NO
+  FROM DUAL]]>
+	</select>
+	<insert id="IEpEqpNotArrivPreDcInveRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.IEpEqpNotArrivPreDcInveRgst 중고단말기미착선할인재고등록 */
+/* IO: 양재석,2015-10-19T18:23:36(양재석,2015-10-15T16:27:08) */
+INSERT
+  INTO TB_EP_INVE_XCL_DTL
+       (
+       INVE_XCL_NO,
+       INVE_XCL_DTL_SEQ,
+       CNSL_MGMT_NO,
+       PRCH_MGMT_NO,
+       CNSL_DT,
+       PRCH_DT,
+       XCL_AMT,
+       DEL_YN,
+       FS_REG_USER_ID,
+       FS_REG_DTM,
+       LS_CHG_USER_ID,
+       LS_CHG_DTM
+       )
+SELECT #INVE_XCL_NO#
+       ,ROW_NUMBER() OVER(ORDER BY X.CNSL_DT,X.CNSL_MGMT_NO) AS ROWNO
+       ,X.CNSL_MGMT_NO
+       ,X.PRCH_MGMT_NO
+       ,X.CNSL_DT
+       ,X.PRCH_DT
+       ,X.PRCH_AMT
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+FROM        
+(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_DT,A.CNSL_MGMT_NO DESC) AS ROWNO
+       ,A.CNSL_MGMT_NO
+       ,DECODE(NVL(B.CNSL_MGMT_NO,'N'),'N','N','Y') XCL_YN
+       ,A.CNSL_DT
+       ,A.CLCT_DT
+       ,A.ONING_DT
+       ,A.EQP_ST
+       ,A.SKN_JDG_AMT PRCH_AMT
+       ,C.PRCH_MGMT_NO
+       ,C.PRCH_DT
+       ,A.EQP_MDL_CD
+       ,A.EQP_SER_NO
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,(SELECT IA.*
+           FROM TB_EP_INVE_XCL_DTL IA
+                , TB_EP_INVE_XCL IB
+          WHERE IA.DEL_YN = 'N'
+            AND IB.DEL_YN = 'N'
+            AND IA.INVE_XCL_NO = IB.INVE_XCL_NO
+            AND (IA.CNSL_MGMT_NO,IA.INVE_XCL_NO) IN (SELECT CNSL_MGMT_NO, MAX(INVE_XCL_NO) FROM TB_EP_INVE_XCL_DTL WHERE DEL_YN = 'N' GROUP BY CNSL_MGMT_NO)
+            AND IA.INVE_CNCL_SLIP_NO IS NULL
+        ) B
+       ,TB_EP_CST_PRCHS_MGMT C
+       ,TB_EQP_MDL D
+ WHERE A.CLCT_DT IS NOT NULL
+   AND A.CLCT_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT# /* 기간 */
+   AND A.DEL_YN = 'N'
+   AND A.SKN_CL = 'Y' /* SKN */
+   AND A.PRE_DC_CL = 'Y' /* 선할인 */
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+   AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+   AND B.DEL_YN (+)= 'N'
+   AND C.DEL_YN (+)= 'N'
+   AND C.TLY_DT IS NULL /* 검수미완 */
+   AND TO_CHAR(TO_DATE(A.ONING_DT)+15,'YYYYMMDD') <= TO_CHAR(SYSDATE,'YYYYMMDD')
+   AND A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND D.DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="INVE_CL_CD"><![CDATA[   
+]]><isEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) = 'C'
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) != 'C'
+]]></isNotEqual><![CDATA[ 
+]]></isNotEmpty><![CDATA[
+) X
+WHERE X.XCL_YN = 'N']]>
+	</insert>
+	<select id="SInqEpEqpInveXclSumList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.SInqEpEqpInveXclSumList 중고단말기재고정산합계조회 */
+/* IO: 양재석,2015-10-15T16:37:52(양재석,2015-10-15T16:37:52) */
+SELECT INVE_XCL_NO
+       ,SUM(XCL_AMT) XCL_AMT
+       ,COUNT(INVE_XCL_NO) INVE_XCL_CNT
+  FROM TB_EP_INVE_XCL_DTL
+ WHERE INVE_XCL_NO = #INVE_XCL_NO#
+   AND DEL_YN = 'N'
+ GROUP BY INVE_XCL_NO]]>
+	</select>
+	<insert id="IEpEqpInveXclRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.IEpEqpInveXclRgst 중고단말기재고정산등록 */
+/* IO: 양재석,2015-10-16T15:26:07(양재석,2015-10-15T17:50:23) */
+INSERT
+  INTO TB_EP_INVE_XCL
+       (
+       INVE_XCL_NO
+       ,XCL_STRD_DT
+       ,INVE_CL_CD
+       ,DEDC_TYP_CD
+       ,INVE_TYP_CD
+       ,XCL_AMT
+       ,INVE_XCL_CNT
+       ,DEL_YN
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+       #INVE_XCL_NO#
+       ,#XCL_STRD_DT#
+       ,#INVE_CL_CD#
+       ,#DEDC_TYP_CD#
+       ,#INVE_TYP_CD#
+       ,#XCL_AMT#
+       ,#INVE_XCL_CNT#
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<select id="SInqEpEqpNotArrivInveXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.SInqEpEqpNotArrivInveXclList 중고단말기미착재고정산조회 */
+/* IO: 양재석,2015-10-20T16:51:58(양재석,2015-10-16T17:30:10) */
+SELECT PA.*
+  FROM (SELECT ROW_NUMBER() OVER(ORDER BY A.XCL_STRD_DT,B.CNSL_MGMT_NO DESC) AS ROWNO
+               ,COUNT(*) OVER (PARTITION BY A.INVE_XCL_NO) AS EXCEL_TOTAL_CNT
+               ,A.INVE_XCL_NO
+               ,A.XCL_STRD_DT	/* 정산 기준 일자 */
+               ,A.INVE_CL_CD
+               ,A.DEDC_TYP_CD	/* 공제 유형 코드 */
+               ,A.INVE_TYP_CD	/* 재고 유형 코드 */
+               ,B.INVE_SLIP_DT	/* 재고 전표 일자 */
+               ,B.INVE_SLIP_NO	/* 재고 전표 번호 */
+               ,A.INVE_SLIP_ST	/* 재고 전표 상태 */
+               ,B.INVE_CNCL_SLIP_DT	 /* 재고 취소 전표 일자 */
+               ,B.INVE_CNCL_SLIP_NO	 /* 재고 취소 전표 번호 */
+               ,B.CNSL_MGMT_NO
+               ,B.CNSL_DT
+               ,C.CLCT_DT
+               ,C.EQP_MDL_CD
+               ,D.EQP_MDL_NM
+               ,C.EQP_SER_NO
+               ,C.SKN_EQP_ST
+               ,C.EQP_ST
+               ,B.XCL_AMT
+               ,B.ASMT_DMG_AMT
+          FROM TB_EP_INVE_XCL A
+               , TB_EP_INVE_XCL_DTL B
+               , TB_EP_CST_CONSULT_MGMT C
+               , TB_EQP_MDL D
+         WHERE A.INVE_XCL_NO = #INVE_XCL_NO#
+           AND A.INVE_XCL_NO = B.INVE_XCL_NO
+           AND B.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+           AND C.EQP_MDL_CD = D.EQP_MDL_CD
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND C.DEL_YN = 'N'
+           AND D.DEL_YN = 'N'
+       )PA
+ WHERE PA.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<update id="DEpEqpInveXclDtlDel" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.DEpEqpInveXclDtlDel 중고단말기재고정산상세삭제 */
+/* IO: 양재석,2015-10-19T16:06:00(양재석,2015-10-19T15:43:19) */
+UPDATE TB_EP_INVE_XCL_DTL
+   SET DEL_YN = 'Y'
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE INVE_XCL_NO = #INVE_XCL_NO#]]>
+	</update>
+	<update id="UEpEqpInveXclDelDtlUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.UEpEqpInveXclDelDtlUpd 중고단말기재고정산삭제상세수정 */
+/* IO: 양재석,2015-10-19T16:05:49(양재석,2015-10-19T15:46:18) */
+UPDATE TB_EP_INVE_XCL_DTL
+   SET DEL_YN = 'N'
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE INVE_XCL_NO = #INVE_XCL_NO#
+   AND CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</update>
+	<update id="UEpEqpInveXclSumUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.UEpEqpInveXclSumUpd 중고단말기재고정산합계수정 */
+/* IO: 양재석,2015-10-19T16:07:13(양재석,2015-10-19T16:07:13) */
+UPDATE TB_EP_INVE_XCL
+   SET XCL_AMT = #XCL_AMT#
+       ,INVE_XCL_CNT = #INVE_XCL_CNT#
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE INVE_XCL_NO = #INVE_XCL_NO#
+   AND DEL_YN = 'N']]>
+	</update>
+	<insert id="IEpEqpNotArrivSendAmtInveRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.IEpEqpNotArrivSendAmtInveRgst 중고단말기미착송금재고등록 */
+/* IO: 양재석,2015-10-19T18:37:51(양재석,2015-10-19T18:29:52) */
+INSERT
+  INTO TB_EP_INVE_XCL_DTL
+       (
+       INVE_XCL_NO,
+       INVE_XCL_DTL_SEQ,
+       CNSL_MGMT_NO,
+       PRCH_MGMT_NO,
+       CNSL_DT,
+       PRCH_DT,
+       XCL_AMT,
+       DEL_YN,
+       FS_REG_USER_ID,
+       FS_REG_DTM,
+       LS_CHG_USER_ID,
+       LS_CHG_DTM
+       )
+SELECT #INVE_XCL_NO#
+       ,ROW_NUMBER() OVER(ORDER BY X.CNSL_DT,X.CNSL_MGMT_NO) AS ROWNO
+       ,X.CNSL_MGMT_NO
+       ,X.PRCH_MGMT_NO
+       ,X.CNSL_DT
+       ,X.PRCH_DT
+       ,X.PRCH_AMT
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+FROM        
+(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_DT,A.CNSL_MGMT_NO DESC) AS ROWNO
+       ,A.CNSL_MGMT_NO
+       ,DECODE(NVL(B.CNSL_MGMT_NO,'N'),'N','N','Y') XCL_YN
+       ,A.CNSL_DT
+       ,A.CLCT_DT
+       ,A.ONING_DT
+       ,A.EQP_ST
+       ,A.SKN_JDG_AMT PRCH_AMT
+       ,C.PRCH_MGMT_NO
+       ,C.PRCH_DT
+       ,A.EQP_MDL_CD
+       ,A.EQP_SER_NO
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,(SELECT IA.*
+           FROM TB_EP_INVE_XCL_DTL IA
+                , TB_EP_INVE_XCL IB
+          WHERE IA.DEL_YN = 'N'
+            AND IB.DEL_YN = 'N'
+            AND IA.INVE_XCL_NO = IB.INVE_XCL_NO
+            AND (IA.CNSL_MGMT_NO,IA.INVE_XCL_NO) IN (SELECT CNSL_MGMT_NO, MAX(INVE_XCL_NO) FROM TB_EP_INVE_XCL_DTL WHERE DEL_YN = 'N' GROUP BY CNSL_MGMT_NO)
+            AND IA.INVE_CNCL_SLIP_NO IS NULL
+        ) B
+       ,TB_EP_CST_PRCHS_MGMT C
+       ,TB_EQP_MDL D
+ WHERE A.CLCT_DT IS NOT NULL
+   AND A.CLCT_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT# /* 기간 */
+   AND A.DEL_YN = 'N'
+   AND A.SKN_CL = 'Y' /* SKN */
+   AND A.PRE_DC_CL != 'Y' /* 선할인여부 */
+   AND NVL(A.PAY_MTHD,'') = '01' /* 계좌송금 */
+   AND A.PAY_DT IS NOT NULL /* 송금일자 */
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+   AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+   AND B.DEL_YN (+)= 'N'
+   AND C.DEL_YN (+)= 'N'
+   AND C.TLY_DT IS NULL /* 검수미완 */
+   AND A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND D.DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="INVE_CL_CD"><![CDATA[   
+]]><isEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) = 'C'
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) != 'C'
+]]></isNotEqual><![CDATA[ 
+]]></isNotEmpty><![CDATA[
+) X
+WHERE X.XCL_YN = 'N']]>
+	</insert>
+	<insert id="IEpEqpNotArrivFreeDedcInveRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.IEpEqpNotArrivFreeDedcInveRgst 중고단말기미착요금선납재고등록 */
+/* IO: 양재석,2015-10-19T18:52:17(양재석,2015-10-19T18:29:52) */
+INSERT
+  INTO TB_EP_INVE_XCL_DTL
+       (
+       INVE_XCL_NO,
+       INVE_XCL_DTL_SEQ,
+       CNSL_MGMT_NO,
+       PRCH_MGMT_NO,
+       CNSL_DT,
+       PRCH_DT,
+       XCL_AMT,
+       DEL_YN,
+       FS_REG_USER_ID,
+       FS_REG_DTM,
+       LS_CHG_USER_ID,
+       LS_CHG_DTM
+       )
+SELECT #INVE_XCL_NO#
+       ,ROW_NUMBER() OVER(ORDER BY X.CNSL_DT,X.CNSL_MGMT_NO) AS ROWNO
+       ,X.CNSL_MGMT_NO
+       ,X.PRCH_MGMT_NO
+       ,X.CNSL_DT
+       ,X.PRCH_DT
+       ,X.PRCH_AMT
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+FROM        
+(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_DT,A.CNSL_MGMT_NO DESC) AS ROWNO
+       ,A.CNSL_MGMT_NO
+       ,DECODE(NVL(B.CNSL_MGMT_NO,'N'),'N','N','Y') XCL_YN
+       ,A.CNSL_DT
+       ,A.CLCT_DT
+       ,A.ONING_DT
+       ,A.EQP_ST
+       ,A.SKN_JDG_AMT PRCH_AMT
+       ,C.PRCH_MGMT_NO
+       ,C.PRCH_DT
+       ,A.EQP_MDL_CD
+       ,A.EQP_SER_NO
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,(SELECT IA.*
+           FROM TB_EP_INVE_XCL_DTL IA
+                , TB_EP_INVE_XCL IB
+          WHERE IA.DEL_YN = 'N'
+            AND IB.DEL_YN = 'N'
+            AND IA.INVE_XCL_NO = IB.INVE_XCL_NO
+            AND (IA.CNSL_MGMT_NO,IA.INVE_XCL_NO) IN (SELECT CNSL_MGMT_NO, MAX(INVE_XCL_NO) FROM TB_EP_INVE_XCL_DTL WHERE DEL_YN = 'N' GROUP BY CNSL_MGMT_NO)
+            AND IA.INVE_CNCL_SLIP_NO IS NULL
+        ) B
+       ,TB_EP_CST_PRCHS_MGMT C
+       ,TB_EQP_MDL D
+ WHERE A.CLCT_DT IS NOT NULL
+   AND A.CLCT_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT# /* 기간 */
+   AND A.DEL_YN = 'N'
+   AND A.SKN_CL = 'Y' /* SKN */
+   AND A.PRE_DC_CL != 'Y' /* 선할인여부 */
+   AND NVL(A.PAY_MTHD,'') = '02' /* 요금선납 */
+   AND A.PAY_DT IS NOT NULL /* 공제일자 */
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO(+)
+   AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+   AND B.DEL_YN (+)= 'N'
+   AND C.DEL_YN (+)= 'N'
+   AND C.TLY_DT IS NULL /* 검수미완 */
+   AND A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND D.DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="INVE_CL_CD"><![CDATA[   
+]]><isEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) = 'C'
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) != 'C'
+]]></isNotEqual><![CDATA[ 
+]]></isNotEmpty><![CDATA[
+) X
+WHERE X.XCL_YN = 'N']]>
+	</insert>
+	<update id="UEpEqpInveXclSlipStUpd" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.UEpEqpInveXclSlipStUpd 중고단말기재고정산전표상태수정 */
+/* IO: 양재석,2015-10-20T08:53:41(양재석,2015-10-20T08:53:41) */
+UPDATE TB_EP_INVE_XCL
+   SET INVE_SLIP_ST = #INVE_SLIP_ST#
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE INVE_XCL_NO = #INVE_XCL_NO#
+   AND DEL_YN = 'N']]>
+	</update>
+	<insert id="IEpEqpArrivPreDcInveRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.IEpEqpArrivPreDcInveRgst 중고단말기확정선할인재고등록 */
+/* IO: 양재석,2015-10-21T13:16:43(양재석,2015-10-20T11:21:06) */
+INSERT
+  INTO TB_EP_INVE_XCL_DTL
+       (
+       INVE_XCL_NO,
+       INVE_XCL_DTL_SEQ,
+       CNSL_MGMT_NO,
+       PRCH_MGMT_NO,
+       CNSL_DT,
+       PRCH_DT,
+       XCL_AMT,
+       ASMT_DMG_AMT,
+       DEL_YN,
+       FS_REG_USER_ID,
+       FS_REG_DTM,
+       LS_CHG_USER_ID,
+       LS_CHG_DTM
+       )
+SELECT #INVE_XCL_NO#
+       ,ROW_NUMBER() OVER(ORDER BY X.CNSL_DT,X.CNSL_MGMT_NO) AS ROWNO
+       ,X.CNSL_MGMT_NO
+       ,X.PRCH_MGMT_NO
+       ,X.CNSL_DT
+       ,X.PRCH_DT
+       ,X.PRCH_AMT
+       ,X.ASMT_DMG_AMT
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+FROM        
+(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_DT,A.CNSL_MGMT_NO DESC) AS ROWNO
+       ,A.CNSL_MGMT_NO
+       ,DECODE(NVL(B.CNSL_MGMT_NO,'N'),'N','N','Y') XCL_YN
+       ,A.CNSL_DT
+       ,A.CLCT_DT
+       ,A.ONING_DT
+       ,A.EQP_ST
+       ,NVL(C.PRCH_AMT,0) AS PRCH_AMT
+       ,C.PRCH_MGMT_NO
+       ,C.PRCH_DT
+       ,A.EQP_MDL_CD
+       ,A.EQP_SER_NO
+       ,(NVL(B.XCL_AMT,0) - NVL(C.PRCH_AMT,0)) AS ASMT_DMG_AMT
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,(SELECT IA.*
+           FROM TB_EP_INVE_XCL_DTL IA
+                , TB_EP_INVE_XCL IB
+          WHERE IA.DEL_YN = 'N'
+            AND IB.DEL_YN = 'N'
+            AND IA.INVE_XCL_NO = IB.INVE_XCL_NO
+            AND (IA.CNSL_MGMT_NO,IA.INVE_XCL_NO) IN (SELECT CNSL_MGMT_NO, MAX(INVE_XCL_NO) FROM TB_EP_INVE_XCL_DTL WHERE DEL_YN = 'N' GROUP BY CNSL_MGMT_NO)
+            AND IB.INVE_SLIP_ST = '20' /* 전표상태 회계팀 승인 */
+            AND IB.INVE_TYP_CD = '20'  /* 중고폰재고유형 미착재고*/
+            AND IA.INVE_CNCL_SLIP_NO IS NULL
+        ) B
+       ,TB_EP_CST_PRCHS_MGMT C
+       ,TB_EQP_MDL D
+ WHERE A.CLCT_DT IS NOT NULL
+   AND A.CLCT_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT# /* 기간 */
+   AND A.DEL_YN = 'N'
+   AND A.SKN_CL = 'Y' /* SKN */
+   AND A.PRE_DC_CL = 'Y' /* 선할인여부 */
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+   AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND C.TLY_DT IS NOT NULL /* 검수완료 */
+   AND A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND D.DEL_YN = 'N'
+   AND (NVL(C.AGN_DDCT_YN,'N') = 'N' OR (C.AGN_DDCT_YN = 'Y' AND TO_CHAR(TO_DATE(C.TLY_DT)+15,'YYYYMMDD') <= TO_CHAR(SYSDATE,'YYYYMMDD')))
+]]><isNotEmpty prepend="AND" property="INVE_CL_CD"><![CDATA[   
+]]><isEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) = 'C'
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) != 'C'
+]]></isNotEqual><![CDATA[ 
+]]></isNotEmpty><![CDATA[
+) X]]>
+	</insert>
+	<insert id="IEpEqpArrivSendAmtInveRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.IEpEqpArrivSendAmtInveRgst 중고단말기확정송금재고등록 */
+/* IO: 양재석,2015-10-21T13:58:56(양재석,2015-10-20T13:14:42) */
+INSERT
+  INTO TB_EP_INVE_XCL_DTL
+       (
+       INVE_XCL_NO,
+       INVE_XCL_DTL_SEQ,
+       CNSL_MGMT_NO,
+       PRCH_MGMT_NO,
+       CNSL_DT,
+       PRCH_DT,
+       XCL_AMT,
+       ASMT_DMG_AMT,
+       DEL_YN,
+       FS_REG_USER_ID,
+       FS_REG_DTM,
+       LS_CHG_USER_ID,
+       LS_CHG_DTM
+       )
+SELECT #INVE_XCL_NO#
+       ,ROW_NUMBER() OVER(ORDER BY X.CNSL_DT,X.CNSL_MGMT_NO) AS ROWNO
+       ,X.CNSL_MGMT_NO
+       ,X.PRCH_MGMT_NO
+       ,X.CNSL_DT
+       ,X.PRCH_DT
+       ,X.PRCH_AMT
+       ,X.ASMT_DMG_AMT
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+FROM        
+(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_DT,A.CNSL_MGMT_NO DESC) AS ROWNO
+       ,A.CNSL_MGMT_NO
+       ,DECODE(NVL(B.CNSL_MGMT_NO,'N'),'N','N','Y') XCL_YN
+       ,A.CNSL_DT
+       ,A.CLCT_DT
+       ,A.ONING_DT
+       ,A.EQP_ST
+       ,NVL(C.PRCH_AMT,0) AS PRCH_AMT
+       ,C.PRCH_MGMT_NO
+       ,C.PRCH_DT
+       ,A.EQP_MDL_CD
+       ,A.EQP_SER_NO
+       ,(NVL(B.XCL_AMT,0) - NVL(C.PRCH_AMT,0)) AS ASMT_DMG_AMT
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,(SELECT IA.*
+           FROM TB_EP_INVE_XCL_DTL IA
+                , TB_EP_INVE_XCL IB
+          WHERE IA.DEL_YN = 'N'
+            AND IB.DEL_YN = 'N'
+            AND IA.INVE_XCL_NO = IB.INVE_XCL_NO
+            AND (IA.CNSL_MGMT_NO,IA.INVE_XCL_NO) IN (SELECT CNSL_MGMT_NO, MAX(INVE_XCL_NO) FROM TB_EP_INVE_XCL_DTL WHERE DEL_YN = 'N' GROUP BY CNSL_MGMT_NO)
+            AND IB.INVE_SLIP_ST = '20' /* 전표상태 회계팀 승인 */
+            AND IB.INVE_TYP_CD = '20'  /* 중고폰재고유형 미착재고*/
+            AND IA.INVE_CNCL_SLIP_NO IS NULL
+        ) B
+       ,TB_EP_CST_PRCHS_MGMT C
+       ,TB_EQP_MDL D
+ WHERE A.CLCT_DT IS NOT NULL
+   AND A.CLCT_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT# /* 기간 */
+   AND A.DEL_YN = 'N'
+   AND A.SKN_CL = 'Y' /* SKN */
+   AND A.PRE_DC_CL != 'Y' /* 선할인여부 */
+   AND A.PAY_MTHD = '01' /* 계좌송금 */
+   AND A.PAY_DT IS NOT NULL /* 송금완료 */
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+   AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND C.TLY_DT IS NOT NULL /* 검수완료 */
+   AND A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND TO_CHAR(TO_DATE(A.ONING_DT)+15,'YYYYMMDD') <= TO_CHAR(SYSDATE,'YYYYMMDD')
+   AND D.DEL_YN = 'N'
+   AND (NVL(C.AGN_DDCT_YN,'N') = 'N' OR (C.AGN_DDCT_YN = 'Y' AND TO_CHAR(TO_DATE(C.TLY_DT)+15,'YYYYMMDD') <= TO_CHAR(SYSDATE,'YYYYMMDD')))
+]]><isNotEmpty prepend="AND" property="INVE_CL_CD"><![CDATA[   
+]]><isEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) = 'C'
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) != 'C'
+]]></isNotEqual><![CDATA[ 
+]]></isNotEmpty><![CDATA[
+) X]]>
+	</insert>
+	<insert id="IEpEqpArrivFreeDedcInveRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.IEpEqpArrivFreeDedcInveRgst 중고단말기확정요금선납재고등록 */
+/* IO: 양재석,2015-10-21T13:20:37(양재석,2015-10-20T13:19:32) */
+INSERT
+  INTO TB_EP_INVE_XCL_DTL
+       (
+       INVE_XCL_NO,
+       INVE_XCL_DTL_SEQ,
+       CNSL_MGMT_NO,
+       PRCH_MGMT_NO,
+       CNSL_DT,
+       PRCH_DT,
+       XCL_AMT,
+       ASMT_DMG_AMT,
+       DEL_YN,
+       FS_REG_USER_ID,
+       FS_REG_DTM,
+       LS_CHG_USER_ID,
+       LS_CHG_DTM
+       )
+SELECT #INVE_XCL_NO#
+       ,ROW_NUMBER() OVER(ORDER BY X.CNSL_DT,X.CNSL_MGMT_NO) AS ROWNO
+       ,X.CNSL_MGMT_NO
+       ,X.PRCH_MGMT_NO
+       ,X.CNSL_DT
+       ,X.PRCH_DT
+       ,X.PRCH_AMT
+       ,X.ASMT_DMG_AMT
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+FROM        
+(SELECT  ROW_NUMBER() OVER(ORDER BY A.CNSL_DT,A.CNSL_MGMT_NO DESC) AS ROWNO
+       ,A.CNSL_MGMT_NO
+       ,DECODE(NVL(B.CNSL_MGMT_NO,'N'),'N','N','Y') XCL_YN
+       ,A.CNSL_DT
+       ,A.CLCT_DT
+       ,A.ONING_DT
+       ,A.EQP_ST
+       ,NVL(C.PRCH_AMT,0) AS PRCH_AMT
+       ,C.PRCH_MGMT_NO
+       ,C.PRCH_DT
+       ,A.EQP_MDL_CD
+       ,A.EQP_SER_NO
+       ,(NVL(B.XCL_AMT,0) - NVL(C.PRCH_AMT,0)) AS ASMT_DMG_AMT
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,(SELECT IA.*
+           FROM TB_EP_INVE_XCL_DTL IA
+                , TB_EP_INVE_XCL IB
+          WHERE IA.DEL_YN = 'N'
+            AND IB.DEL_YN = 'N'
+            AND IA.INVE_XCL_NO = IB.INVE_XCL_NO
+            AND (IA.CNSL_MGMT_NO,IA.INVE_XCL_NO) IN (SELECT CNSL_MGMT_NO, MAX(INVE_XCL_NO) FROM TB_EP_INVE_XCL_DTL WHERE DEL_YN = 'N' GROUP BY CNSL_MGMT_NO)
+            AND IB.INVE_SLIP_ST = '20' /* 전표상태 회계팀 승인 */
+            AND IB.INVE_TYP_CD = '20'  /* 중고폰재고유형 미착재고*/
+            AND IA.INVE_CNCL_SLIP_NO IS NULL
+        ) B
+       ,TB_EP_CST_PRCHS_MGMT C
+       ,TB_EQP_MDL D
+ WHERE A.CLCT_DT IS NOT NULL
+   AND A.CLCT_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT# /* 기간 */
+   AND A.DEL_YN = 'N'
+   AND A.SKN_CL = 'Y' /* SKN */
+   AND A.PRE_DC_CL != 'Y' /* 선할인여부 */
+   AND A.PAY_MTHD = '02' /* 요금공제 */
+   AND A.PAY_DT IS NOT NULL /* 공제완료 */
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+   AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND C.TLY_DT IS NOT NULL /* 검수완료 */
+   AND A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND TO_CHAR(TO_DATE(A.ONING_DT)+15,'YYYYMMDD') <= TO_CHAR(SYSDATE,'YYYYMMDD')
+   AND D.DEL_YN = 'N'
+   AND (NVL(C.AGN_DDCT_YN,'N') = 'N' OR (C.AGN_DDCT_YN = 'Y' AND TO_CHAR(TO_DATE(C.TLY_DT)+15,'YYYYMMDD') <= TO_CHAR(SYSDATE,'YYYYMMDD')))
+]]><isNotEmpty prepend="AND" property="INVE_CL_CD"><![CDATA[   
+]]><isEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) = 'C'
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) != 'C'
+]]></isNotEqual><![CDATA[ 
+]]></isNotEmpty><![CDATA[
+) X]]>
+	</insert>
+	<insert id="IEpEqpStdJdgArrivInveRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.IEpEqpStdJdgArrivInveRgst 중고단말기일반감정확정재고등록 */
+/* IO: 양재석,2015-10-21T13:32:58(양재석,2015-10-20T14:46:15) */
+INSERT
+  INTO TB_EP_INVE_XCL_DTL
+       (
+       INVE_XCL_NO,
+       INVE_XCL_DTL_SEQ,
+       CNSL_MGMT_NO,
+       PRCH_MGMT_NO,
+       CNSL_DT,
+       PRCH_DT,
+       XCL_AMT,
+       ASMT_DMG_AMT,
+       DEL_YN,
+       FS_REG_USER_ID,
+       FS_REG_DTM,
+       LS_CHG_USER_ID,
+       LS_CHG_DTM
+       )
+SELECT #INVE_XCL_NO#
+       ,ROW_NUMBER() OVER(ORDER BY X.CNSL_DT,X.CNSL_MGMT_NO) AS ROWNO
+       ,X.CNSL_MGMT_NO
+       ,X.PRCH_MGMT_NO
+       ,X.CNSL_DT
+       ,X.PRCH_DT
+       ,X.PRCH_AMT
+       ,X.ASMT_DMG_AMT
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+FROM        
+(
+SELECT ROW_NUMBER() OVER(ORDER BY A.CNSL_DT,A.CNSL_MGMT_NO DESC) AS ROWNO
+       ,A.CNSL_MGMT_NO
+       ,A.CNSL_DT
+       ,A.CLCT_DT
+       ,A.ONING_DT
+       ,B.EQP_ST
+       ,NVL(B.PRCH_AMT,0) AS PRCH_AMT
+       ,B.PRCH_MGMT_NO
+       ,B.PRCH_DT
+       ,A.EQP_MDL_CD
+       ,A.EQP_SER_NO
+       ,0 AS ASMT_DMG_AMT
+       ,DECODE(NVL(C.CNSL_MGMT_NO,'N'),'N','N','Y') XCL_YN
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,TB_EP_CST_PRCHS_MGMT B
+       ,(SELECT IA.*
+           FROM TB_EP_INVE_XCL_DTL IA
+                , TB_EP_INVE_XCL IB
+          WHERE IA.DEL_YN = 'N'
+            AND IB.DEL_YN = 'N'
+            AND IA.INVE_XCL_NO = IB.INVE_XCL_NO
+            AND (IA.CNSL_MGMT_NO,IA.INVE_XCL_NO) IN (SELECT CNSL_MGMT_NO, MAX(INVE_XCL_NO) FROM TB_EP_INVE_XCL_DTL WHERE DEL_YN = 'N' GROUP BY CNSL_MGMT_NO)
+            AND IA.INVE_CNCL_SLIP_NO IS NULL
+            AND INVE_TYP_CD = '10'  /* 중고폰재고유형 확정재고*/
+        ) C
+ WHERE A.CLCT_DT IS NOT NULL
+   AND A.CLCT_DT BETWEEN #CLCT_FR_DT# AND #CLCT_TO_DT# /* 기간 */
+   AND A.CNSL_MGMT_NO = B.CNSL_MGMT_NO
+   AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+]]><isNotEmpty prepend="AND" property="DEDC_TYP_CD"><![CDATA[   
+]]><isEqual property="DEDC_TYP_CD" compareValue="01"><![CDATA[ 
+       B.RMT_DT IS NOT NULL /* 계좌송금 */
+]]></isEqual><![CDATA[ 
+]]><isEqual property="DEDC_TYP_CD" compareValue="03"><![CDATA[ 
+       B.FEE_DEDC_PROC_DT IS NOT NULL /* 요금공제 */
+]]></isEqual><![CDATA[ 
+]]></isNotEmpty><![CDATA[
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND NVL(A.SKN_CL,'N') != 'Y'
+   AND B.TLY_DT IS NOT NULL  /* 검수완료 */
+   AND (NVL(B.AGN_DDCT_YN,'N') = 'N' OR (B.AGN_DDCT_YN = 'Y' AND TO_CHAR(TO_DATE(B.TLY_DT)+15,'YYYYMMDD') <= TO_CHAR(SYSDATE,'YYYYMMDD')))
+]]><isNotEmpty prepend="AND" property="INVE_CL_CD"><![CDATA[   
+]]><isEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) = 'C'
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="INVE_CL_CD" compareValue="10"><![CDATA[ 
+       SUBSTR(A.CNSL_MGMT_NO,1,1) != 'C'
+]]></isNotEqual><![CDATA[ 
+]]></isNotEmpty><![CDATA[
+) X
+WHERE X.XCL_YN = 'Y']]>
+	</insert>
+	<select id="SInqEpEqpArrivInveXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.SInqEpEqpArrivInveXclList 중고단말기확정재고정산조회 */
+/* IO: 양재석,2015-10-21T13:28:47(양재석,2015-10-20T15:49:01) */
+SELECT A.INVE_XCL_NO           /* 재고 정산 번호      */
+       ,A.XCL_STRD_DT          /* 정산 기준 일자      */
+       ,A.INVE_CL_CD	         /* 재고 구분 코드      */
+       ,A.DEDC_TYP_CD          /* 공제 유형 코드      */
+       ,A.INVE_TYP_CD          /* 재고 유형 코드      */
+       ,A.XCL_AMT              /* 정산 금액           */
+       ,A.INVE_XCL_CNT         /* 재고 정산 건수      */
+       ,A.INVE_SLIP_DT         /* 재고 전표 일자      */
+       ,A.INVE_SLIP_NO         /* 재고 전표 번호      */
+       ,A.INVE_SLIP_ST         /* 재고 전표 상태      */
+       ,'0' CHECKED
+       ,B.ASMT_DMG_AMT         /*  손실금액 */
+  FROM TB_EP_INVE_XCL A
+       ,(SELECT IA.INVE_XCL_NO
+                , SUM(NVL(IA.ASMT_DMG_AMT,0)) ASMT_DMG_AMT
+           FROM TB_EP_INVE_XCL_DTL IA
+                , TB_EP_INVE_XCL IB
+          WHERE IA.INVE_XCL_NO = IB.INVE_XCL_NO
+            AND IB.INVE_TYP_CD = '10'  /* 중고폰재고유형 확정재고*/
+            AND IA.DEL_YN = 'N'
+            AND IB.DEL_YN = 'N'
+          GROUP BY IA.INVE_XCL_NO
+        ) B
+ WHERE SUBSTR(A.XCL_STRD_DT,0,6) = #STRD_MTH#
+   AND A.DEL_YN = 'N'
+   AND A.INVE_TYP_CD = '10' /*확정재고*/
+   AND A.INVE_XCL_NO = B.INVE_XCL_NO]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,138 @@
+package dms.nr.nrbplbase.biz;
+
+import java.util.Map;
+import java.util.logging.Logger;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]위약금정책관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-07-10 10:11:29</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class PNRPenPolyMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRPenPolyMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:29:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : OP_CL_CD [업부구분코드]
+	 *	- field : PP_EFF_PRD_FR_DT [유효기간시작일자]
+	 *	- field : PP_EFF_PRD_TO_DT [유효기간종료일자]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_STD_LIST
+	 *		- field : OP_CL_CD [업무구분]
+	 *		- field : PP_EFF_PRD_FR_DT [유효기간시작일자]
+	 *		- field : PP_EFF_PRD_TO_DT [유효기간종료일자]
+	 *		- field : TOT_RENTAL_FEE_RT [총렌탈료비율]
+	 *		- field : REM_RENTAL_FEE_RT [잔여렌탈료비율]
+	 *		- field : DAY_RENTAL_FEE_RT [일렌탈료비율]
+	 *		- field : PP_APLY_DT [일자]
+	 *		- field : RENTAL_FEE_RT [렌탈료비율]
+	 *		- field : FS_REG_DTM [최초등록일자]
+	 * </pre>
+	 */
+	
+	public IDataSet pInqPenPolyLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSPLBase", "fInqPenPolyLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+		return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:29:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PEN_POLY_LIST
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : PP_EFF_PRD_FR_DT [유효기간시작일자]
+	 *		- field : PP_EFF_PRD_TO_DT [유효기간종료일자]
+	 *		- field : TOT_RENTAL_FEE_RT [총렌탈료비율]
+	 *		- field : REM_RENTAL_FEE_RT [잔여렌탈료비율]
+	 *		- field : DAY_RENTAL_FEE_RT [일렌탈료비율]
+	 *		- field : PP_APLY_DT [일자]
+	 *		- field : RENTAL_FEE_RT [렌탈료비율]
+	 *		- field : PP_RMK [비고]
+	 *		- field : FS_REG_DTM [등록일]
+	 *		- field : PEN_POLY_NO [위약금정책번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSavePenPoly(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. 입력 RS설정
+			requestData.putFieldMap(requestData.getRecordSet("RS_PEN_POLY_LIST").getRecordMap(0));
+
+			requestData.putField("USERNO", ca.getUserNo());
+			// 2. 레코드셋 상태에 따른 분기
+			if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // INSERT
+				callSharedBizComponentByDirect("nr.NRSPLBase", "fRegPenPoly", requestData, onlineCtx);
+			} else if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // UPDATE
+				callSharedBizComponentByDirect("nr.NRSPLBase", "fUpdPenPoly", requestData, onlineCtx);
+			}
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+	
+	    return responseData;
+	}
+  
+}

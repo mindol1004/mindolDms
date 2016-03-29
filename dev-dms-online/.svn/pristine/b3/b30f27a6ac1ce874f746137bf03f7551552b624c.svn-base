@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRRentalFeeCctlMgmt">
+	<select id="SRentalFeeLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeLstPaging 렌탈비정산정보조회 */
+/* IO: 장미진,2015-09-08T17:41:12(장미진,2015-09-07T19:22:39) */
+SELECT  A.SVC_MGMT_NO                    					/*서비스관리번호*/ 
+       ,NVL(SUM(D.RENTAL_FEE),0) AS RENTAL_FEE       		/*렌탈료 = DMS금액*/
+       ,NVL(SUM(D.INV_AMT),0) AS INV_AMT			        /*청구금액 = UKEY금액*/
+       ,NVL(SUM(D.RECV_DT),0) AS RECV_DT                    /*수납금액 */
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_CNTRT C
+       ,TB_EQP_CNTRT_DTL D
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  C.ASSET_NO = D.ASSET_NO
+]]><isNotEmpty prepend="AND" property="RENTAL_YM"><![CDATA[
+        D.RENT_YM BETWEEN SUBSTR(C.RENT_STA_DT,0,6) AND #RENTAL_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+	    A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+GROUP BY A.SVC_MGMT_NO
+ORDER BY A.SVC_MGMT_NO]]>
+	</select>
+	<select id="SRentalFeeLstPagingDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeLstPagingDtl 렌탈비정산정보조회Dtl */
+/* IO: 장미진,2015-09-08T17:33:50(장미진,2015-09-07T19:33:53) */
+SELECT  A.SVC_MGMT_NO                    				    /*서비스관리번호*/ 
+       ,C.RENT_STA_DT                     				    /*계약시작일*/ 
+       ,C.RENT_END_SCHD_DT             					    /*계약종료일*/
+       ,C.RENT_END_DT           				            /* 실종료일 */
+       ,NVL(D.RENTAL_FEE,0) AS RENTAL_FEE    				/*렌탈료 = DMS금액*/
+       ,NVL(D.INV_AMT,0) AS INV_AMT			                /*청구금액 = UKEY금액*/
+       ,NVL(D.RECV_DT,0) AS RECV_DT                      	/*수납금액 */
+       ,(NVL(D.INV_AMT,0) - NVL(D.RECV_DT,0)) AS ARREAR_PRC /*미납금액 */
+       ,MONTHS_BETWEEN( TO_DATE(#RENTAL_YM#,'YYYYMM'),TO_DATE(SUBSTR(C.RENT_STA_DT,0,6),'YYYYMM') )+1||'회' AS CNT	/*회차*/
+       ,'' AS SLIP_ST
+       ,'' AS SLIP_NO
+  FROM  TB_NR_CNTRT A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_CNTRT C
+       ,TB_EQP_CNTRT_DTL D
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  C.ASSET_NO = D.ASSET_NO
+]]><isNotEmpty property="SVC_MGMT_NO_LIST"><![CDATA[
+   AND A.SVC_MGMT_NO IN    
+	]]><iterate open="(" close=")" conjunction="," property="SVC_MGMT_NO_LIST"><![CDATA[
+        #SVC_MGMT_NO_LIST[]#
+	]]></iterate><![CDATA[
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_YM"><![CDATA[
+        D.RENT_YM = #RENTAL_YM#
+]]></isNotEmpty><![CDATA[
+ORDER BY A.SVC_MGMT_NO]]>
+	</select>
+	<select id="SRentalFeeLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeLstTotCnt 렌탈비정산정보조회총건수 */
+/* IO: 장미진,2015-09-09T10:29:04(장미진,2015-09-07T19:38:43) */
+SELECT  COUNT(*) AS M_CNT
+       ,SUM(PA.RENTAL_FEE) AS M_PRC
+  FROM  (SELECT  A.SVC_MGMT_NO                    					/*서비스관리번호*/ 
+                ,NVL(SUM(D.RENTAL_FEE),0) AS RENTAL_FEE       		/*렌탈료 = DMS금액*/
+                ,NVL(SUM(D.INV_AMT),0) AS INV_AMT			        /*청구금액 = UKEY금액*/
+                ,NVL(SUM(D.RECV_DT),0) AS RECV_DT                    /*수납금액 */
+           FROM  TB_NR_CNTRT A
+                ,TB_RENTAL_CNTRT B
+                ,TB_EQP_CNTRT C
+                ,TB_EQP_CNTRT_DTL D
+          WHERE  A.CNTRT_NO = B.CNTRT_NO
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  C.ASSET_NO = D.ASSET_NO
+]]><isNotEmpty prepend="AND" property="RENTAL_YM"><![CDATA[
+        D.RENT_YM BETWEEN SUBSTR(C.RENT_STA_DT,0,6) AND #RENTAL_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[              
+	    A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+       GROUP BY  A.SVC_MGMT_NO) PA
+ORDER BY PA.SVC_MGMT_NO]]>
+	</select>
+	<select id="SRentalFeeLstDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRRentalFeeCctlMgmt.SRentalFeeLstDtlTotCnt 렌탈비정산조회Dtl총건수 */
+/* IO: 장미진,2015-09-09T10:32:43(장미진,2015-09-09T10:30:15) */
+SELECT  COUNT(*) AS S_CNT
+       ,SUM(PA.RENTAL_FEE) AS S_PRC
+  FROM  (SELECT  A.SVC_MGMT_NO                    				    /*서비스관리번호*/ 
+                ,C.RENT_STA_DT                     				    /*계약시작일*/ 
+                ,C.RENT_END_SCHD_DT             					    /*계약종료일*/
+                ,C.RENT_END_DT           				            /* 실종료일 */
+                ,NVL(D.RENTAL_FEE,0) AS RENTAL_FEE    				/*렌탈료 = DMS금액*/
+                ,NVL(D.INV_AMT,0) AS INV_AMT			                /*청구금액 = UKEY금액*/
+                ,NVL(D.RECV_DT,0) AS RECV_DT                      	/*수납금액 */
+                ,(NVL(D.INV_AMT,0) - NVL(D.RECV_DT,0)) AS ARREAR_PRC /*미납금액 */
+                ,MONTHS_BETWEEN( TO_DATE(#RENTAL_YM#,'YYYYMM'),TO_DATE(SUBSTR(C.RENT_STA_DT,0,6),'YYYYMM') )+1||'회' AS CNT	/*회차*/
+                ,'' AS SLIP_ST
+                ,'' AS SLIP_NO
+           FROM  TB_NR_CNTRT A
+                ,TB_RENTAL_CNTRT B
+                ,TB_EQP_CNTRT C
+                ,TB_EQP_CNTRT_DTL D
+          WHERE  A.CNTRT_NO = B.CNTRT_NO
+            AND  B.CNTRT_NO = C.CNTRT_NO
+            AND  C.ASSET_NO = D.ASSET_NO
+]]><isNotEmpty property="SVC_MGMT_NO_LIST"><![CDATA[
+            AND A.SVC_MGMT_NO IN    
+	]]><iterate open="(" close=")" conjunction="," property="SVC_MGMT_NO_LIST"><![CDATA[
+        #SVC_MGMT_NO_LIST[]#
+	]]></iterate><![CDATA[
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RENTAL_YM"><![CDATA[
+        D.RENT_YM = #RENTAL_YM#
+]]></isNotEmpty><![CDATA[
+) PA
+ORDER BY PA.SVC_MGMT_NO]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,286 @@
+package dms.sc.scsbase.biz;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordHeader;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.utils.HpcUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: FSCPrnInfoInq</li>
+ * <li>설  명 : 개인정보조회</li>
+ * <li>작성일 : 2014-08-11 11:13:03</li>
+ * <li>작성자 : 김석영 (kimsukyoung)</li>
+ * </ul>
+ *
+ * @author 김석영 (kimsukyoung)
+ */
+public class FSCPrnInfoInq extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FSCPrnInfoInq() {
+		super();
+	}
+
+	/**
+	 * 개인정보조회
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : PRN_INFO_INQ_ITEM_CD [개인정보조회항목코드]
+	 *	- field : PRN_INFO_INQ_CTT [개인정보조회내용]
+	 *	- field : INQ_OBJ_CL_CD [조회대상구분코드]
+	 *	- field : INQ_OBJ_NO [조회대상번호]
+	 *	- field : INQ_REQ_CHNL_CD [조회요청채널코드]
+	 *	- field : INQ_REQ_IDF_NO [조회요청식별번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PARAM
+	 *		- field : PRN_INFO_INQ_ITEM_CD [개인정보조회항목코드]
+	 *		- field : PRN_INFO_INQ_ITEM_NM [개인정보조회항목명]
+	 *		- field : PRN_INFO_INQ_CTT [개인정보조회내용]
+	 * </pre>
+	 */
+	public IDataSet fInqPrnInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		String prnInfoInqItemCd = null;
+		String prnInfoInqCtt = null;
+		Boolean bSuccess = true;
+		//필수항목 입력파라미터 체크 
+		if ( StringUtils.isEmpty(requestData.getField("PRN_INFO_INQ_ITEM_CD")) ) {
+			throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("PRN_INFO_INQ_ITEM_CD") });  // 필수입력항목 {0}이/가 누락되었습니다.
+		}
+		if ( StringUtils.isEmpty(requestData.getField("PRN_INFO_INQ_CTT")) ) {
+			throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("PRN_INFO_INQ_CTT") });
+		}
+		if ( StringUtils.isEmpty(requestData.getField("INQ_OBJ_CL_CD")) ) {
+			throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("INQ_OBJ_CL_CD") });
+		}
+		if ( StringUtils.isEmpty(requestData.getField("INQ_OBJ_NO")) ) {
+			throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("INQ_OBJ_NO") });
+		}
+		if ( StringUtils.isEmpty(requestData.getField("INQ_REQ_CHNL_CD")) ) {
+			throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("INQ_REQ_CHNL_CD") });
+		}
+
+		if ( StringUtils.isEmpty(requestData.getField("INQ_REQ_IDF_NO")) ) {
+			throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("INQ_REQ_IDF_NO") });
+		}
+
+		IDataSet reqData = (IDataSet) requestData.clone();
+		try {
+			// 응답레코드셋 생성
+			IRecordSet rs = new RecordSet("RS_PARAM");
+			List<IRecordHeader> rhList = new ArrayList<IRecordHeader>();
+			rhList.add(new RecordHeader("PRN_INFO_INQ_ITEM_CD"));
+			rhList.add(new RecordHeader("PRN_INFO_INQ_ITEM_NM"));
+			rhList.add(new RecordHeader("PRN_INFO_INQ_CTT"));
+			rs.addHeaders(rhList);
+			IRecord record = rs.newRecord(0);
+
+			// 개인정보항목코드  (SCC005:개인정보항목코드)
+			prnInfoInqItemCd = reqData.getField("PRN_INFO_INQ_ITEM_CD");
+			record.set("PRN_INFO_INQ_ITEM_CD", prnInfoInqItemCd);
+			record.set("PRN_INFO_INQ_ITEM_NM", HpcUtils.getCode("SCC005", prnInfoInqItemCd).getCodeNm());
+			//개인정보내용 복호화 
+			try {
+				prnInfoInqCtt = HpcUtils.decodeByAES(reqData.getField("PRN_INFO_INQ_CTT"));
+			} catch ( Exception e ) {
+				// HpcUtils.decodeByAES 복호화 함수에서 예외사항이 발생한 경우 에러처리하지 않고 빈값으로 넘긴다.  
+				prnInfoInqCtt = "";
+				bSuccess = false;
+			}
+			//record.set("PRN_INFO_INQ_CTT", HpcUtils.restoreSpecialChar(prnInfoInqCtt));
+			record.set("PRN_INFO_INQ_CTT", prnInfoInqCtt);   // 2014.12.22 문자 XSS restore처리 by leeym
+
+			reqData.putField("PRN_INFO_INQ_CTT", prnInfoInqCtt);
+
+			if ( bSuccess ) {
+				// 개인정보조회이력 등록
+				FSCPrnInfoHstMgmt fSCPrnInfoHstMgmt = (FSCPrnInfoHstMgmt) lookupFunctionUnit(FSCPrnInfoHstMgmt.class);
+				fSCPrnInfoHstMgmt.fRegPrnInfoInqHst(reqData, onlineCtx);
+			}
+			responseData.putRecordSet(rs);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+			//throw new BizRuntimeException("HPC00282", e);	// 개인정보조회에 실패하였습니다.
+		}
+		return responseData;
+	}
+
+	/**
+	 * 개인정보조회 화면조회용 서비스
+	 이메일,전화번호 등 여러종류의 개인정보를 한꺼번에 조회해오기 위한 용도이다.
+	 *
+	 * @author 임지후 (jihooyim)
+	 * @since 2014-08-11 11:13:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PRN_INFO_INQ
+	 *		- field : PRN_INFO_INQ_ITEM_CD [개인정보조회항목코드]
+	 *		- field : PRN_INFO_INQ_CTT [개인정보조회내용]
+	 *	- field : FRM_ID [화면ID]
+	 *	- field : INQ_OBJ_CL_CD [조회대상구분코드]
+	 *	- field : INQ_OBJ_NO [조회대상번호]
+	 *	- field : INQ_REQ_CHNL_CD [조회요청채널코드]
+	 *	- field : INQ_REQ_IDF_NO [조회요청식별번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PARAM
+	 *		- field : PRN_INFO_INQ_ITEM_CD [개인정보조회항목코드]
+	 *		- field : PRN_INFO_INQ_ITEM_NM [개인정보조회항목명]
+	 *		- field : PRN_INFO_INQ_CTT [개인정보조회내용]
+	 * </pre>
+	 */
+	public IDataSet fInqPrnInfoForFrm(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet rsTemp = new DataSet();
+		IRecordSet rsRecordSetTemp = null;
+		IDataSet reqData = new DataSet();
+		IRecordSet reqRecordSet = requestData.getRecordSet("RS_PRN_INFO_INQ");
+		int reqCnt = reqRecordSet.getRecordCount();
+		IRecord record = null;
+
+		try {
+
+			for ( int i = 0 ; i < reqCnt ; i++ ) {
+				record = reqRecordSet.getRecord(i);
+				//조회항목코드
+				reqData.putField("PRN_INFO_INQ_ITEM_CD", record.get("PRN_INFO_INQ_ITEM_CD"));
+				//조회내용 (암호화된 데이터)
+				reqData.putField("PRN_INFO_INQ_CTT", record.get("PRN_INFO_INQ_CTT"));
+				reqData.putField("FRM_ID", requestData.getField("FRM_ID"));
+				reqData.putField("INQ_OBJ_CL_CD", requestData.getField("INQ_OBJ_CL_CD"));
+				reqData.putField("INQ_OBJ_NO", requestData.getField("INQ_OBJ_NO"));
+				reqData.putField("INQ_REQ_CHNL_CD", requestData.getField("INQ_REQ_CHNL_CD"));
+				reqData.putField("INQ_REQ_IDF_NO", requestData.getField("INQ_REQ_IDF_NO"));
+
+				// 개인정보조회 fm 호출
+				rsTemp = fInqPrnInfo(reqData, onlineCtx);
+
+				if ( rsRecordSetTemp == null ) {
+					rsRecordSetTemp = (IRecordSet) rsTemp.getRecordSet("RS_PARAM").clone();
+				} else {
+					rsRecordSetTemp.addRecord(rsTemp.getRecordSet("RS_PARAM").getRecord(0));
+				}
+			}
+			responseData.putRecordSet(rsRecordSetTemp);
+			responseData.setOkResultMessage("SKFI0001", null);//별도의 파라미터 없이 메시지 그대로 내보내는 경우
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e);
+		}
+		return responseData;
+	}
+
+	/**
+	 * 이메일,전화번호 등 여러종류의 개인정보를 한꺼번에 조회가능하며
+	 개인정보조회이력등록없이 단순히 개인정보 조회만 해온다.
+	 *
+	 * @author 임지후 (jihooyim)
+	 * @since 2014-08-11 11:13:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PRN_INFO_INQ
+	 *		- field : PRN_INFO_INQ_ITEM_CD [개인정보조회항목코드]
+	 *		- field : PRN_INFO_INQ_CTT [개인정보조회내용]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PARAM
+	 *		- field : PRN_INFO_INQ_ITEM_CD [개인정보조회항목코드]
+	 *		- field : PRN_INFO_INQ_ITEM_NM [개인정보조회항목명]
+	 *		- field : PRN_INFO_INQ_CTT [개인정보조회내용]
+	 * </pre>
+	 */
+	public IDataSet fInqPrnInfoNoRegHst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IRecordSet rs = new RecordSet("RS_PARAM"); //결과레코드셋
+		IRecord record = null;
+		IRecord rsRecord = null;
+		String prnInfoInqItemCd = null; //개인정보항목코드
+		String prnInfoInqCtt = null; //개인정보 암호화 내용
+		String rsPrnInfoInqCtt = null; //개인정보 복호화 결과
+		try {
+
+			IRecordSet reqRecordSet = requestData.getRecordSet("RS_PRN_INFO_INQ");
+			int reqCnt = reqRecordSet.getRecordCount();
+
+			for ( int i = 0 ; i < reqCnt ; i++ ) {
+				record = reqRecordSet.getRecord(i);
+
+				if ( i == 0 ) {
+					// 결과레코드셋 생성
+					List<IRecordHeader> rhList = new ArrayList<IRecordHeader>();
+					rhList.add(new RecordHeader("PRN_INFO_INQ_ITEM_CD"));
+					rhList.add(new RecordHeader("PRN_INFO_INQ_ITEM_NM"));
+					rhList.add(new RecordHeader("PRN_INFO_INQ_CTT"));
+					rs.addHeaders(rhList);
+				}
+				rsRecord = rs.newRecord(i);
+
+				// 개인정보항목코드  (SCC005:개인정보항목코드)
+				prnInfoInqItemCd = record.get("PRN_INFO_INQ_ITEM_CD");
+				//암호화된 개인정보내용
+				prnInfoInqCtt = record.get("PRN_INFO_INQ_CTT");
+
+				//필수항목 입력파라미터 체크 
+				if ( StringUtils.isEmpty(prnInfoInqItemCd) ) {
+					throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("PRN_INFO_INQ_ITEM_CD") });  // 필수입력항목 {0}이/가 누락되었습니다.
+				}
+				if ( StringUtils.isEmpty(prnInfoInqCtt) ) {
+					throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("PRN_INFO_INQ_CTT") });
+				}
+
+				//개인정보내용 복호화 
+				try {
+					rsPrnInfoInqCtt = HpcUtils.decodeByAES(prnInfoInqCtt);
+				} catch ( Exception e ) {
+					// HpcUtils.decodeByAES 복호화 함수에서 예외사항이 발생한 경우 에러처리하지 않고 빈값으로 넘긴다.  
+					rsPrnInfoInqCtt = new String("");
+				}
+
+				//결과데이터셋에 개인정보 복호화 결과 입력
+				rsRecord.set("PRN_INFO_INQ_ITEM_CD", prnInfoInqItemCd);
+				rsRecord.set("PRN_INFO_INQ_ITEM_NM", HpcUtils.getCode("SCC005", prnInfoInqItemCd).getCodeNm());
+				rsRecord.set("PRN_INFO_INQ_CTT", rsPrnInfoInqCtt);
+			}
+
+			responseData.putRecordSet(rs);
+			responseData.setOkResultMessage("SKFI0001", null);//별도의 파라미터 없이 메시지 그대로 내보내는 경우
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e);
+		}
+		return responseData;
+	}
+}

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCCmGrpCdMgmt">
+	<select id="SCmGrpCdLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmGrpCdMgmt.SCmGrpCdLstPaging 공통그룹코드목록조회 */
+/* IO: 심상준,2014-10-06T11:10:32(심상준,2014-07-24T10:15:34) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY CM_GRP_CD_ID ASC) AS ROWNO  
+               ,CM_GRP_CD_ID                                           /* 공통그룹코드ID */
+               ,CM_GRP_CD_NM                                           /* 공통그룹코드명 */
+               ,CM_GRP_CD_DESC                                         /* 공통그룹코드설명 */
+               ,DECODE(USE_YN,'Y','1','N','0') AS USE_YN               /* 사용여부 */
+               ,DECODE(MGMT_CD_YN,'Y','1','N','0') AS MGMT_CD_YN       /* 관리여부 */
+               ,MGMT_ITEM_NM1                                          /* 관리항목명1 */
+               ,MGMT_ITEM_NM2                                          /* 관리항목명2 */
+               ,MGMT_ITEM_NM3                                          /* 관리항목명3 */
+               ,MGMT_ITEM_NM4                                          /* 관리항목명4 */
+               ,MGMT_ITEM_NM5                                          /* 관리항목명5 */
+               ,MGMT_ITEM_NM6                                          /* 관리항목명6 */
+               ,MGMT_ITEM_NM7                                          /* 관리항목명7 */
+               ,MGMT_ITEM_NM8                                          /* 관리항목명8 */
+               ,MGMT_ITEM_NM9                                          /* 관리항목명9 */
+               ,MGMT_ITEM_NM10                                         /* 관리항목명10 */
+               ,FS_REG_USER_ID                                         /* 최초등록사용자ID */  
+               ,TO_CHAR(FS_REG_DTM, 'YYYYMMDDHH24MISS') AS FS_REG_DTM  /* 최초등록일시 */
+               ,LS_CHG_USER_ID                                         /* 최종등록사용자ID */
+               ,TO_CHAR(LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM  /* 최종등록일시 */ 
+          FROM  TB_CM_GRP_CD   /* SC_공통그룹코드 */   
+        ]]><dynamic prepend="WHERE"><![CDATA[ 
+        ]]><isNotEmpty prepend="AND" property="CM_GRP_CD_ID"><![CDATA[
+                CM_GRP_CD_ID LIKE '%'||#CM_GRP_CD_ID#||'%'
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="CM_GRP_CD_NM"><![CDATA[
+                CM_GRP_CD_NM LIKE '%'||#CM_GRP_CD_NM#||'%'
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEqual prepend="AND" property="USE_YN" compareValue="%"><![CDATA[
+                USE_YN = #USE_YN#
+        ]]></isNotEqual><![CDATA[
+        ]]><isNotEqual prepend="AND" property="MGMT_CD_YN" compareValue="%"><![CDATA[
+                MGMT_CD_YN = #MGMT_CD_YN#
+        ]]></isNotEqual><![CDATA[]]></dynamic><![CDATA[
+        ) A
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="ICmGrpCd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmGrpCdMgmt.ICmGrpCd 공통그룹코드등록 */
+/* IO: 심상준,2014-09-26T17:44:22(심상준,2014-07-24T10:15:51) */
+INSERT
+  INTO  TB_CM_GRP_CD                          /* SC_공통그룹코드 */      
+       (
+        CM_GRP_CD_ID                          /* 공통그룹코드ID */     
+       ,CM_GRP_CD_NM                          /* 공통그룹코드명 */     
+       ,CM_GRP_CD_DESC                        /* 공통그룹코드설명 */   
+       ,USE_YN                                /* 사용여부 */           
+       ,MGMT_CD_YN                            /* 관리여부 */           
+       ,MGMT_ITEM_NM1                         /* 관리항목명1 */        
+       ,MGMT_ITEM_NM2                         /* 관리항목명2 */        
+       ,MGMT_ITEM_NM3                         /* 관리항목명3 */        
+       ,MGMT_ITEM_NM4                         /* 관리항목명4 */        
+       ,MGMT_ITEM_NM5                         /* 관리항목명5 */        
+       ,MGMT_ITEM_NM6                         /* 관리항목명6 */        
+       ,MGMT_ITEM_NM7                         /* 관리항목명7 */        
+       ,MGMT_ITEM_NM8                         /* 관리항목명8 */        
+       ,MGMT_ITEM_NM9                         /* 관리항목명9 */        
+       ,MGMT_ITEM_NM10                        /* 관리항목명10 */       
+       ,FS_REG_USER_ID                        /* 최초등록사용자ID */
+       ,FS_REG_DTM                            /* 최초등록일시 */
+       ,LS_CHG_USER_ID                        /* 최종등록사용자ID */
+       ,LS_CHG_DTM                            /* 최종등록일시 */ 
+        )
+VALUES  
+       (
+        #CM_GRP_CD_ID#                       /* 공통그룹코드ID */     
+       ,#CM_GRP_CD_NM#                       /* 공통그룹코드명 */     
+       ,#CM_GRP_CD_DESC#                     /* 공통그룹코드설명 */   
+       ,DECODE(#USE_YN#,'1','Y','0','N')     /* 사용여부 */           
+       ,DECODE(#MGMT_CD_YN#,'1','Y','0','N') /* 관리여부 */           
+       ,#MGMT_ITEM_NM1#                      /* 관리항목명1 */        
+       ,#MGMT_ITEM_NM2#                      /* 관리항목명2 */        
+       ,#MGMT_ITEM_NM3#                      /* 관리항목명3 */        
+       ,#MGMT_ITEM_NM4#                      /* 관리항목명4 */        
+       ,#MGMT_ITEM_NM5#                      /* 관리항목명5 */        
+       ,#MGMT_ITEM_NM6#                      /* 관리항목명6 */        
+       ,#MGMT_ITEM_NM7#                      /* 관리항목명7 */        
+       ,#MGMT_ITEM_NM8#                      /* 관리항목명8 */        
+       ,#MGMT_ITEM_NM9#                      /* 관리항목명9 */        
+       ,#MGMT_ITEM_NM10#                     /* 관리항목명10 */       
+       ,#USERNO#                             /* 최초등록사용자ID */   
+       ,SYSDATE                              /* 최초등록일시 */       
+       ,#USERNO#                             /* 최종등록사용자ID */   
+       ,SYSDATE                              /* 최종등록일시 */      
+        )]]>
+	</insert>
+	<update id="UCmGrpCd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmGrpCdMgmt.UCmGrpCd 공통그룹코드수정 */
+/* IO: 심상준,2014-09-26T17:44:33(심상준,2014-07-24T10:16:36) */
+UPDATE  
+        TB_CM_GRP_CD                                       /* SC_공통그룹코드 */         
+   SET  CM_GRP_CD_NM = #CM_GRP_CD_NM#                      /* 공통그룹코드명 */     
+       ,CM_GRP_CD_DESC = #CM_GRP_CD_DESC#                  /* 공통그룹코드설명 */   
+       ,USE_YN = DECODE(#USE_YN#,'1','Y','0','N')          /* 사용여부 */           
+       ,MGMT_CD_YN = DECODE(#MGMT_CD_YN#,'1','Y','0','N')  /* 관리여부 */           
+       ,MGMT_ITEM_NM1 = #MGMT_ITEM_NM1#                    /* 관리항목명1 */        
+       ,MGMT_ITEM_NM2 = #MGMT_ITEM_NM2#                    /* 관리항목명2 */        
+       ,MGMT_ITEM_NM3 = #MGMT_ITEM_NM3#                    /* 관리항목명3 */        
+       ,MGMT_ITEM_NM4 = #MGMT_ITEM_NM4#                    /* 관리항목명4 */        
+       ,MGMT_ITEM_NM5 = #MGMT_ITEM_NM5#                    /* 관리항목명5 */        
+       ,MGMT_ITEM_NM6 = #MGMT_ITEM_NM6#                    /* 관리항목명6 */        
+       ,MGMT_ITEM_NM7 = #MGMT_ITEM_NM7#                    /* 관리항목명7 */        
+       ,MGMT_ITEM_NM8 = #MGMT_ITEM_NM8#                    /* 관리항목명8 */        
+       ,MGMT_ITEM_NM9 = #MGMT_ITEM_NM9#                    /* 관리항목명9 */        
+       ,MGMT_ITEM_NM10 = #MGMT_ITEM_NM10#                  /* 관리항목명10 */       
+       ,LS_CHG_USER_ID = #USERNO#                          /* 최종등록사용자ID */   
+       ,LS_CHG_DTM = SYSDATE                               /* 최종등록일시 */       
+ WHERE  CM_GRP_CD_ID = #CM_GRP_CD_ID#]]>
+	</update>
+	<select id="SCmGrpCdLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmGrpCdMgmt.SCmGrpCdLstTotCnt 공통그룹코드전체건수조회 */
+/* IO: 심상준,2014-10-06T11:09:56(심상준,2014-08-21T14:25:56) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_CM_GRP_CD       /* SC_공통그룹코드 */ 
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="CM_GRP_CD_ID"><![CDATA[
+        CM_GRP_CD_ID LIKE '%'||#CM_GRP_CD_ID#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CM_GRP_CD_NM"><![CDATA[
+        CM_GRP_CD_NM LIKE '%'||#CM_GRP_CD_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="USE_YN" compareValue="%"><![CDATA[
+        USE_YN = #USE_YN#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="MGMT_CD_YN" compareValue="%"><![CDATA[
+        MGMT_CD_YN = #MGMT_CD_YN#
+]]></isNotEqual><![CDATA[]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SCmGrpCdLstValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmGrpCdMgmt.SCmGrpCdLstValidate 공통그룹코드저장사전체크 */
+/* IO: 심상준,2014-09-26T17:43:05(심상준,2014-08-25T10:09:02) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_CM_GRP_CD   /* SC_공통그룹코드 */ 
+ WHERE  CM_GRP_CD_ID = #CM_GRP_CD_ID#]]>
+	</select>
+</sqlMap>

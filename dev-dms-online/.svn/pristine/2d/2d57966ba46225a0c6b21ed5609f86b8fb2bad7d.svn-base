@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpClctInfoMgmt">
+	<select id="SEqpClctInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpClctInfoMgmt.SEqpClctInfoLstPaging 단말기회수정보조회 */
+/* IO: 장미진,2015-08-05T15:39:00(이민재,2015-07-17T17:07:33) */
+SELECT
+        *
+  FROM     
+        (SELECT 
+                 ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                ,A.EQP_MDL_CD 				/*모델코드*/
+                ,E.EQP_MDL_NM 				/*모델명*/
+                ,A.EQP_IN_DT                /*R센터회수일*/
+                ,A.SKN_CLCT_DT				/*SKN입고일*/	
+                ,A.EQP_COLOR_CD             /*색상코드*/
+                ,A.RTN_REG_DT               /*대리점반납일*/
+                ,A.IN_OBJ_DTL_CD		/*회수구분코드*/
+                ,B.EQP_PRCH_AMT             /*매입금액*/
+                ,B.EQP_REM_PRC_AMT          /*잔존가*/ 
+                ,C.SVC_MGMT_NO 				/*서비스관리번호*/
+                ,C.NR_CNTRTR_NM   			/*고객명*/
+                ,C.SVC_NO    				/*이동전화번호*/
+                ,C.PET_NM 					/*펫네임*/
+                ,C.EQP_RTN_YN 				/*반납여부*/
+                ,C.NR_CNTRT_DT 				/*계약일*/  
+                ,D.RENTAL_CNTRT_STA_DT		/*계약시작일*/
+                ,D.RENTAL_CNTRT_END_DT		/*계약종료일*/
+                ,D.RENTAL_CNTRT_PRD			/*계약기간코드*/
+                ,E.CAPA_CD
+           FROM  TB_EQP_CLCT_OBJ A
+                ,TB_EQP_ASSET B
+                ,TB_NR_CNTRT C
+                ,TB_RENTAL_CNTRT D
+                ,TB_RENTAL_POLY E
+          WHERE  A.EQP_SER_NUM = B.EQP_SER_NUM    
+            AND  A.EQP_SER_NUM = C.EQP_SER_NUM
+            AND  C.CNTRT_NO = D.CNTRT_NO
+            AND  D.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+            AND  B.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+       C.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="NR_CNTRTR_NM"><![CDATA[
+       C.NR_CNTRTR_NM LIKE '%'||#NR_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_NO"><![CDATA[
+       C.SVC_NO = #SVC_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SKN_CLCT_DT"><![CDATA[
+       C.SKN_CLCT_DT  BETWEEN #CNTRT_SDT# AND #CNTRT_EDT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RTN_STA_DT"><![CDATA[
+       A.RTN_REG_DT  BETWEEN #RTN_STA_DT# AND #RTN_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="IN_STA_DT"><![CDATA[
+       A.EQP_IN_DT  BETWEEN #IN_STA_DT# AND #IN_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="IN_OBJ_DTL_CD"><![CDATA[
+       A.IN_OBJ_DTL_CD = #IN_OBJ_DTL_CD#
+]]></isNotEmpty><![CDATA[)PA
+  WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpClctInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpClctInfoMgmt.SEqpClctInfoTotCnt 단말기회수정보총건수 */
+/* IO: 장미진,2015-08-05T15:39:39(이민재,2015-07-17T17:07:54) */
+SELECT 
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_CLCT_OBJ A
+       ,TB_EQP_ASSET B
+       ,TB_NR_CNTRT C
+       ,TB_RENTAL_CNTRT D
+       ,TB_RENTAL_POLY E
+ WHERE  A.EQP_SER_NUM = B.EQP_SER_NUM    
+   AND  A.EQP_SER_NUM = C.EQP_SER_NUM
+   AND  C.CNTRT_NO = D.CNTRT_NO
+   AND  D.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  B.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+       C.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="NR_CNTRTR_NM"><![CDATA[
+       C.NR_CNTRTR_NM LIKE '%'||#NR_CNTRTR_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_NO"><![CDATA[
+       C.SVC_NO = #SVC_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SKN_SDT"><![CDATA[
+       C.SKN_CLCT_DT  BETWEEN #SKN_SDT# AND #SKN_EDT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="RTN_STA_DT"><![CDATA[
+       A.RTN_REG_DT  BETWEEN #RTN_STA_DT# AND #RTN_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="IN_STA_DT"><![CDATA[
+       A.EQP_IN_DT  BETWEEN #IN_STA_DT# AND #IN_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="IN_OBJ_DTL_CD"><![CDATA[
+       A.IN_OBJ_DTL_CD = #IN_OBJ_DTL_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SEqpClctInfoDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpClctInfoMgmt.SEqpClctInfoDtl 단말기회수정보상세조회 */
+/* IO: 장미진,2015-08-05T15:38:16(이민재,2015-07-17T17:08:16) */
+SELECT 
+        ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+       ,A.EQP_MDL_CD 				/*모델코드*/
+       ,E.EQP_MDL_NM 				/*모델명*/
+       ,A.EQP_IN_DT                /*R센터회수일*/
+       ,A.SKN_CLCT_DT				/*SKN입고일*/	
+       ,A.EQP_COLOR_CD             /*색상코드*/
+       ,A.RTN_REG_DT               /*대리점반납일*/
+       ,A.IN_OBJ_DTL_CD		/*회수구분코드*/
+       ,B.EQP_PRCH_AMT             /*매입금액*/
+       ,B.EQP_REM_PRC_AMT          /*잔존가*/ 
+       ,C.SVC_MGMT_NO 				/*서비스관리번호*/
+       ,C.NR_CNTRTR_NM   			/*고객명*/
+       ,C.SVC_NO    				/*이동전화번호*/
+       ,C.PET_NM 					/*펫네임*/
+       ,C.EQP_RTN_YN 				/*반납여부*/
+       ,C.NR_CNTRT_DT 				/*계약일*/  
+       ,D.RENTAL_CNTRT_STA_DT		/*계약시작일*/
+       ,D.RENTAL_CNTRT_END_DT		/*계약종료일*/
+       ,D.RENTAL_CNTRT_PRD			/*계약기간코드*/
+       ,E.CAPA_CD
+  FROM  TB_EQP_CLCT_OBJ A
+       ,TB_EQP_ASSET B
+       ,TB_NR_CNTRT C
+       ,TB_RENTAL_CNTRT D
+       ,TB_RENTAL_POLY E
+ WHERE  A.EQP_SER_NUM = B.EQP_SER_NUM    
+   AND  A.EQP_SER_NUM = C.EQP_SER_NUM
+   AND  C.CNTRT_NO = D.CNTRT_NO
+   AND  D.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  B.OP_CL_CD = 'NR'
+   AND  C.SVC_MGMT_NO = #SVC_MGMT_NO#]]>
+	</select>
+</sqlMap>

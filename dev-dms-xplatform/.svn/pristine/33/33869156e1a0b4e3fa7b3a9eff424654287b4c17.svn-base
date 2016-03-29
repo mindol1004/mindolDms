@@ -1,0 +1,330 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="FRM0026P" classname="popup_sample1" inheritanceid="" position="absolute 0 0 400 187" titletext="개인정보조회" class="frm_bg_popup" onload="Form_onload" scrollbars="autoboth">
+    <Layouts>
+      <Layout>
+        <Div id="Div01" taborder="1" text="개인정보조회" class="popUp_title_bg" transparenthittest="true" position="absolute 22 11 377 39"/>
+        <Static id="Static00" text="h38" class="tip_guide" visible="false" position2="absolute l:205 w:26 t:0 h:38" positiontype="position2"/>
+        <Static id="Static01" text="w&#13;&#10;22" class="tip_guide" visible="false" position2="absolute l:0 w:22 t:74 h:26" positiontype="position2"/>
+        <Button id="btn_close" taborder="1" position="absolute 358 13 376 31" class="popUp_close" onclick="btn_close_onclick"/>
+        <Static id="Static02" text="h32" class="tip_guide" visible="false" position2="absolute l:149 w:42 t:6 h:32" positiontype="position2"/>
+        <Static id="Static03" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:376 w:15 t:42 h:42" positiontype="position2"/>
+        <Static id="Static04" text="h10" class="tip_guide" visible="false" position2="absolute l:117 w:42 t:39 h:10" positiontype="position2"/>
+        <Static id="Static05" text="h10" class="tip_guide" visible="false" position2="absolute l:37 w:42 t:6 h:10" positiontype="position2"/>
+        <Static id="Static08" text="h10" class="tip_guide" visible="false" position2="absolute l:325 w:42 t:31 h:7" positiontype="position2"/>
+        <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:7 w:15 t:18 h:42" positiontype="position2"/>
+        <Static id="Static06" text="h10" class="tip_guide" visible="false" position2="absolute l:165 w:42 t:163 h:15" positiontype="position2" onclick="Static06_onclick"/>
+        <Static id="Static07" text="h10" class="tip_guide" visible="false" position2="absolute l:161 w:74 t:133 h:10" positiontype="position2"/>
+        <Div id="Div02" taborder="1" text="팝업내용" position="absolute 22 49 376 133" style="color:#777777ff;">
+          <Layouts>
+            <Layout>
+              <Div id="Div00" anchor="left top right" taborder="0" text="Div00" class="bg_detail" position="absolute 0 0 354 84">
+                <Layouts>
+                  <Layout>
+                    <Static id="stc_prnInfoItem" text="개인정보항목" class="sta_WFDA_detail_Label" position="absolute 9 9 99 29" tooltiptype="hover" anchor="default"/>
+                    <Static id="stc_prnInfo" text="개인정보" class="sta_WFDA_detail_Label" position="absolute 9 33 115 53" tooltiptype="hover" anchor="default"/>
+                    <Static id="Static12" text="w&#13;&#10;&#13;20" class="tip_guide" visible="false" position2="absolute l:0 w:20 t:-14 h:42" positiontype="position2"/>
+                    <Edit id="edt_prnInfoInqItemCd" taborder="1" position="absolute 115 9 344 29" anchor="default" enable="false" oneditclick="Div02_Div00_Edit00_oneditclick"/>
+                    <TextArea id="edt_prnInfoInqCtt" taborder="2" position="absolute 115 32 344 72" style="background:#f7f7f7ff;" readonly="true" anchor="top bottom" scrollbars="autoboth"/>
+                  </Layout>
+                </Layouts>
+              </Div>
+            </Layout>
+          </Layouts>
+        </Div>
+        <Div id="Div00" taborder="1" text="Div00" position="absolute 131 139 268 159">
+          <Layouts>
+            <Layout/>
+          </Layouts>
+        </Div>
+        <Button id="btn_cancel" taborder="2" text="닫기" onclick="btn_close_onclick" class="btn_WFGI_useBtn" position="absolute 161 143 217 163"/>
+        <Static id="Static18" text="h10" class="tip_guide" visible="false" position2="absolute l:138 w:42 t:122 h:10" positiontype="position2"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_ncFieldMap" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="FRM_ID" type="STRING" size="256"/>
+          <Column id="INQ_OBJ_NO" type="STRING" size="256"/>
+          <Column id="REG_HST_YN" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_prnInfoInq" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="PRN_INFO_INQ_ITEM_CD" type="STRING" size="2"/>
+          <Column id="PRN_INFO_INQ_CTT" type="STRING" size="2000"/>
+          <Column id="PRN_INFO_INQ_ITEM_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+    </Objects>
+    <Bind/>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : FSC035P.xfdl
+ * 03. 화면 설명 : 개인정보조회(팝업)
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.12
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.12    김석영    최초 작성
+ ************************************************************************************************
+ */
+
+/*===============================================================================================
+ * 호출스크립트
+ * gfn_dialog("FRM0026P",{prnInfoInqItemCd:개인정보조회항목코드,prnInfoInqCtt:개인정보(암호문),inqObjNo:조회대상번호,regHstYn:이력등록여부});
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+var result;
+ 
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitPop(obj, e, "FSC035P")
+	
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+ 	
+ 	fn_searchMain();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form 종료전 Check 함수(공통)
+-----------------------------------------------------------------------------------------------*/
+function Form_checkBeforeClose()
+{
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+}
+
+/*===============================================================================================
+ * [ PART 5 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인조회
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_searchMain()
+{
+	var prnInfoInqItemCdArr = prnInfoInqItemCd.split(",");
+	var prnInfoInqCttArr = prnInfoInqCtt.split(",");
+	
+	if(prnInfoInqItemCdArr.length != prnInfoInqCttArr.length ){
+		trace("조회항목코드와 조회내용 입력값 파라미터의 갯수가 서로 틀립니다.");
+		return;
+	}
+	//이력등록여부 항목 파라미터 체크 
+	var pRegHstYn = "";
+        
+	try {
+		gfn_isNull(regHstYn) ? pRegHstYn = "Y" : pRegHstYn = regHstYn;
+	}
+	catch(e) {
+		pRegHstYn = "Y";
+	}
+		
+	var nRow = 0;
+	ds_prnInfoInq.clearData();
+	for(var i=0; i< prnInfoInqItemCdArr.length; i++ ){
+		nRow = ds_prnInfoInq.addRow();
+		ds_prnInfoInq.setColumn(nRow,"PRN_INFO_INQ_ITEM_CD",prnInfoInqItemCdArr[i]);
+		ds_prnInfoInq.setColumn(nRow,"PRN_INFO_INQ_CTT",prnInfoInqCttArr[i]);
+	}
+		
+	ds_ncFieldMap.setColumn(0,'FRM_ID',this.opener.name);
+	ds_ncFieldMap.setColumn(0,'INQ_OBJ_NO',inqObjNo);
+	ds_ncFieldMap.setColumn(0,'REG_HST_YN',pRegHstYn);
+	
+	var sSvcID		 = "searchMain";
+	var sTrID		 = "PSCPrnInfoInq_pInqPrnInfo";
+	var sPtrn		 = "R";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "ncFieldMap=ds_ncFieldMap RS_PRN_INFO_INQ=ds_prnInfoInq";
+	var sOutputDs	 = "ds_prnInfoInq=RS_PARAM";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";	
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 메인저장
+ * param   : 
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_saveMain()
+{
+}
+
+/*===============================================================================================
+ * [ PART 6 ] CallBack 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+	switch(sSvcID) {
+		case "searchMain" : 
+			if ( iErrorCode == 0 ) {
+				Div02.Div00.edt_prnInfoInqItemCd.value = ds_prnInfoInq.getColumn(0,'PRN_INFO_INQ_ITEM_NM');
+				Div02.Div00.edt_prnInfoInqCtt.value = ds_prnInfoInq.getColumn(0,'PRN_INFO_INQ_CTT');
+			}
+			break;
+		default :
+			break;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : search
+-----------------------------------------------------------------------------------------------*/
+function btn_search_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : reset
+-----------------------------------------------------------------------------------------------*/
+function btn_reset_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : print
+-----------------------------------------------------------------------------------------------*/
+function btn_print_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : save
+-----------------------------------------------------------------------------------------------*/
+function btn_save_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : insert
+-----------------------------------------------------------------------------------------------*/
+function btn_insert_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : delete
+-----------------------------------------------------------------------------------------------*/
+function btn_delete_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid filter
+-----------------------------------------------------------------------------------------------*/
+function btn_filter_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid excel
+-----------------------------------------------------------------------------------------------*/
+function btn_excel_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : grid expand
+-----------------------------------------------------------------------------------------------*/
+function btn_expand_onclick(obj:Button,  e:ClickEventInfo)
+{
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : close
+-----------------------------------------------------------------------------------------------*/
+function btn_close_onclick(obj:Button,  e:ClickEventInfo)
+{
+	this.close();
+}
+
+
+/*===============================================================================================
+ * [ PART 8 ] Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 조회조건에서 엔터키가 눌러졌을때 조회
+-----------------------------------------------------------------------------------------------*/
+function div_Search_edt_id_onkeydown(obj:Edit, e:KeyEventInfo)
+{
+
+}
+
+
+/*===============================================================================================
+ * [ PART 9 ] User Defined
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 저장전 유효성 검사
+ * param   : 
+ * return  : true/false
+-----------------------------------------------------------------------------------------------*/
+function fn_chkBeforeSave()	
+{
+}
+
+]]></Script>
+  </Form>
+</FDL>

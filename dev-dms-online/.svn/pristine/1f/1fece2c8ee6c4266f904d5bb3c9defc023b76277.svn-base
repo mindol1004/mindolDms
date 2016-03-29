@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPDpstMgmt">
+	<select id="SInqSendAmtObPrchjListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPDpstMgmt.SInqSendAmtObPrchjListTotCnt 송금대상매입조회목록총건수 */
+/* IO: 양재석,2015-09-16T11:01:17(양재석,2015-09-15T17:33:46) */
+SELECT COUNT(*) AS TOTAL_CNT
+  FROM TB_EP_CST_PRCHS_MGMT A  
+  	   , TB_DEALCO B
+       , TB_EP_BAS_DEAL_CO_MARKETING C   	 
+       , TB_EQP_MDL D
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+   AND A.EQP_MDL_CD = D.EQP_MDL_CD
+   AND B.AGN_ORG_CD  = C.UKEY_AGN_CD(+)
+   AND C.DEL_YN(+) = 'N' 
+   AND NVL(C.STA_DT,A.CNSL_DT) <= A.CNSL_DT
+   AND NVL(C.END_DT,A.CNSL_DT) >= A.CNSL_DT      
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND D.DEL_YN = 'N'
+   AND A.CUST_IDEA = 'Y'
+   AND A.PRCH_CL = 'Y'
+   AND A.SKN_CL = 'N'
+   AND A.PROGR_ST NOT IN ('2E','34')
+   AND (A.FEE_DEDC_YN IS NULL OR A.FEE_DEDC_YN = '0')
+   AND (A.POLY_OBJ_YN IS NULL OR A.POLY_OBJ_YN = '0')
+   AND A.ASIANA_CARD_NO IS NULL
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+       B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+       A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+       A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+       A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+]]><isEqual property="DT_GB_CD" compareValue="1"><![CDATA[ 
+       A.CUST_CHK_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="DT_GB_CD" compareValue="1"><![CDATA[ 
+       A.RMT_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]></isNotEqual><![CDATA[  
+]]></isEmpty><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="Y"><![CDATA[ 
+   AND A.CNSL_DEALCO_CD = '11050'
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="N"><![CDATA[ 
+   AND A.CNSL_DEALCO_CD <> '11050'
+]]></isEqual><![CDATA[]]>
+	</select>
+	<select id="SInqSendAmtObjPrchListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPDpstMgmt.SInqSendAmtObjPrchListPaging 송금대상매입조회목록 */
+/* IO: 양재석,2015-09-16T11:01:30(양재석,2015-09-15T18:44:42) */
+SELECT PA.*
+  FROM (SELECT ROW_NUMBER() OVER(ORDER BY A.PRCH_MGMT_NO DESC) AS ROWNO
+               , A.PRCH_MGMT_NO
+               , A.CNSL_MGMT_NO
+        	      , A.EQP_MDL_CD
+        	      , A.EQP_SER_NO
+               , A.PRCH_DT
+               , A.CNSL_DT
+               , C.HEADQ_NM
+        	      , C.MKT_TEAM_CD
+               , C.MKT_TEAM_NM
+               , B.AGN_ORG_CD 
+               , B.UKEY_SUB_CD      
+               , B.DEALCO_NM CNSL_DEALCO_NM /*상담처명*/
+               , (SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = B.AFFIL_AGN) AFFIL_AGN_NM /*대리점명*/
+               , A.CNSL_DEALCO_CD
+               , D.EQP_MDL_NM
+               , A.EQP_COLOR_CD
+               , A.PRCH_AMT
+               , A.BANK_CD
+               , A.ACCO_NO
+               , A.DPSTR
+               , A.ACCO_NO_ENPT
+               , A.DPSTR_ENPT
+               , nvl(A.AMT_RMT_YN,'N') AMT_RMT_YN
+               , A.RMT_DT
+               , A.EQP_ST
+               , A.EQP_ST_DTAIL
+               , B.AFFIL_AGN
+               , NVL(A.PRE_DC_CL,'N') PRE_DC_CL
+               , NVL((SELECT CM_CD_ID
+                        FROM TB_CM_CD
+                       WHERE USE_YN = 'Y'
+                         AND CM_GRP_CD_ID = 'DMS182'
+                         AND MGMT_ITEM_CD1 <= A.CNSL_DT
+                         AND MGMT_ITEM_CD2 >= A.CNSL_DT)
+                 ,0) UBO_AMT
+               , (A.PRCH_AMT + NVL((SELECT CM_CD_ID
+                                      FROM TB_CM_CD
+                                     WHERE USE_YN = 'Y'
+                                       AND CM_GRP_CD_ID = 'DMS182'
+                                       AND MGMT_ITEM_CD1 <= A.CNSL_DT
+                                       AND MGMT_ITEM_CD2 >= A.CNSL_DT)
+                               ,0)
+                 ) TOT_AMT   
+               , (SELECT CUST_GRP 
+                    FROM TB_EP_CST_CONSULT_MGMT
+                   WHERE CNSL_MGMT_NO = A.CNSL_MGMT_NO
+                     AND DEL_YN = 'N') CUST_GRP
+               , '0' CHECKED
+          FROM TB_EP_CST_PRCHS_MGMT A  
+          	   , TB_DEALCO B
+               , TB_EP_BAS_DEAL_CO_MARKETING C   	 
+               , TB_EQP_MDL D
+         WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+           AND B.EFF_STA_DT <= A.CNSL_DT
+           AND B.EFF_END_DT >= A.CNSL_DT
+           AND A.EQP_MDL_CD = D.EQP_MDL_CD
+           AND B.AGN_ORG_CD  = C.UKEY_AGN_CD(+)
+           AND C.DEL_YN(+) = 'N' 
+           AND NVL(C.STA_DT,A.CNSL_DT) <= A.CNSL_DT
+           AND NVL(C.END_DT,A.CNSL_DT) >= A.CNSL_DT      
+           AND A.DEL_YN = 'N'
+           AND B.DEL_YN = 'N'
+           AND D.DEL_YN = 'N'
+           AND A.CUST_IDEA = 'Y'
+           AND A.PRCH_CL = 'Y'
+           AND A.SKN_CL = 'N'
+           AND A.PROGR_ST NOT IN ('2E','34')
+           AND (A.FEE_DEDC_YN IS NULL OR A.FEE_DEDC_YN = '0')
+           AND (A.POLY_OBJ_YN IS NULL OR A.POLY_OBJ_YN = '0')
+           AND A.ASIANA_CARD_NO IS NULL
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+               B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+               A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+               A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+               A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+               A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+               A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+               A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+]]><isEqual property="DT_GB_CD" compareValue="1"><![CDATA[ 
+               A.CUST_CHK_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="DT_GB_CD" compareValue="1"><![CDATA[ 
+               A.RMT_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]></isNotEqual><![CDATA[  
+]]></isEmpty><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="Y"><![CDATA[ 
+           AND A.CNSL_DEALCO_CD = '11050'
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="N"><![CDATA[ 
+           AND A.CNSL_DEALCO_CD <> '11050'
+]]></isEqual><![CDATA[  
+       )PA
+ WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInqSendAmtObjPrchDtlList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPDpstMgmt.SInqSendAmtObjPrchDtlList 송금대상매입상세조회목록 */
+/* IO: 양재석,2015-09-16T11:00:51(양재석,2015-09-16T11:00:51) */
+SELECT A.PRCH_MGMT_NO
+       , '99'             EQP_COLOR_CD
+       , C.CMPT_PROD_CD
+       , D.PROD_CL
+       , C.HLD_QTY        IN_QTY
+       , C.PRCH_UPRC      IN_AMT
+  FROM TB_EP_CST_PRCHS_MGMT A  
+  	    , TB_DEALCO B
+       , TB_EP_CST_PRCHS_DTL C   	 
+       , TB_EQP_MDL D
+ WHERE A.CNSL_DEALCO_CD = B.DEALCO_CD
+   AND B.EFF_STA_DT <= A.CNSL_DT
+   AND B.EFF_END_DT >= A.CNSL_DT
+   AND A.PRCH_MGMT_NO = C.PRCH_MGMT_NO
+   AND C.CMPT_PROD_CD = d.EQP_MDL_CD(+)
+   AND A.PRCH_CL = 'Y'
+   AND A.CUST_IDEA = 'Y'
+   AND C.HLD_QTY > 0 
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND C.DEL_YN = 'N'
+   AND D.DEL_YN(+) = 'N'
+   AND A.SKN_CL = 'N'
+   AND (A.FEE_DEDC_YN IS NULL OR A.FEE_DEDC_YN = '0')
+   AND (A.POLY_OBJ_YN IS NULL OR A.POLY_OBJ_YN = '0')  
+   AND A.ASIANA_CARD_NO IS NULL 
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[   
+       B.AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="CNSL_DEALCO_CD"><![CDATA[   
+       A.CNSL_DEALCO_CD = #CNSL_DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[      
+       A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	         
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[   
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DPSTR_ENPT"><![CDATA[      
+       A.DPSTR_ENPT = #DPSTR_ENPT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[   
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+       A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[
+]]><isEmpty prepend="AND" property="BOX_NO"><![CDATA[   
+]]><isEqual property="DT_GB_CD" compareValue="1"><![CDATA[ 
+       A.CUST_CHK_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]></isEqual><![CDATA[ 
+]]><isNotEqual property="DT_GB_CD" compareValue="1"><![CDATA[ 
+       A.RMT_DT BETWEEN #IN_FR_DT# AND #IN_TO_DT#
+]]></isNotEqual><![CDATA[  
+]]></isEmpty><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="Y"><![CDATA[ 
+   AND A.CNSL_DEALCO_CD = '11050'
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="N"><![CDATA[ 
+   AND A.CNSL_DEALCO_CD <> '11050'
+]]></isEqual><![CDATA[]]>
+	</select>
+	<select id="SInqSendAmtObjErrChkList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPDpstMgmt.SInqSendAmtObjErrChkList 송금대상목록에러체크조회 */
+/* IO: 양재석,2015-09-16T18:03:43(양재석,2015-09-16T18:03:43) */
+SELECT (SELECT EQP_MDL_NM FROM TB_EQP_MDL WHERE DEL_YN = 'N' AND EQP_MDL_CD = #EQP_MDL_CD#) EQP_MDL_NM
+       , (SELECT DEALCO_NM  FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = #CNSL_DEALCO_CD#) DEALCO_NM
+       , (SELECT COUNT(*)
+            FROM TB_EP_CST_CONSULT_MGMT 
+           WHERE DEL_YN = 'N' 
+             AND EQP_MDL_CD = #EQP_MDL_CD# 
+             AND EQP_SER_NO = #EQP_SER_NO# 
+             AND EQP_COLOR_CD = #EQP_COLOR_CD#
+             AND PROGR_ST NOT IN ('31','32','33','34')) REG_CNT
+  FROM DUAL]]>
+	</select>
+</sqlMap>

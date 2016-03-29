@@ -1,0 +1,169 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="DpstMgmtFeeDedcTsInputP" classname="popup_sample1" inheritanceid="" position="absolute 0 0 360 164" titletext="요금공제처리차수입력" class="frm_bg_popup" onload="Form_onload" dragscrolltype="both" scrollbars="none">
+    <Layouts>
+      <Layout>
+        <Div id="Div01" taborder="5" text="요금공제처리차수입력" class="popUp_title_bg" transparenthittest="true" position="absolute 22 12 403 40"/>
+        <Button id="btn_close" taborder="3" position="absolute 574 13 592 31" class="popUp_close" onclick="btn_onclick" anchor="top right"/>
+        <Static id="Static05" text="h10" class="tip_guide" visible="false" position2="absolute l:37 w:42 t:6 h:10" positiontype="position2"/>
+        <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:7 w:15 t:18 h:121" positiontype="position2"/>
+        <Static id="Static07" text="h10" class="tip_guide" visible="false" position2="absolute l:142 w:74 t:109 h:10" positiontype="position2"/>
+        <Static id="Static02" text="w&#13;&#10;&#13;5" class="tip_guide" visible="false" position2="absolute l:177 w:5 t:122 h:18" positiontype="position2"/>
+        <Static id="Static06" text="h15" class="tip_guide" visible="false" position2="absolute l:158 w:42 t:139 h:15" positiontype="position2"/>
+        <Static id="Static09" text="h10" class="tip_guide" visible="false" position2="absolute l:22 w:42 t:39 h:10" positiontype="position2"/>
+        <Static id="Static01" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:336 w:15 t:13 h:126" positiontype="position2"/>
+        <Button id="btn_confirm" taborder="1" text="확인" class="btn_popup_confirm" position="absolute 122 119 177 139" anchor="default" onclick="btn_onclick"/>
+        <Button id="btn_cancel" taborder="2" text="취소" onclick="btn_onclick" class="btn_popup_cancel" position="absolute 182 119 237 139" anchor="default"/>
+        <Static id="Static13" text="처리차수" usedecorate="true" onclick="Static13_onclick" class="sub_title" position="absolute 22 45 185 65"/>
+        <Div id="div_search" anchor="left top right" taborder="0" class="bg_detail" position="absolute 22 68 336 109">
+          <Layouts>
+            <Layout>
+              <Static id="stc_cntrtNm" text="처리차수" class="sta_WFDA_detail_Label" position="absolute 20 9 79 29" anchor="default" style="background:transparent URL('theme://Img/img_star.png') left top;"/>
+              <Static id="Static08" text="w&#13;&#10;&#13;10" onclick="div_search_Static08_onclick" class="tip_guide" visible="false" position2="absolute l:77 w:10 t:-1 h:74" positiontype="position2"/>
+              <Static id="Static16" text="w20" class="guideTip" visible="false" position2="absolute l:0 w:20 t:2 h:76" positiontype="position2"/>
+              <Static id="Static00" text="w20" class="guideTip" visible="false" position2="absolute l:292 w:20 t:-6 h:76" positiontype="position2"/>
+              <Edit id="edt_ppayProcTs" taborder="1" lengthunit="ascii" maxlength="5" onkeydown="div_search_enter_onkeydown" position="absolute 87 9 196 29" inputtype="number" style="align:right middle;"/>
+            </Layout>
+          </Layouts>
+          <InitValue/>
+        </Div>
+        <Static id="Static14" text="h8" class="tip_guide" visible="false" position2="absolute l:22 w:42 t:60 h:8" positiontype="position2"/>
+        <Static id="Static04" text="h10" class="tip_guide" visible="false" position2="absolute l:101 w:42 t:68 h:10" positiontype="position2"/>
+        <Static id="Static08" text="h10" class="tip_guide" visible="false" position2="absolute l:117 w:42 t:98 h:10" positiontype="position2"/>
+      </Layout>
+    </Layouts>
+    <Objects/>
+    <Bind>
+      <BindItem id="item15" compid="div_search.edt_ppayProcTs" propid="value" datasetid="ds_search" columnid="EQP_SER_NO"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 임대R
+ * 02. 화면 : DpstMgmtFeeDedcTsInputP.xfdl
+ * 03. 화면 설명 : 요금공제처리차수입력
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 양재석
+ * 06. 작성일 : 2015.11.23
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.11.23    양재석    최초 작성
+ *     20xx.xx.xx               최종 수정
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+ 
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "FEP063P")
+
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form 종료전 Check 함수(공통)
+-----------------------------------------------------------------------------------------------*/
+function Form_checkBeforeClose()
+{
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+/*
+	var strCode = "";
+	gfn_getCodeDs( this
+				  , strCode
+				  ,"fn_afterCodeCallBack");	
+*/				  
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+	div_search.edt_ppayProcTs.value = "1";
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 버튼 Event
+-----------------------------------------------------------------------------------------------*/
+function btn_onclick(obj:Button,  e:ClickEventInfo)
+{
+	switch(obj.name) 
+	{	
+			
+		case "btn_confirm" :	//확인
+			var arrTerm = gfn_trim(div_search.edt_ppayProcTs.value);
+			if(gfn_isNull(arrTerm) || toNumber(arrTerm) == 0){
+				gfn_message("A","DMS00023","E","",div_search.stc_cntrtNm.text);
+				return;
+			}
+			if(!gfn_checkNumber(arrTerm)){
+				gfn_message("A","DMS00119","I","",new Array(div_search.stc_cntrtNm.text,"숫자"));
+				return;
+			}
+
+			var objRtn = new Object;
+				objRtn["ppayProcTs"] = toNumber(arrTerm).toString();
+
+			this.close(objRtn);		
+			break;
+			
+		case "btn_cancel" : 	//취소
+			close("cancel");
+			break;
+			
+		case "btn_close" : 		//버튼X
+		
+			close("cancel");
+			break;	
+	}
+}
+
+]]></Script>
+  </Form>
+</FDL>

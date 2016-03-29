@@ -1,0 +1,311 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="GridPage" classname="GridButton" inheritanceid="" position="absolute 0 0 294 20" titletext="Grid Page" onload="GridPage_onload" scrollbars="none" dragscrolltype="none">
+    <Layouts>
+      <Layout>
+        <Div id="div_pageBox" taborder="14" text="Div00" position="absolute 0 0 294 20">
+          <Layouts>
+            <Layout>
+              <UserCombo id="cboPage" taborder="0" position="absolute 0 0 55 21" innerdataset="@dsCombo" codecolumn="pageNo" datacolumn="pageNo" displayrowcount="5" style="align:center middle;" onitemchanged="cboPage_onitemchanged" inputtype="number" tooltiptext="바로가기"/>
+              <Button id="btnFirst" taborder="0" onclick="btnFirst_onclick" class="btn_Page_First" position="absolute 0 0 20 20" tooltiptext="처음"/>
+              <Button id="btnPrev" taborder="1" onclick="btnPrev_onclick" class="btn_Page_Prev" position="absolute 21 0 41 20" tooltiptext="이전"/>
+              <Button id="btnNext" taborder="2" onclick="btnNext_onclick" class="btn_Page_Next" position="absolute 253 0 273 20" tooltiptext="다음"/>
+              <Button id="btnLast" taborder="3" onclick="btnLast_onclick" class="btn_Page_Last" position="absolute 274 0 294 20" tooltiptext="맨끝"/>
+              <Button id="btnNo1" taborder="4" text="1" onclick="btnNo_onclick" class="btn_Page_On" position="absolute 43 0 63 20" tooltiptext="맨 끝"/>
+              <Button id="btnNo2" taborder="5" text="2" onclick="btnNo_onclick" class="btn_Page" position="absolute 64 0 84 20" anchor="left bottom" tooltiptext="맨 끝"/>
+              <Button id="btnNo3" taborder="6" text="3" onclick="btnNo_onclick" class="btn_Page" position="absolute 85 0 105 20" tooltiptext="맨 끝"/>
+              <Button id="btnNo4" taborder="7" text="4" onclick="btnNo_onclick" class="btn_Page" position="absolute 106 0 126 20" tooltiptext="맨 끝"/>
+              <Button id="btnNo5" taborder="8" text="5" onclick="btnNo_onclick" class="btn_Page" position="absolute 127 0 147 20" tooltiptext="맨 끝"/>
+              <Button id="btnNo6" taborder="9" text="6" onclick="btnNo_onclick" class="btn_Page" position="absolute 148 0 168 20" tooltiptext="맨 끝"/>
+              <Button id="btnNo7" taborder="10" text="7" onclick="btnNo_onclick" class="btn_Page" position="absolute 169 0 189 20" tooltiptext="맨 끝"/>
+              <Button id="btnNo8" taborder="11" text="8" onclick="btnNo_onclick" class="btn_Page" position="absolute 190 0 210 20" tooltiptext="맨 끝"/>
+              <Button id="btnNo10" taborder="12" text="10" onclick="btnNo_onclick" class="btn_Page" position="absolute 232 0 252 20" tooltiptext="맨 끝"/>
+              <Button id="btnNo9" taborder="13" text="9" onclick="btnNo_onclick" class="btn_Page" position="absolute 211 0 231 20" tooltiptext="맨 끝"/>
+            </Layout>
+          </Layouts>
+        </Div>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="dsCombo" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="pageNo" type="STRING" size="9"/>
+        </ColumnInfo>
+      </Dataset>
+    </Objects>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통 Composite
+ * 02. 화면 : CommGridPage.xfdl
+ * 03. 화면 Notice : Grid Control용 Pageing Composite
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+include "LIB::comUtil.xjs";
+
+var	cv_iUnitSelRowNo   = 0;		// 한번 Server호출시 가져올 row갯수(외부설정)
+var	cv_iTotalRowCount  = 0; 	// 검색조건에 따른 전체 Total Count(외부설정)
+var	cv_iCurrentPageNum = 0;		// 선택한 Page No.(시작시)
+var	cv_sExecFunc       = "";	// Page No.선택시 실행Function(외부설정)
+	
+var	cv_iMaxPageNum     = 0;		// 전체Row 기준 Max페이지
+var	cv_iCurrPageGroup  = 0;		// 선택한 Page No.가 속한 Page Group
+var	cv_iMaxPageGroup   = 0;		// 전체Row 기준 Max페이지Group
+var	cv_iStartPage      = 0;		// Page Group내에서 시작번호
+var	cv_iLastPage	   = 0;		// Page Group내에서 마지막번호
+/*----------------------------------------------------------------------------------------------
+ * Notice  : GridPage_onload
+-----------------------------------------------------------------------------------------------*/
+function GridPage_onload(obj:Form, e:LoadEventInfo)
+{
+	//trace("GridPage_onload>>>>>");
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : Page번호 Setting값 리턴
+ * return  : argTotalCount - 전체 조회 Row수
+ *           argPageSize - 한번조회시 가져오는 최대 Row수
+ *           argCurrentPage - 현재 Page번호
+-----------------------------------------------------------------------------------------------*/
+function getPageNo()
+{
+	//var arrPage = {argPageSize:cv_iUnitSelRowNo, argTotalCount:cv_iTotalRowCount, argCurrentPage:cv_iCurrentPageNum};
+	var arrPage = new Array();
+	    arrPage[0] = cv_iUnitSelRowNo;
+	    arrPage[1] = cv_iTotalRowCount;
+	    arrPage[2] = cv_iCurrentPageNum;
+	return arrPage;
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Page번호 Setting
+-----------------------------------------------------------------------------------------------*/
+function setPageInit(sFunction, sVbFlag)
+{
+	if ( gfn_isNull(sVbFlag) ) sVbFlag = false;
+	
+	this.visible 	  = sVbFlag;
+	this.usercallfunc = sFunction;
+	
+	cv_iUnitSelRowNo   = 0;		// 한번 Server호출시 가져올 row갯수(외부설정)
+	cv_iTotalRowCount  = 0; 	// 검색조건에 따른 전체 Total Count(외부설정)
+	cv_iCurrentPageNum = 0;		// 선택한 Page No.(시작시)
+	cv_sExecFunc       = sFunction;	// Page No.선택시 실행Function(외부설정)
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Page번호 Setting
+-----------------------------------------------------------------------------------------------*/
+function setPageNo(iPageSize, iTotalCount, iCurrPage, sFunction)
+{
+	if ( gfn_isNull(iPageSize) || iPageSize < 1 || gfn_isNull(iTotalCount) || iTotalCount < 1 ) {
+		this.visible = false;
+		return;
+	} else {
+		this.visible = true;
+	}
+	
+	if ( gfn_isNull(sFunction) ) sFunction = this.usercallfunc;
+	if ( gfn_isNull(iCurrPage) ) iCurrPage = 1;
+		
+	////////////////////////////////////////////////////////////////
+	//초기값 설정
+	cv_iUnitSelRowNo   = iPageSize;
+	cv_iTotalRowCount  = iTotalCount;
+	cv_sExecFunc       = sFunction;
+	cv_iCurrentPageNum = iCurrPage;   
+	
+	//전체Page Max값
+	var iMaxNumQuotient  = Math.floor(cv_iTotalRowCount / cv_iUnitSelRowNo);	//몫
+	var iMaxNumRemainder = ( cv_iTotalRowCount%cv_iUnitSelRowNo > 0.000000001 ) ? 1 : 0;	//나머지
+	cv_iMaxPageNum   = iMaxNumQuotient + iMaxNumRemainder;
+	
+	//현재page Group값
+	var iCurrGroupQuotient  = Math.floor(cv_iCurrentPageNum / 10);	//몫
+	var iCurrGroupRemainder = ( cv_iCurrentPageNum%10 > 0.000000001 ) ? 1 : 0;	//나머지
+	cv_iCurrPageGroup = iCurrGroupQuotient + iCurrGroupRemainder;
+
+	//Page 시작값
+	cv_iStartPage = (( cv_iCurrPageGroup - 1 ) * 10) + 1;
+	if ( cv_iCurrPageGroup == cv_iMaxPageGroup && !bLastIndexUse ) {
+		cv_iLastPage  = cv_iMaxPageNum;
+	} else {
+		cv_iLastPage  = cv_iStartPage + 9;
+	}
+	//전체Page Group Max값
+	var iMaxGroupQuotient  = Math.floor(cv_iMaxPageNum / 10);	//몫
+	var iMaxGroupRemainder = ( cv_iMaxPageNum%10 > 0.000000001 ) ? 1 : 0;	//나머지
+	cv_iMaxPageGroup = iMaxGroupQuotient + iMaxGroupRemainder;
+	
+	fn_SetStyle(cv_iCurrentPageNum, cv_iCurrPageGroup);
+	////////////////////////////////////////////////////////////////
+
+	if ( cv_iCurrPageGroup > 1 ) {
+		div_pageBox.btnFirst.enable = true;
+		div_pageBox.btnPrev.enable = true;
+	} else {
+		div_pageBox.btnFirst.enable = false;
+		div_pageBox.btnPrev.enable = false;
+	}
+	
+	var lastPageId = "";
+	// 인덱스 번호 처리
+	for(var i=1; i<=10; i++){
+		//eval("btnNo"+i+".visible=true");
+		eval("div_pageBox.btnNo"+i+".text="+ (cv_iStartPage + i -1) );
+		//2015.1.5 tooltiptext 변경
+		eval("div_pageBox.btnNo"+i+".tooltiptext="+ (cv_iStartPage + i -1) );
+		
+		if ( (cv_iStartPage + i -1) <= cv_iMaxPageNum ) {
+			eval("div_pageBox.btnNo"+i+".visible=true");
+			//2015.1.5 마지막페이지id 저장
+			lastPageId= "div_pageBox.btnNo"+i;
+		} else {
+			eval("div_pageBox.btnNo"+i+".visible=false");
+		}
+		
+	}	
+	
+	
+	if ( cv_iMaxPageGroup > cv_iCurrPageGroup ) {
+		div_pageBox.btnNext.enable = true;
+		div_pageBox.btnLast.enable = true;
+		
+	} else {
+		div_pageBox.btnNext.enable = false;
+		div_pageBox.btnLast.enable = false;
+	}
+	//2015.1.5 마지막페이지 위치 옆으로 조절  
+	if(!gfn_isEmpty(lastPageId)){
+		lastPageId = eval(lastPageId);
+	} else {
+		lastPageId =div_pageBox.btnNo10;
+	}
+	div_pageBox.btnNext.position.left = lastPageId.position.right+1;
+	div_pageBox.btnNext.position.right = lastPageId.position.right+20+1;
+	div_pageBox.btnLast.position.left = div_pageBox.btnNext.position.right+1;
+	div_pageBox.btnLast.position.right = div_pageBox.btnNext.position.right+20+1;
+	
+	//div 가운데 정렬하기 
+	div_pageBox.position.left = 0;
+	div_pageBox.position.right = div_pageBox.btnLast.position.right;
+	var sDivWidth = toNumber(div_pageBox.position.width);
+	var sFormWidth = toNumber(this.position.width);
+	var sHalf = Math.round((sFormWidth-sDivWidth)/2);
+	div_pageBox.position.left = sHalf;
+	div_pageBox.position.width = sDivWidth;
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Page번호 Setting2
+-----------------------------------------------------------------------------------------------*/
+function setPageNo2(objPageDs:Dataset, sFunction)
+{
+	var iCurrPage = objPageDs.getColumn(0,"page");
+	var iPageSize = objPageDs.getColumn(0,"page_size");
+	var iTotalCnt = objPageDs.getColumn(0,"total_record_cnt");
+	this.setPageNo(iPageSize, iTotalCount, iCurrPage, sFunction);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : 페이지 바로가기 item changed Event
+-----------------------------------------------------------------------------------------------*/
+// function cboPage_onitemchanged(obj:Combo, e:ItemChangeEventInfo)
+// {
+// 	var iCurrPage = e.postvalue;
+// 	this.setPageNo(cv_iUnitSelRowNo, cv_iTotalRowCount, iCurrPage, cv_sExecFunc);
+// 	if(!gfn_isNull(cv_sExecFunc))	{
+// 		eval(cv_sExecFunc + "(cv_iTotalRowCount, cv_iUnitSelRowNo, iCurrPage)");
+// 	}
+// }
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 첫 페이지 바로가기
+-----------------------------------------------------------------------------------------------*/
+function btnFirst_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var iCurrPage = 1;
+	
+	this.setPageNo(cv_iUnitSelRowNo, cv_iTotalRowCount, iCurrPage, cv_sExecFunc);
+	if(!gfn_isNull(cv_sExecFunc))	{
+		eval(cv_sExecFunc + "(cv_iTotalRowCount, cv_iUnitSelRowNo, iCurrPage)");
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 이전 버튼
+-----------------------------------------------------------------------------------------------*/
+function btnPrev_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var iCurrPage = cv_iStartPage - 1;
+	
+	this.setPageNo(cv_iUnitSelRowNo, cv_iTotalRowCount, iCurrPage, cv_sExecFunc);
+	if(!gfn_isNull(cv_sExecFunc))	{
+		eval(cv_sExecFunc + "(cv_iTotalRowCount, cv_iUnitSelRowNo, iCurrPage)");
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 페이지번호 Click(인덱스 클릭)
+-----------------------------------------------------------------------------------------------*/
+function btnNo_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var iCurrPage = toNumber(obj.text.replace("btnNo",""));
+	
+	this.setPageNo(cv_iUnitSelRowNo, cv_iTotalRowCount, iCurrPage, cv_sExecFunc);
+	if(!gfn_isNull(cv_sExecFunc))	{
+		eval(cv_sExecFunc + "(cv_iTotalRowCount, cv_iUnitSelRowNo, iCurrPage)");
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 다음버튼
+-----------------------------------------------------------------------------------------------*/
+function btnNext_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var iCurrPage = cv_iLastPage + 1;
+	//2015.02.12 다량데이터index 사용 및   조회 후  callback함수에서도 setPageNo를 호출하므로 비활성화함.
+	//this.setPageNo(cv_iUnitSelRowNo, cv_iTotalRowCount, iCurrPage, cv_sExecFunc);
+	
+	if(!gfn_isNull(cv_sExecFunc))	{
+		eval(cv_sExecFunc + "(cv_iTotalRowCount, cv_iUnitSelRowNo, iCurrPage)");
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 마지막 페이지 바로가기
+-----------------------------------------------------------------------------------------------*/
+function btnLast_onclick(obj:Button,  e:ClickEventInfo)
+{
+	var iCurrPage = cv_iMaxPageNum;
+	
+	//2015.02.12 다량데이터index 사용 및   조회 후  callback함수에서도 setPageNo를 호출하므로 비활성화함.
+	//this.setPageNo(cv_iUnitSelRowNo, cv_iTotalRowCount, iCurrPage, cv_sExecFunc);
+	if(!gfn_isNull(cv_sExecFunc))	{
+		eval(cv_sExecFunc + "(cv_iTotalRowCount, cv_iUnitSelRowNo, iCurrPage)");
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Page No Style조정
+-----------------------------------------------------------------------------------------------*/
+function fn_SetStyle(iCurrentPageNum, iCurrPageGroup){
+	for(var i=1; i<=10; i++){
+		eval("div_pageBox.btnNo"+i+".class='btn_Page'");
+		//eval("btnNo"+i+".text="+ i);
+	}
+
+	if ( iCurrentPageNum > 0 ) {
+		var iGroupPageCnt = iCurrentPageNum - ((iCurrPageGroup - 1) * 10);
+		eval("div_pageBox.btnNo"+iGroupPageCnt+".class='btn_Page_On'");
+	}
+}]]></Script>
+  </Form>
+</FDL>

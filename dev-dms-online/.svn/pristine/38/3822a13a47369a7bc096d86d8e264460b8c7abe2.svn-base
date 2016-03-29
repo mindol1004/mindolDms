@@ -1,0 +1,351 @@
+package dms.ep.epscsbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+import org.apache.commons.logging.Log;
+
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]검수관리</li>
+ * <li>설  명 : <pre>[FU]검수관리</pre></li>
+ * <li>작성일 : 2015-08-18 17:12:47</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class FEPTlyMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPTlyMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]감정검수등록목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-18 17:12:47
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : AFFIL_AGN_NM [대리점명]
+	 *	- field : CNSL_DEALCO_CD [상당처코드]
+	 *	- field : CNSL_DEALCO_NM [상당처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : JDC_CL [감정구분]
+	 *	- field : TLY_CL [검수구분]
+	 *	- field : STDR_CL [기준일자구분]
+	 *	- field : STDR_SDT [기준시작일자]
+	 *	- field : STDR_EDT [기준종료일자]
+	 *	- field : SER_NO [일련번호]
+	 *	- field : MGMT_NO [접수관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : CUST_NM [고객명]
+	 *	- field : PRCH_CHG_DAMT_AMT [매입 변경 차액 금액]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_JDG_TLY_LIST
+	 *		- field : CHECKED [체크]
+	 *		- field : JDG_CD [감정구분]
+	 *		- field : RWD_CD [보상유형]
+	 *		- field : CNSL_MGMT_NO [상담관리 일련번호]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : EQP_SER_NO [모델 일련 번호]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : EQP_COLOR_CD [색상 코드]
+	 *		- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *		- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *		- field : AGN_ORG_CD [대리점조직코드(Ukey 코드)]
+	 *		- field : AFFIL_AGN [소속 대리점코드(팀코드)]
+	 *		- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *		- field : CNSL_DEALCO_CD [상담 거래처코드(상담처코드)]
+	 *		- field : CNSL_DEALCO_NM [상담 거래처명(상담처명)]
+	 *		- field : DPSTR [예금주]
+	 *		- field : DPSTR_ENPT [예금주 암호화]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : SCRB_MTHD [가입 방법]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : INPT_NM [검수자]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : TEL_NO_ENPT [연락처 암호화]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : BOX_NO [박스 번호]
+	 *		- field : SKN_CL [SKN 구분]
+	 * </pre>
+	 */
+	public IDataSet fSJdgTlyRegLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DEPTlyMgmt dEPTlyMgmt = (DEPTlyMgmt)lookupDataUnit(DEPTlyMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPTlyMgmt.dSJdgTlyRegTotCnt(requestData, onlineCtx);   // 재감정검수등록목록총건수          
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));            
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            
+            // 3. LISTDM호출
+            responseData = dEPTlyMgmt.dSJdgTlyRegPaging(requestData, onlineCtx);    // 재감정검수등록목록페이징조회            
+            rsPagingList = responseData.getRecordSet("RS_JDG_TLY_LIST");          
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);                     
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]매입관리상세삭제</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-18 17:12:47
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CHECKED [체크]
+	 *	- field : CNSL_MGMT_NO [상담관리 일련번호]
+	 *	- field : EQP_MDL_CD [단말기 모델 코드]
+	 *	- field : EQP_MDL_NM [단말기 모델 명]
+	 *	- field : EQP_SER_NO [모델 일련 번호]
+	 *	- field : CNSL_DT [상담 일자]
+	 *	- field : EQP_COLOR_CD [색상 코드]
+	 *	- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *	- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *	- field : AGN_ORG_CD [대리점조직코드(Ukey 코드)]
+	 *	- field : AFFIL_AGN [소속 대리점코드(팀코드)]
+	 *	- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *	- field : DPSTR [예금주]
+	 *	- field : CTZ_NO [주민번호]
+	 *	- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *	- field : SCRB_MTHD [가입 방법]
+	 *	- field : CLCT_DT [회수일자]
+	 *	- field : TLY_DT [검수일자]
+	 *	- field : INPT_NM [검수자]
+	 *	- field : TEL_NO [연락처]
+	 *	- field : PRCH_MGMT_NO [매입관리번호]
+	 *	- field : BOX_NO [박스 번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDTbEpCstPrchsDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DEPTlyMgmt dEPTlyMgmt = (DEPTlyMgmt)lookupDataUnit(DEPTlyMgmt.class);
+            responseData = dEPTlyMgmt.dDTbEpCstPrchsDtl(requestData, onlineCtx);            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]매입관리삭제</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-18 17:12:47
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CHECKED [체크]
+	 *	- field : CNSL_MGMT_NO [상담관리 일련번호]
+	 *	- field : EQP_MDL_CD [단말기 모델 코드]
+	 *	- field : EQP_MDL_NM [단말기 모델 명]
+	 *	- field : EQP_SER_NO [모델 일련 번호]
+	 *	- field : CNSL_DT [상담 일자]
+	 *	- field : EQP_COLOR_CD [색상 코드]
+	 *	- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *	- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *	- field : AGN_ORG_CD [대리점조직코드(Ukey 코드)]
+	 *	- field : AFFIL_AGN [소속 대리점코드(팀코드)]
+	 *	- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *	- field : DPSTR [예금주]
+	 *	- field : CTZ_NO [주민번호]
+	 *	- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *	- field : SCRB_MTHD [가입 방법]
+	 *	- field : CLCT_DT [회수일자]
+	 *	- field : TLY_DT [검수일자]
+	 *	- field : INPT_NM [검수자]
+	 *	- field : TEL_NO [연락처]
+	 *	- field : PRCH_MGMT_NO [매입관리번호]
+	 *	- field : BOX_NO [박스 번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDTbEpCstPrchsMgmt(IDataSet requestData, IOnlineContext onlineCtx) {	    
+        IDataSet responseData = new DataSet();        
+        try {        
+            // 1. DU lookup
+            DEPTlyMgmt dEPTlyMgmt = (DEPTlyMgmt)lookupDataUnit(DEPTlyMgmt.class);
+            responseData = dEPTlyMgmt.dDTbEpCstPrchsMgmt(requestData, onlineCtx);            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]상담관리진행상태및매입고구분수정</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-18 17:12:47
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CHECKED [체크]
+	 *	- field : CNSL_MGMT_NO [상담관리 일련번호]
+	 *	- field : EQP_MDL_CD [단말기 모델 코드]
+	 *	- field : EQP_MDL_NM [단말기 모델 명]
+	 *	- field : EQP_SER_NO [모델 일련 번호]
+	 *	- field : CNSL_DT [상담 일자]
+	 *	- field : EQP_COLOR_CD [색상 코드]
+	 *	- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *	- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *	- field : AGN_ORG_CD [대리점조직코드(Ukey 코드)]
+	 *	- field : AFFIL_AGN [소속 대리점코드(팀코드)]
+	 *	- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *	- field : DPSTR [예금주]
+	 *	- field : CTZ_NO [주민번호]
+	 *	- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *	- field : SCRB_MTHD [가입 방법]
+	 *	- field : CLCT_DT [회수일자]
+	 *	- field : TLY_DT [검수일자]
+	 *	- field : INPT_NM [검수자]
+	 *	- field : TEL_NO [연락처]
+	 *	- field : PRCH_MGMT_NO [매입관리번호]
+	 *	- field : BOX_NO [박스 번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUTbEpCstConsultMgmtProgrSt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DEPTlyMgmt dEPTlyMgmt = (DEPTlyMgmt)lookupDataUnit(DEPTlyMgmt.class);
+            responseData = dEPTlyMgmt.dUTbEpCstConsultMgmtProgrSt(requestData, onlineCtx);            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]감정검수대상목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-08-18 17:12:47
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : AFFIL_AGN [대리점코드]
+	 *	- field : AFFIL_AGN_NM [대리점명]
+	 *	- field : CNSL_DEALCO_CD [상당처코드]
+	 *	- field : CNSL_DEALCO_NM [상당처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : JDC_CL [감정구분]
+	 *	- field : TLY_CL [검수구분]
+	 *	- field : STDR_CL [기준일자구분]
+	 *	- field : STDR_SDT [기준시작일자]
+	 *	- field : STDR_EDT [기준종료일자]
+	 *	- field : SER_NO [일련번호]
+	 *	- field : MGMT_NO [접수관리번호]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : CUST_NM [고객명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_JDG_TLY_LIST
+	 *		- field : CHECKED [체크]
+	 *		- field : JDG_CD [감정구분]
+	 *		- field : RWD_CD [보상유형]
+	 *		- field : CNSL_MGMT_NO [상담관리 일련번호]
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델 명]
+	 *		- field : EQP_SER_NO [모델 일련 번호]
+	 *		- field : CNSL_DT [상담 일자]
+	 *		- field : EQP_COLOR_CD [색상 코드]
+	 *		- field : AFFIL_ORG_ID [소속조직코드(조직)]
+	 *		- field : AFFIL_ORG_NM [소속조직명(조직)]
+	 *		- field : AGN_ORG_CD [대리점조직코드(Ukey 코드)]
+	 *		- field : AFFIL_AGN [소속 대리점코드(팀코드)]
+	 *		- field : AFFIL_AGN_NM [소속 대리점명(팀명)]
+	 *		- field : CNSL_DEALCO_CD [상담 거래처코드(상담처코드)]
+	 *		- field : CNSL_DEALCO_NM [상담 거래처명(상담처명)]
+	 *		- field : DPSTR [예금주]
+	 *		- field : DPSTR_ENPT [예금주 암호화]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : EQP_ST_DTAIL [단말기 상태 세부]
+	 *		- field : SCRB_MTHD [가입 방법]
+	 *		- field : CLCT_DT [회수일자]
+	 *		- field : TLY_DT [검수일자]
+	 *		- field : INPT_NM [검수자]
+	 *		- field : TEL_NO [연락처]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : BOX_NO [박스 번호]
+	 *		- field : HEADQ_NM [본부 명]
+	 *		- field : SKN_CL [SKN 구분]
+	 * </pre>
+	 */
+	public IDataSet fSJdgTlyObjLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DEPTlyMgmt dEPTlyMgmt = (DEPTlyMgmt)lookupDataUnit(DEPTlyMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPTlyMgmt.dSJdgTlyObjTotCnt(requestData, onlineCtx); // 검수대상목록총건수
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));            
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            
+            // 3. LISTDM호출
+            responseData = dEPTlyMgmt.dSJdgTlyObjPaging(requestData, onlineCtx);    // 검수대상목록페이징조회            
+            rsPagingList = responseData.getRecordSet("RS_JDG_TLY_LIST");          
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);                     
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+  
+}

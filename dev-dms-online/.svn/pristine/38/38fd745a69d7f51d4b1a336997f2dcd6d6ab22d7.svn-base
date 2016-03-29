@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRFpaRemprcMgmt">
+	<select id="SFpaRemprcEqpMdlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaRemprcMgmt.SFpaRemprcEqpMdlTotCnt FPA잔존가모델 총 건수 */
+/* IO: 문재웅,2015-10-15T14:19:37(문재웅,2015-10-15T13:56:57) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_STRD_INFO A /* NR_단말기기준정보 */
+       ,TB_EQP_MDL B       /* BI_단말기모델 */
+ WHERE  A.OP_CL_CD    = 'NR'
+   AND  A.ESI_USE_YN  = 'Y'
+   AND  A.EQP_MDL_CD  = B.EQP_MDL_CD
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD  = #EQP_MDL_CD#   /* 모델번호 */      
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SFpaRemprcEqpMdlLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaRemprcMgmt.SFpaRemprcEqpMdlLstPaging FPA잔존가모델조회 */
+/* IO: 문재웅,2015-10-16T13:23:09(문재웅,2015-10-15T13:57:56) */
+SELECT  *      
+  FROM ( SELECT  ROW_NUMBER() OVER(ORDER BY A.FS_REG_DTM DESC, A.EQP_MDL_CD, A.CAPA_CD) AS ROWNO
+                ,A.OP_CL_CD   	/* 업무구분코드 */
+                ,A.EQP_MDL_CD 	/* 단말기모델코드 */
+                ,A.EQP_MDL_NM 	/* 단말기모델명 */
+                ,A.MFACT_CD  	/* 생산업체코드 */
+                ,B.LAUNC_DT	 	/* 출시 일자 */
+                ,B.OUT_PRC	 	/* 출고 가격 */
+                ,A.PET_NM  		/* 펫명 */
+                ,A.CAPA_CD  	/* 용량코드 */
+                ,A.ESI_USE_YN  	/* 단말기기준정보사용여부 */
+                ,A.MDL_NO      	/* 모델번호 */
+                ,TO_CHAR(B.FS_REG_DTM,'YYYYMMDD') AS FS_REG_DTM /* 최초등록일시 */
+                ,B.RMK AS EQP_REMPRC_RMK  /* 단말기잔존가비고 */
+           FROM  TB_EQP_STRD_INFO A /* NR_단말기기준정보 */
+                ,TB_EQP_MDL B       /* BI_단말기모델 */
+          WHERE  A.OP_CL_CD = 'NR'
+            AND  A.ESI_USE_YN = 'Y'
+            AND  A.EQP_MDL_CD  = B.EQP_MDL_CD
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#   /* 모델번호 */      
+]]></isNotEmpty><![CDATA[
+       )PA
+WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSFpaRemprcLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaRemprcMgmt.SSFpaRemprcLst FPA잔존가조회 */
+/* IO: 문재웅,2015-10-16T16:42:51(문재웅,2015-10-15T13:58:28) */
+SELECT  #EQP_MDL_CD_M#  AS EQP_MDL_CD  	/* 단말기모델코드 */
+       ,#CAPA_CD#      	AS CAPA_CD     	/* 용량코드	*/
+       ,#OP_CL_CD#  	AS OP_CL_CD    	/* 업무구분코드*/
+       ,A.CM_CD_ID 		AS REMPRC_STRD_MM_CD	/* 잔존가기준월코드 */
+       ,A.CM_CD_NM      AS REMPRC_STRD_MM_NM	/* 잔존가기준월  */
+       ,B.MM_12			/* 월12 */
+       ,B.MM_13			/* 월13 */
+       ,B.MM_14			/* 월14 */
+       ,B.MM_15			/* 월15 */
+       ,B.MM_16			/* 월16 */
+       ,B.MM_17			/* 월17 */
+       ,B.MM_18			/* 월18 */
+       ,B.MM_19			/* 월19 */
+       ,B.MM_20			/* 월20 */
+       ,B.MM_21			/* 월21 */
+       ,B.MM_22			/* 월22 */
+       ,B.MM_23			/* 월23 */
+       ,B.EQP_REMPRC_RMK	
+ FROM   TB_CM_CD A      /* SC_공통코드 */
+       ,TB_EQP_REMPRC B /* NR_단말기잔존가 */
+WHERE   A.CM_GRP_CD_ID  = 'DMS248'  /* 잔존가기준월 */
+  AND   A.USE_YN 		= 'Y'
+  AND   A.CM_CD_ID 		= B.REMPRC_STRD_MM_CD(+)
+  AND   B.EQP_MDL_CD(+) = #EQP_MDL_CD_M#
+ORDER   BY A.CM_CD_SORT_ORD]]>
+	</select>
+	<update id="IFpaRemprc" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsfxbase.db.DNRFpaRemprcMgmt.IFpaRemprc FPA잔존가 등록/수정 */
+/* IO: 문재웅,2015-10-16T16:18:54(문재웅,2015-10-16T10:25:41) */
+MERGE INTO  TB_EQP_REMPRC USING  DUAL   /* NR_단말기잔존가 */
+        ON (EQP_MDL_CD        = #EQP_MDL_CD#
+       AND  CAPA_CD           = #CAPA_CD#
+       AND  OP_CL_CD          = #OP_CL_CD#
+       AND  REMPRC_STRD_MM_CD = #REMPRC_STRD_MM_CD#
+           )
+WHEN  MATCHED THEN
+      UPDATE  SET  
+            MM_12           = #MM_12#
+           ,MM_13           = #MM_13#
+           ,MM_14           = #MM_14#
+           ,MM_15           = #MM_15#
+           ,MM_16           = #MM_16#
+           ,MM_17           = #MM_17#
+           ,MM_18           = #MM_18#
+           ,MM_19           = #MM_19#
+           ,MM_20           = #MM_20#
+           ,MM_21           = #MM_21#
+           ,MM_22           = #MM_22#
+           ,MM_23           = #MM_23#
+           ,EQP_REMPRC_RMK  = #EQP_REMPRC_RMK#
+           ,LS_CHG_USER_ID  = #USER_NO#
+           ,LS_CHG_DTM      = SYSDATE
+WHEN  NOT MATCHED THEN
+    INSERT(
+            EQP_MDL_CD	      /* 단말기모델코드 */
+           ,CAPA_CD	          /* 용량코드 */
+           ,OP_CL_CD	      /* 업무구분코드 */
+           ,REMPRC_STRD_MM_CD /* 잔존가기준월코드 */
+           ,MM_12	          /* 월12 */
+           ,MM_13	          /* 월13 */
+           ,MM_14	          /* 월14 */
+           ,MM_15	          /* 월15 */
+           ,MM_16	          /* 월16 */
+           ,MM_17	          /* 월17 */
+           ,MM_18	          /* 월18 */
+           ,MM_19	          /* 월19 */
+           ,MM_20	          /* 월20 */
+           ,MM_21	          /* 월21 */
+           ,MM_22	          /* 월22 */
+           ,MM_23	          /* 월23 */
+           ,EQP_REMPRC_RMK	  /* 단말기잔존가비고 */
+           ,FS_REG_USER_ID	  /* 최초등록사용자ID */
+           ,FS_REG_DTM	      /* 최초등록일시 */
+           ,LS_CHG_USER_ID	  /* 최종변경사용자ID */
+           ,LS_CHG_DTM	      /* 최종변경일시 */
+          )
+   VALUES(
+            #EQP_MDL_CD#	    /* 단말기모델코드 */
+           ,#CAPA_CD#	        /* 용량코드 */
+           ,#OP_CL_CD#	        /* 업무구분코드 */
+           ,#REMPRC_STRD_MM_CD#	/* 잔존가기준월코드 */
+           ,#MM_12#	            /* 월12 */
+           ,#MM_13#	            /* 월13 */
+           ,#MM_14#	            /* 월14 */
+           ,#MM_15#	            /* 월15 */
+           ,#MM_16#	            /* 월16 */
+           ,#MM_17#	            /* 월17 */
+           ,#MM_18#	            /* 월18 */
+           ,#MM_19#	            /* 월19 */
+           ,#MM_20#	            /* 월20 */
+           ,#MM_21#	            /* 월21 */
+           ,#MM_22#	            /* 월22 */
+           ,#MM_23#	            /* 월23 */
+           ,#EQP_REMPRC_RMK#	/* 단말기잔존가비고 */
+           ,#USER_NO#
+           ,SYSDATE
+           ,#USER_NO#
+           ,SYSDATE
+         )]]>
+	</update>
+</sqlMap>

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRReqpClctInRgst">
+	<select id="SResqpClctLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpClctInRgst.SResqpClctLstTotCnt 회수대상임대폰조회총건수 */
+/* IO: 김윤환,2015-08-13T11:27:46(이준우,2015-07-14T20:56:54) */
+SELECT 
+	   COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM (
+		SELECT  
+			   IB.IN_SCHD_DT 
+			   ,IB.EQP_IN_DT 
+			   ,IB.EQP_MDL_CD
+			   ,IB.EQP_SER_NO
+			   ,IA.INVE_ST_CD
+		  FROM TB_EQP_ASSET IA
+			   ,TB_EQP_CLCT_OBJ IB
+			   ,TB_EQP_MDL IC
+		 WHERE IA.EQP_MDL_CD = IB.EQP_MDL_CD
+		   AND IA.EQP_SER_NO = IB.EQP_SER_NO
+		   AND IA.EQP_MDL_CD = IC.EQP_MDL_CD
+		   AND IA.OP_CL_CD = 'PR'
+		   AND IA.DEL_YN = 'N'
+	   	   AND IB.DEL_YN = 'N'
+		   AND IB.IN_OBJ_DTL_CD <> '30'
+		 UNION ALL
+		SELECT 
+			   IX.EQP_RCV_DT AS IN_SCHD_DT   /*입고예정일자(회수일자) */
+		  	   ,IX.EQP_RCV_DT AS EQP_IN_DT /*입고일자*/
+		  	   ,IZ.EQP_MDL_CD     /*단말기모델코드*/
+		  	   ,IZ.EQP_SER_NO    /*단말기일련번호*/
+		  	   ,IZ.INVE_ST_CD
+	      FROM TB_EQP_ASSET IZ
+			   ,TB_EQP_WAYBIL IX
+			   ,TB_EQP_MDL IQ
+		 WHERE IZ.ASSET_NO = IX.ASSET_NO
+		   AND IZ.EQP_MDL_CD = IQ.EQP_MDL_CD
+		   AND IZ.OP_CL_CD = 'PR'
+		   AND IZ.DEL_YN = 'N'
+		   AND IX.DEL_YN = 'N' 
+	  ) A 
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="ST_DT" prepend="AND"><![CDATA[
+	A.IN_SCHD_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT" prepend="AND"><![CDATA[
+	A.IN_SCHD_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ST_DT_IN" prepend="AND"><![CDATA[
+	A.EQP_IN_DT >= #ST_DT_IN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT_IN" prepend="AND"><![CDATA[
+	A.EQP_IN_DT <= #ED_DT_IN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+	A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+	A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%" prepend="AND"><![CDATA[
+	A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SResqpClctLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpClctInRgst.SResqpClctLstPaging 회수대상임대폰조회목록 */
+/* IO: 김용진,2015-09-10T17:44:32(이준우,2015-07-15T12:35:58) */
+SELECT 
+	    PA.*
+  FROM (
+		 SELECT 
+		 		ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD, A.EQP_SER_NO ) AS ROWNO 
+		        ,A.*
+				FROM (
+					  SELECT  
+							  IA.OP_CL_CD
+							  ,IA.INVE_ST_CD
+							  ,IA.EQP_PRCH_AMT AS PRCH_AMT
+							  ,IA.FST_IN_DT
+							  ,IA.EQP_PRCH_DT AS PRCH_DT 
+							  ,IA.LAST_EXPART_DT
+							  ,IA.LAST_IN_OUT_NO	/*최종입출고번호*/
+							  ,IA.EQP_LOSS_DT AS LOSS_DT
+							  ,IA.BOX_NO
+							  ,IA.DEL_YN
+							  ,IA.ASSET_NO      /*자산번호*/
+							  ,IB.EQP_MDL_CD     /*단말기모델코드*/
+							  ,IC.EQP_MDL_NM		/*단말기모델명*/
+							  ,IA.EQP_COLOR_CD       /*단말기색상코드*/
+							  ,IB.EQP_SER_NO    /*단말기일련번호*/
+							  ,IA.EQP_IMEI_NO     /*단말기IMEI번호*/
+							  ,IB.EQP_CLCT_OBJ_NO 	/*단말기입고대상번호*/
+							  ,IB.EQP_IN_DT AS IN_DT
+							  ,IB.AGN_CD
+							  ,IB.RTN_REG_DT
+							  ,IB.IN_SCHD_DT   /*입고예정일자*/
+							  ,IB.IN_OBJ_DTL_CD        /*회수구분코드*/
+							  ,(SELECT  MAX(ID.EQP_OUT_NO)
+								  FROM  TB_EQP_OUT ID 
+								 WHERE  ID.ASSET_NO = IA.ASSET_NO
+								   AND  ID.DEL_YN = 'N') AS EQP_OUT_NO /* 출고번호 */    
+							  ,'01' AS EQP_IC_CD /* 입고구분 */
+						FROM  TB_EQP_ASSET IA
+							  ,TB_EQP_CLCT_OBJ IB
+							  ,TB_EQP_MDL IC
+					   WHERE  IA.EQP_MDL_CD = IB.EQP_MDL_CD
+						 AND  IA.EQP_SER_NO = IB.EQP_SER_NO
+						 AND  IA.EQP_MDL_CD = IC.EQP_MDL_CD
+						 AND  IA.OP_CL_CD = 'PR'
+						 AND  IA.DEL_YN = 'N'
+						 AND  IB.DEL_YN = 'N'
+						 AND  IB.IN_OBJ_DTL_CD <> '30'		/* 회수구분 분실제외 */
+                       UNION ALL               
+					  SELECT 
+							  IZ.OP_CL_CD
+							  ,IZ.INVE_ST_CD
+							  ,IZ.EQP_PRCH_AMT AS PRCH_AMT
+							  ,IZ.FST_IN_DT
+							  ,IZ.EQP_PRCH_DT AS PRCH_DT 
+							  ,IZ.LAST_EXPART_DT
+							  ,IZ.LAST_IN_OUT_NO	/*최종입출고번호*/
+							  ,IZ.EQP_LOSS_DT AS LOSS_DT
+							  ,IZ.BOX_NO
+							  ,IZ.DEL_YN
+							  ,IZ.ASSET_NO      /*자산번호*/
+							  ,IZ.EQP_MDL_CD     /*단말기모델코드*/
+							  ,IQ.EQP_MDL_NM		/*단말기모델명*/
+							  ,IZ.EQP_COLOR_CD       /*단말기색상코드*/
+							  ,IZ.EQP_SER_NO    /*단말기일련번호*/
+							  ,IZ.EQP_IMEI_NO     /*단말기IMEI번호*/
+							  ,'' AS EQP_CLCT_OBJ_NO 	/*단말기입고대상번호*/
+							  ,IX.EQP_RCV_DT AS IN_DT /*입고일자*/
+							  ,'' AS AGN_CD
+							  ,'' AS RTN_REG_DT
+							  ,IX.EQP_RCV_DT AS IN_SCHD_DT   /*입고예정일자(회수일자) */
+							  ,'' AS IN_OBJ_DTL_CD        /*회수구분코드*/
+							  ,'' AS EQP_OUT_NO /* 출고번호 */   
+							  ,'02' AS EQP_IC_CD /* 입고구분 */
+						 FROM TB_EQP_ASSET IZ
+						      ,TB_EQP_WAYBIL IX
+							  ,TB_EQP_MDL IQ
+					   WHERE  IZ.ASSET_NO = IX.ASSET_NO
+					     AND  IZ.EQP_MDL_CD = IQ.EQP_MDL_CD
+					     AND  IZ.OP_CL_CD = 'PR'
+					     AND  IZ.DEL_YN = 'N'
+					     AND  IX.DEL_YN = 'N' 
+				   ) A
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="ST_DT" prepend="AND"><![CDATA[
+                 A.IN_SCHD_DT >= #ST_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT" prepend="AND"><![CDATA[
+                 A.IN_SCHD_DT <= #ED_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ST_DT_IN" prepend="AND"><![CDATA[
+                 A.IN_DT >= #ST_DT_IN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="ED_DT_IN" prepend="AND"><![CDATA[
+                 A.IN_DT <= #ED_DT_IN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+                 A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="INVE_ST_CD" compareValue="%" prepend="AND"><![CDATA[
+                 A.INVE_ST_CD = #INVE_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[
+                 ORDER BY IN_SCHD_DT DESC
+) PA
+  WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<update id="UResqpClctTbEqpAsset" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpClctInRgst.UResqpClctTbEqpAsset 단말기자산정보수정 */
+/* IO: 이준우,2015-07-22T14:30:53(이준우,2015-07-17T14:11:22) */
+UPDATE  TB_EQP_ASSET
+   SET 
+        INVE_ST_CD = #INVE_ST_CD# /*입출고구분코드*/
+       ,LAST_IN_OUT_NO = #LAST_IN_OUT_NO#	/*최종입출고번호*/ 
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM     = SYSDATE
+		
+ WHERE  ASSET_NO = #ASSET_NO#]]>
+	</update>
+	<update id="UResqpClctTbEqpIn" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpClctInRgst.UResqpClctTbEqpIn 단말기입고수정 */
+/* IO: 이준우,2015-08-03T09:32:39(이준우,2015-07-17T14:51:17) */
+UPDATE  TB_EQP_IN
+   SET  LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,DEL_YN = #DEL_YN# 					/*삭제여부*/
+       ,LS_CHG_DTM     = SYSDATE       
+       
+ WHERE  EQP_IN_NO = #EQP_IN_NO#]]>
+	</update>
+	<update id="UResqpClctTbEqpClctObj" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpClctInRgst.UResqpClctTbEqpClctObj 단말기입고대상수정 */
+/* IO: 이준우,2015-08-13T16:42:13(이준우,2015-07-17T14:52:35) */
+UPDATE  TB_EQP_CLCT_OBJ
+   SET  EQP_IN_DT	 = #EQP_IN_DT#
+       ,LS_CHG_USER_ID = #LS_CHG_USER_ID#
+       ,LS_CHG_DTM     = SYSDATE
+       
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  EQP_SER_NO = #EQP_SER_NO#
+   AND  EQP_CLCT_OBJ_NO = #EQP_CLCT_OBJ_NO#]]>
+	</update>
+	<insert id="IResqpClctTbEqpIn" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpClctInRgst.IResqpClctTbEqpIn 단말기입고대상입력 */
+/* IO: 이준우,2015-07-21T13:47:20(이준우,2015-07-20T13:06:46) */
+INSERT
+INTO TB_EQP_IN
+  (
+     EQP_IN_NO
+    ,ASSET_NO
+    ,EQP_MDL_CD
+    ,EQP_SER_NO
+    ,EQP_IN_DT
+    ,EQP_CLCT_OBJ_NO
+	,IN_DTL_CD
+	,IN_DEALCO_CD
+	,CHRG_DEPT_CD
+	,DEL_YN
+	,FS_REG_USER_ID
+	,FS_REG_DTM
+	,LS_CHG_USER_ID
+	,LS_CHG_DTM
+
+  ) VALUES
+  (
+    #EQP_IN_NO#,
+    #ASSET_NO#,
+    #EQP_MDL_CD#,
+    #EQP_SER_NO#,
+    #EQP_IN_DT#,
+    #EQP_CLCT_OBJ_NO#,
+    #IN_DTL_CD#,
+    #IN_DEALCO_CD#,
+    #CHRG_DEPT_CD#,
+    #DEL_YN#,
+    #FS_REG_USER_ID#,
+    SYSDATE,
+    #LS_CHG_USER_ID#,
+    SYSDATE
+  )]]>
+	</insert>
+	<select id="SResqpClctLstSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpClctInRgst.SResqpClctLstSeq 회수대상임대폰 입고넘버 채번 */
+/* IO: 이준우,2015-07-29T09:26:31(이준우,2015-07-28T10:17:37) */
+SELECT  'EI'||LPAD(SQ01_TB_EQP_IN.NEXTVAL,10,'0') AS EQP_IN_NO
+  FROM  DUAL]]>
+	</select>
+</sqlMap>

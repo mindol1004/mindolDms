@@ -1,0 +1,181 @@
+package dms.nr.nrsxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]대리점단말기정산정보관리</li>
+ * <li>설  명 : <pre>대리점단말기정산정보관리FU</pre></li>
+ * <li>작성일 : 2015-08-18 10:06:59</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FNRAgnEqpStlMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRAgnEqpStlMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>대리점단말기정산정보조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : PRCH_STA_DT [매입시작일]
+	 *	- field : PRCH_END_DT [매입종료일]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : SLIP_TS [전표차수]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_LIST
+	 *		- field : PRCHCO_CD [대리점코드]
+	 *		- field : PRCHCO_NM [대리점명]
+	 *		- field : DEALCO_BLICENS_NO [사업자번호]
+	 *		- field : XCL_PROC_DT [정산월]
+	 *		- field : SLIP_TS [전표차수]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_DT [전표처리일]
+	 *		- field : PRCH_AMT [정산금액]
+	 *		- field : PAY_YM [지급년월]
+	 *		- field : AGN_CRD_AMT [대리점여신금액]
+	 *		- field : AGN_SALE_AMT [대리점매출금액]
+	 *		- field : CRD_SALE_DAMT [여신매출차액]
+	 * </pre>
+	 */
+	public IDataSet fInqAgnEqpStlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DNRAgnEqpStlMgmt dNRAgnEqpStlMgmt = (DNRAgnEqpStlMgmt) lookupDataUnit(DNRAgnEqpStlMgmt.class);
+            
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRAgnEqpStlMgmt.dSAgnEqpStlTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+
+            // 3. LISTDM호출
+            responseData = dNRAgnEqpStlMgmt.dSAgnEqpStlLstPaging(requestData, onlineCtx);
+            rsList = responseData.getRecordSet("RS_AGN_EQP_STL_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsList, requestData, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산정보상세</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-18 10:06:59
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_PROC_DT [정산월]
+	 *	- field : PRCHCO_CD [대리점코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_EQP_STL_DTL
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : PRCH_DT [매입일자]
+	 *		- field : PRCH_AMT [매입금액]
+	 * </pre>
+	 */
+	public IDataSet fInqAgnEqpStlDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. DU lookup
+            DNRAgnEqpStlMgmt dNRAgnEqpStlMgmt = (DNRAgnEqpStlMgmt) lookupDataUnit(DNRAgnEqpStlMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNRAgnEqpStlMgmt.dSAgnEqpStlDtl(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점단말기정산정보전표생성</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-31 16:01:58
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegAgnEqpStlSlip(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet erpSlipData = null;
+        IDataSet assetNoData = null;
+    
+        try {
+            // 1. FM 호출
+            IRecordSet erpSlipRs = requestData.getRecordSet("ERP_SLIP_LIST");
+            if( erpSlipRs == null ){
+                return responseData;
+            }
+            
+            // 1. DU lookup
+            DNRAgnEqpStlMgmt dNRAgnEqpStlMgmt = (DNRAgnEqpStlMgmt) lookupDataUnit(DNRAgnEqpStlMgmt.class);
+            
+            for(int i=0; i < erpSlipRs.getRecordCount(); i++){
+                erpSlipData = new DataSet();
+                erpSlipData.putFieldMap(erpSlipRs.getRecordMap(i));
+                IRecordSet assetNoRs = dNRAgnEqpStlMgmt.dSAgnEqpStlAssetNoLst(erpSlipData, onlineCtx).getRecordSet("RS_AGN_EQP_ASSET_LIST");
+                
+                for(int j=0; j < assetNoRs.getRecordCount(); j++){
+                    assetNoData = new DataSet();
+                    assetNoData.putFieldMap(assetNoRs.getRecordMap(j));
+                    assetNoData.putField("ASSET_SLIP_NO", erpSlipData.getField("SLIP_NO"));
+                    assetNoData.putField("USERNO", requestData.getField("USERNO"));
+                    dNRAgnEqpStlMgmt.dIAgnEqpStlSlip(assetNoData, onlineCtx);
+                }
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+  
+}

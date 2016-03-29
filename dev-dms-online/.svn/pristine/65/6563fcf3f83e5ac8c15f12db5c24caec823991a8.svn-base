@@ -1,0 +1,144 @@
+package dms.nr.nrseabase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]단말매각관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-06 08:55:36</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class FNREqpDspslMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNREqpDspslMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-06 08:55:36
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : DEPR_DT [매각일]
+	 *	- field : ASSET_SLIP_NO [전표번호]
+	 *	- field : ASSET_SLIP_ST [전표상태]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_DSPSL_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_PRCH_AMT [매입가]
+	 *		- field : DEPR_DT [검색기준일]
+	 *		- field : REM_PRC [회계용잔존가]
+	 *		- field : DEPR_PRC [회계용감가상각]
+	 *		- field : SALE_PRC [예상매각가]
+	 *		- field : EQP_PRCH_DT [계약일 = 입고일]
+	 *		- field : CAPA_CD [용량]
+	 *		- field : ASSET_SLIP_ST [전표상태]
+	 *		- field : ASSET_SLIP_NO [전표번호]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpDspslLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet usrListRs = null;
+		int intTotalCnt = 0;
+
+		try {
+			// 1. DU lookup
+			DNREqpDspslMgmt dNREqpDspslMgmt = (DNREqpDspslMgmt) lookupDataUnit(DNREqpDspslMgmt.class);
+			
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dNREqpDspslMgmt.dSEqpDspslTotCnt(requestData, onlineCtx);
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+
+			// 3. LISTDM호출
+			responseData = dNREqpDspslMgmt.dSEqpDspslLstPaging(reqDs, onlineCtx);
+			usrListRs = responseData.getRecordSet("RS_EQP_DSPSL_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(usrListRs, reqDs, intTotalCnt);
+			
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-08-06 08:55:36
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_DSPSL
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_PRCH_AMT [매입가]
+	 *		- field : DEPR_DT [검색기준일]
+	 *		- field : REM_PRC [회계용잔존가]
+	 *		- field : DEPR_PRC [회계용감가상각]
+	 *		- field : SALE_PRC [예상매각가]
+	 *		- field : EQP_PRCH_DT [계약일 = 입고일]
+	 *		- field : CAPA_CD [용량]
+	 *		- field : ASSET_SLIP_ST [전표상태]
+	 *		- field : ASSET_SLIP_NO [전표번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fDspslSlipNo(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	   
+	    // 일단전표처리상태만 바꾸는거로 =====
+	    try {
+ 			// 1. DU lookup
+ 			DNREqpDspslMgmt dNREqpDspslMgmt = (DNREqpDspslMgmt) lookupDataUnit(DNREqpDspslMgmt.class);
+ 			
+ 			// 2. LISTDM호출
+ 			responseData = dNREqpDspslMgmt.dUDspslSlipST(requestData, onlineCtx);
+ 			
+ 		} catch ( BizRuntimeException e ) {
+ 			throw e; //시스템 오류가 발생하였습니다.
+ 		}	
+	    
+	
+	    return responseData;
+	}
+  
+}

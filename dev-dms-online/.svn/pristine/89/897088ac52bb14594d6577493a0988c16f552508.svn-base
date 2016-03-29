@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInsuInvMgmt">
+	<select id="SInsuInvInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuInvMgmt.SInsuInvInfoLstPaging 보증보험청구정보조회 */
+/* IO: 장미진,2015-10-08T18:04:41(장미진,2015-10-08T11:07:34) */
+SELECT  *      
+  FROM (SELECT  ROW_NUMBER() OVER (ORDER BY INSU_INV_NO) AS ROWNO
+               ,INSU_INV_NO                 /*보증보험청구번호*/
+               ,UKEY_INSU_NO                /*UKEY보증보험번호*/
+               ,UKEY_INSURE_MGMT_NO         /*UKEY보험관리번호*/
+               ,INV_STAT_CD                 /*청구상태코드*/
+               ,UKEY_INV_DT                 /*UKEY청구일자*/
+               ,UKEY_INV_AMT                /*UKEY청구금액*/
+               ,DMS_INV_DT                  /*DMS청구일자*/
+               ,DMS_INV_AMT                 /*DMS청구금액*/
+               ,UNPD_RENTAL_FEE             /*미납렌탈요금*/
+               ,DMG_CMP_UNRTN_AMT           /*손해배상금미반납금액*/
+               ,ARR_ADD_AMT                 /*연체가산금액*/
+               ,RECV_STAT_CD                /*수납상태*/
+               ,UKEY_RECV_DT                /*UKEY수납일자*/
+               ,UKEY_RECV_AMT               /*UKEY수납금액*/
+               ,RSN_CD                      /*사유코드*/
+               ,INSU_INV_MEMO               /*보증보험청구비고*/
+               ,CASE WHEN UKEY_INV_AMT = DMS_INV_AMT THEN 'Y'
+                     ELSE 'N'
+                END  INVE_MATCHED			/*청구금액일치여부*/
+          FROM  TB_INSU_INV
+]]><dynamic prepend="WHERE"><![CDATA[          
+]]><isNotEmpty prepend="AND" property="DMS_INV_STA_DT"><![CDATA[
+                DMS_INV_DT BETWEEN #DMS_INV_STA_DT# AND #DMS_INV_END_DT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="UKEY_RECV_STA_DT"><![CDATA[
+                UKEY_RECV_DT BETWEEN #UKEY_RECV_STA_DT# AND #UKEY_RECV_END_DT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="UKEY_INV_STA_DT"><![CDATA[
+                UKEY_INV_DT BETWEEN #UKEY_INV_STA_DT# AND #UKEY_INV_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="UKEY_INSURE_MGMT_NO"><![CDATA[
+                UKEY_INSURE_MGMT_NO = #UKEY_INSURE_MGMT_NO#       
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="INV_STAT_CD" compareValue="%"><![CDATA[              
+	            INV_STAT_CD = #INV_STAT_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="RECV_STAT_CD" compareValue="%"><![CDATA[              
+	            RECV_STAT_CD = #RECV_STAT_CD#
+]]></isNotEqual><![CDATA[  
+]]><isNotEqual prepend="AND" property="INVE_MATCHED" compareValue="%"><![CDATA[              
+	            INVE_MATCHED = #INVE_MATCHED#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEqual prepend="AND" property="RSN_CD" compareValue="%"><![CDATA[              
+	            RSN_CD = #RSN_CD#
+]]></isNotEqual><![CDATA[       
+]]></dynamic><![CDATA[ )PA
+ WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInsuInvInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuInvMgmt.SInsuInvInfoTotCnt 보증보험청구정보총건수 */
+/* IO: 장미진,2015-10-08T18:04:52(장미진,2015-10-08T11:11:50) */
+SELECT  COUNT(1) AS TOTAL_CNT
+       ,COUNT(UKEY_INV_DT) AS UKEY_INV_CNT
+       ,NVL(SUM(UKEY_INV_AMT),0) AS UKEY_INV_AMT
+       ,COUNT(UKEY_RECV_DT) AS UKEY_RECV_CNT
+       ,NVL(SUM(UKEY_RECV_AMT),0) AS UKEY_RECV_AMT
+  FROM (SELECT  ROW_NUMBER() OVER (ORDER BY INSU_INV_NO) AS ROWNO
+               ,INSU_INV_NO                 /*보증보험청구번호*/
+               ,UKEY_INSU_NO                /*UKEY보증보험번호*/
+               ,UKEY_INSURE_MGMT_NO         /*UKEY보험관리번호*/
+               ,INV_STAT_CD                 /*청구상태코드*/
+               ,UKEY_INV_DT                 /*UKEY청구일자*/
+               ,UKEY_INV_AMT                /*UKEY청구금액*/
+               ,DMS_INV_DT                  /*DMS청구일자*/
+               ,DMS_INV_AMT                 /*DMS청구금액*/
+               ,UNPD_RENTAL_FEE             /*미납렌탈요금*/
+               ,DMG_CMP_UNRTN_AMT           /*손해배상금미반납금액*/
+               ,ARR_ADD_AMT                 /*연체가산금액*/
+               ,RECV_STAT_CD                /*수납상태*/
+               ,UKEY_RECV_DT                /*UKEY수납일자*/
+               ,UKEY_RECV_AMT               /*UKEY수납금액*/
+               ,RSN_CD                      /*사유코드*/
+               ,INSU_INV_MEMO               /*보증보험청구비고*/
+               ,CASE WHEN UKEY_INV_AMT = DMS_INV_AMT THEN 'Y'
+                     ELSE 'N'
+                END  INVE_MATCHED			/*청구금액일치여부*/
+          FROM  TB_INSU_INV
+]]><dynamic prepend="WHERE"><![CDATA[          
+]]><isNotEmpty prepend="AND" property="DMS_INV_STA_DT"><![CDATA[
+                DMS_INV_DT BETWEEN #DMS_INV_STA_DT# AND #DMS_INV_END_DT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="UKEY_RECV_STA_DT"><![CDATA[
+                UKEY_RECV_DT BETWEEN #UKEY_RECV_STA_DT# AND #UKEY_RECV_END_DT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="UKEY_INV_STA_DT"><![CDATA[
+                UKEY_INV_DT BETWEEN #UKEY_INV_STA_DT# AND #UKEY_INV_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="UKEY_INSURE_MGMT_NO"><![CDATA[
+                UKEY_INSURE_MGMT_NO = #UKEY_INSURE_MGMT_NO#       
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="INV_STAT_CD" compareValue="%"><![CDATA[              
+	            INV_STAT_CD = #INV_STAT_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="RECV_STAT_CD" compareValue="%"><![CDATA[              
+	            RECV_STAT_CD = #RECV_STAT_CD#
+]]></isNotEqual><![CDATA[  
+]]><isNotEqual prepend="AND" property="INVE_MATCHED" compareValue="%"><![CDATA[              
+	            INVE_MATCHED = #INVE_MATCHED#
+]]></isNotEqual><![CDATA[ 
+]]><isNotEqual prepend="AND" property="RSN_CD" compareValue="%"><![CDATA[              
+	            RSN_CD = #RSN_CD#
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[)]]>
+	</select>
+</sqlMap>

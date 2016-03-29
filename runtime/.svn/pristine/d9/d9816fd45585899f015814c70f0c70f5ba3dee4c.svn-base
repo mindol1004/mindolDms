@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 웹 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <bean id="nc.biz.IUserManager"
+        class="nexcore.framework.online.biz.auth.internal.DefaultWebUserManager"
+        init-method="init" destroy-method="destroy">
+        <description>
+            <![CDATA[ Component for managing user information ]]>
+        </description>
+        <property name="anonymousUserId"   value="Anonymous" />
+        <property name="userLoader">
+        	<!--  
+            <bean class="nexcore.framework.online.biz.auth.internal.DefaultUserLoader">
+            <description><![CDATA[ XSQL을 사용하여 DB에서 조회하여 사용자정보 객체를 생성한다. ]]></description>
+                <property name="sqlManager" ref="nc.db.ISqlManager" />
+            </bean>
+            -->
+            <bean class="nexcore.framework.online.biz.auth.internal.EmptyUserLoader">
+            	<description><![CDATA[ 입력된 사용자아이디만 설정되는 사용자정보 객체를 생성한다. ]]></description>
+            </bean>
+        </property>
+    </bean>
+    
+</beans>

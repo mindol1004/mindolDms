@@ -1,0 +1,225 @@
+package dms.nr.nrsplbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: 위약금정책관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-07-10 10:18:49</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class DNRPenPolyMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DNRPenPolyMgmt(){
+		super();
+	}
+	
+	/**
+	 * <pre>위약금정책 정보 조회</pre>
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-10 11:14:22
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSPenPolyLstPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+ 		IRecordSet rsReturn = dbSelect("SPenPolyLstPaging", requestData, onlineCtx);
+ 		// 2.결과값 셋팅
+ 		responseData.putRecordSet("RS_PEN_POLY_LIST", rsReturn);
+	
+	    return responseData;
+	
+	}
+	
+	/**
+	 * <pre>위약금정책 총 건수</pre>
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-09 17:07:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	
+
+	public IDataSet dSPenPolyTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출	    
+  		IRecord record = dbSelectSingle("SPenPolyTotCnt", requestData, onlineCtx);
+  		// 2.결과값 셋팅	    
+  		responseData.putFieldMap(record); 
+ 	
+ 	    return responseData;
+	}
+
+
+	/**
+	 *위약금정책정보등록
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-10 11:19:43
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIPenPoly(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	 // 1.쿼리문 호출
+  		dbInsert("IPenPoly", requestData, onlineCtx);
+ 	
+ 	    return responseData;
+	}
+
+	/**
+	 *위약금정책정보수정
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-10 11:20:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUPenPoly(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+	    dbUpdate("UPenPoly", requestData, onlineCtx);
+	
+	    return responseData;
+	}
+
+	/**
+	 *위약금정책정보시퀀스등록
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-15 18:59:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSPenPolySeq(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+	     IRecord record = dbSelectSingle("SPenPolySeq", requestData, onlineCtx);
+  		// 2.결과값 셋팅	    
+  		responseData.putFieldMap(record); 
+	
+	    return responseData;
+	}
+
+	/**
+	 *위약금정책정보기간수정
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-16 16:53:58
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUPenPolyDate(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+	    dbUpdate("UPenPolyDate", requestData, onlineCtx);
+	
+	    return responseData;
+	}
+
+	/**
+	 *위약금정책정보max값조회
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-16 17:19:57
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSPenPolyMax(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	 // 1.쿼리문 호출
+	    dbUpdate("SPenPolyMax", requestData, onlineCtx);
+	
+	    return responseData;
+	}
+
+	/**
+	 *위약금정책정보  신규등록시 유효기간시작일 체크
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-20 13:38:34
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSChkPolyFrDt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+	    // 1.쿼리문 호출	    
+  		IRecord record = dbSelectSingle("SChkPolyFrDt", requestData, onlineCtx);
+  		// 2.결과값 셋팅	    
+  		responseData.putFieldMap(record); 
+  		
+	    return responseData;
+	}
+
+	/**
+	 *위약금정책정보 수정시 유효기간시작일 체크
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-07-20 14:35:12
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSChkPolyToDt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출	    
+  		IRecord record = dbSelectSingle("SChkPolyToDt", requestData, onlineCtx);
+  		// 2.결과값 셋팅	    
+  		responseData.putFieldMap(record); 
+	
+	    return responseData;
+	}
+
+}

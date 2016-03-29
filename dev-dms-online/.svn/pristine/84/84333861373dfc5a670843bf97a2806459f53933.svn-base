@@ -1,0 +1,328 @@
+package dms.nr.nrseabase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.ibm.icu.text.SimpleDateFormat;
+
+import java.util.Calendar;
+
+import fwk.common.CommonArea;
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]단말자산취득관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-22 17:06:01</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class FNREqpPrchInfoMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNREqpPrchInfoMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-22 17:06:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : RENTAL_CNTRT_STA_DT [계약시작일]
+	 *	- field : RENTAL_CNTRT_END_DT [계약종료일]
+	 *	- field : SLIP_ST_CD [전표상태]
+	 *	- field : SLIP_NO [전표번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_PRCH_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말일련번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : CNTRT_PRD [계약기간코드]
+	 *		- field : RENTAL_CNTRT_STA_DT [계약시작일]
+	 *		- field : RENTAL_CNTRT_END_DT [계약종료일]
+	 *		- field : EQP_PRCH_AMT [매입가]
+	 *		- field : OP_TYP_CD [계약상태코드]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : YYYY [전표처리용년]
+	 *	- record : RS_SLIP_LIST
+	 *		- field : CNT [전표처리용총건수]
+	 *		- field : PRC [전표처리총금액]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 *		- field : YYYY [전표처리년도]
+	 *	- record : RS_SUM_LIST
+	 *		- field : M_CNT [단말취득현황총건수]
+	 *		- field : M_PRC [단말취득현황총금액]
+	 *		- field : T_CNT [전표용총건수]
+	 *		- field : T_PRC [전표용총금액]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpPrchInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet temp = new DataSet();
+	    int intTotalCnt = 0;
+	    
+		try {
+			// 1. DU lookup
+			DNREqpPrchInfoMgmt dNREqpPrchInfoMgmt = (DNREqpPrchInfoMgmt) lookupDataUnit(DNREqpPrchInfoMgmt.class);
+			
+			 temp = dNREqpPrchInfoMgmt.dSEqpPrchInfoLstTotCnt(requestData, onlineCtx);
+			 IRecordSet sumListRs = temp.getRecordSet("RS_SUM_LIST");
+			 
+			 String cnt = sumListRs.get(0,"M_CNT");
+			 intTotalCnt = Integer.parseInt(cnt);
+			 PagenateUtils.setPagenatedParamsToDataSet(requestData);
+			
+			  // 2. LISTDM호출
+			 temp = dNREqpPrchInfoMgmt.dSEqpPrchInfoLstPaging(requestData, onlineCtx);
+			 IRecordSet usrListRs = temp.getRecordSet("RS_EQP_PRCH_LIST");
+			
+			if(usrListRs == null){
+				return responseData;
+			}
+			
+			requestData.putRecordSet("RS_SUM_LIST",sumListRs);
+			responseData.putRecordSet("RS_EQP_PRCH_LIST",usrListRs);
+			
+			// 3. 합계전표용 그리드조회정보 호출
+			temp = dNREqpPrchInfoMgmt.dSEqpPrchInfoTotalSlip(requestData, onlineCtx);
+			IRecordSet slipListRs = temp.getRecordSet("RS_SLIP_LIST"); 
+			IRecordSet sumRs = temp.getRecordSet("RS_SUM_LIST");
+			responseData.putRecordSet("RS_SUM_LIST",sumRs);
+			PagenateUtils.setPagenatedParamToRecordSet(sumRs, requestData, intTotalCnt);
+			responseData.putRecordSet("RS_SLIP_LIST",slipListRs);
+			PagenateUtils.setPagenatedParamToRecordSet(slipListRs, requestData, intTotalCnt);
+
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-22 17:06:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : T_CNT [총건수]
+	 *		- field : T_PRC [총금액]
+	 *		- field : YYYY [전표처리년도]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : CHK [상태값]
+	 *		- field : CASE_WHEN [구분값]
+	 *		- field : YYYYMM [전표처리년월]
+	 *		- field : STA_DT [계약일fr]
+	 *		- field : END_DT [계약일to]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fEqpPrchInfoSlipCreate(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	
+	    try {
+	    	// T_CNT = 총건수 , T_PRC = 총 금액, YYYY = 해당년도,YYYYMM = 해당년월
+	    	IRecordSet prchRs = requestData.getRecordSet("RS_SLIP_LIST");		
+	    	
+	    	for(int i=0; i<prchRs.getRecordCount(); i++){
+	    		IRecord ir = prchRs.getRecord(i);
+	    		if("10".equals(ir.get("SLIP_ST_CD")) || "20".equals(ir.get("SLIP_ST_CD")) || "30".equals(ir.get("SLIP_ST_CD"))){
+	    			throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+	    		}
+	    	}
+	    		requestData.putField("SLIP_TYPE", "ASSET_AA");//전표유형
+	    		requestData.putField("USER_NO", ca.getUserNo());
+	    		//배치로직호출 -- 전표생성
+	    		ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+	    		DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+	    		String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR010");
+			    params.put("TASK_NM", "전표발행");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+		    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+			    
+	    		
+ 		} catch ( BizRuntimeException e ) {
+ 			throw e; //시스템 오류가 발생하였습니다.
+ 		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+				
+		
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-22 17:06:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : RENTAL_CNTRT_STA_DT [계약일조회시작일]
+	 *	- field : RENTAL_CNTRT_END_DT [계약일조회종료일]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_ALL_EXCEL_LIST
+	 *		- field : NO [NO]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말일련번호]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : CNTRT_PRD [계약기간]
+	 *		- field : RENTAL_CNTRT_STA_DT [계약시작일]
+	 *		- field : RENTAL_CNTRT_END_DT [계약종료일]
+	 *		- field : EQP_PRCH_AMT [매입금액]
+	 *		- field : OP_TYP_CD [계약상태코드]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : SLIP_DT [전표처리일자]
+	 *		- field : ACQR_XCL_SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 * </pre>
+	 */
+	public IDataSet fInqEqpPrchAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet temp = new DataSet();
+	    
+	    try {
+	  
+		   // 1. DU lookup
+            DNREqpPrchInfoMgmt dNREqpPrchInfoMgmt = (DNREqpPrchInfoMgmt) lookupDataUnit(DNREqpPrchInfoMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNREqpPrchInfoMgmt.dSEqpPrchAllExcel(requestData, onlineCtx); 
+	            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-22 17:06:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SLIP_LIST
+	 *		- field : T_CNT [총건수]
+	 *		- field : T_PRC [총금액]
+	 *		- field : YYYY [전표처리년도]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태]
+	 *		- field : CHK [상태값]
+	 *		- field : CASE_WHEN [구분값]
+	 *		- field : YYYYMM [전표처리년월]
+	 *		- field : STA_DT [계약일fr]
+	 *		- field : END_DT [계약일to]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fEqpPrchInfoSlipCancle(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    
+	    try {
+	    	// T_CNT = 총건수 , T_PRC = 총 금액, YYYY = 해당년월,YYYYMM = 해당년월
+	    	IRecordSet prchRs = requestData.getRecordSet("RS_SLIP_LIST");
+		  
+		    for(int i=0; i<prchRs.getRecordCount(); i++){
+		    	IRecord ir = prchRs.getRecord(i);
+		    	
+			    if(StringUtils.isEmpty(ir.get("SLIP_ST_CD")) || "00".equals(ir.get("SLIP_ST_CD")) || "05".equals(ir.get("SLIP_ST_CD"))){
+			    	throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+		    	}else if("20".equals(ir.get("SLIP_ST_CD")) || "30".equals(ir.get("SLIP_ST_CD"))){
+		    		throw new BizRuntimeException("DMS00087"); //{0} 건은 처리가 불가능 합니다.--승인완료인
+		    	}
+		    }
+				requestData.putField("USER_NO", ca.getUserNo());
+		    	
+				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+		
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR011");
+			    params.put("TASK_NM", "전표삭제");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+		    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+		    
+	    } catch ( BizRuntimeException e ) {
+	            throw e; //시스템 오류가 발생하였습니다.
+ 		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	    
+		
+	    return responseData;
+	}
+  
+}

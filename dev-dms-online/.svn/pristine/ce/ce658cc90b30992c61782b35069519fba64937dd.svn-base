@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPAvailInveMgmt">
+	<select id="SAvailInveListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPAvailInveMgmt.SAvailInveListPaging 가용재고조회목록 */
+/* IO: 박민정,2015-08-31T17:12:58(박민정,2015-08-27T15:39:11) */
+SELECT  *
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD ASC) AS ROWNO 
+                ,'' AS CHEKED 
+                ,B.PROD_CL                                  /*중고폰상품구분  DMS160 처리*/
+                ,B.MFACT_CD                                 /*제조사 DMS101처리*/
+                ,A.EQP_MDL_CD                               /*단말기 모델코드*/
+                ,B.EQP_MDL_NM                               /*단말기 모델명*/
+                ,A.EQP_COLOR_CD                             /*단말기 색상코드 DMS100처리*/
+                ,A.EQP_SER_NO                               /*단말기 일련번호*/
+                ,A.BF_SER_NO                                /*이전 일련 번호*/
+                ,A.HLD_DEALCO_ID                            /*보유처 ID*/
+                ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND A.HLD_DEALCO_ID = DEALCO_CD) AS HLD_DEALCO_NM  /*보유처명*/
+                ,A.EQP_ST                                   /*단말기 상태*/
+                ,C.EQP_ST_DTAIL                             /*단말기상태세부*/
+                ,A.SELLYN                                   /*판매여부*/
+                ,D.SALEPLC                                  /*매출처코드*/
+                ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND D.SALEPLC = DEALCO_CD) AS SALEPLC_NM /* 매출처명*/
+                ,(SELECT AGN_ORG_CD 
+                    FROM TB_DEALCO
+                   WHERE DEALCO_CD = D.SALEPLC               /*매출처*/
+                     AND EFF_END_DT = '99991231235959'       /*유효종료일자*/
+                  ) AS SALEPLC_UKEY                          /*판매처*/ 
+                ,DECODE(NVL(A.SELLYN,'N'),'Y',CONF_SELL_AMT) AS CONF_SELL_AMT  /*확정판매금액*/ 
+                ,DECODE(NVL(A.SELLYN,'N'),'Y',CONF_SELL_DT) AS CONF_SELL_DT    /*확정판매일자*/
+                ,A.HOLD_AMT                                   /*유보금액*/
+                ,A.INVE_AMT                                   /*재고 금액*/
+                ,A.HOLD_AMT + A.INVE_AMT AS TOT_DIS_AMT       /*재고 금액2*/   
+                ,A.CNSL_MGMT_NO                               /*상담 관리 번호*/
+                ,CASE 
+                    WHEN(C.PROGR_ST IN ('31','32','33','34','35')) AND (C.PRCH_DT >= '20111001') /*진행상태*/ /*매입일자*/
+                    THEN DECODE(C.AMT_RMT_YN,'Y',C.RMT_DT,DECODE(C.FEE_DEDC_PROC_YN,'Y', C.FEE_DEDC_PROC_DT,DECODE(C.POLY_OBJ_PROC_YN,'Y',C.POLY_PROC_DT,DECODE(C.FORCING_PRCH_PROC_YN,'Y',C.FORCING_PRCH_PROC_DT, DECODE(C.SKN_CL,'Y',C.TLY_DT,''))))) 
+                    ELSE C.PRCH_DT                            /*매입일자*/
+                 END PRCHS_DT                                 /*매입일자*/       
+                ,DECODE(C.SKN_CL,'Y','샘플감정',DECODE(C.PROGR_ST,'33','정책매입','보통')) AS SKN_ST /*SKN구분*/ /*진행상태*/ /*재고상태*/
+                ,C.PROGR_ST     /*진행상태  DMS179중고폰G.Key 진행상태*/
+                ,C.BOX_NO      /*박스 번호*/
+                ,DECODE(A.IN_OUT_DTL_CL,'105', A.LAST_IN_OUT_DT) AS LAST_IN_OUT_DT     /*입고 출고 상세 구분,(최종 입고 출고 일자)반품일자*/
+                ,C.IMEI  
+                ,A.CNSGN_SELL_YN                           /*위탁 판매 여부*/
+                ,A.CNSGN_SELL_DT                           /*위탁 판매 일자*/
+                ,A.CNSGN_SELL_CNCL_DT                      /*위탁 판매 취소 일자*/
+                ,A.CNSGNPLC                                /*위탁처코드*/
+                ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND A.CNSGNPLC = DEALCO_CD) AS CNSGNPLC_NM  /*위탁처명*/
+                ,C.CNSL_DEALCO_CD                          /*상담처코드 */
+                ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND C.CNSL_DEALCO_CD = DEALCO_CD) AS CNSL_DEALCO_NM /*상담처명*/
+                ,E.AFFIL_AGN  /*대리점코드*/
+                ,(SELECT DEALCO_NM FROM TB_DEALCO WHERE DEL_YN = 'N' AND DEALCO_CD = E.AFFIL_AGN) AS AFFIL_AGN_NM /*대리점명*/
+                ,E.AGN_ORG_CD                              /*대리점UkeyCode*/
+                ,C.CNSL_DT                                 /*상담일자*/
+                ,F.IN_CONF_DT                              /*입고확정일자*/
+                ,C.TLY_DT                                  /*검수일자*/
+                ,C.RMT_DT                                  /*송금일자*/
+                ,C.FEE_DEDC_PROC_DT                        /*요금공제처리일자*/
+                ,C.BOX_PROC_CHRGR                          /*박스 처리 담당자 이름이 필요하기 떄문에 나중에 유저테이블과 조인*/
+                ,SUBSTR(nvl(C.BOX_PROC_DT,F.BOX_PROC_DT),0,8) BOX_PROC_DT   /*박스 처리 일자*/
+                ,DECODE(C.SCRN_AFIMG_YN,'A','강','B','약','') SCRN_AFIMG_YN   /*화면잔상여부*/
+                ,C.EVALCNSLR_SUGG                                           /*평가원의견*/
+                ,C.SELL_GRADE   /*판매등급*/  
+           FROM  TB_EP_DIS_PROD_DIS A      /*EP_상품재고*/
+                ,TB_EQP_MDL B              /*단말기모델*/
+                ,TB_EP_CST_PRCHS_MGMT C    /*EP_매입관리*/
+                ,(SELECT PROD_SER_NO       /*ES.상품일련번호*/
+                        ,SALEPLC           /*GS.매출처*/
+                        ,SELL_DTM          /*GS.판매일시*/
+                    FROM TB_EP_SAL_EQUIPMENT_SALE ES   /*EP_단말기판매*/
+                        ,TB_EP_SAL_GNRL_SALE GS    /*EP_일반판매*/
+                   WHERE ES.GNRL_SELL_NO = GS.GNRL_SELL_NO  /*일반판매번호*/
+                     AND ES.GNRL_SELL_CHG_SEQ = GS.GNRL_SELL_CHG_SEQ 
+                     AND GS.GNRL_SELL_CHG_SEQ = (SELECT MAX(GNRL_SELL_CHG_SEQ) 
+                                                   FROM TB_EP_SAL_GNRL_SALE 
+                                                  WHERE GNRL_SELL_NO = GS.GNRL_SELL_NO 
+                                                    AND DELYN = 'N') 
+                     AND GS.DELYN = 'N' 
+                     AND ES.DELYN = 'N' 
+                     AND GS.SELL_CNCL_YN = 'N'           /*판매취소여부*/
+                     AND GS.SELL_CHG_HST_CL != '07') D   /*판매 변경 이력 구분*/  
+                 ,(SELECT DEALCO_CD
+                         ,DEALCO_NM
+                         ,AFFIL_AGN  /*소속대리점*/
+                         ,AGN_ORG_CD  /*UKey대리점코드*/
+                     FROM TB_DEALCO Y
+                    WHERE (DEL_YN = 'N' OR DEL_YN IS NULL) ) E 
+                 ,TB_EP_CST_CONSULT_MGMT F       /*EP_상담관리*/
+          WHERE A.EQP_MDL_CD = B.EQP_MDL_CD (+) 
+            AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO  /*상담 관리 번호*/
+            AND A.EQP_SER_NO = D.PROD_SER_NO(+) /*상품일련번호*/
+            AND A.DEL_YN = 'N' 
+            AND C.DEL_YN = 'N' 
+            AND C.CNSL_DEALCO_CD = E.DEALCO_CD (+) /*상담 거래처 코드*/
+            AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO    /*상담 관리 번호*/
+            AND F.DEL_YN = 'N'
+]]><isNotEmpty property="AFFIL_AGN"><![CDATA[ /*보유팀*/
+    AND A.HLD_DEALCO_ID IN (SELECT DEALCO_CD
+	                         FROM TB_DEALCO 
+		                      WHERE EFF_STA_DT <= A.CONF_SELL_DT||'235959'    /*유효 시작 일자 <= A.확정판매일자*/
+		                        AND EFF_END_DT >= A.CONF_SELL_DT||'235959'    /*유효 종료 일자 >= A.확정판매일자 */
+		                        AND DEL_YN = 'N' 
+		                        AND AFFIL_AGN = #AFFIL_AGN#)
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="HLD_DEALCO_ID"><![CDATA[/*보유처*/
+	AND A.HLD_DEALCO_ID  = #HLD_DEALCO_ID#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[   /*상담 관리 번호*/
+    AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[  /*단말기 모델코드*/
+	AND A.EQP_MDL_CD  = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MFACT_CD"><![CDATA[    /*제조사 DMS101처리*/
+    AND B.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_ST"><![CDATA[      /*단말기 상태등급*/
+    AND A.EQP_ST = #EQP_ST#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BF_SER_NO"><![CDATA[  /*이전 일련 번호*/
+    AND A.BF_SER_NO = #BF_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[    /*단말기일련번호*/
+    AND A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[  
+    AND C.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[   
+]]><isEqual property="SELLYN" compareValue="N"><![CDATA[
+    AND A.INVE_ST = '01'   /*재고상태 01값이 뭘까*/
+]]></isEqual><![CDATA[
+	AND NVL(A.SELLYN,'N')  = #SELLYN#
+]]><isNotEmpty property="SALEFROMDTM"><![CDATA[/*GS.판매일시_시작*/ 
+    AND SUBSTR(D.SELL_DTM,0,8) >= #SALEFROMDTM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="SALETODTM"><![CDATA[/*GS.판매일시_종료*/ 
+    AND SUBSTR(D.SELL_DTM,0,8) <= #SALETODTM#
+]]></isNotEmpty><![CDATA[ 
+]]><isEqual property="SKN_ST" compareValue="Y"><![CDATA[
+    AND C.SKN_CL = 'Y'
+]]></isEqual><![CDATA[
+]]><isEqual property="SKN_ST" compareValue="P"><![CDATA[  
+    AND C.SKN_CL = 'N'
+    AND C.PROGR_ST = '33' /*진행상태*/
+]]></isEqual><![CDATA[
+]]><isEqual property="SKN_ST" compareValue="N"><![CDATA[
+    AND C.SKN_CL = 'N'
+    AND C.PROGR_ST != '33'
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="Y"><![CDATA[  /*에코폰4U 접수여부*/
+    AND F.CNSL_DEALCO_CD = '11050'   /*상담 거래처 코드*/
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="N"><![CDATA[ 
+    AND F.CNSL_DEALCO_CD <> '11050'
+]]></isEqual><![CDATA[
+ )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAvailInveListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsimbase.db.DEPAvailInveMgmt.SAvailInveListTotCnt 가용재고조회총건수 */
+/* IO: 박민정,2015-08-31T17:12:44(박민정,2015-08-27T15:57:01) */
+SELECT  COUNT(*) AS TOTAL_CNT     /*전체건수*/	
+  FROM  TB_EP_DIS_PROD_DIS A      /*EP_상품재고*/
+       ,TB_EQP_MDL B              /*단말기모델*/
+       ,TB_EP_CST_PRCHS_MGMT C    /*EP_매입관리*/
+       ,(SELECT PROD_SER_NO       /*ES.상품일련번호*/
+               ,SALEPLC           /*GS.매출처*/
+               ,SELL_DTM          /*GS.판매일시*/
+           FROM TB_EP_SAL_EQUIPMENT_SALE ES   /*EP_단말기판매*/
+               ,TB_EP_SAL_GNRL_SALE GS        /*EP_일반판매*/
+          WHERE ES.GNRL_SELL_NO = GS.GNRL_SELL_NO  /*일반판매번호*/
+            AND ES.GNRL_SELL_CHG_SEQ = GS.GNRL_SELL_CHG_SEQ 
+            AND GS.GNRL_SELL_CHG_SEQ = (SELECT MAX(GNRL_SELL_CHG_SEQ) 
+                                          FROM TB_EP_SAL_GNRL_SALE 
+                                         WHERE GNRL_SELL_NO = GS.GNRL_SELL_NO 
+                                           AND DELYN = 'N') 
+            AND GS.DELYN = 'N' 
+            AND ES.DELYN = 'N' 
+            AND GS.SELL_CNCL_YN = 'N'           /*판매취소여부*/
+            AND GS.SELL_CHG_HST_CL != '07') D   /*판매 변경 이력 구분*/  
+        ,(SELECT DEALCO_CD
+                ,DEALCO_NM
+                ,AFFIL_AGN  /*소속대리점*/
+                ,AGN_ORG_CD  /*UKey대리점코드*/
+            FROM TB_DEALCO Y
+           WHERE (DEL_YN = 'N' OR DEL_YN IS NULL)) E 
+        ,TB_EP_CST_CONSULT_MGMT F       /*EP_상담관리*/
+  WHERE A.EQP_MDL_CD = B.EQP_MDL_CD (+) 
+    AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO  /*상담 관리 번호*/
+    AND A.EQP_SER_NO = D.PROD_SER_NO(+) /*상품일련번호*/
+    AND A.DEL_YN = 'N' 
+    AND C.DEL_YN = 'N' 
+    AND C.CNSL_DEALCO_CD = E.DEALCO_CD (+) /*상담 거래처 코드*/
+    AND A.CNSL_MGMT_NO = F.CNSL_MGMT_NO    /*상담 관리 번호*/
+    AND F.DEL_YN = 'N'
+]]><isNotEmpty property="AFFIL_AGN"><![CDATA[ /*보유팀*/
+    AND A.HLD_DEALCO_ID IN (SELECT DEALCO_CD
+	                         FROM TB_DEALCO 
+		                      WHERE EFF_STA_DT <= A.CONF_SELL_DT||'235959'    /*유효 시작 일자 <= A.확정판매일자*/
+		                        AND EFF_END_DT >= A.CONF_SELL_DT||'235959'    /*유효 종료 일자 >= A.확정판매일자 */
+		                        AND DEL_YN = 'N' 
+		                        AND AFFIL_AGN = #AFFIL_AGN#)
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="HLD_DEALCO_ID"><![CDATA[/*보유처*/
+	AND A.HLD_DEALCO_ID  = #HLD_DEALCO_ID#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="CNSL_MGMT_NO"><![CDATA[   /*상담 관리 번호*/
+    AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD"><![CDATA[  /*단말기 모델코드*/
+	AND A.EQP_MDL_CD  = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MFACT_CD"><![CDATA[    /*제조사 DMS101처리*/
+    AND B.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_ST"><![CDATA[      /*단말기 상태등급*/
+    AND A.EQP_ST = #EQP_ST#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BF_SER_NO"><![CDATA[  /*이전 일련 번호*/
+    AND A.BF_SER_NO = #BF_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO"><![CDATA[    /*단말기일련번호*/
+    AND A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_NO"><![CDATA[  
+    AND C.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[   
+]]><isEqual property="SELLYN" compareValue="N"><![CDATA[
+    AND A.INVE_ST = '01'   /*재고상태 01값이 뭘까*/
+]]></isEqual><![CDATA[
+	AND NVL(A.SELLYN,'N')  = #SELLYN#
+]]><isNotEmpty property="SALEFROMDTM"><![CDATA[/*GS.판매일시_시작*/ 
+    AND SUBSTR(D.SELL_DTM,0,8) >= #SALEFROMDTM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty property="SALETODTM"><![CDATA[/*GS.판매일시_종료*/ 
+    AND SUBSTR(D.SELL_DTM,0,8) <= #SALETODTM#
+]]></isNotEmpty><![CDATA[ 
+]]><isEqual property="SKN_ST" compareValue="Y"><![CDATA[
+    AND C.SKN_CL = 'Y'
+]]></isEqual><![CDATA[
+]]><isEqual property="SKN_ST" compareValue="P"><![CDATA[  
+    AND C.SKN_CL = 'N'
+    AND C.PROGR_ST = '33' /*진행상태*/
+]]></isEqual><![CDATA[
+]]><isEqual property="SKN_ST" compareValue="N"><![CDATA[
+    AND C.SKN_CL = 'N'
+    AND C.PROGR_ST != '33'
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="Y"><![CDATA[  /*에코폰4U 접수여부*/
+    AND F.CNSL_DEALCO_CD = '11050'   /*상담 거래처 코드*/
+]]></isEqual><![CDATA[
+]]><isEqual property="ECO_FU_YN" compareValue="N"><![CDATA[ 
+    AND F.CNSL_DEALCO_CD <> '11050'
+]]></isEqual><![CDATA[]]>
+	</select>
+</sqlMap>

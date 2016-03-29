@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCFrmMgmt">
+	<select id="SFrmListInq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.SFrmListInq 화면조회 */
+/* IO: 김석영,2014-10-02T20:19:19(심상준,2014-07-21T11:28:56) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY FRM_ID ASC) AS ROWNO        /* ROWNUM */
+               ,FRM_ID                                                  /* 화면ID */ 
+               ,FRM_NM                                                  /* 화면명 */
+               ,FRM_DESC                                                /* 화면설명 */
+               ,FRM_CL_CD                                               /* 화면구분코드 */
+               ,FRM_URL                                                 /* 화면URL */ 
+          FROM  TB_FRM   
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="FRM_ID" prepend="AND"><![CDATA[
+                FRM_ID like '%'||#FRM_ID#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="FRM_NM" prepend="AND"><![CDATA[
+                FRM_NM like '%'||#FRM_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="FRM_URL" prepend="AND"><![CDATA[
+				FRM_URL like '%'||#FRM_URL#||'%'
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[
+         ORDER  BY FRM_ID ASC
+        ) PA
+ WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IFrmListReg" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.IFrmListReg 화면등록 */
+/* IO: 김석영,2014-10-01T18:51:25(심상준,2014-07-21T11:29:33) */
+INSERT
+  INTO  TB_FRM                               /* SC화면 */ 
+       (
+        FRM_ID                               /* 화면ID */
+       ,FRM_NM                               /* 화면명 */ 
+       ,FRM_DESC                             /* 화면설명 */  
+       ,FRM_CL_CD                            /* 화면구분코드 */ 
+       ,FRM_URL                              /* 화면URL */
+       ,FS_REG_USER_ID                       /* 최초등록사용자ID */
+       ,FS_REG_DTM                           /* 최초등록일시 */
+       ,LS_CHG_USER_ID                       /* 최종변경사용ID */
+       ,LS_CHG_DTM                           /* 최종변경일시 */ 
+        )
+VALUES
+       (
+        #FRM_ID#                             /* 화면ID */
+       ,#FRM_NM#                             /* 화면명 */
+       ,#FRM_DESC#                           /* 화면설명 */  
+       ,#FRM_CL_CD#  						 /* 화면구분코드 */ 
+       ,#FRM_URL#                            /* 화면URL */
+       ,#USERNO#                             /* 최초등록사용자ID */
+       ,SYSDATE                              /* 최초등록일시 */
+       ,#USERNO#                             /* 최종변경사용ID */
+       ,SYSDATE                              /* 최종변경일시 */ 
+        )]]>
+	</insert>
+	<update id="UFrmListUpd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.UFrmListUpd 화면수정 */
+/* IO: 김석영,2014-10-01T18:51:18(심상준,2014-07-21T11:29:59) */
+UPDATE 
+        TB_FRM                                          /* SC화면 */
+   SET  FRM_NM=#FRM_NM#                                 /* 화면명 */   
+       ,FRM_DESC=#FRM_DESC#                             /* 화면구분코드 */ 
+       ,FRM_CL_CD=#FRM_CL_CD#                           /* 화면구분코드 */
+       ,FRM_URL=#FRM_URL#                               /* 화면URL */  
+       ,LS_CHG_USER_ID=#USERNO#                         /* 최종변경사용자ID */  
+       ,LS_CHG_DTM=SYSDATE                              /* 최종변경일시 */ 
+ WHERE  FRM_ID= #FRM_ID#                                /* 화면ID */]]>
+	</update>
+	<delete id="DFrmListDel" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.DFrmListDel 화면삭제 */
+/* IO: 김석영,2014-10-01T18:51:09(심상준,2014-08-01T16:37:32) */
+DELETE
+  FROM  TB_FRM            /* SC_화면 */
+ WHERE  FRM_ID = #FRM_ID# /* 화면ID  */]]>
+	</delete>
+	<select id="SFrmListCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.SFrmListCnt 화면관리전체건수조회 */
+/* IO: 김석영,2014-10-02T20:20:04(심상준,2014-08-19T11:16:58) */
+SELECT  COUNT(*) AS TOTAL_CNT   /*총카운트 */
+  FROM  TB_FRM      /*SC_화면 */
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="FRM_ID" prepend="AND"><![CDATA[
+        FRM_ID LIKE '%'||#FRM_ID#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="FRM_NM" prepend="AND"><![CDATA[
+        FRM_NM LIKE '%'||#FRM_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="FRM_URL" prepend="AND"><![CDATA[
+		FRM_URL like '%'||#FRM_URL#||'%'
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SFrmListChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.SFrmListChk 화면저장사전체크 */
+/* IO: 심상준,2014-10-15T11:02:44(심상준,2014-08-22T09:27:44) */
+SELECT  
+        COUNT(1) AS ROW_CNT   /* 사전체크 카운트 */
+  FROM  TB_FRM                /*SC_화면 */
+ WHERE  FRM_ID = #FRM_ID#]]>
+	</select>
+	<select id="SFrmRolListAll" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.SFrmRolListAll 화면목록전체조회 */
+/* IO: 심상준,2014-12-30T15:15:02(심상준,2014-09-18T16:27:39) */
+SELECT   
+        A.FRM_ID                                                  /* 화면ID */ 
+       ,A.FRM_NM                                                  /* 화면명 */
+       ,A.FRM_DESC                                                /* 화면설명 */
+       ,A.FRM_CL_CD                                               /* 화면구분코드 */
+       ,A.FRM_URL                                                 /* 화면URL */
+       ,B.MENU_ID                                                 /* 메뉴ID */ 
+  FROM  TB_FRM A                                                /* 화면 */      
+       ,TB_MENU B                                               /* 메뉴 */
+ WHERE  A.FRM_ID = B.FRM_ID(+)]]>
+	</select>
+	<select id="SFrmValidateMenu" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.SFrmValidateMenu 화면저장사전체크(메뉴) */
+/* IO: 심상준,2014-10-15T11:01:22(심상준,2014-10-15T10:16:13) */
+SELECT  
+        COUNT(1) AS ROW_CNT   /* 사전체크 카운트 */
+  FROM  TB_MENU                /*SC_메뉴 */
+ WHERE  FRM_ID = #FRM_ID#]]>
+	</select>
+	<select id="SFrmValidateFrmAutr" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCFrmMgmt.SFrmValidateFrmAutr 화면저장사전체크(화면권한역할) */
+/* IO: 심상준,2014-10-15T11:01:36(심상준,2014-10-15T10:16:41) */
+SELECT  
+        COUNT(1) AS ROW_CNT   /* 사전체크 카운트 */
+  FROM  TB_FRM_AUTR_ROL       /*SC_화면권한역할 */
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="FRM_ID"><![CDATA[
+        FRM_ID = #FRM_ID#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AUTR_ROL_ID"><![CDATA[
+        AUTR_ROL_ID = #AUTR_ROL_ID#
+]]></isNotEmpty><![CDATA[]]></dynamic><![CDATA[]]>
+	</select>
+</sqlMap>

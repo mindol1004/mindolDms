@@ -1,0 +1,566 @@
+package fwk.channel.web.data;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONNull;
+import net.sf.json.JSONObject;
+import nexcore.framework.core.ServiceConstants;
+import nexcore.framework.core.component.IBizComponentMetaDataRegistry;
+import nexcore.framework.core.component.IDataSetMetaData;
+import nexcore.framework.core.component.IIoMetaData;
+import nexcore.framework.core.component.IMethodIoFieldMetaData;
+import nexcore.framework.core.component.IMethodMetaData;
+import nexcore.framework.core.component.IRecordSetMetaData;
+import nexcore.framework.core.component.internal.DataSetMetaData;
+import nexcore.framework.core.component.internal.FieldMetaData;
+import nexcore.framework.core.component.internal.RecordSetMetaData;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordHeader;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.IValueObject;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.data.json.JsonProcessor;
+import nexcore.framework.core.exception.FwkRuntimeException;
+import nexcore.framework.core.ioc.ComponentRegistry;
+import nexcore.framework.core.log.LogManager;
+import nexcore.framework.core.message.IMessage;
+import nexcore.framework.core.message.IMessageManager;
+import nexcore.framework.core.transform.FlatUtil;
+import nexcore.framework.core.util.BaseUtils;
+import nexcore.framework.core.util.ExceptionUtil;
+
+import org.apache.commons.logging.Log;
+
+import fwk.utils.HpcUtils;
+
+public class HpcJsonProcessor extends JsonProcessor {
+    private Log         logger                                = LogManager.getFwkLog();
+    
+    /**
+     * JSON 객체로부터 IDataSet을 생성한다.
+     */
+    public IValueObject getRequestDataSet(JSONObject jObj, String txId) {
+
+        IBizComponentMetaDataRegistry mdRegistry = (IBizComponentMetaDataRegistry) ComponentRegistry.lookup(ServiceConstants.COMPONENT_METADATA_REGISTRY);
+        IMethodMetaData mmd = mdRegistry.getMethodMetaData(txId);
+        if (mmd == null) {
+            failToGetMethodMetaData(mdRegistry, txId);
+            throw new FwkRuntimeException("SKFE4011", new String[] { txId });
+        }
+
+        IIoMetaData imd = mmd.getInputIoMetaData();
+        if (imd.getMetaDataType() == IIoMetaData.DATASET) {
+            JSONObject dsObj = jObj.getJSONObject(ELM_DS);
+            if (dsObj.isNullObject()){
+                return null;
+            }
+
+            // return 할 DataSet
+            IDataSet ds = new DataSet();
+
+            // processing fields
+            JSONObject fieldsObj = dsObj.getJSONObject(ELM_DS_FIELDS);
+            if (!fieldsObj.isNullObject()) {
+                processRequestDataSetFields(fieldsObj, ds, imd);
+            }
+
+            // processing RecordSets
+            JSONObject recordSetsObj = dsObj.getJSONObject(ELM_DS_RECORDSETS);
+            if (!recordSetsObj.isNullObject()) {
+                processRequestDataSetRecordSets(recordSetsObj, ds, imd);
+            }
+
+            return ds;
+        } else {
+           throw new RuntimeException("Can not support OBJECT meta data type.");
+        }
+    }
+    
+    /**
+     * IDataSet, IOnlineContext로 부터 JSON 객체를 생성한다.
+     * @since 6.5.0
+     */
+    public JSONObject getResponseJson(IValueObject resultData, IOnlineContext onlineCtx, Map attributes) {
+        JSONObject responseObj = new JSONObject();
+        responseObj.put(ELM_TX, getResponseTransactionJson(onlineCtx)); // <transaction>
+        responseObj.put(ELM_ATTRIBUTES, getResponseAttributesJson(attributes));  // <attributes>
+        if (resultData == null) {
+            return responseObj;
+        }
+        JSONObject dsObj = getResponseDataSetJson(resultData, onlineCtx);// <dataSet>
+        responseObj.put(ELM_DS, dsObj);
+
+        return responseObj;
+    }
+    
+    /**
+     * IDataSet으로 부터 JSON 객체를 생성한다.
+     */
+    private JSONObject getResponseDataSetJson(IValueObject resultData, IOnlineContext onlineCtx) {
+        String txId = onlineCtx.getTransaction().getTxId();
+
+        // ---------------------------------------------------------------------
+        // ComponentMetaData가 null 인 경우, IResultMessage만 존재할 수 있으므로
+        // IResultMessage Element 생성 부분을 제일 먼저 수행함
+        // ---------------------------------------------------------------------
+
+        JSONObject dataSetObj = new JSONObject(); // <dataSet>
+
+        // <dataSet> -- <message> 추가
+        IResultMessage msg = resultData.getResultMessage();
+        dataSetObj.put(ELM_DS_MSG, getResponseResultMessageJson(msg, onlineCtx));
+//        if (msg != null && msg.getStatus() == IResultMessage.FAIL){//에러가 나더라도 업무데이터가 있으면 보내도록 수정함. 2015.03.16 by PSI
+//            return dataSetObj;
+//        }
+
+        IBizComponentMetaDataRegistry compRegistry = (IBizComponentMetaDataRegistry) ComponentRegistry.lookup(ServiceConstants.COMPONENT_METADATA_REGISTRY);
+        IMethodMetaData mmd = compRegistry.getMethodMetaData(txId);
+        if (mmd == null) { // IMethodMetaData가 존재하지 않으므로
+            failToGetMethodMetaData(compRegistry, txId);
+            return dataSetObj; // 더 아래 코드는 더 이상 수행하지 않음
+            // TODO 그냥 리턴하지 말고 exception을 내야 하나?
+        }
+
+        IIoMetaData metaData = mmd.getOutputIoMetaData();
+        if (metaData == null) {
+            // IDataSetMetaData가 존재하지 않으면 아래 코드는 더 이상 수행하지 않음
+            return dataSetObj;
+        }
+
+        if (metaData.getMetaDataType() == IIoMetaData.DATASET) {
+            processDataSet(dataSetObj, (IDataSetMetaData) metaData, (IDataSet) resultData);
+        } else if (metaData.getMetaDataType() == IIoMetaData.OBJECT) {
+//            processObject(dataSetElm, (IObjectMetaData) metaData, resultData);
+            throw new RuntimeException("Can not supprot OBJECT meta data type.");
+        }
+
+        return dataSetObj;
+    }
+    
+    /**
+     * IDataSet으로 부터 JSON 객체를 생성한다.
+     */
+    private void processDataSet(JSONObject dataSetObj, IDataSetMetaData dsMetaData, IDataSet resultDataSet) {
+//      JSONObject fieldsObj = new JSONObject();
+        JSONObject recordSetsObj = new JSONObject();
+
+        // <dataSet> -- <fields> 추가
+        List fieldMdList = dsMetaData.getFieldMetaDataList(); 
+        dataSetObj.put(ELM_DS_FIELDS, getResponseFieldsJson(resultDataSet, fieldMdList));
+        
+        // <dataSet> -- <recordSet> 추가
+//        List rsmdList = dsMetaData.getRecordSetMetaDataList();
+//        if (rsmdList == null || rsmdList.size() == 0) {
+         // Component RecordSet Meta 정보가 없을 경우...
+        
+        //출력IO와 상관없이 RecordSet에 설정되어 있는 값을 모두 추출함. 
+            Iterator recordSets = resultDataSet.getRecordSets();
+            if(recordSets!=null) {
+                while (recordSets.hasNext()) {
+                    IRecordSet recordSet = (IRecordSet)recordSets.next();
+                    JSONObject rSetObj = getResponseRecordSetJson(recordSet);
+                    recordSetsObj.put(HpcUtils.chngUppStrToCamelStr(recordSet.getId()), rSetObj);
+                }
+            }
+//        } else {
+//            // Component RecordSet Meta 정보가 존재하는 경우...
+//            for (int i = 0; i < rsmdList.size(); i++) {
+//                // DOWNGRADED TO JAVA 1.4 - BEFORE :
+//                IRecordSetMetaData rsmd = (IRecordSetMetaData) rsmdList.get(i);
+//                JSONObject rSetObj = getResponseRecordSetJson(resultDataSet.getRecordSet(rsmd.getId()), rsmd);
+//                recordSetsObj.put(HpcUtils.chngUppStrToCamelStr(rsmd.getId()), rSetObj);
+//            }
+//        }
+//      dataSetObj.put(ELM_DS_FIELDS, fieldsObj); // <fields>
+        dataSetObj.put(ELM_DS_RECORDSETS, recordSetsObj); // <recordSets>
+    }
+    
+    /**
+     * IDataSet 내 Fields 영역으로 부터 JSON 객체를 생성한다.
+     */
+    private JSONObject getResponseFieldsJson(IDataSet resultDataSet, List fieldMDList) {
+        JSONObject fieldsObject = new JSONObject();
+        
+        // 메타정보가 존재하지 않는 경우에는 DataSet의 전체 항목을 처리함.
+//        if (fieldMDList == null || fieldMDList.size() == 0) {
+        
+        //텐노드 유영란 이사및 권용하과장의 요청에 따라 Meta정보와 상관없이 DataSet에 정의된 내용을 모두 내보내도록 함. 2014.10.14 by PSI
+            Iterator keyIter = resultDataSet.getFieldKeys();
+            while (keyIter.hasNext()) {
+                String key = (String) keyIter.next();
+                String[] values = resultDataSet.getFieldValues(key);
+                if (values == null) {
+                    fieldsObject.put(HpcUtils.chngUppStrToCamelStr(key), JSONNull.getInstance());
+                }
+                else {
+                    for(String value : values){
+                        fieldsObject.put(HpcUtils.chngUppStrToCamelStr(key), value == null ? JSONNull.getInstance() : value);
+                    }
+                }
+            }
+//        } else {
+//            for (int i = 0; i < fieldMDList.size(); i++) {
+//                IMethodIoFieldMetaData mIoFMData = (IMethodIoFieldMetaData) fieldMDList.get(i);
+//                String[] values = resultDataSet.getFieldValues(mIoFMData.getId());
+//                if (values == null) {
+//                    fieldsObject.put(mIoFMData.getId(), JSONNull.getInstance());
+//                } else {
+//                    for(String value : values){
+//                        fieldsObject.put(mIoFMData.getId(), value);
+//                    }
+//                }
+//            }
+//        }
+        return fieldsObject;
+    }
+    
+    
+    /**
+     * IRecordSet 객체 내용을 JSON 객체로 변환한다.
+     */
+    private JSONObject getResponseRecordSetJson(IRecordSet recordSet) {
+        JSONObject recordSetObj = new JSONObject();
+        JSONArray recordSetListObj = new JSONArray();
+
+        if (recordSet == null) { // 기존 코드 recordSet != null
+            return recordSetObj;
+        }
+        
+        recordSetObj.put(ELM_DS_RECORDSET_NC_RECORD_CNT, String.valueOf(recordSet.getRecordCount()));  // <recordCount>
+        recordSetObj.put(ELM_DS_RECORDSET_NC_PAGE_NO, String.valueOf(recordSet.getPageNo())); // <pageNo>
+        recordSetObj.put(ELM_DS_RECORDSET_NC_RECORD_CNT_PER_PAGE, String.valueOf(recordSet.getRecordCountPerPage())); // <recordCountPerPage>
+        recordSetObj.put(ELM_DS_RECORDSET_NC_TOTAL_RECORD_CNT, String.valueOf(recordSet.getTotalRecordCount())); // <totalRecordCount>
+
+        for (int i = 0; i < recordSet.getRecordCount(); i++) {
+            IRecord record = recordSet.getRecord(i);
+            JSONObject recordObj = new JSONObject();
+            int recordSize = record.size(); // IRecord 컬럼(Field) 갯수
+            for (int k = 0; k < recordSize; k++) {
+                IRecordHeader header = recordSet.getHeader(k);
+                Object o = record.getObject(k);
+                if(o instanceof IRecordSet){
+                    recordObj.put(HpcUtils.chngUppStrToCamelStr(header.getName()), getResponseRecordSetJson((IRecordSet)o));
+                }
+                else{
+                    Object v =  record.get(k);
+                    recordObj.put(HpcUtils.chngUppStrToCamelStr(header.getName()), v == null ? JSONNull.getInstance() : v);
+                }
+            }
+            recordSetListObj.add(recordObj);
+        }
+
+        recordSetObj.put(ELM_DS_RECORDSET_NC_LIST, recordSetListObj);
+        return recordSetObj;
+    }
+    /**
+     * IRecordSetMetaData 내용을 참조하여 IRecordSet 객체 내용을JSON 객체로 변환한다.
+     */
+    private JSONObject getResponseRecordSetJson(IRecordSet recordSet, IRecordSetMetaData rsmd) {
+        JSONObject recordSetObj = new JSONObject();
+        JSONArray recordSetListObj = new JSONArray();
+
+        if (recordSet == null) { // 기존 코드 recordSet != null
+            return recordSetObj;
+        }
+        
+        recordSetObj.put(ELM_DS_RECORDSET_NC_RECORD_CNT, String.valueOf(recordSet.getRecordCount()));  // <recordCount>
+        recordSetObj.put(ELM_DS_RECORDSET_NC_PAGE_NO, String.valueOf(recordSet.getPageNo())); // <pageNo>
+        recordSetObj.put(ELM_DS_RECORDSET_NC_RECORD_CNT_PER_PAGE, String.valueOf(recordSet.getRecordCountPerPage())); // <recordCountPerPage>
+        recordSetObj.put(ELM_DS_RECORDSET_NC_TOTAL_RECORD_CNT, String.valueOf(recordSet.getTotalRecordCount())); // <totalRecordCount>
+
+        List recordFmdList = rsmd.getFieldMetaDataList();
+        for (int i = 0; i < recordSet.getRecordCount(); i++) {
+            IRecord record = recordSet.getRecord(i);
+            JSONObject recordObj = new JSONObject();
+            for (int k = 0; k < recordFmdList.size(); k++) {
+                Object metadata = recordFmdList.get(k);
+                
+                if(metadata instanceof IMethodIoFieldMetaData){
+                    IMethodIoFieldMetaData fmd = (IMethodIoFieldMetaData)metadata;
+                    // IRecordSet 내 Header Name이 존재하는 경우만 headerElm 내 값을 설정
+                    if (recordSet.getHeaderIndex(fmd.getId()) != -1) { // Header
+                        String value = record.get(fmd.getId());
+                        recordObj.put(fmd.getId(), value == null ? JSONNull.getInstance() : value);             
+                    } else {
+                        recordObj.put(fmd.getId(), JSONNull.getInstance());      
+                    }
+                }
+                else if(metadata instanceof IRecordSetMetaData){
+                    IRecordSetMetaData childRsmd = (IRecordSetMetaData)metadata;
+                    recordObj.put(childRsmd.getId(), getResponseRecordSetJson(record.getRecordSet(childRsmd.getId()), childRsmd));
+                } else {
+                    throw new RuntimeException("IoMetaData error. Invalid class=" + rsmd.getClass() + "");
+                }
+            }
+            recordSetListObj.add(recordObj);
+        }
+
+        recordSetObj.put(ELM_DS_RECORDSET_NC_LIST, recordSetListObj);
+        return recordSetObj;
+    }
+    
+    /**
+     * IResultMessage로 부터 JSON 객체를 생성한다.
+     */
+    private JSONObject getResponseResultMessageJson(IResultMessage resultMsg, IOnlineContext onlineCtx) {
+        JSONObject resultMsgObj = new JSONObject();
+        if(resultMsg == null){
+            resultMsgObj.put(ELM_DS_MSG_RESULT, IResultMessage.STR_OK);
+            resultMsgObj.put(ELM_DS_MSG_ID, null);
+            resultMsgObj.put(ELM_DS_MSG_NAME, null);
+            resultMsgObj.put(ELM_DS_MSG_REASON, null);
+        }
+        else{
+            IMessageManager msgMGR = (IMessageManager) ComponentRegistry.lookup(ServiceConstants.MESSAGE);
+            IMessage msgObj = msgMGR.getMessage(resultMsg.getMessageId(), onlineCtx.getUserInfo().getLocale());
+
+            resultMsgObj.put(ELM_DS_MSG_RESULT, resultMsg.getStatus() == IResultMessage.FAIL ? IResultMessage.STR_FAIL : IResultMessage.STR_OK);
+            resultMsgObj.put(ELM_DS_MSG_ID,     resultMsg.getMessageId());
+            resultMsgObj.put(ELM_DS_MSG_NAME,   msgObj == null ? resultMsg.getMessageId() + " params:" + Arrays.toString(resultMsg.getMessageParams()) : msgObj.getName(resultMsg.getMessageParams()));
+            resultMsgObj.put(ELM_DS_MSG_REASON, msgObj == null ? null : msgObj.getReason());
+            resultMsgObj.put(ELM_DS_MSG_REMARK, msgObj == null ? null : msgObj.getRemark());
+
+            if (resultMsg.getErrorRecordSetId() != null) {
+                resultMsgObj.put(ELM_DS_MSG_RECORDSET_ID, resultMsg.getErrorRecordSetId());
+            }
+            if (resultMsg.getErrorRecordId() != null) {
+                resultMsgObj.put(ELM_DS_MSG_RECORD_ID, resultMsg.getErrorRecordId());
+            }
+            if (resultMsg.getAffectedRowCount() >= 0) {
+                resultMsgObj.put(ELM_DS_MSG_AFFECTED_ROW_CNT, String.valueOf(resultMsg.getAffectedRowCount()));
+            }
+            // 개발모드일 경우에만 예외 Trace 정보를 제공함.
+            if ((BaseUtils.isLocalRuntime() || BaseUtils.isDevelopementRuntime()) && resultMsg.getThrowable() != null) {
+                resultMsgObj.put(ELM_DS_MSG_EXCEPTION, ExceptionUtil.toString(resultMsg.getThrowable()));
+            }
+        }
+        return resultMsgObj;
+    }
+    
+    private void failToGetMethodMetaData(IBizComponentMetaDataRegistry mdRegistry, String txId){
+        StringBuffer sb = new StringBuffer();
+        sb.append("\nCould not Found MethodMetaData from MetaDataRegistry with txId = " + txId + "\n");
+        // DOWNGRADED TO JAVA 1.4 - BEFORE :
+        // List<IComponentMetaData> mdList = mdRegistry.getAllComponentMetaData();
+        List mdList = mdRegistry.getAllComponentMetaData();
+        if (mdList == null){
+            sb.append("Where the Registry has not initiated!");
+        }else{
+            sb.append("Where the Registry has " + mdList.size() + " ComponentMetaData.");
+        }
+        logger.info(sb.toString());
+    }
+    
+    /**
+     * UI로의 Request로부터필드타입 parameter를 취득한다. 
+     *  
+     * @param fieldsObj
+     * @param ds
+     * @param imd void
+     */
+    private void processRequestDataSetFields(JSONObject fieldsObj, IDataSet ds, IIoMetaData imd) {
+        List fioList = imd.getFieldMetaDataList();//필드타입의 IO List를 취득함.
+        if(fioList != null && fioList.size()==0 ) {
+            fioList = imd.getFlMetaDataList();//일반 IO가 없을 때에는 전문타입IO가 있는지 다시 확인한다. 
+        }
+        Iterator iter = null;
+        FieldMetaData fmd = null;
+        Object obj = null;
+        if(fioList!=null && fioList.size() > 0) {
+            iter = fioList.iterator();
+            while(iter.hasNext()) {
+                obj= iter.next();//필드타입의 IO list만 취득하기 때문에 FieldMetaData 외의 객체는 없다.
+                if(obj instanceof  FieldMetaData) {
+                    fmd = (FieldMetaData)obj;
+                    if(null == fmd.getType()) {//AD에서 datatype설정이 가능하기 전까지는 String으로 받도록 허용한다.
+                        ds.putField(fmd.getId(), HpcUtils.cleanXSS(fieldsObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId()))));
+                    } else {
+                        if (FieldMetaData.TYPE_BIGDECIMAL.equalsIgnoreCase(fmd.getType())) {
+                            ds.putField(fmd.getId(), new BigDecimal(fieldsObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId()))));
+                        } else if (FieldMetaData.TYPE_STRING.equalsIgnoreCase(fmd.getType())) {
+                            ds.putField(fmd.getId(), HpcUtils.cleanXSS(fieldsObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId()))));
+                        } else if (FieldMetaData.TYPE_SHORT.equals(fmd.getType())) {
+                            ds.putField(fmd.getId(),HpcUtils.cleanXSS(fieldsObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId()))));
+                        } else if (FieldMetaData.TYPE_INT.equals(fmd.getType())) {
+                            ds.putField(fmd.getId(), fieldsObj.getInt(HpcUtils.chngUppStrToCamelStr(fmd.getId())));
+                        } else if (FieldMetaData.TYPE_LONG.equals(fmd.getType())) {
+                            ds.putField(fmd.getId(), fieldsObj.getLong(HpcUtils.chngUppStrToCamelStr(fmd.getId())));
+                        } else if (FieldMetaData.TYPE_DOUBLE.equals(fmd.getType())) {
+                            ds.putField(fmd.getId(), fieldsObj.getDouble(HpcUtils.chngUppStrToCamelStr(fmd.getId())));
+                        } else if (FieldMetaData.TYPE_FLOAT.equals(fmd.getType())) {
+                            ds.putField(fmd.getId(), new Float(fieldsObj.getLong(HpcUtils.chngUppStrToCamelStr(fmd.getId()))).floatValue());
+                        } else {
+                            throw new RuntimeException("field's type incorrect. " + "[id="+ fmd.getId() + ", type=" + fmd.getType() + "]"); 
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private Object getJSONValue(Object value){
+        if(value == null){
+            return value;
+        }
+        if(value instanceof JSONArray){
+            JSONArray fieldArray = (JSONArray)value;
+            return fieldArray.toArray(new String[fieldArray.size()]);
+        }
+        else if(value instanceof JSONObject){
+            JSONObject jObject = (JSONObject)value;
+            return jObject.isNullObject() ? null : value.toString();
+        }
+        else {
+            return HpcUtils.cleanXSS((value.toString()));//XSS체크필터
+        }
+    }
+    
+    private void processRequestDataSetRecordSets(JSONObject recordSetsObj, IDataSet ds, IIoMetaData imd){
+        DataSetMetaData dsMeta = null;
+        if(imd instanceof DataSetMetaData) {
+            dsMeta = (DataSetMetaData)imd;
+        }
+        List alFioList = dsMeta.getRecordSetMetaDataList();//필드와 레코드셋을 구분하지 않는 메타데이터 목록을 반환.
+        Iterator iter= null;
+        Object fmdObj = null;
+        JSONObject rsJsonObj = null;
+        if(alFioList!=null && alFioList.size() >0) {
+            iter = alFioList.iterator();
+            IRecordSetMetaData rsmd  = null;
+            List rsFieldList = null;
+            String headerName = "";
+            IRecordSet recordSet = null;
+            while(iter.hasNext()) {//IRecordSet 헤더구성
+                fmdObj = iter.next();
+                if (fmdObj instanceof RecordSetMetaData) {//필드처리는 transformXpfToDataSet()에서 했기 때문에 RecordSet처리만 한다.
+                    rsmd = (IRecordSetMetaData) fmdObj;
+                    rsJsonObj = recordSetsObj.getJSONObject(HpcUtils.chngUppStrToCamelStr(rsmd.getId()));
+                    if(rsJsonObj.isNullObject())continue;
+                    recordSet = getRecordSet( rsJsonObj.getJSONArray(ELM_DS_RECORDSET_NC_LIST), rsmd);
+                    if(recordSet != null){
+                        ds.putRecordSet(recordSet);
+                    }
+                }
+            }
+        }
+    }
+    
+    private IRecordSet getRecordSet(JSONArray recordSetListObj, IRecordSetMetaData rsmd){
+        if(recordSetListObj.size() < 1){
+            return null;
+        }
+        
+        IRecordSet recordSet = new RecordSet(rsmd.getId());
+        List rsFieldList =   rsmd.getFieldMetaDataList();
+        recordSet.addHeaders(FlatUtil.makeRecordHeader(rsFieldList));//헤더생성
+        JSONObject recordObj = null;
+        IRecord record = null;
+        FieldMetaData fmd = null;
+        for(int idx=0; idx < recordSetListObj.size(); idx++) {
+            recordObj = (JSONObject)recordSetListObj.get(idx);
+            record = recordSet.newRecord();
+            for(int i=0; i<rsFieldList.size(); i++){
+                if(rsFieldList.get(i) instanceof FieldMetaData) {
+                    fmd = (FieldMetaData)rsFieldList.get(i);
+                    if(null == fmd.getType()) {
+                        try {
+                            record.set(fmd.getId(), recordObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId())));
+                        } catch(net.sf.json.JSONException e) {
+                          //JSONObject에 Key값이 없는 경우는 아예 JSONException을 발생시킴에 따라 Key값이 없는 경우는 null이 들어가도록 함.
+                            if(logger.isErrorEnabled())logger.error("No data :"+e.getMessage());
+                        }
+                        
+                    } else {
+                        if (FieldMetaData.TYPE_BIGDECIMAL.equalsIgnoreCase(fmd.getType())) {
+                            record.set(fmd.getId(), new BigDecimal(recordObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId()))));
+                        }  else if (FieldMetaData.TYPE_STRING.equalsIgnoreCase(fmd.getType())) {
+                            record.set(fmd.getId(), HpcUtils.cleanXSS(recordObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId()))));
+                        } else if (FieldMetaData.TYPE_SHORT.equals(fmd.getType())) {
+                            record.set(fmd.getId(), HpcUtils.cleanXSS(recordObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId()))));
+                        } else if (FieldMetaData.TYPE_INT.equals(fmd.getType())) {
+                            record.set(fmd.getId(), recordObj.getInt(HpcUtils.chngUppStrToCamelStr(fmd.getId())));
+                        } else if (FieldMetaData.TYPE_LONG.equals(fmd.getType())) {
+                            record.set(fmd.getId(), recordObj.getLong(HpcUtils.chngUppStrToCamelStr(fmd.getId())));
+                        } else if (FieldMetaData.TYPE_DOUBLE.equals(fmd.getType())) {
+                            record.set(fmd.getId(), recordObj.getDouble(HpcUtils.chngUppStrToCamelStr(fmd.getId())));
+                        } else if (FieldMetaData.TYPE_FLOAT.equals(fmd.getType())) {
+                            record.set(fmd.getId(), new Float(recordObj.getString(HpcUtils.chngUppStrToCamelStr(fmd.getId()))).floatValue());
+                        } else {
+                            throw new RuntimeException("field's type incorrect. " + "[id="+ fmd.getId() + ", type=" + fmd.getType() + "]"); 
+                        }
+                    }
+                }
+            }
+        }
+        return recordSet;
+    }
+//    private IRecordSet getRecordSet(String recordSetId, JSONArray recordSetListObj){
+//        if(recordSetListObj.size() < 1){
+//            return null;
+//        }
+//        
+//        IRecordSet recordSet = new RecordSet(recordSetId);
+//
+//        for(int i=0; i<recordSetListObj.size(); i++){
+//            JSONObject recordObj = (JSONObject)recordSetListObj.get(i);
+//            
+//            // 헤더 생성
+//            if(i == 0){
+//                Iterator<String> columnNames = recordObj.keys();
+//                while(columnNames.hasNext()){
+//                    recordSet.addHeader(new RecordHeader(columnNames.next()));
+//                }
+//            }
+//            
+//            IRecord record = recordSet.newRecord();
+//            
+//            Iterator<Entry<String, Object>> columns = recordObj.entrySet().iterator();
+//            while(columns.hasNext()){
+//                Entry<String, Object> column = columns.next();
+//                String columnName = column.getKey();
+//                Object columnValue = column.getValue();
+//                
+//                if(columnValue == null){
+//                    record.set(columnName, columnValue);
+//                }
+//                else if(columnValue instanceof JSONObject){
+//                    JSONObject jColumnValue = (JSONObject)columnValue;
+//                    if(jColumnValue.isNullObject()){
+//                        record.set(columnName, (String)null);
+//                    }
+//                    else {
+//                        Set<Entry<String, JSONObject>> childEntrySet = jColumnValue.entrySet();
+//                        if(childEntrySet.size() == 1){
+//                            Iterator<Entry<String, JSONObject>> childEntrys = childEntrySet.iterator();
+//                            Entry<String, JSONObject> childEntry = childEntrys.next();
+//                            IRecordSet childRecordSet = getRecordSet(childEntry.getKey(), childEntry.getValue().getJSONArray(ELM_DS_RECORDSET_NC_LIST));
+//                            if(childRecordSet != null){
+//                                record.set(columnName, childRecordSet);
+//                            }
+//                        }
+////                      else if(childEntrySet.size() > 1){
+////                          throw new RuntimeException("");
+////                      }
+//                    }
+//                }
+//                else if(columnValue instanceof String){
+//                    record.set(columnName, HpcUtils.cleanXSS((String)columnValue));//XSS스크립팅 체크
+//                } else {
+//                    record.set(columnName, columnValue);
+//                }
+//            }
+//        }
+//        
+//        return recordSet;
+//    }
+    
+}

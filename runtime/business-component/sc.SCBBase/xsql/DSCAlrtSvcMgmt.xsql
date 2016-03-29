@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCAlrtSvcMgmt">
+	<select id="SAlrtSvcLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcMgmt.SAlrtSvcLstPaging 알림서비스목록조회 */
+/* IO: 임지후,2014-12-30T16:15:08(심상준,2014-09-22T17:08:02) */
+SELECT                                                            
+        *
+  FROM (                                                          
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY ALRT_SVC_NO) AS ROWNO  
+               ,ALRT_SVC_NO                   /* 알림서비스번호 */  
+               ,ALRT_SVC_NM                   /* 알림서비스명 */    
+               ,ALRT_WORK_CL_CD               /* 알림업무구분코드 */
+               ,ALRT_CHNL_CL_CD               /* 알림채널구분코드 */
+               ,ALRT_CONS_CL_CD               /* 알림제약구분코드 */
+               ,DECODE(RETN_AGR_APLY_YN, 'Y', '1', 'N', '0') AS RETN_AGR_APLY_YN  /* 수신동의적용여부 */
+               ,ALRT_TITE_NM                  /* 알림제목명 */    
+               ,ALRT_MSG_CTT                  /* 알림메시지내용 */
+               ,ANSW_TEL_NO                   /* 회신전화번호 */  
+               ,ANSW_EML_ADDR                 /* 회신이메일주소 */
+               ,ANSW_TEL_NO AS ANSW_TEL_NO_BEFORE               /* 회신전화번호 */  
+               ,ANSW_EML_ADDR AS ANSW_EML_ADDR_BEFORE           /* 회신이메일주소 */
+               ,DECODE(USE_YN, 'Y', '1', 'N', '0') AS USE_YN    /* 사용여부 */
+               ,FS_REG_USER_ID                /* 최초등록사용자ID */
+               ,TO_CHAR(FS_REG_DTM, 'YYYYMMDDHH24MISS') AS FS_REG_DTM       /* 최초등록일시 */
+               ,LS_CHG_USER_ID                /* 최종등록사용자ID */
+               ,TO_CHAR(LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM       /* 최종등록일시 */
+          FROM  TB_ALRT_SVC      /* SC_알림서비스 */
+        ]]><dynamic prepend="WHERE"><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="ALRT_SVC_NO"><![CDATA[       
+                ALRT_SVC_NO LIKE '%'||#ALRT_SVC_NO#||'%'  
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEmpty prepend="AND" property="ALRT_SVC_NM"><![CDATA[       
+                ALRT_SVC_NM LIKE '%'||#ALRT_SVC_NM#||'%'  
+        ]]></isNotEmpty><![CDATA[
+        ]]><isNotEqual prepend="AND" property="ALRT_WORK_CL_CD" compareValue="%"><![CDATA[       
+                ALRT_WORK_CL_CD = #ALRT_WORK_CL_CD# 
+        ]]></isNotEqual><![CDATA[
+        ]]><isNotEqual prepend="AND" property="ALRT_CHNL_CL_CD" compareValue="%"><![CDATA[       
+                ALRT_CHNL_CL_CD = #ALRT_CHNL_CL_CD# 
+        ]]></isNotEqual><![CDATA[
+        ]]><isNotEqual prepend="AND" property="ALRT_CONS_CL_CD" compareValue="%"><![CDATA[       
+                ALRT_CONS_CL_CD = #ALRT_CONS_CL_CD# 
+        ]]></isNotEqual><![CDATA[]]></dynamic><![CDATA[
+        ) PA                                                              
+ WHERE ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAlrtSvcLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcMgmt.SAlrtSvcLstTotCnt 알림서비스전체건수조회 */
+/* IO: 심상준,2014-10-02T17:15:25(심상준,2014-09-22T17:08:29) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_ALRT_SVC  /* SC_알림서비스 */
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="ALRT_SVC_NO"><![CDATA[       
+        ALRT_SVC_NO LIKE '%'||#ALRT_SVC_NO#||'%'  
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="ALRT_SVC_NM"><![CDATA[       
+        ALRT_SVC_NM LIKE '%'||#ALRT_SVC_NM#||'%'  
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="ALRT_WORK_CL_CD" compareValue="%"><![CDATA[       
+        ALRT_WORK_CL_CD = #ALRT_WORK_CL_CD# 
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="ALRT_CHNL_CL_CD" compareValue="%"><![CDATA[       
+        ALRT_CHNL_CL_CD = #ALRT_CHNL_CL_CD# 
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="ALRT_CONS_CL_CD" compareValue="%"><![CDATA[       
+        ALRT_CONS_CL_CD = #ALRT_CONS_CL_CD# 
+]]></isNotEqual><![CDATA[]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SAlrtSvcLstValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcMgmt.SAlrtSvcLstValidate 알림서비스사전체크 */
+/* IO: 심상준,2014-09-24T10:46:51(심상준,2014-09-22T17:08:48) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_ALRT_SVC  /* SC_알림서비스 */
+ WHERE  ALRT_SVC_NO = #ALRT_SVC_NO#]]>
+	</select>
+	<insert id="IAlrtSvc" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcMgmt.IAlrtSvc 알림서비스등록 */
+/* IO: 심상준,2014-10-02T17:16:31(심상준,2014-09-22T17:09:10) */
+INSERT
+  INTO  TB_ALRT_SVC                 /* SC_알림서비스 */   
+       (
+        ALRT_SVC_NO                 /* 알림서비스번호 */                     
+       ,ALRT_SVC_NM                 /* 알림서비스명 */                     
+       ,ALRT_WORK_CL_CD             /* 알림업무구분코드 */                 
+       ,ALRT_CHNL_CL_CD             /* 알림채널구분코드 */               
+       ,ALRT_CONS_CL_CD             /* 알림제약구분코드 */                   
+       ,RETN_AGR_APLY_YN            /* 수신동의적용여부 */       
+       ,ALRT_TITE_NM                /* 알림제목명 */       
+       ,ALRT_MSG_CTT                /* 알림메시지내용 */       
+       ,ANSW_TEL_NO                 /* 회신전화번호 */ 
+       ,ANSW_EML_ADDR               /* 회신이메일주소 */
+       ,USE_YN                      /* 사용여부 */
+       ,FS_REG_USER_ID              /* 최초등록사용자ID */    
+       ,FS_REG_DTM                  /* 최초등록일시 */        
+       ,LS_CHG_USER_ID              /* 최종등록사용자ID */    
+       ,LS_CHG_DTM                  /* 최종등록일시 */
+       ,ANSW_TEL_NO_ENPT            /* 회신전화번호암호화 */ 
+       ,ANSW_EML_ADDR_ENPT          /* 회신이메일주소암호화 */        
+        )
+VALUES  
+       (
+        #ALRT_SVC_NO#               /* 알림서비스번호 */ 
+       ,#ALRT_SVC_NM#              /* 알림서비스명 */ 
+       ,#ALRT_WORK_CL_CD#           /* 알림업무구분코드 */
+       ,#ALRT_CHNL_CL_CD#           /* 알림채널구분코드 */
+       ,#ALRT_CONS_CL_CD#           /* 알림제약구분코드 */
+       ,DECODE(#RETN_AGR_APLY_YN#,'1','Y','0','N', NULL, 'N')   /* 수신동의적용여부 */
+       ,#ALRT_TITE_NM#              /* 알림제목명 */
+       ,#ALRT_MSG_CTT#              /* 알림메시지내용 */
+       ,#ANSW_TEL_NO_MASK#          /* 회신전화번호 */
+       ,#ANSW_EML_ADDR_MASK#        /* 회신이메일주소 */
+       ,DECODE(#USE_YN#,'1','Y','0','N', NULL, 'N')             /* 사용여부 */ 
+       ,#USERNO#                    /* 최초등록사용자ID */
+       ,SYSDATE                     /* 최초등록일시 */ 
+       ,#USERNO#                    /* 최종등록사용자ID */ 
+       ,SYSDATE                     /* 최종등록일시 */
+       ,#ANSW_TEL_NO_ENPT#          /* 회신전화번호암호화 */ 
+       ,#ANSW_EML_ADDR_ENPT#        /* 회신이메일주소암호화 */ 
+        )]]>
+	</insert>
+	<update id="UAlrtSvc" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcMgmt.UAlrtSvc 알림서비스수정 */
+/* IO: 임지후,2015-02-03T15:05:20(심상준,2014-09-22T17:09:47) */
+UPDATE  
+        TB_ALRT_SVC      /* SC_알림서비스 */
+   SET  ALRT_SVC_NM = #ALRT_SVC_NM#              /* 알림서비스명 */    
+       ,ALRT_WORK_CL_CD = #ALRT_WORK_CL_CD#      /* 알림업무구분코드 */ 
+       ,ALRT_CHNL_CL_CD = #ALRT_CHNL_CL_CD#      /* 알림채널구분코드 */
+       ,ALRT_CONS_CL_CD = #ALRT_CONS_CL_CD#      /* 알림제약구분코드 */ 
+       ,RETN_AGR_APLY_YN = DECODE(#RETN_AGR_APLY_YN#,'1','Y','0','N')  /* 수신동의적용여부 */ 
+       ,ALRT_TITE_NM = #ALRT_TITE_NM#            /* 알림제목명 */  
+       ,ALRT_MSG_CTT = #ALRT_MSG_CTT#            /* 알림메시지내용 */              
+       ]]><isEqual property="ANSW_TEL_NO_CHANGE_YN" compareValue="Y"><![CDATA[    
+       ,ANSW_TEL_NO = #ANSW_TEL_NO_MASK#              /* 회신전화번호 */        
+       ]]></isEqual><![CDATA[ 
+       ]]><isEqual property="ANSW_EML_ADDR_CHANGE_YN" compareValue="Y"><![CDATA[    
+       ,ANSW_EML_ADDR = #ANSW_EML_ADDR_MASK#          /* 회신이메일주소 */   
+       ]]></isEqual><![CDATA[     
+       ,USE_YN = DECODE(#USE_YN#,'1','Y','0','N')  /* 사용여부 */                  
+       ,LS_CHG_USER_ID = #USERNO#                /* 최종등록사용자ID */          
+       ,LS_CHG_DTM = SYSDATE                     /* 최종등록일시 */
+       ]]><isEqual property="ANSW_TEL_NO_CHANGE_YN" compareValue="Y"><![CDATA[    
+       ,ANSW_TEL_NO_ENPT = #ANSW_TEL_NO_ENPT#      /* 회신전화번호암호화 */   
+       ]]></isEqual><![CDATA[ 
+       ]]><isEqual property="ANSW_EML_ADDR_CHANGE_YN" compareValue="Y"><![CDATA[    
+       ,ANSW_EML_ADDR_ENPT = #ANSW_EML_ADDR_ENPT#  /* 회신이메일주소암호화 */     
+       ]]></isEqual><![CDATA[                
+ WHERE  ALRT_SVC_NO = #ALRT_SVC_NO#]]>
+	</update>
+</sqlMap>

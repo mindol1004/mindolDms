@@ -1,0 +1,554 @@
+package dms.ep.epscsbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]반송대상관리</li>
+ * <li>설  명 : <pre>반송대상관리</pre></li>
+ * <li>작성일 : 2015-09-10 10:57:23</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class FEPRtnMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPRtnMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>검수반송대상조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : FR_DT [처리시작일자]
+	 *	- field : TO_DT [처리종료일자]
+	 *	- field : DT_GB [조회기준구분]
+	 *	- field : AFFIL_AGN [소속대리점코드]
+	 *	- field : AFFIL_AGN_NM [소속대리점명]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : CNSL_DEALCO_NM [상담처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : DPSTR [고객명]
+	 *	- field : RETUR_RSLT [처리구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_JDG_RTN_OBJ_LIST
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : AFFIL_ORG_ID [소속조직]
+	 *		- field : ORG_NM [조직명]
+	 *		- field : AGN_ORG_CD [대리점조직코드]
+	 *		- field : HEADQ_NM [본부명]
+	 *		- field : MKT_TEAM_CD [마케팅팀코드]
+	 *		- field : MKT_TEAM_NM [마케팅팀명]
+	 *		- field : UKEY_SUB_CD [UKEY서브코드]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : CNSL_DEALCO_NM [상담거래처]
+	 *		- field : CNSL_DEALCO_CD [상담거래처코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : ACCO_NO [계좌번호]
+	 *		- field : DPSTR [예금주]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : EQP_ST [단말기상태]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : RETUR_RSLT [반송결과]
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : DEALCO_ZIPCD [우편번호]
+	 *		- field : DEALCO_ADDR [주소]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : CHEKED [체크]
+	 *		- field : DPSTR_ENPT [예금주암호화]
+	 *		- field : DEALCO_ADDR_ENPT [거래처주소암호화]
+	 * </pre>
+	 */
+	public IDataSet fInqJdgRtnObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPRtnMgmt.dSJdgRtnObjListTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseData = dEPRtnMgmt.dSJdgRtnObjListPaging(reqDs, onlineCtx);
+
+            rsPagingList = responseData.getRecordSet("RQ_JDG_RTN_OBJ_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>검수반송등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RQ_JDG_RTN_CON_LIST
+	 *		- field : RETUR_RSLT [반송결과]
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegJdgRtn(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet rqRevdData = new DataSet();
+        
+        try {
+            CommonArea ca = getCommonArea(onlineCtx);
+            IRecordSet reqSet = requestData.getRecordSet("RQ_JDG_RTN_CON_LIST");
+            // 1. DU lookup
+            DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+            for(int i = 0; i < reqSet.getRecordCount(); i++){
+                requestData.putFieldMap(reqSet.getRecordMap(i));
+                requestData.putField("FS_CHG_USER_ID", ca.getUserNo());
+                requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                responseData = dEPRtnMgmt.dIJdgRtn(requestData, onlineCtx);      
+            }
+            // 2. 반제전표용자료생성
+            if(requestData != null && requestData.getRecordSet("RQ_JDG_RTN_CON_LIST") != null && requestData.getRecordSet("RQ_JDG_RTN_CON_LIST").getRecordCount() > 0){
+                FEPCnclInveRevdSlipRgst fEPCnclInveRevdSlipRgst = (FEPCnclInveRevdSlipRgst) lookupFunctionUnit(FEPCnclInveRevdSlipRgst.class);
+                rqRevdData.putRecordSet("RQ_RVED_SLIP_LIST",requestData.getRecordSet("RQ_JDG_RTN_CON_LIST"));
+                fEPCnclInveRevdSlipRgst.fRegCnclInveRevdSlipRgst(rqRevdData, onlineCtx);
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>고객반송대상조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : FR_DT [처리시작일자]
+	 *	- field : TO_DT [처리종료일자]
+	 *	- field : DT_GB [조회기준구분]
+	 *	- field : AFFIL_AGN [소속대리점코드]
+	 *	- field : AFFIL_AGN_NM [소속대리점명]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : CNSL_DEALCO_NM [상담처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : DPSTR [고객명]
+	 *	- field : RETUR_RSLT [처리구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CUST_RTN_OBJ_LIST
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : DPSTR [고객명]
+	 *		- field : ZIPCD [우편번호]
+	 *		- field : ADDR [주소]
+	 *		- field : TEL_NO [전화번호]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : CHEKED [체크]
+	 *		- field : DPSTR_ENPT [예금주암호화]
+	 *		- field : ETC_ADDR_ENPT [주소암호화]
+	 * </pre>
+	 */
+	public IDataSet fInqCustRtnObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPRtnMgmt.dSCustRtnObjListTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseData = dEPRtnMgmt.dSCustRtnObjListPaging(reqDs, onlineCtx);
+
+            rsPagingList = responseData.getRecordSet("RS_CUST_RTN_OBJ_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>고객반송등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CUST_RTN_LIST
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegCustRtn(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            CommonArea ca = getCommonArea(onlineCtx);
+            IRecordSet reqSet = requestData.getRecordSet("RS_CUST_RTN_LIST");
+            // 1. DU lookup
+            DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+            for(int i = 0; i < reqSet.getRecordCount(); i++){
+                requestData.putFieldMap(reqSet.getRecordMap(i));
+                requestData.putField("FS_CHG_USER_ID", ca.getUserNo());
+                requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                responseData = dEPRtnMgmt.dICustRtnReg(requestData, onlineCtx);      
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점반송대상조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : FR_DT [처리시작일자]
+	 *	- field : TO_DT [처리종료일자]
+	 *	- field : DT_GB [조회기준구분]
+	 *	- field : AFFIL_AGN [소속대리점코드]
+	 *	- field : AFFIL_AGN_NM [소속대리점명]
+	 *	- field : CNSL_DEALCO_CD [상담처코드]
+	 *	- field : CNSL_DEALCO_NM [상담처명]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : EQP_SER_NO [단말기일련번호]
+	 *	- field : DPSTR [고객명]
+	 *	- field : RETUR_RSLT [처리구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_RTN_OBJ_LIST
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : AGN_ORG_CD [대리점조직코드]
+	 *		- field : CNSL_DEALCO_NM [상담거래처명]
+	 *		- field : AFFIL_AGN_NM [대리점명]
+	 *		- field : UKEY_SUB_CD [UKEY서브코드]
+	 *		- field : DEALCO_ZIPCD [우편번호]
+	 *		- field : DEALCO_ADDR [주소]
+	 *		- field : DEALCO_TEL_NO [전화번호]
+	 *		- field : PROGR_ST [진행상태]
+	 *		- field : DPSTR [고객명]
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : DATA_GB [데이터구분]
+	 *		- field : CHEKED [체크]
+	 *		- field : DPSTR_ENPT [예금주암호화]
+	 * </pre>
+	 */
+	public IDataSet fInqAgnRtnObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPRtnMgmt.dSAgnRtnObjListTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            // 3. LISTDM호출
+            responseData = dEPRtnMgmt.dSAgnRtnObjListPaging(reqDs, onlineCtx);
+
+            rsPagingList = responseData.getRecordSet("RS_AGN_RTN_OBJ_LIST");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점반송등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_RTN_LIST
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : DATA_GB [데이터구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegAgnRtn(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+            try {
+                CommonArea ca = getCommonArea(onlineCtx);
+                IRecordSet reqSet = requestData.getRecordSet("RS_AGN_RTN_LIST");
+                // 1. DU lookup
+                DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+                for(int i = 0; i < reqSet.getRecordCount(); i++){
+                    requestData.putFieldMap(reqSet.getRecordMap(i));
+                    requestData.putField("FS_CHG_USER_ID", ca.getUserNo());
+                    requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    if("C".equals(requestData.getField("DATA_GB"))){
+                        dEPRtnMgmt.dIAgnRtnConReg(requestData, onlineCtx);      
+                    } else if ("P".equals(requestData.getField("DATA_GB"))){
+                      dEPRtnMgmt.dIAgnRtnReg(requestData, onlineCtx);      
+                    }    
+                }             
+
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>고객반송취소</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CUST_RTN_LIST
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdCustRtnCnl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+                   
+            try {
+                CommonArea ca = getCommonArea(onlineCtx);
+                IRecordSet reqSet = requestData.getRecordSet("RS_CUST_RTN_LIST");
+                // 1. DU lookup
+                DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+                for(int i = 0; i < reqSet.getRecordCount(); i++){
+                    requestData.putFieldMap(reqSet.getRecordMap(i));
+                    requestData.putField("FS_CHG_USER_ID", ca.getUserNo());
+                    requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                    responseData = dEPRtnMgmt.dUCustRtnUpd(requestData, onlineCtx);      
+                }
+            } catch ( BizRuntimeException e ) {
+                throw e;
+            }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>대리점반송취소</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_RTN_LIST
+	 *		- field : RETUR_DT [반송일]
+	 *		- field : RETUR_SUGG [반송의견]
+	 *		- field : PRCH_MGMT_NO [매입관리번호]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : DATA_GB [데이터구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdAgnRtnCnl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            CommonArea ca = getCommonArea(onlineCtx);
+            IRecordSet reqSet = requestData.getRecordSet("RS_AGN_RTN_LIST");
+            // 1. DU lookup
+            DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+            for(int i = 0; i < reqSet.getRecordCount(); i++){
+                requestData.putFieldMap(reqSet.getRecordMap(i));
+                requestData.putField("FS_CHG_USER_ID", ca.getUserNo());
+                requestData.putField("LS_CHG_USER_ID", ca.getUserNo());
+                if("C".equals(requestData.getField("DATA_GB"))){
+                    dEPRtnMgmt.dUAgnRtnConUpd(requestData, onlineCtx);      
+                } else if ("P".equals(requestData.getField("DATA_GB"))){
+                  dEPRtnMgmt.dUAgnRtnUpd(requestData, onlineCtx);      
+                }    
+            }    
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+        
+        return responseData;
+    }
+
+	/**
+	 * <pre>반송등록박스조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-09-10 10:57:23
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqRtnRegBoxList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+
+		try {
+			// 1. DU lookup
+			DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+			responseData = dEPRtnMgmt.dInqRtnRegBoxList(requestData, onlineCtx);      
+			    
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+
+		return responseData;
+	}
+
+	/**
+	 * <pre>[FM]반송등록대상조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-09-23 17:43:08
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqRtnRegObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+
+		// 1. DU lookup
+		DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+		responseData = dEPRtnMgmt.dInqRtnRegObjList(requestData, onlineCtx);      
+
+		return responseData;
+	}
+
+	/**
+	 * <pre>[FM]반송등록대상저장</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-09-24 18:19:20
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegRtnRegObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+        IDataSet rqRevdData = new DataSet();
+
+        try {
+    		// 1. DU lookup
+    		DEPRtnMgmt dEPRtnMgmt = (DEPRtnMgmt) lookupDataUnit(DEPRtnMgmt.class);
+    		responseData = dEPRtnMgmt.dIRegRtnRegObjList(requestData, onlineCtx);
+    		
+            // 2. 반제전표용자료생성
+    		if(requestData != null && requestData.getRecordSet("RQ_AGN_RTN_LIST") != null && requestData.getRecordSet("RQ_AGN_RTN_LIST").getRecordCount() > 0){
+        		FEPCnclInveRevdSlipRgst fEPCnclInveRevdSlipRgst = (FEPCnclInveRevdSlipRgst) lookupFunctionUnit(FEPCnclInveRevdSlipRgst.class);
+        		rqRevdData.putRecordSet("RQ_RVED_SLIP_LIST",requestData.getRecordSet("RQ_AGN_RTN_LIST"));
+        		String strChk = "";
+        		for(int i = (rqRevdData.getRecordSet("RQ_RVED_SLIP_LIST").getRecordCount()-1); i >= 0; i--){
+        		    strChk = rqRevdData.getRecordSet("RQ_RVED_SLIP_LIST").getRecord(i).get("CHK").toString();
+        		    if(strChk == null || "".equals(strChk) || "0".equals(strChk)){
+        		        rqRevdData.getRecordSet("RQ_RVED_SLIP_LIST").removeRecord(i);
+        		    }
+        		}
+                if(rqRevdData != null && rqRevdData.getRecordSet("RQ_RVED_SLIP_LIST") != null && rqRevdData.getRecordSet("RQ_RVED_SLIP_LIST").getRecordCount() > 0){
+                    fEPCnclInveRevdSlipRgst.fRegCnclInveRevdSlipRgst(rqRevdData, onlineCtx);
+                }
+    		}
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+
+		return responseData;
+	}
+  
+}

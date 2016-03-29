@@ -1,0 +1,139 @@
+package dms.ep.epbsxbase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.RecordSet;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]대리점수수료관리</li>
+ * <li>설  명 : <pre>[PU]대리점수수료관리</pre></li>
+ * <li>작성일 : 2015-10-05 10:35:55</li>
+ * <li>작성자 : 김윤환 (kyh0904)</li>
+ * </ul>
+ *
+ * @author 김윤환 (kyh0904)
+ */
+public class PEPAgnCmmsMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPAgnCmmsMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]대리점수수료목록조회</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-22 10:26:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INCEN_STRD_YM [인센티브 기준 년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_CMMS_LIST
+	 *		- field : ROWNO [순번]
+	 *		- field : INCEN_XCL_NO [인센티브 정산 번호]
+	 *		- field : INCEN_STRD_YM [인센티브 기준 년월]
+	 *		- field : INCEN_BIZ_REG_NO [인센티브 사업자 등록 번호]
+	 *		- field : INCEN_CORP_NM [인센티브 법인 명]
+	 *		- field : INCEN_AMT [인센티브 금액]
+	 *		- field : INCEN_SLIP_DT [인센티브 전표 일자]
+	 *		- field : INCEN_SLIP_NO [인센티브 전표 번호]
+	 *		- field : INCEN_SLIP_ST [인센티브 전표 상태]
+	 *		- field : SLIP_NO [전표번호]
+	 *		- field : SLIP_ST_CD [전표상태코드]
+	 * </pre>
+	 */
+	public IDataSet pSAgnCmmsLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출            
+            responseData.putRecordSet(callSharedBizComponentByDirect("ep.EPSSXBase", "fSAgnCmmsLst", requestData, onlineCtx).getRecordSet("RS_AGN_CMMS_LIST"));  // SKT수수료목록조회          
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]대리점수수료등록</pre>
+	 *
+	 * @author 김윤환 (kyh0904)
+	 * @since 2015-10-22 10:26:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INCEN_STRD_YM [정산기준년월]
+	 *	- record : RS_AGN_CMMS_LIST
+	 *		- field : INCEN_BIZ_REG_NO [인센티브 사업자 등록 번호]
+	 *		- field : INCEN_CORP_NM [인센티브 법인 명]
+	 *		- field : INCEN_AMT [인센티브 금액]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveAgnCmms(IDataSet requestData, IOnlineContext onlineCtx) {
+	    Log logger = LogManager.getFwkLog();	    
+	    IDataSet responseData = new DataSet();
+        IRecordSet rsList = requestData.getRecordSet("RS_AGN_CMMS_LIST");
+        CommonArea ca = getCommonArea(onlineCtx);        
+        IRecord rec = null;
+        IDataSet rowDs = new DataSet();
+        
+        try{
+            for (int i = 0; i < rsList.getRecordCount(); i++) {
+                rec = rsList.getRecord(i);
+                rowDs.putFieldMap(rec);
+                rowDs.putField("USER_ID", ca.getUserNo());
+                rowDs.putField("INCEN_STRD_YM",StringUtils.nvlObject(requestData.getField("INCEN_STRD_YM"),""));
+                /*
+                if (logger.isDebugEnabled()) {
+                    logger.debug("#### INCEN_STRD_YM #### =======>> "+StringUtils.nvlObject(requestData.getField("INCEN_STRD_YM"),"")+"\n");
+                    logger.debug("#### rowDs.toString #### =======>> "+rowDs.toString()+"\n");
+                }
+                */
+                callSharedBizComponentByDirect("ep.EPSSXBase", "fIAgnCmms", rowDs, onlineCtx);
+            }
+                                    
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        
+        return responseData;
+    }
+	
+}

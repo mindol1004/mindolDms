@@ -1,0 +1,57 @@
+/**
+ * 
+ */
+package fwk.erfif.sapjco;
+
+import java.util.Properties;
+
+import com.sap.conn.jco.ext.DestinationDataEventListener;
+import com.sap.conn.jco.ext.DestinationDataProvider;
+
+/**
+ * DataProvider
+ * @author greatjin
+ *
+ */
+public class SapDestinationDataProvider implements DestinationDataProvider {
+ 
+	private DestinationDataEventListener eL;
+	private Properties ABAP_AS_properties;
+	
+	/* (non-Javadoc)
+	 * @see com.sap.conn.jco.ext.DestinationDataProvider#getDestinationProperties(java.lang.String)
+	 */
+	public Properties getDestinationProperties(String destinationName) {
+		if(destinationName.equals("ABAP_AS") && ABAP_AS_properties!=null)
+			return ABAP_AS_properties;
+		
+		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.sap.conn.jco.ext.DestinationDataProvider#setDestinationDataEventListener(com.sap.conn.jco.ext.DestinationDataEventListener)
+	 */
+	public void setDestinationDataEventListener(DestinationDataEventListener eventListener) {
+		this.eL = eventListener;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.sap.conn.jco.ext.DestinationDataProvider#supportsEvents()
+	 */
+	public boolean supportsEvents() {
+		return true;
+	}
+    
+	void changePropertiesForABAP_AS(Properties properties) {
+		if(properties==null) {
+			ABAP_AS_properties = null;
+			eL.deleted("ABAP_AS");
+		} else {
+			if(ABAP_AS_properties==null || !ABAP_AS_properties.equals(properties)) {
+				ABAP_AS_properties = properties;
+				eL.updated("ABAP_AS");
+			}
+		}
+	}
+}
+

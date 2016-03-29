@@ -1,0 +1,193 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="nexcore.framework.core.Constants"%>
+<%@ page import="nexcore.framework.core.util.BaseUtils"%>
+<%@ page import="nexcore.framework.core.data.user.IUserInfo"%>
+<%@ page import="nexcore.framework.online.channel.util.WebUtils"%>
+<%@page import="java.util.*" %>
+<%@page import="java.text.*" %>
+<%@ page import="nexcore.framework.core.*"%>
+<%@ page import="nexcore.framework.core.file.*"%>
+<%@ page import="nexcore.framework.core.prototype.*"%>
+<%@ page import="nexcore.framework.online.channel.util.*"%>
+<%@page import="nexcore.framework.core.data.IDataSet" %>
+<%@page import="nexcore.framework.core.data.IRecordSet" %>
+<%@page import="nexcore.framework.core.data.IRecord" %>
+<%@page import="nexcore.framework.core.data.IResultMessage" %>
+<%@page import="nexcore.framework.core.util.BaseUtils" %>
+<%@page import="nexcore.framework.core.util.ExceptionUtil" %>
+<%@page import="nexcore.framework.core.code.ICode"%>
+<%@page import="nexcore.framework.core.util.StringUtils"%>
+<%@page import="fwk.code.HpcCodeManager"%>
+<%@page import="fwk.code.internal.HpcCode"%>
+<%@page import="fwk.utils.HpcUtils"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %> 
+<!DOCTYPE html>
+<html>
+<head> 
+	<title>${pageName}</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" >
+	<!-- libraryList include  start -->
+	<jsp:include page="./include/libraryList.jsp"/>
+	<!-- top page include  end -->
+</head>
+<body>
+<%  
+	String userNm = "";
+	String userNo = "";
+	String sessNo = "";
+	String dealCoCd = "";
+	String dealCoNm = "";
+	String dealCoRepveNm = "";
+	String dealCoBlicensNo = "";
+	IUserInfo userInfo = (IUserInfo)WebUtils.getSessionUserInfo(request);
+	
+	String[] requestUri = request.getRequestURI().split("/");
+	String baseURL = requestUri[requestUri.length-1];
+	
+	if (userInfo == null) {
+		//로그인페이지로 포워딩
+		if(!"login.jsp".equals(baseURL)){
+		    response.sendRedirect("login.jsp");
+		}
+	} else {  
+	    userNm = StringUtils.nvlObject(userInfo.get("USER_NM"), "");
+	    userNo = StringUtils.nvlObject(userInfo.get("USER_NO"), "");
+	    sessNo = StringUtils.nvlObject(userInfo.get("SESS_NO"), "");
+		dealCoCd = StringUtils.nvlObject(userInfo.get("DEALCO_CD"), "");
+		dealCoNm = StringUtils.nvlObject(userInfo.get("DEALCO_NM"), "");
+		dealCoRepveNm = StringUtils.nvlObject(userInfo.get("DEALCO_REPVE_NM"), "");
+		dealCoBlicensNo = StringUtils.nvlObject(userInfo.get("DEALCO_BLICENS_NO"), "");
+	}
+
+	//calendar
+	Calendar cal = Calendar.getInstance();
+	int year = cal.get(cal.YEAR);
+	int month = cal.get(cal.MONTH)+1;
+	String todate = "";
+	
+	if(month < 10){
+	    todate = year +"-" + "0" + month;
+	}else{
+	    todate = year + "-" + month;
+	}
+	String sNoDataMessage = "조회결과가 없습니다.";
+	//money format
+	DecimalFormat df = new DecimalFormat("###,###");   
+	
+	//페이지 설정
+	int _page = 1;
+	int _page_size = 10;
+	if(!StringUtils.isEmpty(request.getParameter("page"))){
+	    _page = Integer.parseInt(request.getParameter("page"));
+	}	
+	if(!StringUtils.isEmpty(request.getParameter("page_size"))){
+	    _page_size = Integer.parseInt(request.getParameter("page_size"));
+	}	
+%>
+<c:set var="userNm"  value="<%=userNm%>"/>
+<c:set var="userId"  value="<%=userNo%>"/>
+<c:set var="dealCoCd"  value="<%=dealCoCd%>"/>
+<c:set var="dealCoNm"  value="<%=dealCoNm%>"/>
+<c:set var="dealCoRepveNm"  value="<%=dealCoRepveNm%>"/>
+<c:set var="dealCoBlicensNo"  value="<%=dealCoBlicensNo%>"/>
+<c:set var="baseURL" value="<%=baseURL%>" />
+<c:set var="contextPath" value="<%=request.getContextPath()%>" />
+<c:set var="transactionId" value="<%= Constants.TRANSACTION_ID %>" />
+<c:set var="target" value="<%= Constants.TARGET %>" />
+
+<form name="logout" action="" method="post" onsubmit="">
+	<input type="hidden" name="${transactionId}">
+	<input type="hidden" name="${target}">
+<%-- 	<input type="hidden" name="USER_NO"  value="<%=userNo%>">
+	<input type="hidden" name="SESS_NO" value="<%=sessNo%>"> --%>
+</form>
+<div id="headerDiv">
+	<div id="topDiv">
+		<div id="logoDiv" class="float-left">		
+			<a href="${contextPath}/jsp/home.jsp"><img id="logoImg" src="${contextPath}/ext/img/logo_SK_C&C.png" width="96" height="49" alt="로고" /></a>
+		</div>
+		<div id="topRightMenuDiv" class="float-right">
+			<ul id="topRightMenuUl" class="navUl">
+			
+			 <c:choose>
+			     <c:when test="${userNm != ''}">
+				<li>${userNm} 님 </li>		
+				<li><img src="${contextPath}/ext/img/top_mu_line.gif" alt="" /></li>
+				 </c:when>
+			     <c:otherwise>
+			     </c:otherwise>
+			</c:choose>			
+	           <c:choose>
+			     <c:when test="${userId != ''}">
+			     		<li><a href="javascript:void(0);" onclick="fn_openChgPwdPopup()">비밀번호변경</a></li>
+			     		<li><img src="${contextPath}/ext/img/top_mu_line.gif" alt="" /></li>
+			     		<li><a href="javascript:void(0);" onclick="onBeforeLogout()">로그아웃</a></li>
+			     </c:when>
+			     <c:otherwise>
+						<li><a href="./login.jsp">로그인</a></li>
+			            <li><img src="${contextPath}/ext/img/top_mu_line.gif" alt="" /></li>
+			            <li><a href="javascript:void(0);" onclick="fn_openChgPwdPopup()">비밀번호변경</a></li>
+			     </c:otherwise>
+			</c:choose>
+	       </ul>
+		</div>
+	</div>	 
+	<c:if test="${baseURL !='login.jsp'}">   
+	<!-- navigator Menu  start -->
+		<nav>
+          <ul class="nav nav-justified">
+            <li><a href="${contextPath}/jsp/home.jsp" class="topnav-icons" >HOME</a></li>
+			<li><a href="${contextPath}/jsp/noticeList.jsp" class="topnav-icons" >공지사항</a></li>
+			<li><a href="${contextPath}/jsp/SknCrdLstM.jsp" class="topnav-icons" >SKN 여신조회</a></li>
+			<li><a href="${contextPath}/jsp/SknCrdDtlLstM.jsp"  class="topnav-icons">SKN 여신상세조회</a></li>
+			<li><a href="${contextPath}/jsp/ApplfItmChkM.jsp"  class="topnav-icons">신청서 항목 체크</a></li>
+          </ul>
+        </nav>
+<%-- 	<div id="navDiv">	 
+		<ul class="navUl"> 
+			<li class="navUlMenu"><a href="${contextPath}/jsp/home.jsp" class="topnav-icons" >HOME</a></li>
+			<li ><img src="${contextPath}/ext/img/gnb_line.gif" alt="" /></li>
+			<li class="navUlMenu"><a href="${contextPath}/jsp/noticeList.jsp" class="topnav-icons" >공지사항</a></li>
+			<li ><img src="${contextPath}/ext/img/gnb_line.gif" alt="" /></li>
+			<li class="navUlMenu"><a href="${contextPath}/jsp/SknCrdLstM.jsp" class="topnav-icons" >SKN 여신조회</a></li>
+			<li ><img src="${contextPath}/ext/img/gnb_line.gif" alt="" /></li>
+			<li class="navUlMenu"><a href="${contextPath}/jsp/SknCrdDtlLstM.jsp"  class="topnav-icons">SKN 여신상세조회</a></li>
+			<li><img src="${contextPath}/ext/img/gnb_line.gif" alt="" /></li>
+			<li class="navUlMenu"><a href="${contextPath}/jsp/ApplfItmChkM.jsp"  class="topnav-icons">신청서 항목 체크</a></li>
+		</ul>
+	</div> --%>
+	<!-- navigator Menu  end -->
+	</c:if>
+</div>
+<script>
+	//현재 선택된 메뉴 active상태
+	
+	$(document).ready(function() {
+		$("a[href='${contextPath}/jsp/${baseURL}']").parent().addClass('activeMenu');
+	});
+	
+	//비밀번호 변경 버튼 클릭시 이벤트
+	function fn_openChgPwdPopup(){
+		 window.open('/jsp/chgPwdPopup.jsp', 'pop','toolbar=no,directories=no,scrollbars=no,resizable=no,status=no,menubar=no,width=390,height=380');		 
+	}
+
+	//로그아웃 버튼 클릭시 이벤트
+	function onBeforeLogout() {
+		if(confirm("로그아웃하시겠습니까?")){
+			 doLogout();
+		} else	{		
+			return false;
+		}
+	}	
+	//로그아웃 서비스 호출
+	function doLogout(){
+		document.logout.${transactionId}.value="PSCLginOp_pLgout";
+		document.logout.${target}.value="forward:jsp/login.jsp";
+		document.logout.target = "_self";
+		document.logout.action = "${contextPath}/login.cmd";
+		document.logout.submit();
+	}
+	
+</script>

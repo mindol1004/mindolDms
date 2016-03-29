@@ -1,0 +1,147 @@
+package dms.nr.nrbplbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]단말기준정보관리</li>
+ * <li>설  명 : <pre>단말기준정보관리PU</pre></li>
+ * <li>작성일 : 2015-07-09 16:58:41</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PNREqpStdMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNREqpStdMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>단말기준정보조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:29:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : OP_CL_CD [업무구분코드]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : MFACT_CD [제조사코드]
+	 *	- field : USE_YN [사용여부]
+	 *	- field : COLOR_CD [색상코드]
+	 *	- field : POP_YN [팝업여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_STD_LIST
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : OP_CL_NM [업무구분명]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : MFACT_NM [제조사명]
+	 *		- field : FST_RGST_DT [출시일]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : CAPA_CD [저장용량코드]
+	 *		- field : CAPA_NM [저장용량명]
+	 *		- field : COLOR_CD [색상코드]
+	 *		- field : COLOR_NM [색상명]
+	 *		- field : USE_YN [사용여부]
+	 *		- field : OUT_PRC [출고가]
+	 *		- field : RMK [비고]
+	 *		- field : FS_REG_USER_ID [최초등록사용자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpStdLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		
+		try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSPLBase", "fInqEqpStdLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 3. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+		
+		return responseData;
+	}
+
+	/**
+	 * <pre>단말기준정보저장</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-10 11:29:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_STD_LIST
+	 *		- field : COLOR_CD [색상코드]
+	 *		- field : COLOR_NM [색상명]
+	 *	- record : RS_EQP_STD_FRM
+	 *		- field : OP_CL_CD [업무구분코드]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : PET_NM [펫네임]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : FST_RGST_DT [출시일]
+	 *		- field : OUT_PRC [출고가]
+	 *		- field : CAPA_CD [저장용량코드]
+	 *		- field : USE_YN [사용여부]
+	 *		- field : RMK [비고]
+	 *		- field : COLOR_CD [색상코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveEqpStd(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. 입력 RS설정
+			requestData.putField("USERNO", ca.getUserNo());
+			requestData.putFieldMap(requestData.getRecordSet("RS_EQP_STD_FRM").getRecordMap(0));
+				
+			// 2. 레코드셋 상태에 따른 분기
+			if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // INSERT
+				callSharedBizComponentByDirect("nr.NRSPLBase", "fRegEqpStd", requestData, onlineCtx);
+			} else if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // UPDATE
+				callSharedBizComponentByDirect("nr.NRSPLBase", "fUpdEqpStd", requestData, onlineCtx);
+			}
+				
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+	
+	    return responseData;
+	}
+  
+}

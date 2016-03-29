@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRColsClctCmmsXclMgmt">
+	<select id="SColsClctCmmsXclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRColsClctCmmsXclMgmt.SColsClctCmmsXclTotCnt 추심회수금조회총건수 */
+/* IO: 안진갑,2016-01-14T13:31:11(김혁범,2015-11-16T14:03:58) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  (
+            SELECT  A.COLS_MNDT_DT
+                   ,B.SVC_MGMT_NO
+                   ,B.CNTRT_NO                   
+                   ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+              FROM  TB_INSU_INV A
+                   ,TB_NR_CNTRT B
+                   ,TB_EQP_CNTRT_DTL C
+             WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+               AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+               AND  B.CNTRT_NO = C.CNTRT_NO
+               AND  C.INV_DT IS NOT NULL                
+               AND  NVL(C.INV_AMT,0) - NVL(C.RECV_AMT,0)>0 
+               AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                    SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                    B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+             GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT
+            UNION ALL
+            SELECT  A.COLS_MNDT_DT
+                   ,B.SVC_MGMT_NO
+                   ,B.CNTRT_NO                   
+                   ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+              FROM  TB_INSU_INV A
+                   ,TB_NR_CNTRT B
+                   ,TB_RENTAL_PEN C
+             WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+               AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+               AND  B.CNTRT_NO = C.CNTRT_NO              
+               AND  NVL(C.UKEY_PEN_AMT,0) - NVL(C.PEN_RECV_AMT,0)>0
+               AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                    SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                    B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+               AND  C.PEN_POLY_CL IN ('01','02','03') /* 중도해지, 반납지연, 연체 */
+             GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT   
+            UNION ALL
+            SELECT  A.COLS_MNDT_DT
+                   ,B.SVC_MGMT_NO
+                   ,B.CNTRT_NO                   
+                   ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+              FROM  TB_INSU_INV A
+                   ,TB_NR_CNTRT B
+                   ,TB_RENTAL_DCP C
+             WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+               AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+               AND  B.CNTRT_NO = C.CNTRT_NO
+               AND  NVL(C.UKEY_DMG_CMP_AMT,0) - NVL(C.DMG_CMP_RECV_AMT,0)>0
+               AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                    SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                    B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+               AND  C.DCP_CL IN ('02','03') /* 미반납, 파손 */
+            GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT
+        ) OA]]>
+	</select>
+	<select id="SColsClctCmmsXclLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRColsClctCmmsXclMgmt.SColsClctCmmsXclLstPaging 추심회수금조회 */
+/* IO: 안진갑,2016-01-14T13:31:03(김혁범,2015-11-16T14:09:49) */
+SELECT  PA.*
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY OA.CNTRT_NO DESC) AS ROWNO
+               ,OA.COLS_MNDT_DT
+               ,OA.SVC_MGMT_NO       
+               ,OA.CNTRT_NO
+               ,OA.COLS_MNDT_AMT       
+               ,SUM(OA.AMT) AS SUM_AMT
+               ,OA.COLS_MNDT_AMT - SUM(OA.AMT) AS DIFF_AMT
+               ,DECODE(OA.COLS_MNDT_AMT, SUM(OA.AMT), 'Y', 'N') AS MATCHED_YN
+          FROM  (
+                    SELECT  A.COLS_MNDT_DT
+                           ,B.SVC_MGMT_NO
+                           ,B.CNTRT_NO                   
+                           ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+                           ,NVL(SUM(NVL(C.RECV_AMT,0)),0) AS AMT
+                      FROM  TB_INSU_INV A
+                           ,TB_NR_CNTRT B
+                           ,TB_EQP_CNTRT_DTL C
+                     WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+                       AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+                       AND  B.CNTRT_NO = C.CNTRT_NO
+                       AND  C.INV_DT IS NOT NULL
+                       AND  NVL(C.INV_AMT,0) - NVL(C.RECV_AMT,0)>0 
+                       AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                            SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                            B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+                     GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT
+                    UNION ALL
+                    SELECT  A.COLS_MNDT_DT
+                           ,B.SVC_MGMT_NO
+                           ,B.CNTRT_NO                   
+                           ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+                           ,NVL(SUM(NVL(C.PEN_RECV_AMT,0)),0) AS AMT
+                      FROM  TB_INSU_INV A
+                           ,TB_NR_CNTRT B
+                           ,TB_RENTAL_PEN C
+                     WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+                       AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+                       AND  B.CNTRT_NO = C.CNTRT_NO
+                       AND  NVL(C.UKEY_PEN_AMT,0) - NVL(C.PEN_RECV_AMT,0)>0
+                       AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                            SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                            B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+                       AND  C.PEN_POLY_CL IN ('01','02','03') /* 중도해지, 반납지연, 연체 */
+                     GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT   
+                    UNION ALL
+                    SELECT  A.COLS_MNDT_DT
+                           ,B.SVC_MGMT_NO
+                           ,B.CNTRT_NO                   
+                           ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+                           ,NVL(SUM(NVL(C.DMG_CMP_RECV_AMT,0)),0) AS AMT
+                      FROM  TB_INSU_INV A
+                           ,TB_NR_CNTRT B
+                           ,TB_RENTAL_DCP C
+                     WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+                       AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+                       AND  B.CNTRT_NO = C.CNTRT_NO
+                       AND  NVL(C.UKEY_DMG_CMP_AMT,0) - NVL(C.DMG_CMP_RECV_AMT,0)>0
+                       AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                            SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+                            B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+                       AND  C.DCP_CL IN ('02','03') /* 미반납, 파손 */
+                    GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT
+                ) OA
+         GROUP  BY OA.COLS_MNDT_DT, OA.SVC_MGMT_NO, OA.CNTRT_NO, OA.COLS_MNDT_AMT
+     ) PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="ScolsClctSum" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRColsClctCmmsXclMgmt.ScolsClctSum 추심회수금합계조회 */
+/* IO: 안진갑,2016-01-14T13:31:23(안진갑,2016-01-14T13:11:32) */
+SELECT  COUNT(1) AS TOTAL_CNT
+       ,SUM(PA.COLS_MNDT_AMT) AS SUM_COLS_MNDT_AMT
+       ,SUM(PA.SUM_AMT) AS SUM_AMT
+       ,SUM(PA.SUM_AMT)*0.2 AS COMM_AMT
+  FROM (
+        SELECT  ROW_NUMBER() OVER(ORDER BY OA.CNTRT_NO DESC) AS ROWNO
+               ,OA.COLS_MNDT_DT
+               ,OA.SVC_MGMT_NO       
+               ,OA.CNTRT_NO
+               ,OA.COLS_MNDT_AMT       
+               ,SUM(OA.AMT) AS SUM_AMT
+               ,OA.COLS_MNDT_AMT - SUM(OA.AMT) AS DIFF_AMT
+               ,DECODE(OA.COLS_MNDT_AMT, SUM(OA.AMT), 'Y', 'N') AS MATCHED_YN
+          FROM  (
+                    SELECT  A.COLS_MNDT_DT
+                           ,B.SVC_MGMT_NO
+                           ,B.CNTRT_NO                   
+                           ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+                           ,NVL(SUM(NVL(C.RECV_AMT,0)),0) AS AMT
+                      FROM  TB_INSU_INV A
+                           ,TB_NR_CNTRT B
+                           ,TB_EQP_CNTRT_DTL C
+                     WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+                       AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+                       AND  B.CNTRT_NO = C.CNTRT_NO
+                       AND  C.INV_DT IS NOT NULL
+                       AND  NVL(C.INV_AMT,0) - NVL(C.RECV_AMT,0)>0 
+                       AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                            SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[ 
+                     GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT
+                    UNION ALL
+                    SELECT  A.COLS_MNDT_DT
+                           ,B.SVC_MGMT_NO
+                           ,B.CNTRT_NO                   
+                           ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+                           ,NVL(SUM(NVL(C.PEN_RECV_AMT,0)),0) AS AMT
+                      FROM  TB_INSU_INV A
+                           ,TB_NR_CNTRT B
+                           ,TB_RENTAL_PEN C
+                     WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+                       AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+                       AND  B.CNTRT_NO = C.CNTRT_NO
+                       AND  NVL(C.UKEY_PEN_AMT,0) - NVL(C.PEN_RECV_AMT,0)>0
+                       AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                            SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[ 
+                       AND  C.PEN_POLY_CL IN ('01','02','03') /* 중도해지, 반납지연, 연체 */
+                     GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT   
+                    UNION ALL
+                    SELECT  A.COLS_MNDT_DT
+                           ,B.SVC_MGMT_NO
+                           ,B.CNTRT_NO                   
+                           ,NVL(A.COLS_MNDT_AMT,0) AS COLS_MNDT_AMT
+                           ,NVL(SUM(NVL(C.DMG_CMP_RECV_AMT,0)),0) AS AMT
+                      FROM  TB_INSU_INV A
+                           ,TB_NR_CNTRT B
+                           ,TB_RENTAL_DCP C
+                     WHERE  A.SVC_MGMT_NO = B.SVC_MGMT_NO
+                       AND  A.INSU_RENTAL_SER_NO = B.RENTAL_SER_NO
+                       AND  B.CNTRT_NO = C.CNTRT_NO
+                       AND  NVL(C.UKEY_DMG_CMP_AMT,0) - NVL(C.DMG_CMP_RECV_AMT,0)>0
+                       AND  A.COLS_MNDT_DT IS NOT NULL
+]]><isNotEmpty prepend="AND" property="COLS_MNDT_DT"><![CDATA[
+                            SUBSTR(A.COLS_MNDT_DT,0,6) = #COLS_MNDT_DT#
+]]></isNotEmpty><![CDATA[ 
+                       AND  C.DCP_CL IN ('02','03') /* 미반납, 파손 */
+                    GROUP  BY A.COLS_MNDT_DT, B.SVC_MGMT_NO, B.CNTRT_NO, A.COLS_MNDT_AMT
+                ) OA
+         GROUP  BY OA.COLS_MNDT_DT, OA.SVC_MGMT_NO, OA.CNTRT_NO, OA.COLS_MNDT_AMT
+     ) PA]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPInveXclMgmt">
+	<select id="SInqEpEqpInveXclList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPInveXclMgmt.SInqEpEqpInveXclList 중고단말기재고정산조회 */
+/* IO: 양재석,2015-10-14T13:14:17(양재석,2015-10-14T10:16:10) */
+SELECT INVE_XCL_NO           /* 재고 정산 번호      */
+       ,XCL_STRD_DT          /* 정산 기준 일자      */
+       ,DEDC_TYP_CD          /* 공제 유형 코드      */
+       ,INVE_TYP_CD          /* 재고 유형 코드      */
+       ,XCL_AMT              /* 정산 금액           */
+       ,INVE_XCL_CNT         /* 재고 정산 건수      */
+       ,INVE_SLIP_DT         /* 재고 전표 일자      */
+       ,INVE_SLIP_NO         /* 재고 전표 번호      */
+       ,INVE_SLIP_ST         /* 재고 전표 상태      */
+       ,INVE_CNCL_SLIP_DT    /* 재고 취소 전표 일자 */
+       ,INVE_CNCL_SLIP_NO    /* 재고 취소 전표 번호 */
+       ,'0' CHECKED
+  FROM TB_EP_INVE_XCL
+ WHERE SUBSTR(XCL_STRD_DT,0,6) = #STRD_MTH#
+   AND DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="OP_GB_CD"><![CDATA[   
+       INVE_TYP_CD = #OP_GB_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

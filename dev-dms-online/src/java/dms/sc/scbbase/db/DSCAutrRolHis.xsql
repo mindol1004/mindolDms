@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCAutrRolHis">
+	<insert id="IAutrRolHis" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAutrRolHis.IAutrRolHis 사용자권한역할이력등록 */
+/* IO: 임지후,2015-03-20T14:22:00(심상준,2014-09-24T09:02:00) */
+INSERT  
+  INTO TH_USER_AUTR_ROL_HST 
+       (
+        USER_NO        /* 사용자번호 */
+       ,AUTR_ROL_ID    /* 권한역할ID */
+       ,CHG_DTM        /* 변경일시 */
+       ,APLY_STA_DT    /* 적용시작일자*/
+       ,APLY_END_DT    /* 적용종료일자*/
+       ,USE_YN         /* 사용여부 */ 
+       ,DEL_YN         /* 삭제여부 */ 
+       ,FS_REG_USER_ID /* 최초등록사용자ID */ 
+       ,FS_REG_DTM     /* 최초등록일시 */ 
+       ,LS_CHG_USER_ID /* 최종변경사용자ID */
+       ,LS_CHG_DTM     /* 최종변경일시*/
+        )
+SELECT
+        USER_NO	       /* 사용자번호 */
+       ,AUTR_ROL_ID    /* 권한역할ID */
+       ,SYSDATE        /* 변경일시 */
+       ,APLY_STA_DT    /* 적용시작일자*/
+       ,APLY_END_DT    /* 적용종료일자*/
+       ,USE_YN         /* 사용여부 */ 
+   ]]><isNotEmpty property="P_DEL_YN"><![CDATA[                                                                                                         
+       ,#P_DEL_YN#	   /* 삭제여부 */
+   ]]></isNotEmpty><![CDATA[   
+   ]]><isEmpty property="P_DEL_YN"><![CDATA[                                                                                                         
+       ,'N'		       /* 삭제여부 */
+   ]]></isEmpty><![CDATA[                          
+       ,FS_REG_USER_ID /* 최초등록사용자ID */ 
+       ,FS_REG_DTM     /* 최초등록일시 */ 
+   ]]><isNotEmpty property="P_DEL_YN"><![CDATA[                                                                                                         
+       ,#CHG_USER_NO# /* 최종변경사용자ID */
+       ,SYSDATE     /* 최종변경일시*/
+   ]]></isNotEmpty><![CDATA[   
+   ]]><isEmpty property="P_DEL_YN"><![CDATA[                                                                                                         
+       ,LS_CHG_USER_ID /* 최종변경사용자ID */
+       ,LS_CHG_DTM     /* 최종변경일시*/
+   ]]></isEmpty><![CDATA[    
+  FROM  TB_USER_AUTR_ROL 
+ WHERE  USER_NO = #USER_NO#
+   AND  AUTR_ROL_ID =  #AUTR_ROL_ID#]]>
+	</insert>
+</sqlMap>

@@ -1,0 +1,73 @@
+package dms.ep.epsrpbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]미정산내역관리</li>
+ * <li>설  명 : <pre>미정산내역관리</pre></li>
+ * <li>작성일 : 2015-12-02 18:00:28</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class FEPXclMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>미정산내역조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-12-02 18:04:31
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqXclList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DEPXclMgmt dEPXclMgmt = (DEPXclMgmt)lookupDataUnit(DEPXclMgmt.class);
+            
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dEPXclMgmt.dSXclListTotCnt(requestData, onlineCtx);          
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));     
+            PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+            
+            // 3. LISTDM호출
+            responseData = dEPXclMgmt.dSXclListPaging(reqDs, onlineCtx);        
+            rsPagingList = responseData.getRecordSet("RS_XCL_LIST");          
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);        
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+
+        return responseData;
+    }
+  
+}

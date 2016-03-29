@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInveInfoMgmt">
+	<select id="SInveInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoLstPaging 재고정보조회 */
+/* IO: 장미진,2015-07-21T16:03:38(이민재,2015-07-17T16:00:30) */
+SELECT 
+      D.SVC_MGMT_NO    					 /* 서비스관리번호 */
+      ,D.EQP_MDL_NM   					 /* 모델명 */
+      ,C.EQP_MDL_CD   					 /* 모델코드 */
+      ,A.EQP_COLOR_CD					 /* 색상코드 */
+      ,E.CM_CD_NM AS EQP_COLOR_NM		 /* 색상 */								
+      ,D.PET_NM       					 /* 펫네임 */ 
+      ,C.RENT_PRD      					 /* 계약기간 */
+      ,C.CNTRT_STA_DT 					 /* 계약시작일 */ 
+      ,C.CNTRT_END_DT 					 /* 계약종료일 */ 
+      ,C.PRCH_PRC     					 /* 매입가 */ 
+      ,C.REM_PRC      					 /* 잔존가 */  
+      ,D.CNTRT_ST     					 /* 계약상태 */ 
+      ,D.EQP_STAT     					 /* 단말상태 */ 
+         
+  FROM TB_EQP_ASSET A 
+       JOIN TB_EQP_CNTRT B  
+       JOIN TB_RENTPHON_CNTRT C 
+       JOIN TB_NR_CNTRT D 
+       LEFT JOIN TB_CM_CD E ON A.EQP_COLOR_CD = E.CM_CD_ID AND E.CM_GRP_CD_ID = 'DMS100'
+
+ WHERE A.OP_CL_CD = 'NR'
+   AND A.ASSET_NO = B.ASSET_NO
+   AND B.CNTRT_NO = C.CNTRT_NO
+   AND C.CNTRT_NO = D.CNTRT_NO
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+       SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+       EQP_MDL_NM LIKE '%'||#EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_STA_DT"><![CDATA[
+       CNTRT_STA_DT  BETWEEN #CNTRT_STA_DT# AND #CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_STAT"><![CDATA[
+       EQP_STAT = #EQP_STAT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_ST"><![CDATA[
+       CNTRT_ST = #CNTRT_ST#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInveInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoTotCnt 재고정보총건수 */
+/* IO: 장미진,2015-07-21T18:01:42(이민재,2015-07-17T16:00:46) */
+SELECT  
+       COUNT(1) AS TOTAL_CNT
+  FROM (SELECT 
+              D.SVC_MGMT_NO    					 /* 서비스관리번호 */
+             ,D.EQP_MDL_NM   					 /* 모델명 */
+             ,C.EQP_MDL_CD   					 /* 모델코드 */
+             ,A.EQP_COLOR_CD					 /* 색상코드 */
+             ,E.CM_CD_NM AS EQP_COLOR_NM		 /* 색상 */								
+             ,D.PET_NM       					 /* 펫네임 */ 
+             ,C.RENT_PRD      					 /* 계약기간 */
+             ,C.CNTRT_STA_DT 					 /* 계약시작일 */ 
+             ,C.CNTRT_END_DT 					 /* 계약종료일 */ 
+             ,C.PRCH_PRC     					 /* 매입가 */ 
+             ,C.REM_PRC      					 /* 잔존가 */  
+             ,D.CNTRT_ST     					 /* 계약상태 */ 
+             ,D.EQP_STAT     					 /* 단말상태 */ 
+         
+         FROM TB_EQP_ASSET A 
+              JOIN TB_EQP_CNTRT B  
+              JOIN TB_RENTPHON_CNTRT C 
+              JOIN TB_NR_CNTRT D 
+              LEFT JOIN TB_CM_CD E ON A.EQP_COLOR_CD = E.CM_CD_ID AND E.CM_GRP_CD_ID = 'DMS100'
+
+        WHERE A.OP_CL_CD = 'NR'
+          AND A.ASSET_NO = B.ASSET_NO
+          AND B.CNTRT_NO = C.CNTRT_NO
+          AND C.CNTRT_NO = D.CNTRT_NO
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+       SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+       EQP_MDL_NM LIKE '%'||#EQP_MDL_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_STA_DT"><![CDATA[ 
+       CNTRT_STA_DT  BETWEEN #CNTRT_STA_DT# AND #CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_STAT"><![CDATA[
+       EQP_STAT = #EQP_STAT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CNTRT_ST"><![CDATA[
+       CNTRT_ST = #CNTRT_ST#
+]]></isNotEmpty><![CDATA[) PA]]>
+	</select>
+	<select id="SInveInfoDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNRInveInfoMgmt.SInveInfoDtl 재고정보상세조회 */
+/* IO: 이민재,2015-07-17T16:33:24(이민재,2015-07-17T16:01:03) */]]>
+	</select>
+</sqlMap>

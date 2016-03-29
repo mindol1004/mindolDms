@@ -1,0 +1,264 @@
+package dms.ep.epbbibase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [PU]임대폰분실관리</li>
+ * <li>설  명 : <pre>[PU]임대폰분실관리</pre></li>
+ * <li>작성일 : 2015-07-22 18:02:48</li>
+ * <li>작성자 : 이준우 (elmsliw)</li>
+ * </ul>
+ *
+ * @author 이준우 (elmsliw)
+ */
+public class PEPBoxInveMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPBoxInveMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>[PM]박스재고조회</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-24 09:12:24
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : PROD_CNT [상품수량]
+	 *	- field : BOX_CNT [박스수량]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_BIL_LIST
+	 *		- field : CHECKED [분실일자]
+	 *		- field : CNSL_MGMT_NO [접수번호]
+	 *		- field : CNSL_DT [접수일]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : MFACT_CD [제조사]
+	 *		- field : PROD_CHRTIC_1 [단말그룹]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_ST [등급]
+	 *		- field : EQP_ST_DTL [등급상세]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : DPSTR [예금주(고객명)]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : DTL_1 [DTL_1]
+	 *		- field : DTL_2 [DTL_2]
+	 *		- field : DTL_3 [DTL_3]
+	 *		- field : DTL_4 [DTL_4]
+	 *		- field : DTL_5 [DTL_5]
+	 *		- field : S_GB [S_GB]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : IMEI [IMEI]
+	 *	- record : RS_BOX_INFO
+	 *		- field : BOX_NO [필드1]
+	 *		- field : CNSL_MGMT_NO [필드2]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : BOX_CNT [필드4]
+	 * </pre>
+	 */
+    public IDataSet pInqBoxInveLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    	
+        try {
+    		// 1. FU lookup
+    		//FPRReqpClctInRgst fPRReqpClctInRgst = (FPRReqpClctInRgst) lookupFunctionUnit(FPRReqpClctInRgst.class);
+    		// 2. FM 호출
+            
+    		//responseData.putRecordSet(callSharedBizComponentByDirect("ep.EPSBIBase", "fInqBoxInveInfo", requestData, onlineCtx).getRecordSet("RS_BOX_INFO"));
+    		responseData = callSharedBizComponentByDirect("ep.EPSBIBase", "fInqBoxInveLst", requestData, onlineCtx);
+    		
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]박스재고저장</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-24 09:12:24
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_BIL_LIST
+	 *		- field : CHECKED [CHECKED]
+	 *		- field : CNSL_MGMT_NO [접수번호]
+	 *		- field : CNSL_DT [접수일]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : MFACT_NM [제조사]
+	 *		- field : PROD_CHRTIC_1 [단말그룹]
+	 *		- field : EQP_MDL_NM [모델]
+	 *		- field : EQP_ST [등급]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : DEALCO_NM [상담처명]
+	 *		- field : DPSTR [고객명]
+	 *		- field : CTZ_NO [생년월일]
+	 *		- field : DTL_1 [기본배터리]
+	 *		- field : DTL_2 [보조배터리]
+	 *		- field : DTL_3 [배터리케이스]
+	 *		- field : DTL_4 [USB케이블]
+	 *		- field : DTL_5 [충전기]
+	 *		- field : S_GB [ㅁㅁㅁ]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : IMEI [IMEI]
+	 *		- field : LAST_CHG_USER_ID [필드1]
+	 *	- record : RS_BOX_INFO
+	 *		- field : BOX_NO [필드1]
+	 *		- field : CNSL_MGMT_NO [필드2]
+	 *		- field : PROD_QTY [필드3]
+	 *		- field : QTY [필드4]
+	 *		- field : LAST_CHG_USER_ID [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet pSaveBoxInveLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IRecordSet rs_box = requestData.getRecordSet("RS_BOX_INFO");
+        IRecordSet rs = requestData.getRecordSet("RS_BIL_LIST");
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try{
+            Map mSave = null;
+            int prod_cnt = 0;
+            
+            if ( rs != null) {
+                for (int i = 0; i < rs.getRecordCount(); i++) {
+                    requestData.putFieldMap(rs.getRecordMap(i));
+                    
+                    Map recordMap = rs.getRecordMap(i);
+                    recordMap.put("LAST_CHG_USER_ID", ca.getUserNo());  
+                    requestData.putFieldMap(recordMap);
+                    
+                    requestData.putField("LAST_CHG_USER_ID", ca.getUserNo());
+                    
+                    
+                    mSave = rs.getRecordMap(i);
+                    if ( "1".equals(mSave.get("CHECKED"))) {
+                        
+                        callSharedBizComponentByDirect("ep.EPSBIBase", "fUpdBoxInveLst", requestData, onlineCtx).getRecordSet("RS_BIL_LIST");
+                        prod_cnt ++;
+                    }
+                }
+             Map recordMap = rs_box.getRecordMap(0);
+             recordMap.put("LAST_CHG_USER_ID", ca.getUserNo());  
+             requestData.putFieldMap(recordMap);
+             //requestData.putField("LAST_CHG_USER_ID", ca.getUserNo());
+             
+            }callSharedBizComponentByDirect("ep.EPSBIBase", "fUpdBoxInveInfoLst", requestData, onlineCtx).getRecordSet("RS_BOX_INFO");
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        
+        // 4. 결과값 리턴
+        responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]박스재고정보조회</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-24 09:12:24
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : PROD_CNT [상품수량]
+	 *	- field : BOX_CNT [박스수량]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_BIL_LIST
+	 *		- field : CHECKED [분실일자]
+	 *		- field : CNSL_MGMT_NO [접수번호]
+	 *		- field : CNSL_DT [접수일]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : MFACT_CD [제조사]
+	 *		- field : PROD_CHRTIC_1 [단말그룹]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : EQP_ST [등급]
+	 *		- field : EQP_ST_DTL [등급상세]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 *		- field : CNSL_DEALCO_NM [상담처명]
+	 *		- field : DPSTR [예금주(고객명)]
+	 *		- field : CTZ_NO [주민번호]
+	 *		- field : DTL_1 [DTL_1]
+	 *		- field : DTL_2 [DTL_2]
+	 *		- field : DTL_3 [DTL_3]
+	 *		- field : DTL_4 [DTL_4]
+	 *		- field : DTL_5 [DTL_5]
+	 *		- field : S_GB [S_GB]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : UBO_AMT [유보금액]
+	 *		- field : TOT_AMT [총금액]
+	 *		- field : IMEI [IMEI]
+	 *	- record : RS_BOX_INFO
+	 *		- field : BOX_NO [필드1]
+	 *		- field : CNSL_MGMT_NO [필드2]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : BOX_CNT [필드4]
+	 * </pre>
+	 */
+    public IDataSet pInqBoxInveInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    	
+        try {
+    		// 1. FU lookup
+    		//FPRReqpClctInRgst fPRReqpClctInRgst = (FPRReqpClctInRgst) lookupFunctionUnit(FPRReqpClctInRgst.class);
+    		// 2. FM 호출
+            
+            responseData = callSharedBizComponentByDirect("ep.EPSBIBase", "fInqBoxInveInfo", requestData, onlineCtx);
+    		
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+        
+        return responseData;
+    }
+} 
+  

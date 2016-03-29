@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR017">
+	<select id="SClsComLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR017.SClsComLst 회수수수료집계목록조회 */
+/* IO: 이영진,2015-11-12T16:38:55(진병수,2015-08-06T19:18:25) */
+SELECT 
+        'NR'                               AS  OP_CL_CD
+       ,SUBSTR(C.NEW_CNTRT_DT,1,6)         AS  DEBT_XCL_YM
+       ,'IN'                               AS  XCL_CL
+       ,(SELECT DEALCO_BLICENS_NO 
+           FROM TB_DEALCO
+          WHERE DEALCO_CD = '1000000006')  AS  BOND_BIZ_REG_NO
+       ,'IP'                               AS  XCL_ITM_CL
+       ,NULL                               AS  DEBT_DEALCO_CD
+       ,NULL                               AS  DEBT_AGN_CD
+       ,SUM(NVL(SGI_INSURE_SCRB_AMT,0))    AS  DEBT_ITM_AMT
+       ,SUM(NVL(SGI_INSURE_SCRB_AMT,0))/10 AS  DEBT_SURTAX
+       ,NULL                               AS  DEBT_SLIP_NO
+       ,NULL                               AS  DEBT_ORGL_SLIP_NO
+       ,NULL                               AS  DEBT_CNCL_SLIP_NO
+       ,NULL                               AS  DEBT_CNCL_DT
+  FROM  TB_INSU_SGI A
+       ,TB_NR_CNTRT C
+       ,
+       (
+        SELECT  
+                MAX(SGI_INSU_NO) AS SGI_INSU_NO
+          FROM  TB_INSU_SGI
+         GROUP  BY CNTRT_NO
+       ) H
+ WHERE  A.CNTRT_NO = C.CNTRT_NO
+   AND  A.SGI_INSU_NO = H.SGI_INSU_NO
+   AND  SUBSTR(C.NEW_CNTRT_DT,1,6) = #PROC_DT#
+ GROUP  BY  SUBSTR(C.NEW_CNTRT_DT,1,6)]]>
+	</select>
+	<select id="SSalesCom2Etc" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR017.SSalesCom2Etc 수수료계약목록조회 */
+/* IO: 이영진,2015-10-29T16:57:36(진병수,2015-08-20T15:50:39) */
+SELECT  A.CNTRT_NO                     AS CNTRT_NO
+       ,'501802'                       AS XCL_DEPT_CD
+       ,TO_CHAR(A.NEW_CNTRT_DT)        AS XCL_DT
+       ,'IC'                           AS XCL_ITM_CD
+       ,SUBSTR(A.AGN_CD,1,6) || 'A000' AS XCL_DEALCO_CD
+       ,NULL                           AS XCL_CL_CD
+       ,NULL                           AS ACNT_CD
+       ,NULL                           AS XCL_ST_CD
+       ,E.SGI_CBACK_INSURE_FEE         AS XCL_AMT
+       ,0                              AS SPLY_PRC
+       ,E.SGI_CBACK_INSURE_FEE/10      AS SURTAX_AMT
+       ,NULL                           AS SURTAX_CL  
+       ,NULL                           AS TAXBILL_NO
+       ,NULL                           AS TAXBILL_DT
+       ,NULL                           AS UPD_TAXBILL_NO
+       ,NULL                           AS XCL_SCHD_DT
+       ,NULL                           AS XCL_PROC_DT
+       ,NULL                           AS XCL_SLIP_NO
+       ,'N'                            AS DEL_YN
+       ,C.ASSET_NO                     AS ASSET_NO
+       ,D.UKEY_CBACK_INSURE_FEE        AS XCL_UKEY_INV_AMT
+  FROM  TB_NR_CNTRT A,
+        TB_RENTAL_CNTRT B,
+        TB_EQP_CNTRT C,
+        TB_INSU_UKEY D,
+        TB_INSU_SGI E,
+        TB_EQP_MDL F,
+       (
+        SELECT  
+                MAX(UKEY_INSU_NO) AS UKEY_INSU_NO
+          FROM  TB_INSU_UKEY
+         GROUP  BY CNTRT_NO
+       ) G,
+       (
+        SELECT  
+                MAX(SGI_INSU_NO) AS SGI_INSU_NO
+          FROM  TB_INSU_SGI
+         GROUP  BY CNTRT_NO
+       ) H
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  A.CNTRT_NO = E.CNTRT_NO
+   AND  B.EQP_MDL_CD = F.EQP_MDL_CD
+   AND  D.UKEY_INSU_NO = G.UKEY_INSU_NO
+   AND  E.SGI_INSU_NO = H.SGI_INSU_NO
+   AND  B.OP_CL_CD = 'NR'
+   AND  E.SGI_CBACK_INSURE_FEE > 0        
+   AND  SUBSTR(A.NEW_CNTRT_DT,1,6) = #PROC_DT#]]>
+	</select>
+	<select id="SExtBondtInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR017.SExtBondtInfo 채권에기등록된데이터조회 */
+/* IO: 이영진,2015-10-29T16:54:28(진병수,2015-09-30T19:56:58) */
+SELECT A.*, S.SLIP_NO, NVL(S.SLIP_ST_CD,'05') AS SLIP_ST_CD 
+   FROM TB_XCL_BOND A
+      , TB_SLIP     S
+  WHERE A.OP_CL_CD    = 'NR'
+    AND A.BOND_XCL_YM = SUBSTR(#PROC_DT#,1,6)
+    AND A.XCL_CL      = 'IC'
+    AND S.SLIP_NO  (+)=  A.BOND_SLIP_NO]]>
+	</select>
+	<select id="SXclEtcInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR017.SXclEtcInfo 기타정산에기등록된데이터조회 */
+/* IO: 이영진,2015-10-29T16:59:00(진병수,2015-09-30T19:56:58) */
+SELECT A.*, S.SLIP_NO, NVL(S.SLIP_ST_CD,'05') AS SLIP_ST_CD 
+   FROM TB_ETC_XCL A
+      , TB_SLIP    S
+  WHERE A.XCL_DT     LIKE SUBSTR(#PROC_DT#,1,6) || '%'
+    AND A.XCL_ITM_CD = 'IC'
+    AND S.SLIP_NO (+)=  A.XCL_SLIP_NO]]>
+	</select>
+	<delete id="DXclEtcByYM" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR017.DXclEtcByYM 기타정산정보삭제 */
+/* IO: 이영진,2015-10-29T17:02:49(진병수,2015-09-15T09:36:58) */
+DELETE TB_ETC_XCL
+ WHERE XCL_ITM_CD = 'IC'
+   AND NVL(XCL_DEPT_CD, 'NR') IN ('NR','501802')
+   AND XCL_DT LIKE SUBSTR(#PROC_DT#,1,6) || '%']]>
+	</delete>
+	<delete id="DXclBond" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR017.DXclBond 기타정산정보삭제 */
+/* IO: 이영진,2015-10-29T17:06:14(진병수,2015-09-15T09:36:58) */
+DELETE TB_XCL_BOND
+ WHERE OP_CL_CD       = NVL(#OP_CL_CD#,'NR')
+   AND BOND_XCL_YM    = #BOND_XCL_YM#
+   AND XCL_CL         = NVL(#XCL_CL#, 'IC')
+   AND BOND_DEALCO_CD = #BOND_DEALCO_CD#
+   AND XCL_ITM_CL     = NVL(#XCL_ITM_CL#, XCL_ITM_CL)
+   AND BOND_SALE_TS   = NVL(#BOND_SALE_TS#, BOND_SALE_TS)]]>
+	</delete>
+	<insert id="IEtcXcl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR017.IEtcXcl 수수료기타정산등록 */
+/* IO: 이영진,2015-10-29T17:01:52(진병수,2015-08-20T15:32:36) */
+INSERT INTO TB_ETC_XCL
+  (
+     ETC_XCL_NO
+    ,CNTRT_NO
+    ,XCL_DEPT_CD  
+    ,XCL_DT       
+    ,XCL_ITM_CD   
+    ,XCL_DEALCO_CD
+    ,XCL_CL_CD 
+    ,ACNT_CD
+    ,XCL_ST_CD
+    ,XCL_AMT
+    ,ASSET_NO
+    ,SPLY_PRC
+    ,SURTAX_AMT
+    ,XCL_UKEY_INV_AMT
+    ,BOND_SALE_TS
+    ,FS_REG_USER_ID
+    ,FS_REG_DTM
+    ,LS_CHG_USER_ID
+    ,LS_CHG_DTM    
+    ,DEL_YN
+  )
+  VALUES
+  (
+     SQ01_TB_ETC_XCL.NEXTVAL         
+    , #CNTRT_NO#
+    , #XCL_DEPT_CD#
+    , #XCL_DT#
+    , #XCL_ITM_CD#
+    , #XCL_DEALCO_CD#
+    , #XCL_CL_CD#
+    , #ACNT_CD#
+    , #XCL_ST_CD#
+    , #XCL_AMT#
+    , #ASSET_NO#
+    , #SPLY_PRC#
+    , #SURTAX_AMT#
+    , #XCL_UKEY_INV_AMT#
+    , #BOND_SALE_TS#
+    , NVL(#USER_NO#, 'BAT')
+    , SYSDATE
+    , NVL(#USER_NO#, 'BAT')
+    , SYSDATE
+    , 'N'
+    )]]>
+	</insert>
+	<insert id="IBond" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR017.IBond 수수료채무등록 */
+/* IO: 이영진,2015-11-12T16:39:24(진병수,2015-08-06T19:19:04) */
+INSERT INTO TB_XCL_DEBT
+            (
+              OP_CL_CD
+            , DEBT_XCL_YM
+            , XCL_CL
+            , DEBT_DEALCO_CD
+            , DEBT_AGN_CD
+            , DEBT_BIZ_REG_NO            
+            , XCL_ITM_CL
+            , DEBT_ITM_AMT
+            , DEBT_SURTAX
+            , DEBT_SLIP_NO
+            , DEBT_SLIP_DT
+            , DEBT_ORGL_SLIP_NO
+            , DEBT_CNCL_SLIP_NO
+            , DEBT_CNCL_DT
+            , DEBT_ADJ_BF_AMT
+            , DEBT_ADJ_DAMT
+            , DEBT_PRCH_TS
+            , FS_REG_USER_ID
+            , FS_REG_DTM
+            , LS_CHG_USER_ID
+            , LS_CHG_DTM
+            )
+            VALUES
+            (
+              #OP_CL_CD#
+            , #DEBT_XCL_YM#
+            , #XCL_CL#
+            , #DEBT_DEALCO_CD#
+            , #DEBT_AGN_CD#
+            , #DEBT_BIZ_REG_NO#
+            , #XCL_ITM_CL#
+            , #DEBT_ITM_AMT#
+            , #DEBT_SURTAX#
+            , #DEBT_SLIP_NO#
+            , #DEBT_SLIP_DT#
+            , #DEBT_ORGL_SLIP_NO#
+            , #DEBT_CNCL_SLIP_NO#
+            , #DEBT_CNCL_DT#
+            , NVL(#DEBT_ADJ_BF_AMT#,0)
+            , NVL(#DEBT_ADJ_DAMT#,  0)
+            , NVL(#DEBT_PRCH_TS#,  1)
+            , NVL(#USR_NO#, 'BAT')
+            , SYSDATE
+            , NVL(#USR_NO#, 'BAT')
+            , SYSDATE
+            
+            )]]>
+	</insert>
+</sqlMap>

@@ -1,0 +1,301 @@
+package dms.nr.nrsfxbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+import fwk.utils.PagenateUtils;
+import fwk.common.CommonArea;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]FPA수수료정산관리</li>
+ * <li>설  명 : <pre>[FU]FPA수수료정산관리</pre></li>
+ * <li>작성일 : 2015-10-13 11:00:04</li>
+ * <li>작성자 : 문재웅 (jaiwoong)</li>
+ * </ul>
+ *
+ * @author 문재웅 (jaiwoong)
+ */
+public class FNRFpaCmmsXclMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRFpaCmmsXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]FPA수수료정산조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-13 11:18:40
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaCmmsXclLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet usrListRs = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DNRFpaCmmsXclMgmt dNRFpaCmmsXclMgmt = (DNRFpaCmmsXclMgmt) lookupDataUnit(DNRFpaCmmsXclMgmt.class);
+
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRFpaCmmsXclMgmt.dSFpaCmmsXclTotCnt(requestData, onlineCtx);
+            IRecordSet sumRs = dsCnt.getRecordSet("RS_SUM_LIST");
+            
+            intTotalCnt = Integer.parseInt(sumRs.get(0,"TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            
+            // 3. LISTDM호출
+            responseData = dNRFpaCmmsXclMgmt.dSFpaCmmsXclLstPaging(requestData, onlineCtx);
+            usrListRs = responseData.getRecordSet("RS_FPA_CMMS_XCL_LIST");
+            
+            // 4.결과값 리턴
+            responseData.putRecordSet("RS_SUM_LIST", sumRs);
+            PagenateUtils.setPagenatedParamToRecordSet(sumRs, requestData, intTotalCnt);
+            
+            responseData.putRecordSet("RS_FPA_CMMS_XCL_LIST",usrListRs);
+            PagenateUtils.setPagenatedParamToRecordSet(usrListRs, requestData, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]FPA수수료정산전체엑셀다운로드</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-13 15:49:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaCmmsXclAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. DU lookup
+            DNRFpaCmmsXclMgmt dNRFpaCmmsXclMgmt = (DNRFpaCmmsXclMgmt) lookupDataUnit(DNRFpaCmmsXclMgmt.class);
+
+              // 3. LISTDM호출
+            responseData = dNRFpaCmmsXclMgmt.dSFpaCmmsXclAllExcel(requestData, onlineCtx);
+              
+          } catch ( BizRuntimeException e ) {
+              throw e; //시스템 오류가 발생하였습니다.
+          }
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FU]FPA수수료정산재생성</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-14 16:23:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaCmmsXclOnlineRecall(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        try {
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+    
+            // call on-demand batch job
+            HashMap params = new HashMap<String,String>();
+            params.put("TASK_ID", "XCR012");
+            params.put("TASK_NM", "FPA수수료정산");
+            params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId());
+            params.put("USER_NO", ca.getUserNo());
+            params.put("XCL_YM", requestData.getField("XCL_YM"));    //정산년월
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.nr.XCR012");
+            params.put("ONDEMAND_DATASET", dsXml);
+            String jobExecutionId = callBatchJob("XCR012", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+            
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+        
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]FPA수수료전표생성</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-13 11:00:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaCmmsXclDeprOnlineRecall(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        CommonArea ca = getCommonArea(onlineCtx);
+        try {
+            IDataSet reqDs = this.fFpaCmmsXclLst(requestData, onlineCtx);
+            IRecordSet fpaCmmRs = reqDs.getRecordSet("RS_FPA_CMMS_XCL_LIST");
+            IRecordSet sumRs = reqDs.getRecordSet("RS_SUM_LIST");
+            
+            if( fpaCmmRs == null ){
+                return responseData;
+            }
+            requestData.putRecordSet(fpaCmmRs);
+            requestData.putRecordSet(sumRs);
+        
+            for(int i=0; i<fpaCmmRs.getRecordCount(); i++){
+                IRecord ir = fpaCmmRs.getRecord(i);
+                
+                if("10".equals(ir.get("SLIP_ST_CD")) || "20".equals(ir.get("SLIP_ST_CD")) || "30".equals(ir.get("SLIP_ST_CD")) ){
+                    throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+                }
+            }
+            
+            IRecord totalSum = requestData.getRecordSet("RS_SUM_LIST").getRecord(0);
+
+            requestData.putField("CNT", totalSum.get("TOTAL_CNT"));     //건수
+            requestData.putField("AMT", totalSum.get("FPA_CMMS_AMT"));  //금액
+            requestData.putField("BIZ_REG_NO", "DEALCO_BLICENS_NO");    //사업자번호
+            //requestData.putField("BIZ_REG_NO", "1000000008");         //사업자번호
+            requestData.putField("YYYYMM", totalSum.get("YYYYMM"));     //전표년월
+            requestData.putField("SLIP_TYPE", "NR_FP");                 //전표유형
+            requestData.putField("USER_NO", ca.getUserNo());
+            //배치로직호출 -- 전표생성
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+
+            // call on-demand batch job
+            HashMap params = new HashMap<String,String>();
+            params.put("TASK_ID", "EPR010");
+            params.put("TASK_NM", "전표발행");
+            params.put("USER_NO", ca.getUserNo());
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");               
+            params.put("POST_SLIP_DATASET", dsXml);
+            String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+        
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-14 16:25:29
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaCmmsXclDeprCnclOnlineRecall(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        CommonArea ca = getCommonArea(onlineCtx);
+        try {
+            
+            IDataSet reqDs = this.fFpaCmmsXclLst(requestData, onlineCtx);
+            IRecordSet fpaCmmRs = reqDs.getRecordSet("RS_FPA_CMMS_XCL_LIST");
+            IRecordSet sumRs = reqDs.getRecordSet("RS_SUM_LIST");
+            
+            if( fpaCmmRs == null ){
+                return responseData;
+            }
+            
+            requestData.putRecordSet(fpaCmmRs);
+            requestData.putRecordSet(sumRs);
+        
+            for(int i=0; i<fpaCmmRs.getRecordCount(); i++){
+                IRecord ir = fpaCmmRs.getRecord(i);
+                
+                if(StringUtils.isEmpty(ir.get("SLIP_ST_CD")) ||"00".equals(ir.get("SLIP_ST_CD")) || "05".equals(ir.get("SLIP_ST_CD"))  ){
+                    throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+                }else if( "20".equals(ir.get("SLIP_ST_CD")) || "30".equals(ir.get("SLIP_ST_CD"))){
+                    throw new BizRuntimeException("DMS00087"); //{0} 건은 처리가 불가능 합니다.--승인완료인
+                }
+            }
+//            requestData.getRecordSet("RS_FPA_CMMS_XCL_LIST").setId("RS_SLIP_DELETE");//SLIP_NO,YYYY들어있음
+//            IRecordSet rs  = requestData.getRecordSet("RS_FPA_CMMS_XCL_LIST");
+//            requestData.putRecordSet("RS_SLIP_DELETE", (IRecordSet) rs.clone());
+//            requestData.removeRecordSet("RS_FPA_CMMS_XCL_LIST");
+
+            IRecord totalSum = requestData.getRecordSet("RS_SUM_LIST").getRecord(0);
+
+            requestData.putField("YYYY", totalSum.get("YYYY"));         //전표년도
+            requestData.putField("YYYYMM", totalSum.get("YYYYMM"));     //전표년월
+            requestData.putField("SLIP_NO", totalSum.get("SLIP_NO"));   //전표번호
+            requestData.putField("SLIP_TYPE", "NR_FP");                 //전표유형
+            requestData.putField("USER_NO", ca.getUserNo());
+            
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+
+            // call on-demand batch job
+            HashMap params = new HashMap<String,String>();
+            params.put("TASK_ID", "EPR011");
+            params.put("TASK_NM", "전표삭제");
+            params.put("USER_NO", ca.getUserNo());
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");               
+            params.put("POST_SLIP_DATASET", dsXml);
+            String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+        
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }    
+        return responseData;
+    }
+  
+}

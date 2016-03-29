@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR010">
+	<select id="SIFCntrt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR010.SIFCntrt 인터페이스수납정보조회 */
+/* IO: 안진갑,2015-09-02T15:08:21(안진갑,2015-08-28T18:28:37) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,SVC_MGMT_NO
+       ,RECV_PROC_DT
+       ,RECV_PROC_TMS
+       ,RECV_DT
+       ,AUTO_TRNSF_DT
+       ,INV_DT
+       ,SALE_ITM_CD
+       ,RECV_CL_CD
+       ,RECV_AMT
+       ,RENTAL_SER_NO
+       ,RECV_MTHD_CD
+       ,U_LS_CHG_DTM
+       ,FILLER
+  FROM  TF_PAY_RFND_DTL
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UIFCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR010.UIFCntrt 인터페이스테이블상태 변경 */
+/* IO: 안진갑,2015-08-28T19:08:48(안진갑,2015-08-28T19:07:59) */
+UPDATE TF_PAY_RFND_DTL
+    SET PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+        AND IF_FILE_NM = #IF_FILE_NM#
+        AND IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<insert id="IPayRfndDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR010.IPayRfndDtl 수납이력등록 */
+/* IO: 안진갑,2015-09-17T15:29:21(안진갑,2015-09-17T15:29:21) */
+INSERT INTO TB_NR_PAY_RFND_DTL
+(
+  SVC_MGMT_NO
+ ,RECV_DT
+ ,SALE_ITM_CD
+ ,RECV_CL_CD
+ ,RECV_PROC_DT
+ ,RECV_PROC_TMS
+ ,AUTO_TRNSF_DT
+ ,INV_DT
+ ,RECV_AMT
+ ,RENTAL_SER_NO
+ ,RECV_MTHD_CD
+ ,U_LS_CHG_DTM
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  #SVC_MGMT_NO#
+ ,#RECV_DT#
+ ,#SALE_ITM_CD#
+ ,#RECV_CL_CD#
+ ,#RECV_PROC_DT#
+ ,#RECV_PROC_TMS#
+ ,#AUTO_TRNSF_DT#
+ ,#INV_DT#
+ ,#RECV_AMT#
+ ,#RENTAL_SER_NO#
+ ,#RECV_MTHD_CD#
+ ,#U_LS_CHG_DTM#
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+</sqlMap>

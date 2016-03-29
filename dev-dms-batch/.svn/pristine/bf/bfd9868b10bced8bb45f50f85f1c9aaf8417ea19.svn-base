@@ -1,0 +1,182 @@
+/**
+ * E4U 매입(중고)
+ */
+package dms.utils.sapjco.domain.ep;
+
+import java.io.Serializable;
+
+import org.apache.commons.lang.StringUtils;
+
+import dms.constants.enums.sapjco.elem.SAP_BIZ_AREA;
+import dms.constants.enums.sapjco.elem.SAP_BP;
+import dms.constants.enums.sapjco.elem.SAP_DEAL_CO_CD;
+import dms.constants.enums.sapjco.elem.SAP_PAY_MTHD;
+import dms.constants.enums.sapjco.elem.SAP_PSTNG_KEY;
+import dms.constants.enums.sapjco.elem.SAP_SLIP_KINDS;
+import dms.constants.enums.sapjco.elem.SAP_WBS_ELEM;
+import dms.utils.sapjco.domain.CommonSlipHeader;
+import fwk.constants.enums.sapjco.elem.SAP_PAY_COND;
+import fwk.erfif.sapjco.domain.CommonSlipItem;
+
+
+/**
+ * @author greatjin
+ *
+ */
+public class E4UAPEPSlip implements Serializable{
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	CommonSlipHeader header    ;
+	CommonSlipItem[] items    = new CommonSlipItem[2] ;
+	
+	private String custCd; //Customer Code for init
+	private boolean cancelSlipFlag = false; 
+	
+	private SAP_SLIP_KINDS slipKinds       = SAP_SLIP_KINDS.E4UAP_EP;
+	private SAP_SLIP_KINDS cancelSlipKinds = SAP_SLIP_KINDS.E4UAP_CANCEL_EP; 
+	private String dmsType      ;
+	private String functionName ;
+	private String slipType     ;
+	
+
+	
+	public E4UAPEPSlip(String zserial, String userNo, String slipDt, String custCd, String amt)
+	{
+		this.init(zserial, userNo, slipDt, custCd, amt, false);
+	}
+	
+	public E4UAPEPSlip(String zserial, String userNo, String slipDt, String custCd, String amt, boolean cancelSlipFlag)
+	{
+		this.init(zserial, userNo, slipDt, custCd, amt, cancelSlipFlag);
+	}
+	
+	/**
+	 * 공통초기화
+	 * @param zserial
+	 * @param userNo
+	 */
+	void initCommon(String zserial, String userNo)
+	{
+		dmsType = slipKinds.getDmsType();
+		functionName = slipKinds.getFuncName();
+		slipType = slipKinds.getSlipType();
+		
+		header = new CommonSlipHeader();
+		header.setSerNo(zserial);
+		header.setDmsTyp(this.dmsType);
+		header.setSlipTyp(this.slipType);
+		header.setTransCd("FBV1");
+		header.setUserNo(userNo);
+	}
+	
+	/**
+	 * 초기화
+	 * @param amt
+	 */
+	private void init(String zserial, String userNo, String slipDt, String deptCd, String amt, boolean cancelSlipFlag)
+	{
+		if(cancelSlipFlag) this.slipKinds = this.cancelSlipKinds;
+		
+		this.initCommon(zserial, userNo);
+		
+		this.custCd = deptCd;
+		this.cancelSlipFlag = cancelSlipFlag;
+		
+		if(StringUtils.isNotEmpty(slipDt)) header.setPstngDt(slipDt);
+		if(StringUtils.isNotEmpty(slipDt)) header.setEvdcDt(slipDt);
+		header.setHdrTxt("행복한에코폰정산("+header.getPstngDt()+")"+(cancelSlipFlag?"반제":""));
+		
+		int idx = 1; 
+		for(int i=0; i<items.length; i++)
+		{
+			items[i] = new CommonSlipItem();
+			items[i].setSerNo(zserial);
+			items[i].setDmsSeq(idx++ +"");
+			items[i].setBizArea(SAP_BIZ_AREA.DEV_HQ.getCode());
+			items[i].setAmt(cancelSlipFlag?Math.abs(Long.parseLong(amt))+"":amt);
+		}
+		
+		initItem0(items[0]);
+		initItem1(items[1]);
+	}
+	
+	/**
+	 * 개인 에코폰
+	 * @param one
+	 */
+	private void initItem0(CommonSlipItem one)
+	{
+		if(cancelSlipFlag) //취소 전표
+		{
+			one.setPstngKey(SAP_PSTNG_KEY.M_DR.getCode());
+			one.setPayRsv("A");
+		}
+		else
+		{
+			one.setPstngKey(SAP_PSTNG_KEY.DR.getCode());
+		}
+		one.setDealCoCd("1111111102");
+		one.setPayAlt(this.custCd);
+		one.setPayCond(SAP_PAY_COND.KRW_1ST.getCode());
+		
+		one.setDsignField(SAP_WBS_ELEM.ECO_R_BIZ.getCode());
+	}
+	
+	/**
+	 *상품
+	 * @param one
+	 */
+	private void initItem1(CommonSlipItem one)
+	{
+		if(cancelSlipFlag) //취소 전표
+		{
+			one.setPstngKey(SAP_PSTNG_KEY.M_CR.getCode());
+		}
+		else
+		{
+			one.setPstngKey(SAP_PSTNG_KEY.CR.getCode());
+		}
+		one.setDealCoCd(SAP_DEAL_CO_CD.GOODS.getCode());
+		one.setDsignField(header.getPstngDt());
+		one.setBp(SAP_BP.SKCC_HQ.getCode());	
+	}
+	
+    public CommonSlipItem getDr()
+    {
+    	return this.items[0];
+    }
+	
+    public CommonSlipItem getCr()
+    {
+    	return this.items[1];
+    }
+    
+    
+
+	public CommonSlipHeader getHeader() {
+		return header;
+	}
+
+	public void setHeader(CommonSlipHeader header) {
+		this.header = header;
+	}
+
+	public CommonSlipItem[] getItems() {
+		return items;
+	}
+
+	public void setItems(CommonSlipItem[] items) {
+		this.items = items;
+	}
+
+
+	public String getFunctionName() {
+		return functionName;
+	}
+	
+	
+
+}

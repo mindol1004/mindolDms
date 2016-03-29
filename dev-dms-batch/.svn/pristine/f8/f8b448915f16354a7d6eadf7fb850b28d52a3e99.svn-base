@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR014">
+	<select id="SJDGLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR014.SJDGLst 손해배상금발생조회 */
+/* IO: 진병수,2015-09-02T19:40:10(진병수,2015-08-06T19:18:25) */
+SELECT  'SEQ'                         AS ETC_XCL_NO   
+      , 'NR'                          AS OP_CL_CD
+      , IB.OP_PROC_DT                 AS XCL_DT  
+      ,  id.ASSET_NO                  AS ASSET_NO
+      ,  ia.CNTRT_NO                  AS CNTRT_NO      
+      ,  'JD'/*파손*/                 AS XCL_CL_CD
+      ,  IB.SVC_MGMT_NO               AS XCL_DEALCO_CD
+      , 'IN'                          AS XCL_ITM_CL    
+     ,  IE.EQP_CMP_AMT_TOT                AS XCL_AMT  
+     ,  IE.EQP_CMP_AMT_TOT * 100/110                   AS SPLY_PRC    
+     ,  IE.EQP_CMP_AMT_TOT - (IE.EQP_CMP_AMT_TOT * 100/110) AS SURTAX_AMT
+  FROM  TB_RENTAL_CNTRT  IA
+      , TB_NR_CNTRT  IB
+      , TB_EQP_CNTRT  IC
+      , TB_EQP_ASSET  ID
+      , TB_EQP_JDG  IE
+      , TB_EQP_MDL  IF
+ WHERE  IA.CNTRT_NO = IB.CNTRT_NO
+   AND  IA.CNTRT_NO = IC.CNTRT_NO
+   AND  IC.ASSET_NO = ID.ASSET_NO
+   AND  ID.ASSET_NO = IE.ASSET_NO
+   AND  IE.EQP_JDG_RSLT_CD = '03'
+   AND  IF.EQP_MDL_CD = ID.EQP_MDL_CD(+)
+   AND  SUBSTR(IB.OP_PROC_DT,1,6) = NVL(SUBSTR(#PROC_DT#,1,6),TO_CHAR(ADD_MONTHS(SYSDATE,-1),'YYYYMM'))   
+UNION ALL   
+SELECT  'SEQ'                         AS ETC_XCL_NO   
+      , 'NR'                          AS OP_CL_CD
+      , IB.OP_PROC_DT                 AS XCL_DT  
+      ,  id.ASSET_NO                  AS ASSET_NO
+      ,  ia.CNTRT_NO                  AS CNTRT_NO      
+      ,  'JN' /*미반납*/               AS XCL_CL_CD
+      ,  IB.SVC_MGMT_NO               AS XCL_DEALCO_CD
+      , 'IN'                          AS XCL_ITM_CL    
+     ,  IB.UNRTN_AMT                AS XCL_AMT  
+     ,  IB.UNRTN_AMT * 100/110                   AS SPLY_PRC    
+     ,  IB.UNRTN_AMT - (IB.UNRTN_AMT * 100/110) AS SURTAX_AMT               
+  FROM  TB_RENTAL_CNTRT  IA
+      , TB_NR_CNTRT  IB
+      , TB_EQP_CNTRT  IC
+      , TB_EQP_ASSET  ID
+      , TB_EQP_MDL  IF
+ WHERE  IA.CNTRT_NO = IB.CNTRT_NO
+   and  NVL(IB.UNRTN_AMT,0)  > 0
+   AND  IA.CNTRT_NO = IC.CNTRT_NO
+   AND  IC.ASSET_NO = ID.ASSET_NO
+   AND  IF.EQP_MDL_CD = ID.EQP_MDL_CD(+)
+   AND  SUBSTR(IB.OP_PROC_DT,1,6) = NVL(SUBSTR(#PROC_DT#,1,6),TO_CHAR(ADD_MONTHS(SYSDATE,-1),'YYYYMM'))]]>
+	</select>
+	<select id="SPenLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR014.SPenLst 위약금발생내역조회 */
+/* IO: 진병수,2015-08-31T20:14:58(진병수,2015-08-06T19:18:25) */
+SELECT 'SEQ'                         AS ETC_XCL_NO   
+     ,  EC.ASSET_NO                  AS ASSET_NO
+     ,  A.CNTRT_NO                   AS CNTRT_NO
+     ,  E.SVC_MGMT_NO                AS XCL_DEALCO_CD    
+     , 'NR'                          AS OP_CL_CD
+     ,  E.OP_PROC_DT                 AS XCL_DT
+     ,  DECODE(A.PEN_POLY_CL ,'01','PE'/*중도해지*/,'02','PX'/*반납지연*/,'03','PY'/*연체*/) AS XCL_CL_CD
+     , 'IN'                          AS XCL_ITM_CL    
+     ,  A.DMS_PEN_AMT                AS XCL_AMT  
+     ,  A.DMS_PEN_AMT * 100/110                   AS SPLY_PRC    
+     ,  A.DMS_PEN_AMT - (A.DMS_PEN_AMT * 100/110) AS SURTAX_AMT    
+     ,  'DEL'                        AS ACNT_CD
+  FROM  TB_RENTAL_PEN A
+       ,TB_RENTAL_CNTRT C
+       ,TB_EQP_MDL D
+       ,TB_NR_CNTRT E
+       ,TB_EQP_CNTRT EC
+ WHERE  A.CNTRT_NO = C.CNTRT_NO
+   AND  A.CNTRT_NO = E.CNTRT_NO
+   AND  A.CNTRT_NO = EC.CNTRT_NO
+   AND  C.EQP_MDL_CD = D.EQP_MDL_CD(+)
+   AND  E.OP_TYP_CD = '07'
+   AND  SUBSTR(E.OP_PROC_DT,1,6) = NVL(SUBSTR(#PROC_DT#,1,6),TO_CHAR(ADD_MONTHS(SYSDATE,-1),'YYYYMM'))]]>
+	</select>
+	<insert id="IEtcXcl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR014.IEtcXcl 기타정산등록 */
+/* IO: 진병수,2015-09-08T10:35:43(진병수,2015-08-20T15:32:36) */
+INSERT INTO TB_ETC_XCL
+  (
+     ETC_XCL_NO
+    ,CNTRT_NO
+    ,XCL_DEPT_CD  
+    ,XCL_DT       
+    ,XCL_ITM_CD   
+    ,XCL_DEALCO_CD
+    ,XCL_CL_CD 
+    ,ACNT_CD
+    ,XCL_ST_CD
+    ,XCL_AMT
+    ,ASSET_NO
+    ,SPLY_PRC
+    ,SURTAX_AMT
+    ,FS_REG_USER_ID
+    ,FS_REG_DTM
+    ,LS_CHG_USER_ID
+    ,LS_CHG_DTM    
+    ,DEL_YN
+  )
+  VALUES
+  (
+     SQ01_TB_ETC_XCL.NEXTVAL         
+    , #CNTRT_NO#
+    , NVL(#XCL_DEPT_CD#,'501802')
+    , #XCL_DT#
+    , NVL(#XCL_ITM_CD#, #XCL_CL_CD#)
+    , #XCL_DEALCO_CD#
+    , #XCL_CL_CD#
+    , #ACNT_CD#
+    , #XCL_ST_CD#
+    , #XCL_AMT#
+    , #ASSET_NO#
+    , #SPLY_PRC#
+    , #SURTAX_AMT#
+    , 'BAT'
+    , SYSDATE
+    , 'BAT'
+    , SYSDATE
+    , 'N'
+    )]]>
+	</insert>
+</sqlMap>

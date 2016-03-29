@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="InveXclSumP" classname="popup_sample1" inheritanceid="" position="absolute 0 0 360 186" titletext="재고정산집계" class="frm_bg_popup" onload="Form_onload" dragscrolltype="both" scrollbars="none">
+    <Layouts>
+      <Layout>
+        <Div id="Div01" taborder="5" text="재고정산집계" class="popUp_title_bg" transparenthittest="true" position="absolute 22 12 403 40"/>
+        <Button id="btn_close" taborder="3" position="absolute 574 13 592 31" class="popUp_close" onclick="btn_onclick" anchor="top right"/>
+        <Static id="Static05" text="h10" class="tip_guide" visible="false" position2="absolute l:37 w:42 t:6 h:10" positiontype="position2"/>
+        <Static id="Static12" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:7 w:15 t:18 h:121" positiontype="position2"/>
+        <Static id="Static07" text="h10" class="tip_guide" visible="false" position2="absolute l:142 w:74 t:132 h:10" positiontype="position2"/>
+        <Static id="Static02" text="w&#13;&#10;&#13;5" class="tip_guide" visible="false" position2="absolute l:177 w:5 t:145 h:18" positiontype="position2"/>
+        <Static id="Static06" text="h15" class="tip_guide" visible="false" position2="absolute l:158 w:42 t:162 h:15" positiontype="position2"/>
+        <Static id="Static09" text="h10" class="tip_guide" visible="false" position2="absolute l:22 w:42 t:39 h:10" positiontype="position2"/>
+        <Static id="Static01" text="w&#13;&#10;&#13;15" class="tip_guide" visible="false" position2="absolute l:336 w:15 t:13 h:126" positiontype="position2"/>
+        <Button id="btn_confirm" taborder="1" text="집계" class="btn_popup_confirm" position="absolute 122 142 177 162" anchor="default" onclick="btn_onclick"/>
+        <Button id="btn_cancel" taborder="2" text="취소" onclick="btn_onclick" class="btn_popup_cancel" position="absolute 182 142 237 162" anchor="default"/>
+        <Static id="Static13" text="집계기준정보" usedecorate="true" onclick="Static13_onclick" class="sub_title" position="absolute 22 45 185 65"/>
+        <Div id="div_search" anchor="left top right" taborder="0" class="bg_detail" position="absolute 22 68 336 132">
+          <Layouts>
+            <Layout>
+              <Static id="stc_cntrtNm" text="업무구분" class="sta_WFDA_detail_Label" position="absolute 20 9 79 29" anchor="default" style="background:transparent URL('theme://Img/img_star.png') left top;"/>
+              <Static id="Static08" text="w&#13;&#10;&#13;10" onclick="div_search_Static08_onclick" class="tip_guide" visible="false" position2="absolute l:77 w:10 t:-1 h:74" positiontype="position2"/>
+              <Static id="stc_cntrtPrd" text="회수일자" class="sta_WFDA_detail_Label" position="absolute 20 33 87 53" anchor="default" style="background:transparent URL('theme://Img/img_star.png') left top;"/>
+              <Static id="Static16" text="w20" class="guideTip" visible="false" position2="absolute l:0 w:20 t:2 h:76" positiontype="position2"/>
+              <Static id="Static00" text="w20" class="guideTip" visible="false" position2="absolute l:292 w:20 t:-6 h:76" positiontype="position2"/>
+              <CommCalendarPred id="CommCalendarPred00" titletext="From_To달력" taborder="1" onkeydown="div_search_CommCalendarPred00_onkeydown" text="CommCalendarPred00" scrollbars="none" position="absolute 87 33 303 53" style="background:transparent; " anchor="default"/>
+              <Combo id="cbo_opGb" taborder="2" value="1" innerdataset="ds_opGb" codecolumn="OP_GB_CD" datacolumn="OP_GB_NM" position="absolute 87 9 163 29" tooltiptext="입금관리감정업무구분" anchor="default"/>
+            </Layout>
+          </Layouts>
+          <InitValue>
+            <Combo id="cbo_opGb" index="0"/>
+          </InitValue>
+        </Div>
+        <Static id="Static14" text="h8" class="tip_guide" visible="false" position2="absolute l:22 w:42 t:60 h:8" positiontype="position2"/>
+        <Static id="Static04" text="h10" class="tip_guide" visible="false" position2="absolute l:101 w:42 t:68 h:10" positiontype="position2"/>
+        <Static id="Static08" text="h10" class="tip_guide" visible="false" position2="absolute l:117 w:42 t:122 h:10" positiontype="position2"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_opGb" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="OP_GB_CD" type="STRING" size="256"/>
+          <Column id="OP_GB_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="OP_GB_CD">20</Col>
+            <Col id="OP_GB_NM">미착재고</Col>
+          </Row>
+          <Row>
+            <Col id="OP_GB_CD">10</Col>
+            <Col id="OP_GB_NM">확정재고</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="div_search.cbo_opGb" propid="value" datasetid="ds_search" columnid="OP_GB_CD"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 임대R
+ * 02. 화면 : InveXclSumP.xfdl
+ * 03. 화면 설명 : 재고정산집계
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 양재석
+ * 06. 작성일 : 2015.10.14
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.10.14    양재석    최초 작성
+ *     20xx.xx.xx               최종 수정
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+ 
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Form_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	gfn_setInitForm(obj, e, "FPR049P")
+
+ 	//Form 초기 개발자 셋팅
+ 	//공통코드 초기화
+ 	fn_setInitCode(obj, e);
+ 	//그리드 초기화
+ 	fn_setInitGrid(obj, e);
+ 	//기본값 초기화
+ 	fn_setInitForm(obj, e);
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Form 종료전 Check 함수(공통)
+-----------------------------------------------------------------------------------------------*/
+function Form_checkBeforeClose()
+{
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Load 후 초기설정
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitCode(obj:Form, e:LoadEventInfo)
+{
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 공통코드 호출 후 처리
+-----------------------------------------------------------------------------------------------*/
+function fn_afterCodeCallBack()
+{
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 그리드 초기화
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitGrid(obj:Form, e:LoadEventInfo)
+{
+}
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 기본값 설정
+-----------------------------------------------------------------------------------------------*/
+function fn_setInitForm(obj:Form, e:LoadEventInfo)
+{
+	div_search.CommCalendarPred00.setData(gfn_getFirstDate(gfn_today()),gfn_today(),true);
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Main Button Event
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : 버튼 Event
+-----------------------------------------------------------------------------------------------*/
+function btn_onclick(obj:Button,  e:ClickEventInfo)
+{
+	switch(obj.name) 
+	{	
+			
+		case "btn_confirm" :	//확인
+			var arrTerm = div_search.CommCalendarPred00.getData();
+			if(gfn_isNull(arrTerm[0]) || gfn_isNull(arrTerm[1])){
+				gfn_message("A","DMS00023","E","","회수일자 ");
+				return;
+			}
+			if(!gfn_isDate(arrTerm[0]) || !gfn_isDate(arrTerm[1])){
+				gfn_message("A","DMS00069","E");
+				return;
+			}
+			if(arrTerm[0].substr(0,6) != arrTerm[1].substr(0,6)){
+				gfn_message("A","회수일자의 기간은 동일 년월에서만 집계 가능합니다.","E");
+				return;
+			}
+
+			var objRtn = new Object;
+				objRtn["opGbCd"] = div_search.cbo_opGb.value;
+				objRtn["clctFrDt"] = arrTerm[0];
+				objRtn["clctToDt"] = arrTerm[1];
+
+			this.close(objRtn);		
+			break;
+			
+		case "btn_cancel" : 	//취소
+			close("cancel");
+			break;
+			
+		case "btn_close" : 		//버튼X
+		
+			close("cancel");
+			break;	
+	}
+}
+
+]]></Script>
+  </Form>
+</FDL>

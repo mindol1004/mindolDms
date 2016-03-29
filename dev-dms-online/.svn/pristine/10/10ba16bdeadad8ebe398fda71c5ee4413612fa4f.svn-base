@@ -1,0 +1,164 @@
+package dms.sc.scsbase.biz;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: FSCPreProc</li>
+ * <li>설  명 : 선행작업</li>
+ * <li>작성일 : 2014-08-20 17:32:08</li>
+ * <li>작성자 : 김석영 (kimsukyoung)</li>
+ * </ul>
+ *
+ * @author 김석영 (kimsukyoung)
+ */
+public class FSCPreProc extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FSCPreProc() {
+		super();
+	}
+
+	/**
+	 * 전처리
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fPreProc(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			CommonArea ca = getCommonArea(onlineCtx);
+
+			// 요청 채널이 UI인 경우 세션 체크
+			if ( StringUtils.equals(ca.getFrstTrnmChnlCd(), "XIUI")) {
+				// 로그인 처리가 아닌 경우
+				if ( !StringUtils.equals(onlineCtx.getTransaction().getTxId(), "PSCLginOp_pLgin")
+					&& !StringUtils.equals(onlineCtx.getTransaction().getTxId(), "PSCLginOp_pLgout")
+					&& !StringUtils.equals(onlineCtx.getTransaction().getTxId(), "PSCUserMgmt_pChgPwd") ) {    // 비밀번호 변경창 세션Check 예외 적용 2014-10-13 by 이유미
+
+					// 세션키로 사용자정보 취득
+					IDataSet reqDsSeon = new DataSet();
+					reqDsSeon.putField("SESS_NO", ca.getSsoSesnKey());
+					reqDsSeon.putField("USER_NO", ca.getUserNo());
+					reqDsSeon.putField("IP_ADDR", ca.getIpad());
+
+					DSCUserLginSessInfoMgmt dTB_SEON_01 = (DSCUserLginSessInfoMgmt) lookupDataUnit(DSCUserLginSessInfoMgmt.class);
+					responseData = dTB_SEON_01.dSUserLginSessInfo(reqDsSeon, onlineCtx);
+
+					if ( responseData.getFieldCount() < 1 ) {
+						throw new BizRuntimeException("DMS00017");  // 동일한 사용자가 다른곳에서 접속하여 연결이 끊어졌습니다.
+					}
+
+					// 데이터 권한셋팅 : 회사/브랜드/가맹점 목록
+					/*
+					List<String> autrCoLst = new ArrayList<String>();
+					List<String> autrBrndLst = new ArrayList<String>();
+					List<String> autrMchtLst = new ArrayList<String>();
+					DSCDataAutrRolMgmt dSCDataAutrRolMgmt = (DSCDataAutrRolMgmt) lookupDataUnit(DSCDataAutrRolMgmt.class);
+					IDataSet reqData = (IDataSet) requestData.clone();
+					reqData.putField("USER_NO", responseData.getField("USER_NO"));
+					reqData.putField("EMP_NO", responseData.getField("EMP_NO"));
+					String sessionMcht = responseData.getField("AUTR_OBJ_MCHT_INFO");  // 권한대상가맹점정보
+
+					IDataSet dataAutrRolDs;
+					if ( StringUtils.equals(responseData.getField("USER_CL_CD"), "11")) {                       // SV                    
+						dataAutrRolDs = dSCDataAutrRolMgmt.dSDataAutrRolBySv(reqData, onlineCtx);
+						IRecordSet rs = dataAutrRolDs.getRecordSet("RS_DATA_AUTR_ROL");
+						for ( int i = 0 ; i < rs.getRecordCount() ; i++ ) {
+							IRecord record = rs.getRecord(i);
+							autrMchtLst.add(record.get("AUTR_OBJ_CD"));
+						}
+					} if ( StringUtils.equals(responseData.getField("USER_CL_CD"), "12")){                       // 팀장
+						dataAutrRolDs = dSCDataAutrRolMgmt.dSDataAutrRolByTeamMgr(reqData, onlineCtx);
+						IRecordSet rs = dataAutrRolDs.getRecordSet("RS_DATA_AUTR_ROL");
+						for ( int i = 0 ; i < rs.getRecordCount() ; i++ ) {
+							IRecord record = rs.getRecord(i);
+							autrMchtLst.add(record.get("AUTR_OBJ_CD"));
+						}
+					} else if ( StringUtils.equals(responseData.getField("USER_CL_CD"), "25") ) {             // 가맹점주  2015-01-13 by Leeym
+						autrMchtLst.add(responseData.getField("MCHT_NO"));
+					} else {                                                                                // 일반
+						dataAutrRolDs = dSCDataAutrRolMgmt.dSDataAutrRolByBase(reqData, onlineCtx);
+						IRecordSet rs = dataAutrRolDs.getRecordSet("RS_DATA_AUTR_ROL");
+						for ( int i = 0 ; i < rs.getRecordCount() ; i++ ) {
+							IRecord record = rs.getRecord(i);
+							if ( StringUtils.isNotEmpty(record.get("AUTR_OBJ_CO_CD")) ) {
+								autrCoLst.add(record.get("AUTR_OBJ_CO_CD"));
+							}
+							// 2014.12.23 임지후 수정 - 가맹점이 ALL인 경우만 입력 
+							if ( StringUtils.isNotEmpty(record.get("AUTR_OBJ_BRND_CD")) && StringUtils.equals(record.get("AUTR_OBJ_MCHT_NO"), "ALL") ) {
+								autrBrndLst.add(record.get("AUTR_OBJ_BRND_CD"));
+							}
+							// 2014.12.23 임지후 수정 - 가맹점명이 ALL인 경우 SKIP 
+							if ( StringUtils.isNotEmpty(record.get("AUTR_OBJ_MCHT_NO")) && !StringUtils.equals(record.get("AUTR_OBJ_MCHT_NO"), "ALL") ) {
+								autrMchtLst.add(record.get("AUTR_OBJ_MCHT_NO"));
+							}
+						}
+					}
+			 		*/
+					// CommonArea Setting
+					ca.setUserNo(responseData.getField("USER_NO"));         // 사용자번호
+					ca.setUserClCd(responseData.getField("USER_CL_CD"));    // 사용자구분코드
+					ca.setJobrCd(responseData.getField("GRPC_JOBR_CD"));    // 직급코드
+					ca.setJtilCd(responseData.getField("GRPC_JTIL_CD"));    // 직책코드
+					ca.setCoCd(responseData.getField("GRPC_CO_CD"));        // 회사코드
+					ca.setDeptCd(responseData.getField("GRPC_DEPT_CD"));    // 부서코드
+					ca.setBrndCd(responseData.getField("BRND_CD"));         // 브랜드코드
+					ca.setMchtNo(responseData.getField("MCHT_NO"));         // 가맹점번호
+					ca.setEmpNo(responseData.getField("EMP_NO"));           // 사원번호
+					//ca.setAutrCoLst(autrCoLst);                             // 권한회사리스트
+					//ca.setAutrBrndLst(autrBrndLst);                         // 권한브랜드리스트
+					//ca.setAutrMchtLst(autrMchtLst);                         // 권한가맹점리스트
+
+					//	                ((IDataSet)requestData.getObjectField("REQUESTDATASET")).putField("USER_NO", ca.getUserNo());
+				}
+			}
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 * 후처리
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fPostProc(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+
+		} catch ( BizRuntimeException e ) {
+
+		}
+		return responseData;
+	}
+
+}

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRCmpStdMgmt">
+	<select id="SCmpStdLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpStdMgmt.SCmpStdLstPaging 손해배상단말정보 조회 */
+/* IO: 안진갑,2015-09-21T12:02:50(안진갑,2015-09-15T17:45:51) */
+SELECT  PA.*
+  FROM 
+       (
+        SELECT  ROW_NUMBER() OVER(ORDER BY IA.EQP_MDL_CD DESC) AS ROWNO 
+               ,IA.*      
+          FROM (
+		        SELECT  A.EQP_MDL_CD
+       			       ,C.EQP_MDL_NM
+       			       ,B.PET_NM
+       			       ,B.MFACT_CD
+  		          FROM  TB_DMG_CMP_POLY_STRD_INFO A
+       			       ,TB_EQP_STRD_INFO B
+       			       ,TB_EQP_MDL C
+ 		         WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+   			       AND  A.OP_CL_CD = B.OP_CL_CD
+   			       AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+   			       AND  A.OP_CL_CD='NR'
+                ]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+		                A.EQP_MDL_CD = #EQP_MDL_CD#
+                ]]></isNotEmpty><![CDATA[          
+                ]]><isNotEmpty property="MFACT_CD" prepend="AND"><![CDATA[
+		                B.MFACT_CD = #MFACT_CD#
+                ]]></isNotEmpty><![CDATA[
+                 GROUP  BY A.EQP_MDL_CD, C.EQP_MDL_NM, B.PET_NM, B.MFACT_CD
+               ) IA
+       ) PA
+WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SCmpStdTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpStdMgmt.SCmpStdTotCnt 손해배상단말정보 총 건수 */
+/* IO: 안진갑,2015-09-21T12:08:35(안진갑,2015-09-15T17:50:04) */
+SELECT  COUNT(1) AS TOTAL_CNT
+  FROM  (
+		 SELECT  A.EQP_MDL_CD
+       	        ,C.EQP_MDL_NM
+       			,B.PET_NM
+       			,B.MFACT_CD
+  		   FROM  TB_DMG_CMP_POLY_STRD_INFO A
+       			,TB_EQP_STRD_INFO B
+       			,TB_EQP_MDL C
+ 		  WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+   			AND  A.OP_CL_CD = B.OP_CL_CD
+   			AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+   			AND  A.OP_CL_CD='NR'
+         ]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+		         A.EQP_MDL_CD = #EQP_MDL_CD#
+         ]]></isNotEmpty><![CDATA[          
+         ]]><isNotEmpty property="MFACT_CD" prepend="AND"><![CDATA[
+		         B.MFACT_CD = #MFACT_CD#
+         ]]></isNotEmpty><![CDATA[
+          GROUP  BY A.EQP_MDL_CD, C.EQP_MDL_NM, B.PET_NM, B.MFACT_CD
+        )]]>
+	</select>
+	<select id="SCmpStdItmDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpStdMgmt.SCmpStdItmDtl 단말점검항목상세 조회 */
+/* IO: 안진갑,2015-10-01T10:06:15(안진갑,2015-09-16T11:30:13) */
+SELECT B.DCP_STRD_INFO_SEQ
+       ,B.INSP_ITM_CD
+       ,A.CM_CD_ID AS INSP_DTL_ITM_CD
+  FROM  TB_CM_CD A 
+       ,TB_DMG_CMP_POLY_STRD_INFO B
+ WHERE  A.CM_CD_ID = B.INSP_DTL_ITM_CD(+)
+   AND  A.CM_GRP_CD_ID = 'DMS107'
+   AND  A.MGMT_ITEM_CD1 = 'Y'
+   AND  B.EQP_MDL_CD (+)= #EQP_MDL_CD#
+ ORDER  BY B.INSP_ITM_CD, A.CM_CD_ID]]>
+	</select>
+	<update id="UCmpStd" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpStdMgmt.UCmpStd 손해배상단말점검항목 수정 */
+/* IO: 안진갑,2015-09-21T11:27:38(안진갑,2015-09-17T13:48:30) */
+UPDATE  TB_DMG_CMP_POLY_STRD_INFO
+   SET  INSP_ITM_CD = #INSP_ITM_CD#
+       ,INSP_DTL_ITM_CD = #INSP_DTL_ITM_CD#
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  OP_CL_CD = 'NR'
+   AND  DCP_STRD_INFO_SEQ = #DCP_STRD_INFO_SEQ#]]>
+	</update>
+	<insert id="ICmpStd" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpStdMgmt.ICmpStd 손해배상단말점검항목 등록 */
+/* IO: 안진갑,2015-09-17T13:56:41(안진갑,2015-09-17T13:48:49) */
+]]><selectKey resultClass="String" keyProperty="DCP_STRD_INFO_SEQ" type="pre"><![CDATA[
+SELECT  NVL(MAX(DCP_STRD_INFO_SEQ),0)+1 AS DCP_STRD_INFO_SEQ FROM TB_DMG_CMP_POLY_STRD_INFO WHERE EQP_MDL_CD=#EQP_MDL_CD#
+]]></selectKey><![CDATA[
+INSERT INTO TB_DMG_CMP_POLY_STRD_INFO
+(
+   EQP_MDL_CD
+  ,OP_CL_CD
+  ,DCP_STRD_INFO_SEQ
+  ,INSP_ITM_CD
+  ,INSP_DTL_ITM_CD
+  ,FS_REG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_USER_ID
+  ,LS_CHG_DTM
+)
+VALUES
+(
+   #EQP_MDL_CD#
+  ,'NR'
+  ,#DCP_STRD_INFO_SEQ#
+  ,#INSP_ITM_CD#
+  ,#INSP_DTL_ITM_CD#
+  ,#USER_NO#
+  ,SYSDATE
+  ,#USER_NO#
+  ,SYSDATE
+)]]>
+	</insert>
+	<delete id="DCmpStd" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrsplbase.db.DNRCmpStdMgmt.DCmpStd 손해배상점검항목 삭제 */
+/* IO: 안진갑,2015-09-21T11:27:26(안진갑,2015-09-21T11:24:25) */
+DELETE 
+  FROM  TB_DMG_CMP_POLY_STRD_INFO
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#
+   AND  OP_CL_CD = 'NR'
+   AND  DCP_STRD_INFO_SEQ = #DCP_STRD_INFO_SEQ#]]>
+	</delete>
+</sqlMap>

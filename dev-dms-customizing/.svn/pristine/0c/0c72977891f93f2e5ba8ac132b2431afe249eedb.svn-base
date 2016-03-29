@@ -1,0 +1,169 @@
+/**
+ * 
+ */
+package fwk.erfif.sapjco.domain;
+
+import java.io.Serializable;
+
+import org.apache.commons.lang.StringUtils;
+
+import fwk.constants.enums.sapjco.SAP_SLIP_KINDS;
+import fwk.constants.enums.sapjco.elem.SAP_GL_DIRC;
+import fwk.constants.enums.sapjco.elem.SAP_PAY_COND;
+import fwk.constants.enums.sapjco.elem.SAP_PAY_MTHD;
+import fwk.constants.enums.sapjco.elem.SAP_PSTNG_KEY;
+import fwk.constants.enums.sapjco.elem.SAP_TAX_CD;
+
+
+/**
+ * 단말기 대금정산
+ * @author greatjin
+ *
+ */
+public class AgencyAmtAPSlip implements Serializable{
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private CommonSlipHeader header    ;
+	private CommonSlipItem[] items    = new CommonSlipItem[2] ;
+	
+	private String custCd; //Customer Code for init
+	private boolean isCrd; //여신여부
+	private String dmsType = SAP_SLIP_KINDS.AGENCY_AMT_AP.getDmsType();
+	
+	public AgencyAmtAPSlip(String zserial)
+	{
+		this.init(zserial);
+	}
+	
+	public AgencyAmtAPSlip(String zserial, String custCd, String amt)
+	{
+		this.init(zserial, custCd, amt);
+	}
+	
+	public AgencyAmtAPSlip(String zserial, String custCd, String amt,boolean isCrd) 
+	{
+		this.init(zserial, null, custCd, amt, isCrd);
+	}
+
+	
+	public AgencyAmtAPSlip(String zserial, String slipDt, String custCd, String amt)
+	{
+		this.init(zserial, slipDt, custCd, amt, false);
+	}
+	
+	public AgencyAmtAPSlip(String zserial, String slipDt, String custCd, String amt, boolean isCrd)
+	{
+		this.init(zserial, slipDt, custCd, amt, isCrd);
+	}
+	
+
+	/**
+	 * 초기화
+	 */
+	private void init(String zserial)
+	{
+		this.init(zserial, null, null);
+	}
+	
+	private void init(String zserial, String custCd, String amt)
+	{
+		this.init(zserial, null, custCd, amt, false);
+	}
+	
+	
+	/**
+	 * 초기화
+	 * @param amt
+	 */
+	private void init(String zserial, String slipDt, String custCd, String amt,  boolean isCrd)
+	{
+		header = new CommonSlipHeader();
+		header.setSerNo(zserial);
+		header.setDmsTyp(this.dmsType);
+		header.setTransCd("FBV1");
+		
+		this.custCd = custCd;
+		this.isCrd  = isCrd;
+		
+		if(StringUtils.isNotEmpty(slipDt)) header.setPstngDt(slipDt);
+		if(StringUtils.isNotEmpty(slipDt)) header.setEvdcDt(slipDt);
+		
+		int idx = 1; 
+		for(int i=0; i<items.length; i++)
+		{
+			items[i] = new CommonSlipItem();
+			items[i].setSerNo(zserial);
+			items[i].setDmsSeq(idx++ +"");
+			items[i].setBizArea("5018");
+			items[i].setBp("1100");			
+			items[i].setDsignField("22101185-D001-02");
+			items[i].setTaxCd(SAP_TAX_CD.INTAX10_TAXBILL.getCode());
+			if(StringUtils.isNotEmpty(amt))   items[i].setAmt(amt);
+		}
+		
+		initDr(items[0]);
+		initCr(items[1]);
+	}
+	
+	/**
+	 * 차변 초기화
+	 * @param one
+	 */
+	private void initDr(CommonSlipItem one)
+	{
+		one.setPstngKey(SAP_PSTNG_KEY.DR.getCode());
+		one.setDealCoCd(custCd);
+		one.setDealCoCd("4102638611");//가라거래처에 따른 에러로 인한 하드코딩
+		one.setPayCond(SAP_PAY_COND.KRW_1ST.getCode());
+		one.setPayMthd(SAP_PAY_MTHD.HANA_FB_CASH.getCode());
+		long netAmt = Long.parseLong(one.getAmt());
+		long taxAmt = (long) (netAmt * 0.1);
+		one.setAmt(netAmt+taxAmt +"");
+		one.setTaxAmt(taxAmt +"");
+		if(isCrd) one.setPayAlt("1138612053");
+	}
+	
+	/**
+	 * 대변초기화
+	 * @param one
+	 */
+	private void initCr(CommonSlipItem one)
+	{
+		one.setPstngKey(SAP_PSTNG_KEY.CR.getCode());
+		one.setDealCoCd(SAP_GL_DIRC.UNCLT_ETC.getCode());
+	}
+	
+    public CommonSlipItem getDr()
+    {
+    	return this.items[0];
+    }
+	
+    public CommonSlipItem getCr()
+    {
+    	return this.items[1];
+    }
+    
+    
+
+	public CommonSlipHeader getHeader() {
+		return header;
+	}
+
+	public void setHeader(CommonSlipHeader header) {
+		this.header = header;
+	}
+
+	public CommonSlipItem[] getItems() {
+		return items;
+	}
+
+	public void setItems(CommonSlipItem[] items) {
+		this.items = items;
+	}
+	
+	
+
+}

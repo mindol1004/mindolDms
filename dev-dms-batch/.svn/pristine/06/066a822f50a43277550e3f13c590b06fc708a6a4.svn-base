@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.DBE008">
+	<select id="STfGrpInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE008.STfGrpInfo TF 그룹정보조회 */
+/* IO: 이준우,2015-10-29T13:49:26(이준우,2015-08-11T14:15:42) */
+SELECT  IF_PROC_DT
+         ,IF_FILE_NM
+         ,IF_SEQ
+         ,DEALCO_GRP_CD					/*거래처그룹코드*/
+         ,DEALCO_GRP_NM                 /*거래처그룹명  */
+    FROM  TF_GRP_INFO
+   WHERE  PROC_ST_CD = '09'
+     AND  IF_PROC_DT = #PROC_DT#		/*전문송신일자  iv_op_dt*/
+ORDER BY  IF_SEQ]]>
+	</select>
+	<insert id="IE4uDealcoGrp" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE008.IE4uDealcoGrp 거래처그룹정보등록 */
+/* IO: 이준우,2015-10-29T13:47:42(이준우,2015-07-29T10:19:57) */
+MERGE INTO  TB_EP_E4U_DEALCO_GRP A
+ USING DUAL
+         ON  (
+             DEALCO_GRP_CD = #DEALCO_GRP_CD#
+             )
+       WHEN  MATCHED THEN 
+ UPDATE SET  DEALCO_GRP_NM = #DEALCO_GRP_NM#
+            ,DEL_YN = 'N'
+            ,LS_CHG_USER_ID = 'BAT'
+            ,LS_CHG_DTM = SYSDATE
+       WHEN  NOT MATCHED THEN                                    
+     INSERT  (
+             DEALCO_GRP_NM   
+            ,DEALCO_GRP_CD
+            ,DEL_YN
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+             )
+     VALUES  (
+             #DEALCO_GRP_NM#
+            ,#DEALCO_GRP_CD#
+            ,'N' 
+            ,'BAT' 
+            ,SYSDATE 
+            ,'BAT' 
+            ,SYSDATE
+            )]]>
+	</insert>
+	<update id="UTfGrpInfo" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE008.UTfGrpInfo TF 그룹정보수정 */
+/* IO: 이준우,2015-10-29T13:49:54(이준우,2015-09-30T13:24:28) */
+UPDATE  TF_GRP_INFO
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) Y,N*/
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_PROC_DT   = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ    = #IF_SEQ#]]>
+	</update>
+</sqlMap>

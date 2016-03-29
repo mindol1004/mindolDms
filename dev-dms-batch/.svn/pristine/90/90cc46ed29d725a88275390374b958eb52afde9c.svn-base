@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.DBE007">
+	<select id="STfEqpJdgRslt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE007.SIfByeqpClctDt IF E4U단말기감정결과조회 */
+/* IO: 이준우,2015-10-22T16:52:17(이준우,2015-08-11T14:15:42) */
+  SELECT  IF_PROC_DT                      /*IF처리일자*/
+         ,IF_FILE_NM                      /*IF파일명  */
+         ,IF_SEQ                          /*IF순번    */
+         ,EQP_MDL_CD                      /*단말기모델코드*/
+         ,EQP_SER_NO                      /*단말기일련번호*/
+         ,IMEI                            /*IMEI          */
+         ,BUYER_NM                        /*매입자명       */
+         ,BUYER_NM_ENPT                   /*매입자명암호화  */
+         ,ACPT_DT                         /*접수일자        */
+         ,PRCH_AMT                        /*매입금액        */
+         ,DPSTR_NM                         /*예금주명        */
+         ,DPSTR_NM_ENPT                    /*예금주명암호화  */
+         ,BANK_CD                         /*은행코드        */
+         ,ACCO_NO                         /*계좌번호        */
+         ,ACCO_NO_ENPT                    /*계좌번호암호화  */
+         ,TEL_NO                          /*전화번호        */
+         ,TEL_NO_ENPT                     /*전화번호암호화  */
+         ,MGMT_NO                         /*관리번호        */
+         ,CUST_GRP_NM                     /*고객그룹명       */
+         ,XCL_MODE                        /*정산방식         */
+         ,PROC_CL_CD                      /*처리구분코드   */
+         ,SUGG                            /*의견           */
+         ,DEALCO_GRP_CD                   /*거래처그룹코드 */
+         ,DEALCO_GRP_NM                   /*거래처그룹명   */
+         ,PROC_ST_CD                      /*처리상태코드   */
+    FROM  TF_EQP_JDG_RSLT
+   WHERE  PROC_ST_CD = '09'
+     AND  IF_PROC_DT = #PROC_DT#		/*전문송신일자  iv_op_dt*/
+ORDER BY  IF_SEQ]]>
+	</select>
+	<insert id="IConsultMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE001.IConsultMgmt 상담관리정보등록 */
+/* IO: 이준우,2015-10-01T17:27:10(이준우,2015-07-29T10:19:57) */
+
+INSERT INTO  TB_EP_CST_CONSULT_MGMT (
+             CNSL_MGMT_NO           /*상담 관리 번호*/
+            ,EQP_MDL_CD             /*단말기 모델 코드*/
+            ,EQP_SER_NO             /*단말기 일련 번호*/
+            ,CNSL_DT                /*상담 일자(접수일자)*/
+            ,CNSL_DEALCO_CD         /*상담 거래처 코드*/
+            ,ONING_DT               /*개통 일자     */
+            ,EQP_ST					/*단말기상태 (단말기등급)*/
+            ,EQP_COLOR_CD           /*색상          */
+            ,LOSS_EQP_YN			/*분실 단말기 여부*/
+            ,RENTP_YN				/*임대폰 여부         */
+            ,USIM_EQPCHG_YN			/*USIM 기변 여부      */
+            ,OTHRCO_FORGN_EQP_YN    /*타사 해외 단말기 여부*/
+            ,SVC_NO					/*서비스 번호*/
+            ,SVC_MGMT_NO			/*서비스 관리 번호*/
+            ,IMEI					/*IMEI*/
+            ,FEE_DEDC_YN			/*요금 공제 여부   */
+            ,USE_PRD_DDCT_AMT		/*매입금액(사용기간차감금액)*/
+            ,DPSTR					/*예금주*/
+            ,DPSTR_ENPT				/*예금주 암호화*/
+            ,BANK_CD                /*은행코드     */
+            ,ACCO_NO                /*계좌번호     */
+            ,ACCO_NO_ENPT           /*계좌 번호 암호화     */
+            ,TEL_NO                 /*전화번호     */
+            ,TEL_NO_ENPT            /*전화 번호 암호화     */
+            ,ZIPCD                  /*우편번호    */
+            ,ADDR                   /*주소        */
+            ,ETC_ADDR               /*기타주소     */
+            ,SUGG                   /*의견         */
+            ,XCL_MODE               /*정산방식*/
+            ,DEL_YN
+            ,UPDATE_COUNT
+            ,FS_REG_USER_ID
+            ,FS_REG_DTM
+            ,LS_CHG_USER_ID
+            ,LS_CHG_DTM
+            ,MOV_YN
+            ,PRCH_CL
+            ,IN_CONF_YN
+            ,SKN_CL
+             )                            
+           VALUES                         
+             (                            
+             #CNSL_MGMT_NO#   
+            ,#EQP_MDL_CD#     
+            ,#EQP_SER_NO#     
+            ,#CNSL_DT#        
+            ,'11050'          
+            ,''               
+            ,'A'              
+            ,'99'             
+            ,'N'              
+            ,'N'              
+            ,'N'              
+            ,'N'              
+            ,''               
+            ,''               
+            ,''               
+            ,''               
+            ,#PRCH_AMT#       
+            ,#DPSTR_NM#        
+            ,#DPSTR_NM_ENPT#   
+            ,#BANK_CD#        
+            ,#ACCO_NO#        
+            ,#ACCO_NO_ENPT#   
+            ,#TEL_NO#         
+            ,#TEL_NO_ENPT#    
+            ,''               
+            ,''               
+            ,''               
+            ,#SUGG#
+            ,#XCL_MODE#
+            ,'N'              
+            ,NVL(#UPDATE_COUNT#, 0)+1
+            ,'BAT'
+            ,SYSDATE
+            ,'BAT'
+            ,SYSDATE
+            ,'Y'
+            ,'C'
+            ,'C'
+            ,'N'
+             )]]>
+	</insert>
+	<insert id="IConsultDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE002.IConsultDtl 상담관리상세등록 */
+/* IO: 이준우,2015-10-02T09:28:09(이준우,2015-07-29T10:19:57) */
+INSERT INTO  TB_EP_CST_CONSULT_DTL (
+             CNSL_MGMT_NO   
+            ,CNSL_SER_NO    
+            ,EQP_MDL_CD     
+            ,CMPT_PROD_CD   
+            ,DTL_CL         
+            ,CL_CD          
+            ,QTY            
+            ,NORM_QTY       
+            ,HLD_QTY        
+            ,DDCT_AMT       
+            ,DEL_YN         
+            ,UPDATE_COUNT   
+            ,FS_REG_USER_ID 
+            ,FS_REG_DTM     
+            ,LS_CHG_USER_ID 
+            ,LS_CHG_DTM     
+            ,SKN_SMPL_QTY   
+             )
+     VALUES  (
+             #CNSL_MGMT_NO#
+            ,#CNSL_SER_NO#         
+            ,#EQP_MDL_CD#  
+            ,#BATR_CD#     
+            ,#OUTS_MCN_CL# 
+            ,'1'           
+            ,#QTY#         
+            ,#NRL_QTY#     
+            ,#HLD_QTY#       
+            ,(CASE WHEN TO_NUMBER(#HLD_QTY#) >= 1 THEN 0 ELSE TO_NUMBER(#PRICE#) END) /* DDCT_AMT        */
+            ,'N'           
+            ,1             
+            ,'BAT'
+            ,SYSDATE
+            ,'BAT'
+            ,SYSDATE
+            ,''
+             )]]>
+	</insert>
+	<update id="UTfEqpJdgRslt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE007.UTfEqpJdgRslt IF_단말기감정결과수정 */
+/* IO: 이준우,2015-10-26T16:36:22(이준우,2015-09-30T13:24:28) */
+UPDATE  TF_EQP_JDG_RSLT
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) Y,N*/
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_PROC_DT   = #IF_PROC_DT#
+   AND  IF_FILE_NM = #IF_FILE_NM#
+   AND  IF_SEQ    = #IF_SEQ#]]>
+	</update>
+	<select id="SInqEqpProdDtlList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPEqpInMgmt.SInqEqpProdDtlList 입고대상상품상세리스트 */
+/* IO: 김상오,2015-08-25T13:37:45(김상오,2015-08-24T17:23:39) */
+SELECT  '' CNSL_MGMT_NO
+       ,'' PRCH_MGMT_NO
+       ,ROWNUM AS CNSL_SER_NO
+       ,A.OUTS_MCN_CL
+       ,'1' BYGRD
+       ,A.EQP_MDL_CD
+       ,A.BATR_CD
+       ,NVL(A.QTY, 0) QTY
+       ,0 NRL_QTY
+       ,0 HLD_QTY
+       ,NVL(A.UPRC, 0) UPRC
+  FROM  TB_EP_BAS_PROD_DTL A
+       ,TB_EQP_MDL B
+ WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND  A.EQP_MDL_CD = #EQP_MDL_CD#
+   AND  A.BYGRD = '1'
+   AND  A.DEL_YN = 'N'
+   /*   AND B.DEL_YN = 'N'  ERD 에는 있는대 현재 테이블에는 없음 20150824 */
+   AND  A.FRDT <= TO_CHAR(SYSDATE,'YYYYMMDD')
+   AND  A.TODT >= TO_CHAR(SYSDATE,'YYYYMMDD')]]>
+	</select>
+</sqlMap>

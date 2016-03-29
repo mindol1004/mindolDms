@@ -1,0 +1,202 @@
+package dms.nr.nrsfxbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+import fwk.common.CommonArea;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]FPA매각가산정</li>
+ * <li>설  명 : <pre>[FU]FPA매각가산정</pre></li>
+ * <li>작성일 : 2015-10-20 10:51:43</li>
+ * <li>작성자 : 문재웅 (jaiwoong)</li>
+ * </ul>
+ *
+ * @author 문재웅 (jaiwoong)
+ */
+public class FNRFpaDspslPrcEst extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRFpaDspslPrcEst(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]FPA매각가산정조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-20 10:52:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaDspslPrcEstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet usrListRs = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DNRFpaDspslPrcEst dNRFpaDspslPrcEst = (DNRFpaDspslPrcEst) lookupDataUnit(DNRFpaDspslPrcEst.class);
+
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRFpaDspslPrcEst.dSFpaDspslPrcEstTotCnt(requestData, onlineCtx);
+            IRecordSet sumRs = dsCnt.getRecordSet("RS_SUM_LIST");
+            
+            intTotalCnt = Integer.parseInt(sumRs.get(0,"TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            
+            // 3. LISTDM호출
+            responseData = dNRFpaDspslPrcEst.dSFpaDspslPrcEstLstPaging(requestData, onlineCtx);
+            usrListRs = responseData.getRecordSet("RS_FPA_DSPSL_PRC_EST_LIST");
+            
+            // 4.결과값 리턴
+            responseData.putRecordSet("RS_SUM_LIST", sumRs);
+            PagenateUtils.setPagenatedParamToRecordSet(sumRs, requestData, intTotalCnt);
+            
+            responseData.putRecordSet("RS_FPA_DSPSL_PRC_EST_LIST",usrListRs);
+            PagenateUtils.setPagenatedParamToRecordSet(usrListRs, requestData, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]FPA매각가산정전체엑셀조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-20 13:43:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaDspslPrcEstAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. DU lookup
+            DNRFpaDspslPrcEst dNRFpaDspslPrcEst = (DNRFpaDspslPrcEst) lookupDataUnit(DNRFpaDspslPrcEst.class);
+
+              // 3. LISTDM호출
+            responseData = dNRFpaDspslPrcEst.dSFpaDspslPrcEstAllExcel(requestData, onlineCtx);
+              
+          } catch ( BizRuntimeException e ) {
+              throw e; //시스템 오류가 발생하였습니다.
+          }
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]FPA매각가산정재생성</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-20 15:04:31
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaDspslPrcEstOnlineRecall(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        try {
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+    
+            // call on-demand batch job
+            HashMap params = new HashMap<String,String>();
+            params.put("TASK_ID", "XCR014");
+            params.put("TASK_NM", "FPA매각가산정");
+            params.put("LGIN_ID", onlineCtx.getUserInfo().getLoginId());
+            params.put("USER_NO", ca.getUserNo());
+            params.put("DSPSL_YM", requestData.getField("DSPSL_YM"));    //매각년월
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.nr.XCR014");
+            params.put("ONDEMAND_DATASET", dsXml);
+            String jobExecutionId = callBatchJob("XCR014", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+            
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+        
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]FPA매각가전표발행</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-20 10:51:43
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DSPSL_YM [매각년월]
+	 *	- field : IS_RECALL [재집계/전표생성/전표취소 구분값]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaDspslPrcEstDeprOnlineRecall(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]FPA매각가전표취소</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-21 17:51:44
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : DSPSL_YM [매각년월]
+	 *	- field : IS_RECALL [재집계/전표생성/전표취소 구분값]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaDspslPrcEstDeprCnclOnlineRecall(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+    
+        return responseData;
+    }
+  
+}

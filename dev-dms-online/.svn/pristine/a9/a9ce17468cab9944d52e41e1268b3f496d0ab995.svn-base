@@ -1,0 +1,111 @@
+package dms.pr.prsimbase.biz;
+
+import java.util.Map;
+
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [FU]재상품화처리관리</li>
+ * <li>설  명 : <pre>재상품화처리관리</pre></li>
+ * <li>작성일 : 2015-08-04 11:11:05</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class FPRRCmcProcRgstMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FPRRCmcProcRgstMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>재상품화처리조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-04 11:11:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : IN_FR_DT [입고시작일]
+	 *	- field : IN_TO_DT [입고종료일]
+	 *	- field : EQP_SER_NUM [단말기일련번호]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : BOX_NO [박스번호]
+	 *	- field : INVE_ST_CD [재고상태코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMC_PROC_LIST
+	 *		- field : IN_DT [입고일]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_COLOR_CD [단말기칼라코드]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : BOX_NO [박스번호]
+	 *		- field : PRCH_AMT [매입가]
+	 *		- field : EQP_JDG_DT [단말기감정일]
+	 *		- field : EQP_JDG_RSLT_CD [단말기감정결과코드]
+	 *		- field : JDG_APRV_YN [감정승인여부]
+	 *		- field : JDG_CHRGR_NO [감정담당자번호]
+	 *		- field : JDG_CHRGR_NM [감정담당자명]
+	 *		- field : IN_PLC_CD [매입처]
+	 *		- field : DEAL_CO_NM [매입처명]
+	 * </pre>
+	 */
+	public IDataSet fInqRCmcProcRgstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		 IDataSet responseData = new DataSet();
+	     IDataSet dsCnt = new DataSet();
+	    
+		 IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		 IRecordSet rsPagingList = null;
+		
+		 int intTotalCnt = 0;
+		
+		 try {
+		 	 // 1. DU lookup
+			 DPRRCmcProcRgstMgmt dPRRCmcProcRgstMgmt = (DPRRCmcProcRgstMgmt) lookupDataUnit(DPRRCmcProcRgstMgmt.class);
+			
+			 // 2. TOTAL COUNT DM호출
+			 dsCnt = dPRRCmcProcRgstMgmt.dSRCmcProcRgstLstTotCnt(reqDs, onlineCtx);
+			 intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));  
+			 PagenateUtils.setPagenatedParamsToDataSet(reqDs);	//카운트 셋
+			
+			 // 3. LIST DM호출
+			 responseData = dPRRCmcProcRgstMgmt.dSRCmcProcRgstLstPaging(reqDs, onlineCtx);
+	
+			 rsPagingList = responseData.getRecordSet("RS_CMC_PROC_LIST");
+			 PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, reqDs, intTotalCnt);	//리스트 셋
+				
+		 } catch ( BizRuntimeException e ) {
+			 throw e;
+		 } catch ( Exception e ) {
+			 throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		 }
+	    return responseData;
+	}
+  
+}

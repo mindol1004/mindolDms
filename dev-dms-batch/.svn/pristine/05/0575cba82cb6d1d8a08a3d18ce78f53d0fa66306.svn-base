@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR019">
+	<select id="SInsuInvRslt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR019.SInsuInvRslt 청구결과 조회 */
+/* IO: 안진갑,2016-02-15T16:28:52(안진갑,2016-02-15T15:45:56) */
+SELECT  A.CUST_TYP_CD         AS CUST_TYP_CD         /* 고객구분 */
+       ,A.CTZ_COPREG_NO       AS CTZ_COPREG_NO
+       ,A.CTZ_COPREG_NO_ENPT  AS CTZ_COPREG_NO_ENPT  /* 주민/법인등록번호 */
+       ,A.INSU_BIZ_REG_NO     AS BLICENS_NO          /* 사업자등록번호 */
+       ,A.UKEY_INSURE_MGMT_NO AS INSU_MGMT_NO        /* 보험관리번호 */
+       ,A.SVC_MGMT_NO         AS SVC_MGMT_NO         /* 서비스관리번호 */
+       ,A.INSU_RENTAL_SER_NO  AS RENTAL_SER_NO       /* 렌탈일련번호 */
+       ,A.UKEY_INV_DT         AS INSU_INV_DT         /* 보험청구일자*/
+       ,A.UKEY_INV_AMT        AS INSU_INV_AMT        /* 보험청구금액*/
+       ,CASE WHEN A.INV_ST_CD IN ('01', '02', '06') THEN '10'
+             WHEN A.INV_ST_CD = '07'                THEN '20'
+             WHEN A.INV_ST_CD IN ('03', '04')       THEN '30'
+             WHEN A.INV_ST_CD = '05'                THEN '40'
+        END AS INSU_INV_PROC_CD /* 보험청구처리코드 */
+       ,A.RSN_CD              AS INSU_INV_PROC_DTL_CD /* 보험청구처리상세코드 */
+  FROM  TB_INSU_INV A
+ WHERE  A.INV_ST_CD IN ('01', '02', '06', '07', '03', '04', '05')
+   AND  A.INV_PROC_DT = #PROC_DT#
+   AND  A.PROC_ST_CD = '09']]>
+	</select>
+	<insert id="IInsuInvRslt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR019.IInsuInvRslt 청구결과 등록 */
+/* IO: 안진갑,2016-02-15T17:44:18(안진갑,2016-02-15T16:29:28) */
+INSERT INTO TF_INSU_INV_RSLT
+(
+   IF_PROC_DT
+  ,IF_FILE_NM
+  ,IF_SEQ
+  ,CUST_TYP_CD
+  ,CTZ_COPREG_NO
+  ,CTZ_COPREG_NO_ENPT
+  ,BLICENS_NO
+  ,INSU_MGMT_NO
+  ,SVC_MGMT_NO
+  ,RENTAL_SER_NO
+  ,INSU_INV_DT
+  ,INSU_INV_AMT
+  ,INSU_INV_PROC_CD
+  ,INSU_INV_PROC_DTL_CD
+  ,INSU_INV_DMISL_STEP_CD
+  ,INSUCO_ERR_CD
+  ,NEWLINE
+  ,PROC_ST_CD
+  ,FS_REG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_USER_ID
+  ,LS_CHG_DTM
+)
+VALUES
+(
+   #IF_PROC_DT#
+  ,#IF_FILE_NM#
+  ,#IF_SEQ#
+  ,#CUST_TYP_CD#
+  ,#CTZ_COPREG_NO#
+  ,#CTZ_COPREG_NO_ENPT#
+  ,#BLICENS_NO#
+  ,#INSU_MGMT_NO#
+  ,#SVC_MGMT_NO#
+  ,#RENTAL_SER_NO#
+  ,#INSU_INV_DT#
+  ,#INSU_INV_AMT#
+  ,#INSU_INV_PROC_CD#
+  ,#INSU_INV_PROC_DTL_CD#
+  ,''
+  ,''
+  ,''
+  ,'09'
+  ,'BAT'
+  ,SYSDATE
+  ,'BAT'
+  ,SYSDATE
+)]]>
+	</insert>
+</sqlMap>

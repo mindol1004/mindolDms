@@ -1,0 +1,183 @@
+package dms.pr.prsimbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [DU]재상품화처리관리</li>
+ * <li>설  명 : <pre>재상품화처리관리</pre></li>
+ * <li>작성일 : 2015-08-04 11:12:06</li>
+ * <li>작성자 : 박민정 (dangnagu2)</li>
+ * </ul>
+ *
+ * @author 박민정 (dangnagu2)
+ */
+public class DPRRCmcProcRgstMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DPRRCmcProcRgstMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>재상품화처리조회목록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-04 11:12:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSRCmcProcRgstLstPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출
+		IRecordSet rsReturn = dbSelect("SRCmcProcRgstLstPaging", requestData, onlineCtx);
+		
+		// 2.결과값 셋팅
+		responseData.putRecordSet("RS_CMC_PROC_LIST", rsReturn);
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>재상품화처리조회총건수</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-04 11:12:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSRCmcProcRgstLstTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출     
+		IRecord record = dbSelectSingle("SRCmcProcRgstLstTotCnt", requestData, onlineCtx);
+		
+		// 2.결과값 셋팅     
+		responseData.putFieldMap(record); 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>재상품화단말기구성품재매칭목록조회</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-04 11:12:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSRProdEqpConstRMatchLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SRProdEqpConstRMatchLst", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RS_CONST_MATCH_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>구성품출고등록</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-05 09:29:10
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIConstOut(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("IConstOut", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>구성품출고일련번호</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-05 09:29:33
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSConstOutNum(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	// 1.쿼리문 호출
+	 		IRecord record = dbSelectSingle("SConstOutNum", requestData, onlineCtx);
+	 		// 2.결과값 셋팅
+	 		responseData.putFieldMap(record);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>구성품출고취소</pre>
+	 *
+	 * @author 박민정 (dangnagu2)
+	 * @since 2015-08-05 16:52:06
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dUReqpConstOutStat(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("UReqpConstOutStat", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+  
+}

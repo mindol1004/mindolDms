@@ -1,0 +1,192 @@
+package dms.nr.nrbxmbase.biz;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]매입취소정산관리</li>
+ * <li>설  명 : <pre>매입취소정산관리</pre></li>
+ * <li>작성일 : 2015-12-01 13:22:13</li>
+ * <li>작성자 : 문재웅 (jaiwoong)</li>
+ * </ul>
+ *
+ * @author 문재웅 (jaiwoong)
+ */
+public class PNRPrchCnclXclMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRPrchCnclXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[PM]매입취소정산조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-12-01 13:22:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : YDATE [매입년월]
+	 *	- field : ASSET_SLIP_NO [전표번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SUM_LIST
+	 *		- field : TOTAL_CNT [총건수]
+	 *	- record : RS_PRCH_CNCL_XCL_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_PRCH_DT [계약일자:단말기매입일자]
+	 *		- field : OP_PROC_DT [해지일자]
+	 *		- field : SPLY_PRC [취득금액:공급가격]
+	 *		- field : ACQR_XCL_SLIP_NO [취득전표번호]
+	 *		- field : ACQR_XCL_SLIP_ST_CD [취득전표상태]
+	 *		- field : ACQR_XCL_SLIP_DT [취득전표 전표일자]
+	 *		- field : ACQR_XCL_PRPSR [취득전표 발의자]
+	 *		- field : ACQR_CNCL_SLIP_NO [취득취소전표번호]
+	 *		- field : ACQR_CNCL_SLIP_ST_CD [취득취소전표상태]
+	 *		- field : ACQR_CNCL_SLIP_DT [취득취소전표 전표일자]
+	 *		- field : ACQR_CNCL_SLIP_PRPSR [취득취소전표 발의자]
+	 *		- field : CC [취득취소생성]
+	 *		- field : DD [취득취소취소]
+	 *		- field : DEPR_STA_DT [감가상각시작일자]
+	 *		- field : DEPR_END_DT [감가상각종료일자]
+	 *		- field : DEPR_DTL_SUM_AMT [감가상각누계액]
+	 *		- field : DISPO_PRE_PRFITLS_AMT [처분선손익금액:충당금]
+	 *		- field : DEPR_DTL_REM_AMT [감가상각잔여금액]
+	 *		- field : DEPR_SLIP_NO [감가상각전표]
+	 *		- field : DEPR_SLIP_ST_CD [감가상각전표상태]
+	 *		- field : DEPR_SLIP_DT [감가상각전표 전표일자]
+	 *		- field : DEPR_PRPSR [감가상각전표 발의자]
+	 *		- field : DEPR_CNCL_SLIP_NO [감가상각취소전표번호]
+	 *		- field : DEPR_CNCL_SLIP_ST_CD [감가상각취소전표상태]
+	 *		- field : DEPR_CNCL_SLIP_DT [감가상각취소전표 전표일자]
+	 *		- field : DEPR_CNCL_SLIP_PRPSR [감가상각취소전표 발의자]
+	 *		- field : JJ [감가상각취소생성]
+	 *		- field : KK [감가상각취소]
+	 *		- field : XCL_PROC_DT [정산처리일자:매입정산일자]
+	 *		- field : PRCH_DT [매입일자]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : PRCH_SLIP_NO [매입전표번호]
+	 *		- field : PRCH_SLIP_ST_CD [매입전표상태]
+	 *		- field : TAXBILL_NO [세금계산서번호]
+	 *		- field : TAX_BILL_ST_CD [세금계산서상태코드]
+	 *		- field : PRCH_NO [매입번호]
+	 *		- field : CNCL_SLIP_NO [매입취소전표번호]
+	 *		- field : CNCL_SLIP_ST_CD [매입취소전표상태]
+	 *		- field : DEPR_STRD_YM [감가상각년월]
+	 * </pre>
+	 */
+	public IDataSet pInqPrchCnclXcllst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqPrchCnclXcllst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]매입취소정산전표처리</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-12-01 13:22:13
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SVC_MGMT_NO [서비스관리번호]
+	 *	- field : ASSET_NO [자산번호]
+	 *	- field : EQP_PRCH_DT [계약일자:단말기매입일자]
+	 *	- field : OP_PROC_DT [해지일자]
+	 *	- field : SPLY_PRC [취득금액:공급가격]
+	 *	- field : ACQR_XCL_SLIP_NO [취득전표번호]
+	 *	- field : ACQR_XCL_SLIP_ST_CD [취득전표상태]
+	 *	- field : ACQR_XCL_SLIP_DT [취득전표 전표일자]
+	 *	- field : ACQR_XCL_PRPSR [취득전표 발의자]
+	 *	- field : ACQR_CNCL_SLIP_NO [취득취소전표번호]
+	 *	- field : ACQR_CNCL_SLIP_ST_CD [취득취소전표상태]
+	 *	- field : ACQR_CNCL_SLIP_DT [취득취소전표 전표일자]
+	 *	- field : ACQR_CNCL_SLIP_PRPSR [취득취소전표 발의자]
+	 *	- field : CC [취득취소생성]
+	 *	- field : DD [취득취소취소]
+	 *	- field : DEPR_STA_DT [감가상각시작일자]
+	 *	- field : DEPR_END_DT [감가상각종료일자]
+	 *	- field : DEPR_DTL_SUM_AMT [감가상각누계액]
+	 *	- field : DISPO_PRE_PRFITLS_AMT [처분선손익금액:충당금]
+	 *	- field : DEPR_DTL_REM_AMT [감가상각잔여금액]
+	 *	- field : DEPR_SLIP_NO [감가상각전표]
+	 *	- field : DEPR_SLIP_ST_CD [감가상각전표상태]
+	 *	- field : DEPR_SLIP_DT [감가상각전표 전표일자]
+	 *	- field : DEPR_PRPSR [감가상각전표 발의자]
+	 *	- field : DEPR_CNCL_SLIP_NO [감가상각취소전표번호]
+	 *	- field : DEPR_CNCL_SLIP_ST_CD [감가상각취소전표상태]
+	 *	- field : DEPR_CNCL_SLIP_DT [감가상각취소전표 전표일자]
+	 *	- field : DEPR_CNCL_SLIP_PRPSR [감가상각취소전표 발의자]
+	 *	- field : JJ [감가상각취소생성]
+	 *	- field : KK [감가상각취소]
+	 *	- field : XCL_PROC_DT [정산처리일자:매입정산일자]
+	 *	- field : PRCH_DT [매입일자]
+	 *	- field : PRCH_AMT [매입금액]
+	 *	- field : PRCH_SLIP_NO [매입전표번호]
+	 *	- field : PRCH_SLIP_ST_CD [매입전표상태]
+	 *	- field : TAXBILL_NO [세금계산서번호]
+	 *	- field : TAX_BILL_ST_CD [세금계산서상태코드]
+	 *	- field : PRCH_NO [매입번호]
+	 *	- field : CNCL_SLIP_NO [매입취소전표번호]
+	 *	- field : CNCL_SLIP_ST_CD [매입취소전표상태]
+	 *	- field : DEPR_STRD_YM [감가상각년월]
+	 *	- field : SLIP_TYPE [전표타입]
+	 *	- field : IS_RECALL [전표생성/취소구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSlipPrchCnclXcl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fSlipPrchCnclXcl", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        
+        return responseData;
+    }
+  
+}

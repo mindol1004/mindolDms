@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 코어 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+	
+    <bean id="nc.core.DelayAsyncManager"
+        class="nexcore.framework.core.service.delayasync.internal.DelayAsyncManager"
+        init-method="init" 
+        destroy-method="destroy">
+        <description>
+            <![CDATA[ 지연후 비동기 연동거래 처리기.]]> 
+        </description>
+        <property name="corePoolSize"                  value="${online.internal.delayasync.corePoolSize}" />
+        <property name="sequenceLength"                value="${online.internal.delayasync.sequenceLength}" />           <!-- 일련번호 자리수 (기본 : 5) -->
+        <property name="cleanOldToSchedule"            value="${online.internal.delayasync.cleanOldToSchedule}" />       <!-- 오래된 데이터 삭제 스케줄 동작여부 (기본 : false) -->
+        <property name="cleanOldToScheduleTime"        value="${online.internal.delayasync.cleanOldToScheduleTime}" />   <!-- 오래된 데이터 삭제 스케줄 동작시각 -->
+        <property name="cleanOldToScheduleRetainDays"  value="${online.internal.delayasync.cleanOldToScheduleRetainDays}" /> <!-- 오래된 데이터 삭제 스케줄 보유기간 -->
+        <property name="sqlManager"                    ref="nc.delayasync.ISqlManager" />
+        <property name="delayAsyncServiceHandler"      ref="nc.core.IDelayAsyncHandler" />
+    </bean>
+
+    <bean id="nc.core.IDelayAsyncHandler" 
+    	class="nexcore.framework.coreext.pojo.resolver.impl.DefaultDelayAsyncServiceHandler">
+        <description>
+            <![CDATA[ 지연 비동기 처리기.]]> 
+        </description>
+    </bean>
+
+    <bean id="nc.delayasync.ISqlManager" class="nexcore.framework.integration.db.internal.XmlSqlManager" init-method="init">
+        <description>XML 기반의 ISqlManager</description>
+        <property name="configFile"        value="config/sql/delay-async-sql-config.xml" />
+        <property name="userThreadManager" ref="nc.core.IUserThreadManager" />
+    </bean>
+
+</beans>
+

@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNREqpPrchInfoMgmt">
+	<select id="SEqpPrchInfoLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchInfoLstPaging 단말자산취득현황조회M */
+/* IO: 장미진,2015-09-25T10:58:34(장미진,2015-09-22T17:29:59) */
+SELECT
+        *
+  FROM (
+        SELECT 
+                ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+               ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+               ,A.EQP_SER_NO             		 /* 단말기일련번호*/
+               ,E.EQP_MDL_NM   					 /* 모델명 */
+               ,A.EQP_MDL_CD   					 /* 모델코드 */
+               ,E.CNTRT_PRD     				 /* 계약기간코드 */
+               ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+               ,D.OP_TYP_CD     				 /* 계약상태코드 */
+               ,A.INVE_ST_CD					 /* 재고상태코드 */
+               ,G.ASSET_SLIP_ST					 /* 전표상태코드*/
+               ,G.ASSET_SLIP_NO					 /* 전표번호*/
+               ,A.ASSET_NO						 /* 자산번호 */
+               ,G.YYYY
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY') AS YYYY
+                   FROM  TB_ASSET_SLIP
+                  WHERE  (ASSET_NO, ASSET_SLIP_SEQ) IN  ( SELECT ASSET_NO, MAX(ASSET_SLIP_SEQ)
+                                                            FROM TB_ASSET_SLIP
+                                                           WHERE ASSET_SLIP_CL_CD = 'AA'
+                                                          GROUP BY ASSET_NO)) G
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.ASSET_NO = G.ASSET_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[) PA]]>
+	</select>
+	<select id="SEqpPrchInfoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchInfoTotCnt 단말자산취득현황총건수 */
+/* IO: 장미진,2015-09-25T10:58:27(장미진,2015-09-22T17:30:29) */
+SELECT
+        COUNT(*) AS M_CNT
+       ,NVL(SUM(PA.EQP_PRCH_AMT),0) AS M_PRC 
+  FROM (
+        SELECT 
+                ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+               ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+               ,A.EQP_SER_NO             		 /* 단말기일련번호*/
+               ,E.EQP_MDL_NM   					 /* 모델명 */
+               ,A.EQP_MDL_CD   					 /* 모델코드 */
+               ,E.CNTRT_PRD     				 /* 계약기간코드 */
+               ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+               ,D.OP_TYP_CD     				 /* 계약상태코드 */
+               ,A.INVE_ST_CD					 /* 재고상태코드 */
+               ,G.ASSET_SLIP_ST					 /* 전표상태코드*/
+               ,G.ASSET_SLIP_NO					 /* 전표번호*/
+               ,A.ASSET_NO						 /* 자산번호 */
+               ,G.YYYY
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY') AS YYYY
+                   FROM  TB_ASSET_SLIP
+                  WHERE  (ASSET_NO, ASSET_SLIP_SEQ) IN  ( SELECT ASSET_NO, MAX(ASSET_SLIP_SEQ)
+                                                             FROM TB_ASSET_SLIP
+                                                            WHERE ASSET_SLIP_CL_CD = 'AA'
+                                                            GROUP BY ASSET_NO)) G
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.ASSET_NO = G.ASSET_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[) PA]]>
+	</select>
+	<select id="SEqpPrchInfoTotalSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchInfoTotalSlip 단말자산취득전표용G */
+/* IO: 장미진,2015-09-30T16:15:57(장미진,2015-09-23T10:08:26) */
+SELECT  COUNT(*) AS T_CNT
+       ,NVL(SUM(PA.EQP_PRCH_AMT),0) AS T_PRC
+       ,REAL_ASSET_SLIP_NO AS SLIP_NO
+       ,NVL(REAL_ASSET_SLIP_ST,'00') AS SLIP_ST_CD
+       ,NVL(YYYY, TO_CHAR(SYSDATE,'YYYY'))
+       ,'' AS YYYYMM
+       ,'' AS CASE_WHEN
+  FROM (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+               ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+               ,A.EQP_SER_NO             		/* 단말기일련번호*/
+               ,E.EQP_MDL_NM   					 /* 모델명 */
+               ,A.EQP_MDL_CD   					 /* 모델코드 */
+               ,A.EQP_COLOR_CD					 /* 색상코드 */
+               ,F.PET_NM       					 /* 펫네임 */ 
+               ,E.CNTRT_PRD     				 /* 계약기간코드 */
+               ,D.NEW_CNTRT_DT 					 /* 계약일 */ 					
+               ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+               ,A.FISCL_REMPRC      			 /* 잔존가 */  
+               ,D.OP_TYP_CD     				 /* 계약상태코드 */
+               ,A.FISCL_SVCL					 /* 내용년수 */
+               ,E.CAPA_CD                 		 /* 용량코드 */
+               ,A.INVE_ST_CD					 /* 재고상태코드 */
+               ,CASE WHEN NVL(G.ASSET_SLIP_ST,'00') = '00' 
+                     THEN NULL ELSE G.ASSET_SLIP_NO 
+                      END AS REAL_ASSET_SLIP_NO                     /*전표번호*/
+               ,CASE WHEN NVL(G.ASSET_SLIP_ST,'00') = '00' 
+                     THEN NULL ELSE G.ASSET_SLIP_ST 
+                      END AS REAL_ASSET_SLIP_ST                     /*전표상태*/
+               ,CASE WHEN NVL(G.ASSET_SLIP_ST,'00') = '00' 
+                     THEN NULL ELSE G.YYYY END AS YYYY              /*전표처리년도*/                      
+               ,A.ASSET_NO						 /* 자산번호 */
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,TB_EQP_MDL F
+               ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY') AS YYYY
+                   FROM  TB_ASSET_SLIP A
+                   WHERE  (ASSET_NO, ASSET_SLIP_SEQ) IN  ( SELECT ASSET_NO, MAX(ASSET_SLIP_SEQ)
+                                                             FROM TB_ASSET_SLIP
+                                                            WHERE ASSET_SLIP_CL_CD = 'AA'
+                                                            GROUP BY ASSET_NO)) G
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.EQP_MDL_CD = F.EQP_MDL_CD(+)
+           AND  A.ASSET_NO = G.ASSET_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+           AND  SUBSTR(D.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6) 
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[           )PA
+GROUP BY REAL_ASSET_SLIP_NO, REAL_ASSET_SLIP_ST, YYYY  
+ORDER BY REAL_ASSET_SLIP_NO DESC]]>
+	</select>
+	<select id="SEqpPrchInfoTotalSlipTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchInfoTotalSlipTotCnt 단말자산취득전표용G총건수 */
+/* IO: 장미진,2015-10-01T10:17:22(장미진,2015-09-23T14:18:41) */
+SELECT  NVL(SUM(T_CNT),0) AS T_CNT
+       ,NVL(SUM(T_PRC),0) AS T_PRC
+  FROM  (SELECT  COUNT(*) AS T_CNT
+              ,NVL(SUM(PA.EQP_PRCH_AMT),0) AS T_PRC
+              ,REAL_ASSET_SLIP_NO AS SLIP_NO
+              ,REAL_ASSET_SLIP_ST AS SLIP_ST_CD
+              ,YYYY
+        FROM  (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+                      ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+                      ,A.EQP_SER_NO             		/* 단말기일련번호*/
+                      ,E.EQP_MDL_NM   					 /* 모델명 */
+                      ,A.EQP_MDL_CD   					 /* 모델코드 */
+                      ,A.EQP_COLOR_CD					 /* 색상코드 */
+                      ,F.PET_NM       					 /* 펫네임 */ 
+                      ,E.CNTRT_PRD     				 /* 계약기간코드 */
+                      ,D.NEW_CNTRT_DT 					 /* 계약일 */ 					
+                      ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+                      ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+                      ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+                      ,A.FISCL_REMPRC      			 /* 잔존가 */  
+                      ,D.OP_TYP_CD     				 /* 계약상태코드 */
+                      ,A.FISCL_SVCL					 /* 내용년수 */
+                      ,E.CAPA_CD                 		 /* 용량코드 */
+                      ,A.INVE_ST_CD					 /* 재고상태코드 */
+                      ,CASE WHEN NVL(G.ASSET_SLIP_ST,'05') = '05' 
+                            THEN NULL ELSE G.ASSET_SLIP_NO 
+                             END AS REAL_ASSET_SLIP_NO                     /*전표번호*/
+                      ,CASE WHEN NVL(G.ASSET_SLIP_ST,'05') = '05' 
+                            THEN NULL ELSE G.ASSET_SLIP_ST 
+                             END AS REAL_ASSET_SLIP_ST                     /*전표상태*/
+                      ,CASE WHEN NVL(G.ASSET_SLIP_ST,'05') = '05' 
+                            THEN NULL ELSE G.YYYY END AS YYYY              /*전표처리년도*/                      
+                      ,G.ASSET_SLIP_ST					 /*전표상태코드*/
+                      ,G.ASSET_SLIP_NO					 /*전표번호*/
+                      ,A.ASSET_NO						 /* 자산번호 */
+                FROM  TB_EQP_ASSET A
+                     ,TB_EQP_CNTRT B
+                     ,TB_RENTAL_CNTRT C
+                     ,TB_NR_CNTRT D
+                     ,TB_RENTAL_POLY E
+                     ,TB_EQP_MDL F
+                     ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY') AS YYYY
+                         FROM  TB_ASSET_SLIP A
+                        WHERE  (ASSET_NO, ASSET_SLIP_SEQ) IN  ( SELECT ASSET_NO, MAX(ASSET_SLIP_SEQ)
+                                                                  FROM TB_ASSET_SLIP
+                                                                 WHERE ASSET_SLIP_CL_CD = 'AA'
+                                                                GROUP BY ASSET_NO)) G
+                WHERE  A.ASSET_NO = B.ASSET_NO
+                  AND  B.CNTRT_NO = C.CNTRT_NO
+                  AND  B.CNTRT_NO = D.CNTRT_NO
+                  AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+                  AND  A.EQP_MDL_CD = F.EQP_MDL_CD(+)
+                  AND  A.ASSET_NO = G.ASSET_NO(+)
+                  AND  A.OP_CL_CD = 'NR'
+                  AND  SUBSTR(D.NEW_CNTRT_DT,0,6) = SUBSTR(#RENTAL_CNTRT_STA_DT#,0,6) 
+]]><isNotEmpty prepend="AND" property="RENTAL_CNTRT_STA_DT"><![CDATA[
+                D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="SLIP_ST_CD" compareValue="%"><![CDATA[
+]]><isEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST IS NULL
+]]></isEqual><![CDATA[
+]]><isNotEqual property="SLIP_ST_CD" compareValue="00"><![CDATA[
+		        G.ASSET_SLIP_ST = #SLIP_ST_CD#
+]]></isNotEqual><![CDATA[
+]]></isNotEqual><![CDATA[                  )PA
+      GROUP BY  REAL_ASSET_SLIP_NO, REAL_ASSET_SLIP_ST, YYYY  
+      ORDER BY  REAL_ASSET_SLIP_NO DESC)]]>
+	</select>
+	<select id="SEqpPrchAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchAllExcel 단말자산취득현황전체다운로드 */
+/* IO: 장미진,2015-09-24T09:58:36(장미진,2015-09-23T17:33:52) */
+SELECT 
+        D.SVC_MGMT_NO    	   AS "서비스관리번호"
+       ,A.EQP_SER_NO           AS "단말기일련번호"
+       ,A.ASSET_NO			   AS "자산번호"
+       ,E.EQP_MDL_NM   		   AS "모델명"
+       ,A.EQP_MDL_CD   		   AS "모델코드"
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS112' 
+            AND CM_CD_ID = E.CNTRT_PRD ) AS "계약기간"
+       ,C.RENTAL_CNTRT_STA_DT  AS "계약시작일"
+       ,C.RENTAL_CNTRT_END_DT  AS "계약종료일"
+       ,A.EQP_PRCH_AMT         AS "매입가"
+       ,(SELECT CM_CD_NM 
+           FROM TB_CM_CD 
+          WHERE CM_GRP_CD_ID = 'DMS115' 
+            AND CM_CD_ID = D.OP_TYP_CD ) AS "자산상태"
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS108' 
+            AND  CM_CD_ID= A.INVE_ST_CD) AS "재고상태"
+       ,H.SLIP_DT  AS "전표일자"
+       ,G.ASSET_SLIP_NO			AS "전표번호"     
+       ,(SELECT  CM_CD_NM 
+           FROM  TB_CM_CD 
+          WHERE  CM_GRP_CD_ID = 'DMS153' 
+            AND  CM_CD_ID = G.ASSET_SLIP_ST	) AS  "전표상태"            
+  FROM  TB_EQP_ASSET A
+       ,TB_EQP_CNTRT B
+       ,TB_RENTAL_CNTRT C
+       ,TB_NR_CNTRT D
+       ,TB_RENTAL_POLY E
+       ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST
+           FROM  TB_ASSET_SLIP A
+          WHERE  ASSET_SLIP_NO = (SELECT MAX(ASSET_SLIP_NO) FROM TB_ASSET_SLIP WHERE ASSET_NO=A.ASSET_NO)  ) G
+       ,TB_SLIP H   
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.CNTRT_NO = C.CNTRT_NO
+   AND  B.CNTRT_NO = D.CNTRT_NO
+   AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+   AND  A.ASSET_NO = G.ASSET_NO(+)
+   AND  G.ASSET_SLIP_NO = H.SLIP_NO
+   AND  A.OP_CL_CD = 'NR'
+   AND  D.NEW_CNTRT_DT  BETWEEN #RENTAL_CNTRT_STA_DT# AND #RENTAL_CNTRT_END_DT#]]>
+	</select>
+	<select id="SEqpPrchAssetNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseabase.db.DNREqpPrchInfoMgmt.SEqpPrchAssetNo 단말자산취득전표용자산번호조회 */
+/* IO: 장미진,2015-09-25T14:16:16(장미진,2015-09-25T12:56:10) */
+SELECT
+        ASSET_NO
+  FROM (
+        SELECT 
+                ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO ASC) AS ROWNO 
+               ,D.SVC_MGMT_NO    				 /* 서비스관리번호 */
+               ,A.EQP_SER_NO             		 /* 단말기일련번호*/
+               ,E.EQP_MDL_NM   					 /* 모델명 */
+               ,A.EQP_MDL_CD   					 /* 모델코드 */
+               ,E.CNTRT_PRD     				 /* 계약기간코드 */
+               ,C.RENTAL_CNTRT_STA_DT 			 /* 계약시작일 */ 
+               ,C.RENTAL_CNTRT_END_DT 			 /* 계약종료일 */ 
+               ,A.EQP_PRCH_AMT      			 /* 매입가 */ 
+               ,D.OP_TYP_CD     				 /* 계약상태코드 */
+               ,A.INVE_ST_CD					 /* 재고상태코드 */
+               ,G.ASSET_SLIP_ST					 /* 전표상태코드*/
+               ,G.ASSET_SLIP_NO					 /* 전표번호*/
+               ,A.ASSET_NO						 /* 자산번호 */
+               ,G.YYYY
+          FROM  TB_EQP_ASSET A
+               ,TB_EQP_CNTRT B
+               ,TB_RENTAL_CNTRT C
+               ,TB_NR_CNTRT D
+               ,TB_RENTAL_POLY E
+               ,(SELECT  ASSET_NO, ASSET_SLIP_NO, ASSET_SLIP_ST,TO_CHAR(LS_CHG_DTM,'YYYY') AS YYYY
+                   FROM  TB_ASSET_SLIP
+                  WHERE  (ASSET_NO, ASSET_SLIP_SEQ) IN  ( SELECT ASSET_NO, MAX(ASSET_SLIP_SEQ)
+                                                            FROM TB_ASSET_SLIP
+                                                           WHERE ASSET_SLIP_CL_CD = 'AA'
+                                                          GROUP BY ASSET_NO)) G
+         WHERE  A.ASSET_NO = B.ASSET_NO
+           AND  B.CNTRT_NO = C.CNTRT_NO
+           AND  B.CNTRT_NO = D.CNTRT_NO
+           AND  C.RENTAL_POLY_NO = E.RENTAL_POLY_NO
+           AND  A.ASSET_NO = G.ASSET_NO(+)
+           AND  A.OP_CL_CD = 'NR'
+           AND  SUBSTR(D.NEW_CNTRT_DT,0,6)=#YYYYMM#
+]]><isEqual prepend="AND" property="CASE_WHEN" compareValue="C"><![CDATA[
+		       NVL(G.ASSET_SLIP_ST,'05') IN ('00','05')
+]]></isEqual><![CDATA[
+]]><isEqual prepend="AND" property="CASE_WHEN" compareValue="D"><![CDATA[
+		        G.ASSET_SLIP_ST = '10'
+]]></isEqual><![CDATA[) PA]]>
+	</select>
+</sqlMap>

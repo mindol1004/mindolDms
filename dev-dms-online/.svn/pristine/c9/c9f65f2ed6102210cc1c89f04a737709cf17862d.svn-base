@@ -1,0 +1,511 @@
+package dms.pr.prspmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [DU]단말기입고관리</li>
+ * <li>설  명 : <pre>단말기입고관리</pre></li>
+ * <li>작성일 : 2015-07-10 13:25:28</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ *
+ * @author 김상오 (myneti99)
+ */
+public class DPREqpReqpInMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DPREqpReqpInMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>동일단말기체크</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:25:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInveEqpChk(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    	
+	    // 1.쿼리문 호출
+	 		IRecord record = dbSelectSingle("SInveEqpChk", requestData, onlineCtx);
+	 		// 2.결과값 셋팅
+	 		responseData.putFieldMap(record);
+	     		
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기일련번호조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:25:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSInveNum(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+    	// 1.쿼리문 호출
+ 		IRecord record = dbSelectSingle("SInveNum", requestData, onlineCtx);
+ 		// 2.결과값 셋팅
+ 		responseData.putFieldMap(record); 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기자산입력</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:25:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEqpInve(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출
+	    dbInsert("IEqpInve", requestData, onlineCtx);	
+	 	return responseData;
+	}
+
+	/**
+	 * <pre>단말기입고입력</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:25:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dIEqpIn(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("IEqpIn", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>구성품출고입력</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:25:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dICmptOut(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("ICmptOut", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기입고 총건수 조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:25:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSEqpReqpInLstGrpTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출     
+        IRecord record = dbSelectSingle("SEqpReqpInLstGrpTotCnt", requestData, onlineCtx);
+        // 2.결과값 셋팅     
+        responseData.putFieldMap(record);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기입고 페이징 조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:25:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSEqpReqpInLstGrpPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SEqpReqpInLstGrpPaging", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_EQP_REQP_IN_LIST", rsReturn);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>단말기입고상세조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:44:02
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSEqpReqpIn(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SEqpReqpIn", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_EQP_REQP_IN_DTL", rsReturn);
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]단말기입고일련번호조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-07-10 13:25:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSEqpInNum(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	// 1.쿼리문 호출
+	 		IRecord record = dbSelectSingle("SEqpInNum", requestData, onlineCtx);
+	 		// 2.결과값 셋팅
+	 		responseData.putFieldMap(record);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]단말기자산정보삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-16 13:35:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDEqpAssetInfoDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("DEqpAssetInfoDel", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]단말기입고정보삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-16 13:35:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : EQP_IN_NO [단말기입고번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDEqpInInfoDel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	dbInsert("DEqpInInfoDel", requestData, onlineCtx);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>[DM]자산입고단말기입고목록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-16 13:35:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_IN_LIST
+	 *		- field : EQP_IN_NO [단말기입고번호]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : IN_DT [입고일자]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : IN_DTL_CD [입고상세코드]
+	 *		- field : IN_PLC_CD [입고처코드]
+	 *		- field : CHRG_DEPT_CD [담당부서코드]
+	 * </pre>
+	 */
+	public IDataSet dSAssetInEqpInLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	// 1.쿼리문 호출
+	        IRecordSet rsReturn = dbSelect("SAssetInEqpInLst", requestData, onlineCtx);
+	 		// 2.결과값 셋팅
+	 		//responseData.putFieldMap(record);	
+	 		responseData.putRecordSet("RS_EQP_IN_LIST", rsReturn);
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+
+	    return responseData;
+	}
+
+	/**
+	 * <pre>구성품출고일련번호조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-16 13:35:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : CONST_OUT_NO [구성품출고번호]
+	 * </pre>
+	 */
+	public IDataSet dSCmptOutNo(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {		
+	    	// 1.쿼리문 호출
+	 		IRecord record = dbSelectSingle("SCmptOutNo", requestData, onlineCtx);
+	 		// 2.결과값 셋팅
+	 		responseData.putFieldMap(record);	
+	    }
+	    catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+
+    /**
+	 * <pre>[DM]구성품출고목록조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-16 13:35:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : CMPT_OUT_LIST
+	 *		- field : CONST_OUT_NO [필드1]
+	 *		- field : OUT_DTL_CD [필드2]
+	 *		- field : CMPT_CD [필드3]
+	 *		- field : CMPT_USE_QTY [필드4]
+	 *		- field : CMPT_OUT_DT [필드5]
+	 *		- field : ASSET_NO [필드6]
+	 *		- field : FS_REG_USER_ID [필드7]
+	 *		- field : LS_CHG_USER_ID [필드8]
+	 *		- field : CHECKED [필드9]
+	 * </pre>
+	 */
+	public IDataSet dSInqCmptOutLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SInqCmptOutLst", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("CMPT_OUT_LIST", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]구성품출고정보삭제</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-22 17:59:36
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : LS_CHG_USER_ID [최종사용자]
+	 *	- field : ASSET_NO [자산번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dDCmptOutInfoDel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            dbInsert("DCmptOutInfoDel", requestData, onlineCtx);  
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]자산단말기이동내역조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-16 13:35:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_MOV_DTL
+	 *		- field : ROWNO [ROWNO]
+	 *		- field : IN_OUT_GB [입출고구분]
+	 *		- field : IN_OUT_DTL_NM [입출고상세구분]
+	 *		- field : IN_OUT_DT [입출고일자]
+	 *		- field : IN_OUT_PLC_NM [입출고처]
+	 * </pre>
+	 */
+	public IDataSet dSInqAssetEqpMovDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SInqAssetEqpMovDtl", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RS_EQP_MOV_DTL", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]자산단말기상세정보조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-07-16 13:35:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ASSET_NO [자산번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_ASSET_EQP_DTL_INFO
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_SER_NUM [단말기일련번호]
+	 *		- field : EQP_IMEI_NUM [단말기IMEI번호]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : INVE_ST_CD [재고상태코드]
+	 *		- field : PRCH_AMT [매입금액]
+	 *		- field : IN_PLC_NM [매입처명]
+	 *		- field : CMPHS_CNTRT_NM [계약명]
+	 * </pre>
+	 */
+	public IDataSet dSInqAssetEqpDtlInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {       
+            // 1.쿼리문 호출
+            IRecordSet rsReturn = dbSelect("SInqAssetEqpDtlInfo", requestData, onlineCtx);
+            // 2.결과값 셋팅
+            responseData.putRecordSet("RS_ASSET_EQP_DTL_INFO", rsReturn);
+        }
+        catch ( BizRuntimeException e ) {
+            throw e;
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>단말기자산 IMEI 번호 중복체크</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-08-04 16:39:30
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSEqpAssetImeiChk(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        // 1.쿼리문 호출
+        IRecord record = dbSelectSingle("SEqpAssetImeiChk", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putFieldMap(record);
+        return responseData;
+    }
+}

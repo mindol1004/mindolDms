@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRAgnSellComMgmt">
+	<select id="SAgnSellComLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnSellComMgmt.SAgnSellComLstPaging 대리점판매수수료정산조회 */
+/* IO: 정동현,2015-08-10T09:21:16(정동현,2015-08-07T09:51:11) */
+SELECT  PA.*
+  FROM  (SELECT  ROW_NUMBER() OVER(ORDER BY A.BOND_DEALCO_CD ASC)  AS  ROWNO
+                ,A.BOND_DEALCO_CD  AS  AGN_CD          		   /* 채권거래처코드 */
+                ,A.DEBT_ITM_AMT  AS  CMMS_CMMS         		   /* 채무항목금액 */
+                ,B.DEAL_CO_NM  AS  AGN_NM              		   /* 채권거래처명 */
+                ,A.DEBT_XCL_YM	AS  XCL_YM					   /* 채무정산년월 */
+           FROM  TB_XCL_DEBT A
+                ,TB_DEAL_CO B
+          WHERE  A.BOND_DEALCO_CD = B.DEAL_CO_CD(+)
+            AND  A.OP_CL_CD = 'NR'                     		   /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */  
+            AND  A.XCL_CL = 'AS'                       		   /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:사용료*/
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                 A.BOND_DEALCO_CD LIKE '%'||#AGN_CD#||'%'      /* 채권거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+                 B.DEAL_CO_NM LIKE '%'||#AGN_NM#||'%'   	   /* 채권거래처명 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                 A.DEBT_XCL_YM = #XCL_YM#               	   /* 채무정산년월 */
+]]></isNotEmpty><![CDATA[
+         ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAgnSellComLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnSellComMgmt.SAgnSellComLstTotCnt 대리점판매수수료정산정보조회총건수 */
+/* IO: 정동현,2015-08-07T09:58:40(정동현,2015-08-06T17:30:56) */
+SELECT  COUNT(*) AS TOTAL_CNT
+  FROM  TB_XCL_DEBT A
+       ,TB_DEAL_CO B
+ WHERE  A.BOND_DEALCO_CD = B.DEAL_CO_CD(+)
+   AND  A.OP_CL_CD = 'NR'                              /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */  
+   AND  A.XCL_CL = 'AS'                       		   /* 정산구분 AS:대리점판매수수료 ER:단말기회수대행수수료, UK:사용료*/
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.BOND_DEALCO_CD LIKE '%'||#AGN_CD#||'%'       /* 채권거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+        B.DEAL_CO_NM LIKE '%'||#AGN_NM#||'%'   		   /* 채권거래처명 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+        A.DEBT_XCL_YM = #XCL_YM#               		   /* 채무정산년월 */
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SAgnSellComDtlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnSellComMgmt.SAgnSellComDtlPaging 대리점판매수수료정산정보상세 */
+/* IO: 정동현,2015-08-10T09:51:24(정동현,2015-08-07T16:34:42) */
+WITH  TMP_A  AS (SELECT  IA.BOND_DEALCO_CD  AS  AGN_CD               /* 거래처코드 */
+                          ,IB.DEAL_CO_NM  AS  AGN_NM                   /* 거래처명 */
+                          ,IA.DEBT_XCL_YM  AS  XCL_YM                  /* 정산년월 */
+                          ,IA.DEBT_ITM_AMT  AS  CMMMS_CMMS             /* 수수료 */
+                     FROM  TB_XCL_DEBT IA
+                          ,TB_DEAL_CO  IB 
+                    WHERE  IA.BOND_DEALCO_CD = IB.DEAL_CO_CD(+)
+                      AND  IA.OP_CL_CD = 'NR'                          /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */
+                      AND  IA.XCL_CL = 'AS'                            /* 정산구분 ASC:대리점판매수수료 ERA:단말기회수대행수수료, UKU:UKey사용료*/
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                           IA.DEBT_XCL_YM = #XCL_YM#                   /* 조회조건 정산년월 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                           IA.BOND_DEALCO_CD LIKE '%'||#AGN_CD#||'%'   /* 조회조건 거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+                           IB.DEAL_CO_NM LIKE '%'||#AGN_NM#||'%'       /* 조회조건 거래처명 */
+]]></isNotEmpty><![CDATA[
+                   )
+       ,TMP_B  AS (
+                    SELECT  B.CNTRT_NO                                 /* 계약번호 */
+                           ,B.SVC_NO                                   /* 서비스번호 */
+                           ,B.AGN_CD                                   /* 거래처코드 */
+                    FROM   TB_RENTAL_CNTRT  A
+                           ,TB_NR_CNTRT     B       
+                    WHERE  A.CNTRT_NO = B.CNTRT_NO(+)     
+                      AND  A.OP_CL_CD = 'NR'                           /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */
+                   )
+SELECT  ROW_NUMBER() OVER (ORDER BY Z.CNTRT_NO ASC) AS ROWNO 
+       ,Z.CNTRT_NO                                                     /* 계약번호 */
+       ,Z.SVC_NO                                                       /* 서비스번호 */
+       ,Z.AGN_CD                                                       /* 거래처코드 */
+       ,X.AGN_NM                                                       /* 거래처명 */
+       ,X.XCL_YM                                                       /* 정산년월 */
+       ,(X.CMMMS_CMMS / (SELECT COUNT(*) AS CNTRT_CNT 
+                           FROM TMP_B T 
+                          WHERE T.AGN_CD = Z.AGN_CD)
+         )  AS  CNTRT_AVG                                              /* 수수료 */
+  FROM  TMP_B Z
+       ,TMP_A X
+ WHERE  Z.AGN_CD = X.AGN_CD]]>
+	</select>
+	<select id="SAgnSellComDtlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRAgnSellComMgmt.SAgnSellComDtlTotCnt 대리점판매수수료정산정보상세총건수 */
+/* IO: 정동현,2015-08-10T09:52:03(정동현,2015-08-07T16:34:23) */
+WITH  TMP_A  AS (SELECT  IA.BOND_DEALCO_CD  AS  AGN_CD               /* 거래처코드 */
+                          ,IB.DEAL_CO_NM  AS  AGN_NM                   /* 거래처명 */
+                          ,IA.DEBT_XCL_YM  AS  XCL_YM                  /* 정산년월 */
+                          ,IA.DEBT_ITM_AMT  AS  CMMMS_CMMS             /* 수수료 */
+                     FROM  TB_XCL_DEBT IA
+                          ,TB_DEAL_CO  IB 
+                    WHERE  IA.BOND_DEALCO_CD = IB.DEAL_CO_CD(+)
+                      AND  IA.OP_CL_CD = 'NR'                          /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */
+                      AND  IA.XCL_CL = 'AS'                            /* 정산구분 ASC:대리점판매수수료 ERA:단말기회수대행수수료, UKU:UKey사용료*/
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+                           IA.DEBT_XCL_YM = #XCL_YM#                   /* 조회조건 정산년월 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+                           IA.BOND_DEALCO_CD LIKE '%'||#AGN_CD#||'%'   /* 조회조건 거래처코드 */
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_NM"><![CDATA[
+                           IB.DEAL_CO_NM LIKE '%'||#AGN_NM#||'%'       /* 조회조건 거래처명 */
+]]></isNotEmpty><![CDATA[
+                   )
+       ,TMP_B  AS (
+                    SELECT  B.CNTRT_NO                                 /* 계약번호 */
+                           ,B.SVC_NO                                   /* 서비스번호 */
+                           ,B.AGN_CD                                   /* 거래처코드 */
+                      FROM  TB_RENTAL_CNTRT  A
+                           ,TB_NR_CNTRT     B       
+                     WHERE  A.CNTRT_NO = B.CNTRT_NO(+)     
+                    AND  A.OP_CL_CD = 'NR'                             /* 업무구분코드 NR:신규R, PR:임대R, ER:중고폰 */
+                   )
+SELECT  COUNT(*)  AS  TOTAL_CNT
+  FROM  TMP_B Z
+       ,TMP_A X
+ WHERE  Z.AGN_CD = X.AGN_CD]]>
+	</select>
+</sqlMap>

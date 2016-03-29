@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR010">
+	<select id="SIFCntrt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR010.SIFCntrt 인터페이스수납정보조회 */
+/* IO: 안진갑,2015-09-02T15:08:21(안진갑,2015-08-28T18:28:37) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,SVC_MGMT_NO
+       ,RECV_PROC_DT
+       ,RECV_PROC_TMS
+       ,RECV_DT
+       ,AUTO_TRNSF_DT
+       ,INV_DT
+       ,SALE_ITM_CD
+       ,RECV_CL_CD
+       ,RECV_AMT
+       ,RENTAL_SER_NO
+       ,RECV_MTHD_CD
+       ,U_LS_CHG_DTM
+       ,FILLER
+  FROM  TF_PAY_RFND_DTL
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UEqpCntrtDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR010.UEqpCntrtDtl 단말상세 수납정보 등록 */
+/* IO: 안진갑,2015-08-28T18:47:25(안진갑,2015-08-28T18:30:08) */
+UPDATE  TB_EQP_CNTRT_DTL 
+   SET  RECV_DT = #RECV_DT# 
+       ,RECV_AMT = #RECV_AMT#
+ WHERE  ASSET_NO = (SELECT  B.ASSET_NO
+                      FROM  TB_NR_CNTRT A
+                           ,TB_EQP_CNTRT B
+                     WHERE  A.CNTRT_NO = B.CNTRT_NO
+                       AND  A.SVC_MGMT_NO = #SVC_MGMT_NO#);
+   AND  RENT_YM = SUBSTR(#RECV_DT#,0,6)]]>
+	</update>
+	<update id="UEtcXcl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR010.UEtcXcl 기타정산 수납정보 등록 */
+/* IO: 안진갑,2015-09-01T21:09:00(안진갑,2015-08-28T19:01:31) */
+UPDATE  TB_ETC_XCL
+   SET  XCL_CL_CD = #SALE_ITM_CD#
+       ,XCL_UKEY_RECV_AMT = #RECV_AMT#
+       ,XCL_UKEY_RECV_DT = #RECV_DT# 
+ WHERE  ASSET_NO = (SELECT  B.ASSET_NO
+                      FROM  TB_NR_CNTRT A
+                           ,TB_EQP_CNTRT B
+                     WHERE  A.CNTRT_NO = B.CNTRT_NO
+                       AND  A.SVC_MGMT_NO = #SVC_MGMT_NO#)
+   AND  XCL_UKEY_INV_DT = #INV_DT#]]>
+	</update>
+	<update id="UIFCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR010.UIFCntrt 인터페이스테이블상태 변경 */
+/* IO: 안진갑,2015-08-28T19:08:48(안진갑,2015-08-28T19:07:59) */
+UPDATE TF_PAY_RFND_DTL
+    SET PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+        AND IF_FILE_NM = #IF_FILE_NM#
+        AND IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<update id="URentalPen" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR010.URentalPen 위약금테이블수납금액 등록 */
+/* IO: 안진갑,2015-09-02T14:47:08(안진갑,2015-09-02T14:37:11) */
+UPDATE  TB_RENTAL_PEN
+   SET  PEN_RECV_AMT = #RECV_AMT#
+ WHERE  CNTRT_NO = (SELECT  A.CNTRT_NO
+                      FROM  TB_NR_CNTRT A
+                     WHERE  A.SVC_MGMT_NO = #SVC_MGMT_NO#)
+   AND  PEN_POLY_CL = #SALE_ITM_CD#]]>
+	</update>
+</sqlMap>

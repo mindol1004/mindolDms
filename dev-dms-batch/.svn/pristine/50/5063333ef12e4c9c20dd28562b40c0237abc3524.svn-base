@@ -1,0 +1,203 @@
+package dms.pr;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.logging.Log;
+
+import bsh.StringUtil;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>서브 업무명 : BPR017</li>
+ * <li>설  명 : <pre>매출정산등록</pre></li>
+ * <li>작성일 : 2015-08-11 13:09:10</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ */
+public class DBP017 extends AbsBatchComponent {
+	 	private Log log;
+	    private boolean delFlag = false;
+	    private int processCnt = 0;
+	    private String taskNo = "";
+	    private String procFileName = "";
+	    
+	    /**
+	     * 생성자
+	     */
+	    public DBP017() {
+	        super();
+	    }
+
+	    /**
+	     * 배치 전처리 메소드. 
+	     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+	     */
+	    public void beforeExecute(IBatchContext context) {
+	    	Log log = getLog(context);
+
+			processCnt = 0;
+			taskNo = "";
+			procFileName = "";
+	
+			IOnlineContext onlineCtx = makeOnlineContext(context);
+			IDataSet reqDS = new DataSet();
+			IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq",
+					reqDS, onlineCtx);
+			taskNo = resDS.getField("TASK_NO");
+	
+			reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+			reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+			reqDS.putField("TASK_NO", taskNo);
+			reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+			reqDS.putField("GRP_ID", "PR");
+			reqDS.putField("INST_CD", "DMS");
+			reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+			reqDS.putField("PROC_CNT", "0");
+			reqDS.putField("FS_REG_USER_ID", "BAT");
+			reqDS.putField("LS_CHG_USER_ID", "BAT");
+	
+			callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS,
+					onlineCtx);
+	
+			log = getLog(context);
+			if (log.isDebugEnabled()) {
+				log.debug("DBP017(매출정산등록)_컴포넌트 호출 결과:");
+				log.debug(resDS);
+			}
+	    }
+
+	    /**
+	     * 배치 메인 메소드
+	     */
+	    public void execute(final IBatchContext context) {
+	       log = getLog(context);
+	       log.debug("\n\n >>>>>>>>>>>  매출정산등록 배치 실행    >>>>>>>>>>>>>> ");
+	        IOnlineContext ctx =  getOnlineContextFromOndemand();
+	        log.debug(">>>>>>>>>>>>>>>   IN_DT : "+context.getInParameter("IN_DT"));
+	        log.debug(">>>>>>>>>>>>>>>   XCL_GUBUN : "+context.getInParameter("XCL_GUBUN"));
+	        
+	        Map<String, String> param = new HashMap<String, String>();
+	        param.put("IN_DT", context.getInParameter("IN_DT"));
+	        
+	        // 트랜잭션 시작
+	    	txBegin();  
+	    	dbStartSession();
+	    	dbBeginBatch();
+	        
+	        //매출항목코드
+	        if("RENT".equals(context.getInParameter("XCL_GUBUN"))){
+	        	dbSelect("SXclRent", param, makeRecordHandler(context), context); //랜트료 정산 
+	        }else if("HD".equals(context.getInParameter("XCL_GUBUN"))){
+	        	dbSelect("SXclDlv", param, makeRecordHandler(context), context); //운송비 정산 
+	        }else if("JD".equals(context.getInParameter("XCL_GUBUN"))){
+	        	dbSelect("SXclCmp", param, makeRecordHandler(context), context); //손해배상 정산 
+	        }else if("RC".equals(context.getInParameter("XCL_GUBUN"))){
+	        	param.put("RE_CMC", "Y");
+	        	dbSelect("SXclCmp", param, makeRecordHandler(context), context); //재상품화수수료 정산 
+	        }
+	        
+			// 트랜잭션 커밋
+			dbEndBatch();
+			dbEndSession();
+			txCommit();
+	        
+	      
+	    }
+	    
+	    /**
+	     * 배치 후처리 메소드. 
+	     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+	     */
+	    public void afterExecute(IBatchContext context) {
+	    	IOnlineContext onlineCtx = makeOnlineContext(context);
+			IDataSet reqDS = new DataSet();
+			reqDS.putField("TASK_NO", taskNo);
+			reqDS.putField("PROC_CNT", "" + processCnt);
+			reqDS.putField("PROC_FILE_NM", procFileName);
+			reqDS.putField("LS_CHG_USER_ID", "BAT");
+			if (super.exceptionInExecute == null) {
+				// execute() 정상인 경우
+				reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+			} else {
+				// execute() 에서 에러 발생할 경우
+				reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+			}
+			IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "dUBatTaskOpHst",
+					reqDS, onlineCtx);
+	
+			Log log = getLog(context);
+			if (log.isDebugEnabled()) {
+				log.debug("DBP017(매출정산등록)_컴포넌트 호출 결과:");
+				log.debug(resDS);
+			}
+	    }
+	    
+	    /**
+	     * 매출정산등록
+	     * 
+	     */
+	    public AbsRecordHandler makeRecordHandler(IBatchContext context) {
+	    	AbsRecordHandler rh = new AbsRecordHandler(context) {
+				
+				@Override
+				public void handleRecord(IRecord row) {
+					Map<String,String> map = new HashMap<String, String>();
+					map.put("IN_DT", context.getInParameter("IN_DT"));
+					map.put("USER_ID", context.getInParameter("TASK_ID"));
+										
+					map.put("CNTRT_NO",  row.get("CNTRT_NO"));
+					map.put("SALE_DT", row.get("SALE_DT"));
+					map.put("SALE_AMT", StringUtils.nvlEmpty(row.get("SALE_AMT"),"0"));
+					map.put("ASSET_NO", row.get("ASSET_NO"));
+					map.put("SALE_ITM_CD", context.getInParameter("XCL_GUBUN") );
+					map.put("SPLY_PRC", "0");
+					map.put("SURTAX_AMT", "0");
+//					log.debug("\n  변경전 >>>>>>>>>>>>>>>>>>>>   map: "+map);
+					if("RENT".equals(context.getInParameter("XCL_GUBUN"))){
+						if(delFlag == false){
+							dbUpdate("UXclSale", map);
+							delFlag = true;
+						}
+						context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+						dbInsert("IXclSale", map, context);   //랜트료 정산등록
+			        	 
+			        }else {
+						if(delFlag == false){
+							dbUpdate("UEtcXclDel", map);
+							delFlag = true;
+						}
+						if("RC".equals(context.getInParameter("XCL_GUBUN"))){
+							//재상품화 수수료는 렌탈계약 테이블에서 재상풍화 수수료 필드로 입력.
+							map.put("SALE_AMT", StringUtils.nvlEmpty(row.get("EQP_RECMC_CMMS"), "0") );
+//							map.put("SALE_AMT", "0" );
+//							log.debug(" 재상품화 수수료  >>>>>>>>>>>>>>>>>>>>  \n  EQP_RECMC_CMMS:"+StringUtils.nvlEmpty(row.get("EQP_RECMC_CMMS"), "0"));
+							
+//							StringUtils.nvl(row.get("EQP_RECMC_CMMS"));
+						}
+//						log.debug("\n 변경후 >>>>>>>>>>>>>>>>>>>>  \n map: "+map);
+						context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+						dbInsert("IEtcXcl", map, context);   //손해배상금, 운송료, 재상품화수수료 정산등록
+
+			        	 
+			        }
+					
+					processCnt++;
+				}
+			};
+	    	return rh;
+	    }
+
+	}

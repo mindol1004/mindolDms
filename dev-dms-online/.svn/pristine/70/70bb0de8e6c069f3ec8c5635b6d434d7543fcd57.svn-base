@@ -1,0 +1,161 @@
+package dms.nr.nrsxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [DU]손해배상금정산정보조회</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-10 14:03:14</li>
+ * <li>작성자 : 정동현 (jjddhh123)</li>
+ * </ul>
+ *
+ * @author 정동현 (jjddhh123)
+ */
+public class DNRCmpXclMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DNRCmpXclMgmt(){
+		super();
+	}
+
+    /**
+	 *
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-10 14:03:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCmpXclLstPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SCmpXclLstPaging", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_CMP_XCL_LST", rsReturn);
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>손해배상금정산정보조회 총 건수 조회</pre>
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-10 14:03:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCmpXclLstTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        // 1.쿼리문 호출     
+	    IRecordSet record = dbSelect("SCmpXclLstTotCnt", requestData, onlineCtx);
+        // 2.결과값 셋팅     
+        responseData.putRecordSet("RS_SUM_LIST",record); 
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>손해배상금정산정보상세 조회</pre>
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-10 14:03:14
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCmpXclDtlPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        // 1.쿼리문 호출
+        IRecordSet rsReturn = dbSelect("SCmpXclDtlPaging", requestData, onlineCtx);
+        // 2.결과값 셋팅
+        responseData.putRecordSet("RS_CMP_XCL_DTL", rsReturn);
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>손해배상금정산정보상세총건수 조회</pre>
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-11 10:03:18
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCmpXclDtlTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        // 1.쿼리문 호출     
+        IRecord record = dbSelectSingle("SCmpXclDtlTotCnt", requestData, onlineCtx);
+        // 2.결과값 셋팅     
+        responseData.putFieldMap(record); 
+    
+        return responseData;
+    }
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-09-08 15:41:43
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCmpXclSysLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출     
+	    IRecordSet rsReturn = dbSelect("SCmpXclSysLst", requestData, onlineCtx);
+        // 2.결과값 셋팅     
+        responseData.putRecordSet("RS_CMP_XCL_SYS_LST", rsReturn);
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-09-08 17:28:48
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet dSCmpXclSysLstTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 1.쿼리문 호출     
+	    IRecordSet record = dbSelect("SCmpXclSysLstTotCnt", requestData, onlineCtx);
+        // 2.결과값 셋팅     
+        responseData.putRecordSet("RS_SUM_DTL_LIST",record);  
+	
+	    return responseData;
+	}
+  
+}

@@ -1,0 +1,293 @@
+package dms.nr.nrbxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]렌탈비정산내역관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-07 17:57:03</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class PNRRentalFeeCctlMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRRentalFeeCctlMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-07 17:57:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CL [구분]
+	 *	- field : RENTAL_YM [렌탈년월]
+	 *	- field : OP_TYP_CD [계약상태]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_RENTAL_FEE_INFO_LIST
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : RENTAL_FEE [DMS금액 = 렌탈료]
+	 *		- field : INV_AMT [UKEY금액 = 청구금액]
+	 *		- field : RECV_AMT [수납금액]
+	 *	- record : RS_RENTAL_FEE_INFO_DETAIL
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : RENT_STA_DT [계약시작일]
+	 *		- field : RENT_END_SCHD_DT [계약종료예정일]
+	 *		- field : RENT_END_DT [실 계약종료일]
+	 *		- field : INV_AMT [UKEY금액 = 청구금액]
+	 *		- field : RECV_AMT [수납금액]
+	 *		- field : ARREAR_PRC [미납금액]
+	 *		- field : RENTAL_FEE [DMS금액 =렌탈료]
+	 *		- field : CNT [회차]
+	 *	- record : RS_SUM_LIST
+	 *		- field : M_CNT [메인총카운트]
+	 *		- field : M_PRC [메인총금액]
+	 *		- field : S_CNT [서브총카운트]
+	 *		- field : S_PRC [서브총금액]
+	 *		- field : ST_CNT [전표용카운트]
+	 *		- field : ST_PRC [전표용총금액]
+	 *	- record : RS_RENTAL_FEE_TOTAL_LIST
+	 *		- field : DEALCO_BLICENS_NO [사업자등록번호]
+	 *		- field : DEALCO_NM [법인명]
+	 *		- field : RECV_AMT [수납요금]
+	 *		- field : SELEC [구분]
+	 * </pre>
+	 */
+	public IDataSet pInqRentalFeeCctlInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqRentalFeeCctlInfoLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-07 17:57:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_NO [계약번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_RENTAL_FEE_DTL
+	 *		- field : RENTAL_FEE [DMS금액]
+	 *		- field : INV_AMT [UKEY금액]
+	 *		- field : RECV_AMT [수납금액]
+	 *		- field : ARREAR_PRC [미납금액]
+	 *		- field : RENT_YM [렌트년월]
+	 *	- record : RS_RENTAL_INFO
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : NEW_CNTRTR_NM [고객명]
+	 *		- field : SVC_NO [전화번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : RENTAL_PRN [렌탈원금]
+	 *		- field : OP_TYP_CD [계약코드]
+	 *		- field : CNT [회차]
+	 *		- field : SLIP_ST [전표상태]
+	 *		- field : SLIP_NO [전표코드]
+	 *		- field : RENT_STA_DT [계약시작일]
+	 *		- field : RENT_END_SCHD_DT [종료예정일]
+	 *		- field : RENT_END_DT [종료일]
+	 * </pre>
+	 */
+	public IDataSet pInqRentalFeeCctlInfoLstDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqRentalFeeCctlInfoLstDtl", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-07 17:57:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CASE_WHEN [분기용]
+	 *	- field : RENTAL_YM [년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pRentalFeeBatchCallOnline(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+			// 1. FM 호출
+	    	if("01".equals(requestData.getField("CASE_WHEN")) ){//재집계용 배치로직 호출
+	    	
+	    		responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fRentalFeeBatchCallOnline", requestData, onlineCtx);
+	    	
+	    	}else if("02".equals(requestData.getField("CASE_WHEN"))) {//전표생성
+	    	
+	    		responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fRentalFeeSlipCreate", requestData, onlineCtx);
+	    	
+	    	}else if("03".equals(requestData.getField("CASE_WHEN"))){ //전표삭제
+	    	
+	    		responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fRentalFeeSlipCancle", requestData, onlineCtx);
+	    	
+	    	}
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-07 17:57:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : RENTAL_YM [렌탈년월]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_ALL_EXCEL_LIST
+	 *		- field : NO [NO]
+	 *		- field : CL [구분]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : EQP_SER_NO [단말일련번호]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : RENT_STA_DT [렌탈시작일]
+	 *		- field : RENT_END_SCHD_DT [렌탈종료예정일]
+	 *		- field : RENT_END_DT [실종료일]
+	 *		- field : RENTAL_FEE_DMS [DMS렌탈요금]
+	 *		- field : INV_SPLY_PRC [UKEY청구요금]
+	 *		- field : RECV_SPLY_PRC [수납금액]
+	 *		- field : PRC [미납금액]
+	 *		- field : CNT [회차]
+	 *		- field : CNTRT_PRD [계약기간]
+	 *		- field : POLY_NM [정책명]
+	 *		- field : OUT_PRC [출고가]
+	 *		- field : RENTAL_PRN [렌탈원금]
+	 *		- field : RENTAL_FEE [렌탈요금]
+	 * </pre>
+	 */
+	public IDataSet pInqRentalFeeAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        try {
+               // 1. FM 호출
+               responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqRentalFeeAllExcel", requestData, onlineCtx);
+           } catch ( BizRuntimeException e ) {
+               throw e;
+           } catch ( Exception e ) {
+               throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+           }
+           // 3. 결과값 리턴
+           responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-07 17:57:03
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : CNTRT_NO [계약번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_RENTAL_FEE_DTL
+	 *		- field : RENTAL_FEE [DMS금액]
+	 *		- field : INV_AMT [UKEY금액]
+	 *		- field : RECV_AMT [수납금액]
+	 *		- field : ARREAR_PRC [미납금액]
+	 *		- field : RENT_YM [렌트년월]
+	 *	- record : RS_RENTAL_INFO
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : NEW_CNTRTR_NM [고객명]
+	 *		- field : SVC_NO [전화번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : RENTAL_PRN [렌탈원금]
+	 *		- field : OP_TYP_CD [계약코드]
+	 *		- field : CNT [회차]
+	 *		- field : SLIP_ST [전표상태]
+	 *		- field : SLIP_NO [전표코드]
+	 *		- field : RENT_STA_DT [계약시작일]
+	 *		- field : RENT_END_SCHD_DT [종료예정일]
+	 *		- field : RENT_END_DT [종료일]
+	 * </pre>
+	 */
+    public IDataSet pInqRentalFeeCctlInfoLstAddDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+    		// 1. FM 호출
+    		responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqRentalFeeCctlInfoLstAddDtl", requestData, onlineCtx);
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+    	// 2. 결과값 리턴
+    	responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DBIDealCoMgmt">
+	<select id="SDealCoTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIDealCoMgmt.SDealCoTotCnt 거래처총건수 */
+/* IO: admin,2015-11-09T14:16:43(이영진,2015-07-03T08:40:19) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_DEALCO A      /* 거래처 */
+ WHERE  DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="DEALCO_CD"><![CDATA[
+      DEALCO_CD = #DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DEALCO_NM"><![CDATA[
+      DEALCO_NM LIKE '%'||#DEALCO_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="DEALCO_CL_1" prepend="AND" compareValue="%"><![CDATA[
+      DEALCO_CL_1 = #DEALCO_CL_1#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="DEALCO_ST_CD" prepend="AND" compareValue="%"><![CDATA[
+      DEALCO_ST_CD = #DEALCO_ST_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="DEALCO_BLICENS_NO"><![CDATA[
+      DEALCO_BLICENS_NO = #DEALCO_BLICENS_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[
+                AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_ORG_CD"><![CDATA[
+                AGN_ORG_CD LIKE '%'||#AGN_ORG_CD#||'%'
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SDealCoPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIDealCoMgmt.SDealCoPaging 거래처조회 */
+/* IO: admin,2015-11-09T14:16:30(이영진,2015-07-03T08:40:57) */
+SELECT  
+        *
+  FROM  (        
+        SELECT
+                ROW_NUMBER() OVER (ORDER BY A.DEALCO_CD ASC) AS ROWNO
+               ,A.DEALCO_CD		      /* 거래처코드 */
+               ,DEALCO_NM		          /* 거래처명 */
+               ,DEALCO_CL_1		      	  /* 거래처구분1 */
+               ,DEALCO_CL_2		          /* 거래처구분2 */
+               ,AGN_ORG_CD	              /* 대리점조직코드 */
+               ,ORG_NM	              /* 대리점조직명 */
+               ,DEALCO_BLICENS_NO		      /* 사업자번호 */
+               ,DEALCO_REPVE_NM		  /* 대표자명 */
+               ,DEALCO_REPVE_NM_ENPT		  /* 대표자명 */
+               ,BIZTYP		              /* 업태 */
+               ,EVNT		          /* 종목 */
+               ,DEALCO_ZIPCD		      /* 우편번호 */
+               ,DEALCO_ADDR		          /* 주소 */
+               ,DEALCO_ADDR_ENPT		          /* 주소 */
+               ,DEALCO_MBLPHON_NO         /* 이동전화번호 */
+               ,DEALCO_MBLPHON_NO_ENPT
+               ,DEALCO_TEL_NO 		      /* 전화번호 */
+               ,DEALCO_TEL_NO_ENPT
+               ,DEALCO_EMAIL_ADDR             /* 이메일 */
+               ,DEALCO_EMAIL_ADDR_ENPT
+               ,DEALCO_FAX_NO               /* DEALCO_FAX_NO */
+               ,DEALCO_FAX_NO_ENPT
+               ,DEALCO_ST_CD			  /* 거래처상태코드 */
+               ,DEAL_STA_DT		      	  /* 거래개시일 */
+               ,DEAL_END_DT		          /* 거래종료일 */
+               ,CHRGR_NM		              /* 담당자명 */
+               ,CHRGR_NM_ENPT
+               ,CHRGR_MBLPHON_NO		      /* 담당자이동전화 */
+               ,CHRGR_MBLPHON_NO_ENPT
+               ,EFF_STA_DT		          /* 유효시작일자 */
+               ,EFF_END_DT		          /* 유효종료일자 */
+               ,DEALCO_RMK		          /* 비고 */
+               ,UKEY_AGN_CD		          /* UKEY대리점코드 */
+               ,UKEY_SUB_CD		          /* UKEY서브코드 */
+               ,UKEY_CHNL_CD	          /* UKEY채널코드 */
+               ,AFFIL_AGN		          /* 소속대리점 */
+               ,AFFIL_AGN_NM	          /* 소속대리점명 */
+               ,HIGHR_DEALCO_CD		          /* 상위거래처 */
+               ,AFFIL_ORG_ID
+               ,CO_CL
+               ,BANK_CD
+               ,DEALCO_ACCO_NO
+               ,DEALCO_ACCO_NO_ENPT
+               ,RMK
+               ,DEL_YN		              /* 삭제여부 */
+               ,FS_REG_USER_ID		      /* 최초등록사용자ID */
+               ,FS_REG_DTM		          /* 최초등록일시 */
+               ,LS_CHG_USER_ID		      /* 최종변경사용자ID */
+               ,LS_CHG_DTM		          /* 최종변경일시 */
+          FROM  TB_DEALCO A              /* 거래처 */
+               ,(SELECT X.DEALCO_CD,X.DEALCO_NM AS AFFIL_AGN_NM 
+                   FROM TB_DEALCO X
+               ) C
+         WHERE DEL_YN = 'N'
+           AND  A.AFFIL_AGN = C.DEALCO_CD(+)
+]]><isNotEmpty prepend="AND" property="DEALCO_CD"><![CDATA[
+                A.DEALCO_CD = #DEALCO_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DEALCO_NM"><![CDATA[
+                DEALCO_NM LIKE '%'||#DEALCO_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual property="DEALCO_CL_1" prepend="AND" compareValue="%"><![CDATA[
+                DEALCO_CL_1 = #DEALCO_CL_1#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual property="DEALCO_ST_CD" prepend="AND" compareValue="%"><![CDATA[
+                DEALCO_ST_CD = #DEALCO_ST_CD#
+]]></isNotEqual><![CDATA[         
+]]><isNotEmpty prepend="AND" property="DEALCO_BLICENS_NO"><![CDATA[
+                DEALCO_BLICENS_NO = #DEALCO_BLICENS_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AFFIL_AGN"><![CDATA[
+                AFFIL_AGN = #AFFIL_AGN#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_ORG_CD"><![CDATA[
+                AGN_ORG_CD LIKE '%'||#AGN_ORG_CD#||'%'
+]]></isNotEmpty><![CDATA[
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IDealCo" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIDealCoMgmt.IDealCo 거래처등록 */
+/* IO: 이영진,2015-10-13T10:44:51(이영진,2015-07-03T08:41:53) */
+INSERT 
+  INTO  TB_DEALCO 
+       (
+        DEALCO_CD              /* 거래처코드       */
+       ,AGN_ORG_CD              /* 대리점조직코드   */
+       ,ORG_NM                  /* 조직명           */
+       ,DEALCO_BLICENS_NO            /* 사업자등록번호   */
+       ,DEALCO_REPVE_NM        /* 대표자명         */
+       ,DEALCO_REPVE_NM_ENPT        /* 대표자명         */
+       ,DEALCO_ZIPCD            /* 우편번호         */
+       ,DEALCO_ADDR               /* 주소             */
+       ,DEALCO_ADDR_ENPT               /* 주소             */
+       ,DEALCO_NM              /* 거래처명         */
+       ,DEALCO_MBLPHON_NO       /* 이동전화번호     */
+       ,DEALCO_MBLPHON_NO_ENPT       /* 이동전화번호     */
+       ,DEALCO_TEL_NO             /* 전화번호         */
+       ,DEALCO_TEL_NO_ENPT             /* 전화번호         */
+       ,DEALCO_EMAIL_ADDR           /* 이메일주소       */
+       ,DEALCO_EMAIL_ADDR_ENPT      /* 이메일주소암호화 */
+       ,DEALCO_FAX_NO             /* 팩스번호         */
+       ,DEALCO_FAX_NO_ENPT             /* 팩스번호         */
+       ,DEALCO_CL_1             /* 거래처구분1  */
+       ,DEALCO_CL_2             /* 거래처구분2  */
+       ,BIZTYP                 /* 업태             */
+       ,EVNT              /* 종목             */
+       ,DEALCO_ST_CD           /* 거래처상태코드   */
+       ,DEAL_STA_DT             /* 거래개시일       */
+       ,DEAL_END_DT             /* 거래종료일       */
+       ,CHRGR_NM                 /* 담당자명         */
+       ,CHRGR_NM_ENPT                 /* 담당자명         */
+       ,CHRGR_MBLPHON_NO           /* 담당자이동전화   */
+       ,CHRGR_MBLPHON_NO_ENPT           /* 담당자이동전화   */
+       ,EFF_STA_DT              /* 유효시작일자     */
+       ,EFF_END_DT              /* 유효종료일자     */
+       ,DEALCO_RMK                /* 비고             */
+       ,UKEY_AGN_CD             /* UKEY대리점코드 */
+       ,UKEY_SUB_CD             /* UKEY서브코드     */
+       ,UKEY_CHNL_CD         /* UKEY채널코드     */
+       ,AFFIL_AGN              /* 소속대리점       */
+       ,HIGHR_DEALCO_CD                /* 상위거래처       */
+       ,AFFIL_ORG_ID
+       ,CO_CL
+       ,BANK_CD
+       ,DEALCO_ACCO_NO
+       ,DEALCO_ACCO_NO_ENPT
+       ,RMK       
+       ,DEL_YN                  /* 삭제여부         */
+       ,FS_REG_USER_ID          /* 최초등록사용자ID */
+       ,FS_REG_DTM              /* 최초등록일시     */
+       ,LS_CHG_USER_ID          /* 최종변경사용자ID */
+       ,LS_CHG_DTM              /* 최종변경일시     */
+       )
+VALUES 
+       (
+        #DEALCO_CD#					 /* 거리처코드 */
+       ,#AGN_ORG_CD#                     /* 대리점조직코드   */
+       ,#DEALCO_NM#                         /* 조직명           */
+       ,#DEALCO_BLICENS_NO#                   /* 사업자등록번호   */
+       ,#DEALCO_REPVE_NM#               /* 대표자명         */
+       ,#DEALCO_REPVE_NM_ENPT#               /* 대표자명         */
+       ,#DEALCO_ZIPCD#                   /* 우편번호         */
+       ,#DEALCO_ADDR#                      /* 주소             */
+       ,#DEALCO_ADDR_ENPT#                      /* 주소             */
+       ,#DEALCO_NM#                     /* 거래처명         */
+       ,#DEALCO_MBLPHON_NO#              /* 이동전화번호     */
+       ,#DEALCO_MBLPHON_NO_ENPT#              /* 이동전화번호     */
+       ,#DEALCO_TEL_NO#    				/* 전화번호         */
+       ,#DEALCO_TEL_NO_ENPT#    				/* 전화번호         */
+       ,#DEALCO_EMAIL_ADDR#                  /* 이메일주소       */
+       ,#DEALCO_EMAIL_ADDR_ENPT#             /* 이메일주소암호화 */
+       ,#DEALCO_FAX_NO#    				/* 팩스번호         */
+       ,#DEALCO_FAX_NO_ENPT#    				/* 팩스번호         */
+       ,#DEALCO_CL_1#                    /* 거래처구분1  */
+       ,#DEALCO_CL_2#                    /* 거래처구분2  */
+       ,#BIZTYP#                        /* 업태             */
+       ,#EVNT#                     /* 종목             */
+       ,#DEALCO_ST_CD#                  /* 거래처상태코드   */
+       ,#DEAL_STA_DT#                    /* 거래개시일       */
+       ,#DEAL_END_DT#                    /* 거래종료일       */
+       ,#CHRGR_NM#                        /* 담당자명         */
+       ,#CHRGR_NM_ENPT#                        /* 담당자명         */
+       ,#CHRGR_MBLPHON_NO#                  /* 담당자이동전화   */
+       ,#CHRGR_MBLPHON_NO_ENPT#                  /* 담당자이동전화   */
+       ,TO_CHAR(SYSDATE,'YYYYMMDD')      /* 유효시작일자     */
+       ,'99991231'                       /* 유효종료일자     */
+       ,#DEALCO_RMK#                       /* 비고             */
+       ,CASE WHEN (LENGTH(#AGN_ORG_CD#) = 10) THEN SUBSTR(#AGN_ORG_CD#,1,6)
+             ELSE ''
+        END                                 /* UKEY대리점코드     */
+       ,CASE WHEN (LENGTH(#AGN_ORG_CD#) = 10) THEN SUBSTR(#AGN_ORG_CD#,7,4)
+             ELSE ''
+        END                                 /* UKEY서브코드     */
+       ,#UKEY_CHNL_CD#                /* UKEY채널코드     */
+       ,#AFFIL_AGN#                     /* 소속대리점       */
+       ,#HIGHR_DEALCO_CD#                       /* 상위거래처       */
+       ,#AFFIL_ORG_ID#
+       ,#CO_CL#
+       ,#BANK_CD#
+       ,#DEALCO_ACCO_NO#
+       ,#DEALCO_ACCO_NO_ENPT#
+       ,#RMK#       
+       ,'N'		                         /* 삭제여부 */
+       ,#USERNO#		                 /* 최초등록사용자ID */
+       ,SYSDATE		                     /* 최초등록일시 */
+       ,#USERNO#		                 /* 최종변경사용자ID */
+       ,SYSDATE		                     /* 최종변경일시 */
+)]]>
+	</insert>
+	<delete id="DDealCo" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIDealCoMgmt.DDealCo 거래처삭제 */
+/* IO: 이영진,2015-07-27T18:07:17(이영진,2015-07-03T08:42:20) */
+DELETE FROM TB_DEALCO
+WHERE DEALCO_CD = #DEALCO_CD#]]>
+	</delete>
+	<insert id="IDealCoHist" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIDealCoMgmt.IDealCoHist 거래처이력생성 */
+/* IO: 이영진,2015-10-13T10:45:28(이영진,2015-07-08T17:54:47) */
+INSERT 
+  INTO  TH_DEALCO_HST 
+       (
+        DEALCO_CD              /* 거래처코드       */
+       ,SEQ                     /* 순번             */
+       ,AGN_ORG_CD              /* 대리점조직코드   */
+       ,ORG_NM                  /* 조직명           */
+       ,DEALCO_BLICENS_NO            /* 사업자등록번호   */
+       ,DEALCO_REPVE_NM        /* 대표자명         */
+       ,DEALCO_REPVE_NM_ENPT        /* 대표자명         */
+       ,DEALCO_ZIPCD            /* 우편번호         */
+       ,DEALCO_ADDR               /* 주소             */
+       ,DEALCO_ADDR_ENPT               /* 주소             */
+       ,DEALCO_NM              /* 거래처명         */
+       ,DEALCO_MBLPHON_NO       /* 이동전화번호     */
+       ,DEALCO_MBLPHON_NO_ENPT       /* 이동전화번호     */
+       ,DEALCO_TEL_NO             /* 전화번호         */
+       ,DEALCO_TEL_NO_ENPT             /* 전화번호         */
+       ,DEALCO_EMAIL_ADDR           /* 이메일주소       */
+       ,DEALCO_EMAIL_ADDR_ENPT      /* 이메일주소암호화 */
+       ,DEALCO_FAX_NO             /* 팩스번호         */
+       ,DEALCO_FAX_NO_ENPT             /* 팩스번호         */
+       ,DEALCO_CL_1             /* 거래처구분1      */
+       ,DEALCO_CL_2             /* 거래처구분2      */
+       ,BIZTYP                 /* 업태             */
+       ,EVNT              /* 종목             */
+       ,DEALCO_ST_CD           /* 거래처상태코드   */
+       ,DEAL_STA_DT             /* 거래개시일       */
+       ,DEAL_END_DT             /* 거래종료일       */
+       ,CHRGR_NM                 /* 담당자명         */
+       ,CHRGR_NM_ENPT                 /* 담당자명         */
+       ,CHRGR_MBLPHON_NO           /* 담당자이동전화   */
+       ,CHRGR_MBLPHON_NO_ENPT           /* 담당자이동전화   */
+       ,EFF_STA_DT              /* 유효시작일자     */
+       ,EFF_END_DT              /* 유효종료일자     */
+       ,DEALCO_RMK                /* 비고             */
+       ,UKEY_AGN_CD				/* UKEY대리점코드 */
+       ,UKEY_SUB_CD             /* UKEY서브코드     */
+       ,UKEY_CHNL_CD         /* UKEY채널코드     */
+       ,AFFIL_AGN              /* 소속대리점       */
+       ,HIGHR_DEALCO_CD                /* 상위거래처       */
+       ,AFFIL_ORG_ID
+       ,CO_CL
+       ,BANK_CD
+       ,DEALCO_ACCO_NO
+       ,DEALCO_ACCO_NO_ENPT
+       ,RMK       
+       ,DEL_YN                  /* 삭제여부         */
+       ,FS_REG_USER_ID          /* 최초등록사용자ID */
+       ,FS_REG_DTM              /* 최초등록일시     */
+       ,LS_CHG_USER_ID          /* 최종변경사용자ID */
+       ,LS_CHG_DTM              /* 최종변경일시     */
+       )
+SELECT
+        DEALCO_CD		        			/* 거래처코드 */
+       ,(SELECT NVL(MAX(SEQ)+1,1)
+           FROM TH_DEALCO_HST 
+          WHERE DEALCO_CD = #DEALCO_CD#) 	/* 순번 */
+       ,AGN_ORG_CD                          /* 대리점조직코드   */
+       ,ORG_NM                              /* 조직명           */
+       ,DEALCO_BLICENS_NO                        /* 사업자등록번호   */
+       ,DEALCO_REPVE_NM                    /* 대표자명         */
+       ,DEALCO_REPVE_NM_ENPT                    /* 대표자명         */
+       ,DEALCO_ZIPCD                        /* 우편번호         */
+       ,DEALCO_ADDR                           /* 주소             */
+       ,DEALCO_ADDR_ENPT                           /* 주소             */
+       ,DEALCO_NM                          /* 거래처명         */
+       ,DEALCO_MBLPHON_NO                   /* 이동전화번호     */
+       ,DEALCO_MBLPHON_NO_ENPT                   /* 이동전화번호     */
+       ,DEALCO_TEL_NO                         /* 전화번호         */
+       ,DEALCO_TEL_NO_ENPT                         /* 전화번호         */
+       ,DEALCO_EMAIL_ADDR                       /* 이메일주소       */
+       ,DEALCO_EMAIL_ADDR_ENPT                  /* 이메일주소암호화 */
+       ,DEALCO_FAX_NO                         /* 팩스번호         */
+       ,DEALCO_FAX_NO_ENPT                         /* 팩스번호         */
+       ,DEALCO_CL_1                         /* 거래처구분1      */
+       ,DEALCO_CL_2                         /* 거래처구분2      */
+       ,BIZTYP                             /* 업태             */
+       ,EVNT                          /* 종목             */
+       ,DEALCO_ST_CD                       /* 거래처상태코드   */
+       ,DEAL_STA_DT                         /* 거래개시일       */
+       ,DEAL_END_DT                         /* 거래종료일       */
+       ,CHRGR_NM                             /* 담당자명         */
+       ,CHRGR_NM_ENPT                             /* 담당자명         */
+       ,CHRGR_MBLPHON_NO                       /* 담당자이동전화   */
+       ,CHRGR_MBLPHON_NO_ENPT                       /* 담당자이동전화   */
+       ,EFF_STA_DT                          /* 유효시작일자     */
+       ,TO_CHAR(SYSDATE,'YYYYMMDD')         /* 유효종료일자     */
+       ,DEALCO_RMK                            /* 비고             */
+       ,UKEY_AGN_CD				            /* UKEY대리점코드 */
+       ,UKEY_SUB_CD                         /* UKEY서브코드     */
+       ,UKEY_CHNL_CD                     /* UKEY채널코드     */
+       ,AFFIL_AGN                          /* 소속대리점       */
+       ,HIGHR_DEALCO_CD                            /* 상위거래처       */
+       ,AFFIL_ORG_ID
+       ,CO_CL
+       ,BANK_CD
+       ,DEALCO_ACCO_NO
+       ,DEALCO_ACCO_NO_ENPT
+       ,RMK       
+       ,DEL_YN                              /* 삭제여부         */
+       ,FS_REG_USER_ID                      /* 최초등록사용자ID */
+       ,FS_REG_DTM                          /* 최초등록일시     */
+       ,LS_CHG_USER_ID                      /* 최종변경사용자ID */
+       ,LS_CHG_DTM                          /* 최종변경일시     */
+  FROM TB_DEALCO
+ WHERE DEALCO_CD = #DEALCO_CD#]]>
+	</insert>
+	<select id="SDealCoCd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIDealCoMgmt.SDealCoCd 거래처코드채번 */
+/* IO: 이영진,2015-10-13T15:11:50(이영진,2015-08-07T18:11:47) */
+SELECT  SQ01_TB_DEALCO.NEXTVAL AS DEALCO_CD
+  FROM  DUAL]]>
+	</select>
+</sqlMap>

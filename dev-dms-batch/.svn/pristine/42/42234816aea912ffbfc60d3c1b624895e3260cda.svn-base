@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR030">
+	<insert id="IEqpInsuCmms" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR030.IEqpInsuCmms 단말보험수수료대상등록 */
+/* IO: 안진갑,2016-01-07T11:05:40(안진갑,2016-01-06T17:29:54) */
+INSERT INTO TB_EQP_INSURE_CMMS
+(
+	XCL_YM
+   ,CNTRT_NO
+   ,EQP_INSURE_FEE
+   ,EQP_DAY_INSURE_FEE
+   ,SCRB_NOD
+   ,EQP_INSURE_FEE_TOT
+   ,FS_REG_USER_ID
+   ,FS_REG_DTM
+   ,LS_CHG_USER_ID
+   ,LS_CHG_DTM
+)
+VALUES(
+	#XCL_YM#
+   ,#CNTRT_NO#
+   ,#EQP_INSURE_FEE#
+   ,#EQP_DAY_INSURE_FEE#
+   ,#SCRB_NOD#
+   ,#EQP_INSURE_FEE_TOT#
+   ,NVL(#USERNO#,'BAT')
+   ,SYSDATE
+   ,NVL(#USERNO#,'BAT')
+   ,SYSDATE
+)]]>
+	</insert>
+	<select id="SEqpInsuCmms" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR030.SEqpInsuCmms 단말보험수수료대상조회 */
+/* IO: 안진갑,2016-01-07T11:05:35(안진갑,2016-01-06T17:32:29) */
+SELECT  TA.XCL_YM
+       ,TA.CNTRT_NO
+       ,TA.EQP_INSURE_FEE
+       ,TRUNC(TA.DAYS_FEE,0) AS EQP_DAY_INSURE_FEE
+       ,TA.SCRB_NOD       
+       ,TRUNC(TA.DAYS_FEE*TA.SCRB_NOD,0) AS EQP_INSURE_FEE_TOT
+  FROM  (
+         SELECT
+                    #FILE_DT# AS XCL_YM
+                   ,A.CNTRT_NO
+                   ,C.EQP_INSURE_FEE/D.MONTH_DAYS AS DAYS_FEE
+                   ,CASE WHEN B.OP_TYP_CD = '07' AND D.BASE_DT = SUBSTR(B.OP_PROC_DT,0,6) AND SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) = SUBSTR(A.RENTAL_CNTRT_END_DT,0,6) 
+                              THEN TO_NUMBER(SUBSTR(A.RENTAL_CNTRT_END_DT,7))-TO_NUMBER(SUBSTR(A.RENTAL_CNTRT_STA_DT,7))+1
+                         WHEN B.OP_TYP_CD = '07' AND D.BASE_DT = SUBSTR(B.OP_PROC_DT,0,6) 
+                              THEN TO_NUMBER(SUBSTR(B.OP_PROC_DT,7))
+                         WHEN B.OP_TYP_CD != '07' AND D.BASE_DT = SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) 
+                              THEN D.MONTH_DAYS-TO_NUMBER(SUBSTR(A.RENTAL_CNTRT_STA_DT,7))+1
+                         ELSE D.MONTH_DAYS
+                     END AS SCRB_NOD
+                   ,C.EQP_INSURE_FEE
+              FROM  TB_RENTAL_CNTRT A 
+                   ,TB_NR_CNTRT B
+                   ,TB_EQP_INSURE C
+                   ,(SELECT  TO_CHAR(ADD_MONTHS(TO_DATE(#FILE_DT#, 'YYYYMM'),-1),'YYYYMM') AS BASE_DT /* 집계 기준년월*/
+                            ,TO_NUMBER(TO_CHAR(LAST_DAY(ADD_MONTHS(TO_DATE(#FILE_DT#, 'YYYYMM'),-1)),'DD')) AS MONTH_DAYS
+                       FROM  DUAL) D
+             WHERE  A.CNTRT_NO = B.CNTRT_NO
+               AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+               AND  B.OP_TYP_CD != '06'
+               AND  D.BASE_DT BETWEEN SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6)AND DECODE(B.OP_TYP_CD,'07',SUBSTR(B.OP_PROC_DT,0,6),SUBSTR(A.RENTAL_CNTRT_END_DT,0,6))
+      ) TA]]>
+	</select>
+	<delete id="DEqpInsuCmms" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR030.DEqpInsuCmms 단말보험수수료대상 삭제 */
+/* IO: 안진갑,2016-01-07T11:30:29(안진갑,2016-01-07T11:05:30) */
+DELETE
+  FROM  TB_EQP_INSURE_CMMS
+ WHERE  CNTRT_NO IN (SELECT A.CNTRT_NO
+  					   FROM TB_EQP_INSURE_CMMS A
+                           ,TB_SLIP B
+					  WHERE A.SLIP_NO = B.SLIP_NO(+)
+					    AND (A.SLIP_NO IS NULL OR B.SLIP_ST_CD = '05')
+					    AND A.XCL_YM = #FILE_DT#
+					 )]]>
+	</delete>
+</sqlMap>

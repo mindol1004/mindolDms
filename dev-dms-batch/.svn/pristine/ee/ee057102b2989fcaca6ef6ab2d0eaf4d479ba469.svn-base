@@ -1,0 +1,363 @@
+package dms.pr;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.bat.base.AutoCommitRecordHandler;
+import nexcore.framework.bat.base.DummyRecordHandler;
+import nexcore.framework.bat.util.SAMFileTool;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.RecordHeader;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.BaseUtils;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.logging.Log;
+
+import sun.security.util.Length;
+import fwk.utils.HpcUtils;
+import fwk.utils.IFFileToDBUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : DMS-IF/인터페이스</li>
+ * <li>서브 업무명 : BIF110</li>
+ * <li>설  명 : <pre>[PR]상담관리M(현장)</pre></li>
+ * <li>작성일 : 2015-08-10 11:07:57</li>
+ * <li>작성자 : 이준우 (newnofixing)</li>
+ * </ul>
+ */
+public class DBP013 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+    
+    private int rv_duplicate_cnt = 0;
+    private int rv_deal_error_cnt = 0;
+    
+    
+    /**
+     * 배치 생성자. 상위클래스 생성자 호출
+     */
+    public DBP013() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        Log log = getLog(context);
+		
+		processCnt = 0;
+		taskNo = "";
+		procFileName = "";
+		
+		IOnlineContext    onlineCtx  = makeOnlineContext(context);
+		IDataSet reqDS = new DataSet();
+		IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+		taskNo = resDS.getField("TASK_NO");
+		
+		reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "PR");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+//        Log log = getLog(context);
+        // 트랜잭션 시작
+        txBegin();  
+        dbStartSession();
+        dbBeginBatch();
+        
+        /* SQL ParmaMap 설정 */
+        HashMap<String, Object> paramMap = new HashMap<String,Object>();
+        paramMap.put("IF_PROC_DT", context.getInParameter("IF_PROC_DT"));             //파라메터 날짜받기
+
+        try {
+            dbSelect("SIFConsultMgmtScn", paramMap, makeRecordHandler(context), context); // IF상담관리정보 조회
+        } catch (Exception e) {         
+            throw new BizRuntimeException("M00001", e);
+        }
+        
+        // 트랜잭션 커밋
+        dbEndBatch();
+        dbEndSession();
+        txCommit();
+    }
+        
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_CNT", ""+processCnt);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+                
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+            
+        }else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+        }
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "dUBatTaskOpHst", reqDS, onlineCtx);
+        
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+    /**
+     * 상담관리대상IF조회 후 레코드 단위로 상담관리대상 테이블에 입력
+     * 
+     */
+    public AbsRecordHandler makeRecordHandler(IBatchContext context) {
+
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+            
+            @Override
+            public void handleRecord(IRecord row) {
+                
+                context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+                             
+                HashMap<String, Object> paramMap = new HashMap<String,Object>();                    
+                paramMap.put("IF_PROC_DT"        , StringUtils.nvlObject(row.get("IF_PROC_DT"),""));                // 전문처리일자
+                paramMap.put("IF_FILE_NM"      , StringUtils.nvlObject(row.get("IF_FILE_NM"),""));                  // IF_처리시간
+                paramMap.put("IF_SEQ"         , StringUtils.nvlObject(row.get("IF_SEQ"),""));                       // IF_순번
+                                                                                                                                 
+                paramMap.put("CNSL_MGMT_NO"           , StringUtils.nvlObject(row.get("CNSL_MGMT_NO"),""));         // 상담관리번호          
+                paramMap.put("EQP_MDL_CD"             , StringUtils.nvlObject(row.get("EQP_MDL_CD"),""));           // 단말기모델코드         
+                paramMap.put("EQP_SER_NO"             , StringUtils.nvlObject(row.get("EQP_SER_NO"),""));           // 단말기일련번호         
+                paramMap.put("CNSL_DT"                , StringUtils.nvlObject(row.get("CNSL_DT"),""));              // 상담일자            
+                paramMap.put("CNSL_DEALCO_CD"         , StringUtils.nvlObject(row.get("CNSL_ORG_CD"),""));          // 상담조직코드          
+                paramMap.put("EQP_COLOR_CD"           , StringUtils.nvlObject(row.get("COLOR_CD"),""));             // 색상코드            
+                paramMap.put("ONING_DT"               , StringUtils.nvlObject(row.get("ONING_DT"),""));             // 개통일자            
+                paramMap.put("EQP_ST"                 , StringUtils.nvlObject(row.get("EQP_ST"),""));               // 단말기상태           
+                paramMap.put("LOSS_EQP_YN"            , StringUtils.nvlObject(row.get("LOSS_EQP_YN"),""));          // 분실단말기여부         
+                paramMap.put("RWD_RTN_OBJ_YN"         , StringUtils.nvlObject(row.get("RWD_RTN_OBJ_YN"),""));       // 보상반납대상여부        
+                paramMap.put("RENTP_YN"               , StringUtils.nvlObject(row.get("RENTP_YN"),""));             // 임대폰여부           
+                paramMap.put("USIM_EQPCHG_YN"         , StringUtils.nvlObject(row.get("USIM_EQPCHG_YN"),""));       // USIM기변여부        
+                paramMap.put("OTHRCO_FORGN_EQP_YN"    , StringUtils.nvlObject(row.get("OTHRCO_FORGN_EQP_YN"),""));  // 타사해외단말기여부              
+                paramMap.put("SUGG"                   , StringUtils.nvlObject(row.get("SUGG"),""));                 // 의견                    
+                paramMap.put("CNSL_AMT"               , StringUtils.nvlObject(row.get("CNSL_AMT"),""));             // 상담금액                   
+                paramMap.put("CTZ_NO"                 , StringUtils.nvlObject(row.get("UNUSE_CTZ_REG_NO"),""));     // 미사용주민등록번호               
+                paramMap.put("DPSTR"                  , StringUtils.nvlObject(row.get("DPSTR"),""));                // 예금주                
+                paramMap.put("DPSTR_ENPT"             , StringUtils.nvlObject(row.get("DPSTR_ENPT"),""));           // 예금주암호화          
+                paramMap.put("BANK_CD"                , StringUtils.nvlObject(row.get("BANK_CD"),""));              // 은행코드              
+                paramMap.put("ACCO_NO"                , StringUtils.nvlObject(row.get("ACCO_NO"),""));              // 계좌번호              
+                paramMap.put("ACCO_NO_ENPT"           , StringUtils.nvlObject(row.get("ACCO_NO_ENPT"),""));         // 계좌번호암호화         
+                paramMap.put("TEL_NO"                 , StringUtils.nvlObject(row.get("TEL_NO"),""));               // 전화번호              
+                paramMap.put("TEL_NO_ENPT"            , StringUtils.nvlObject(row.get("TEL_NO_ENPT"),""));          // 전화번호암호화         
+                paramMap.put("ZIPCD_1"                , StringUtils.nvlObject(row.get("POST_NO1"),""));             // 우편번호1             
+                paramMap.put("ZIPCD_2"                , StringUtils.nvlObject(row.get("POST_NO2"),""));             // 우편번호2             
+                paramMap.put("ADDR"                   , StringUtils.nvlObject(row.get("CUST_BAS_ADDR"),""));        // 고객기본주소          
+                paramMap.put("ETC_ADDR"               , StringUtils.nvlObject(row.get("CUST_DTL_ADDR"),""));        // 고객상세주소          
+                paramMap.put("ETC_ADDR_ENPT"          , StringUtils.nvlObject(row.get("CUST_DTL_ADDR_ENPT"),""));   // 고객상세주소암호화                 
+                paramMap.put("MOV_YN"                 , StringUtils.nvlObject(row.get("MOV_YN"),""));               // 이동여부                      
+                paramMap.put("DEL_YN"                 , StringUtils.nvlObject(row.get("DEL_YN"),""));               // 삭제여부                      
+                paramMap.put("UPDATE_COUNT"           , StringUtils.nvlObject(row.get("UPDATE_CNT"),""));           // UPDATE COUNT              
+                 paramMap.put("UKEYREG_DTM"            , StringUtils.nvlObject(row.get("UKEYREG_DTM"),""));          // UKEY등록일시                 
+                 paramMap.put("UKEYREG_USER_ID"        , StringUtils.nvlObject(row.get("UKEYREG_USER_ID"),""));      // UKEY등록사용자ID      
+                paramMap.put("FST_RGSTR"              , StringUtils.nvlObject(row.get("UKEY_FS_REG_USER_ID"),""));  // UKEY최초등록사용자ID  
+                 paramMap.put("UKEYCHG_DTM"            , StringUtils.nvlObject(row.get("UKEYCHG_DTM"),""));          // UKEY변경일시          
+                 paramMap.put("UKEYCHG_USER_ID"        , StringUtils.nvlObject(row.get("UKEYCHG_USER_ID"),""));      // UKEY변경사용자ID  
+                paramMap.put("FEE_DEDC_YN"            , StringUtils.nvlObject(row.get("FEE_DEDC_YN"),""));          // 요금공제여부      
+                paramMap.put("SVC_NO"                 , StringUtils.nvlObject(row.get("SVC_NO"),""));               // 서비스번호        
+                paramMap.put("SVC_NO_ENPT"            , StringUtils.nvlObject(row.get("SVC_NO_ENPT"),""));          // 서비스번호암호화  
+                paramMap.put("SVC_MGMT_NO"            , StringUtils.nvlObject(row.get("SVC_MGMT_NO"),""));          // 서비스관리번호    
+                paramMap.put("IMEI"                   , StringUtils.nvlObject(row.get("IMEI"),""));                 // IMEI          
+                paramMap.put("ETC_CMPT"               , StringUtils.nvlObject(row.get("ETC_CMPT"),""));             // 기타구성품    
+                paramMap.put("POLY_OBJ_YN"            , StringUtils.nvlObject(row.get("POLY_OBJ_YN"),""));          // 정책대상여부  
+                paramMap.put("PROGR_ST"               , StringUtils.nvlObject(row.get("PROGR_ST"),""));             // 진행상태      
+                paramMap.put("UKEY_XCL_DEALCO_ORG_ID"   , StringUtils.nvlObject(row.get("UKEY_XCL_ORG_ID"),""));      // UKEY정산조직ID       
+                paramMap.put("UKEY_XCL_DEALCO_ORG_ID_2" , StringUtils.nvlObject(row.get("UKEY_XCL_ORG_ID2"),""));     // UKEY정산조직ID2      
+                paramMap.put("PRE_DC_CL"              , StringUtils.nvlObject(row.get("DCINAD_GUBUN"),""));         // 선할인구분           
+                paramMap.put("STRD_INCEN"             , StringUtils.nvlObject(row.get("STRD_INCEN"),""));           // 기준인센티브         
+                paramMap.put("STRD_INCEN_SCOP_AMT"    , StringUtils.nvlObject(row.get("STRD_INCEN_SCOP_AMT"),""));  // 기준인센티브범위금액               
+                paramMap.put("ASIANA_CARD_NO"         , StringUtils.nvlObject(row.get("ASIANA_CARD_NO"),""));       // 아시아나카드번호               
+                paramMap.put("SCRB_MTHD"              , StringUtils.nvlObject(row.get("SCRB_MTHD"),""));            // 가입방법                
+                paramMap.put("PMTH_USE_EQIP_YN"       , StringUtils.nvlObject(row.get("PMTH_USE_EQIP_YN"),""));     // 전월사용단말여부       
+                paramMap.put("PROC_ST_CD"             , StringUtils.nvlObject(row.get("PROC_ST_CD"),""));           // 처리상태코드                  
+                paramMap.put("FS_REG_USER_ID"         , StringUtils.nvlObject(row.get("FS_REG_USER_ID"),""));       // 최초등록사용자ID               
+                paramMap.put("FS_REG_DTM"             , StringUtils.nvlObject(row.get("FS_REG_DTM"),""));           // 최초등록일시                  
+                paramMap.put("LS_CHG_USER_ID"         , StringUtils.nvlObject(row.get("LS_CHG_USER_ID"),""));       // 최종변경사용자ID               
+                paramMap.put("LS_CHG_DTM"             , StringUtils.nvlObject(row.get("LS_CHG_DTM"),""));           // 최종변경일시                  
+
+                paramMap.put("DEALCO_CD"              , StringUtils.nvlObject(row.get("DEALCO_CD"),""));             // 상담처or상담조직 코드
+                                  
+//                paramMap.put("EVALCNSLR_AUTCT_YN"     , StringUtils.nvlObject(row.get("EVALCNSLR_AUTCT_YN"),""));         
+//                paramMap.put("FULLSET_YN"             , StringUtils.nvlObject(row.get("FULLSET_YN"),""));     
+//                paramMap.put("PRCH_CL"                , StringUtils.nvlObject(row.get("PRCH_CL"),""));        
+//                paramMap.put("IN_CONF_YN"             , StringUtils.nvlObject(row.get("IN_CONF_YN"),""));     
+//                paramMap.put("IN_CONF_DT"             , StringUtils.nvlObject(row.get("IN_CONF_DT"),""));     
+//                paramMap.put("IN_PROC_RSN"            , StringUtils.nvlObject(row.get("IN_PROC_RSN"),""));    
+//                paramMap.put("USE_PRD_DDCT_AMT"       , StringUtils.nvlObject(row.get("USE_PRD_DDCT_AMT"),""));
+//                paramMap.put("SKN_JDG_AMT"            , StringUtils.nvlObject(row.get("SKN_JDG_AMT"),""));    
+//                paramMap.put("POLY_OBJ_CD"            , StringUtils.nvlObject(row.get("POLY_OBJ_CD"),""));    
+//                paramMap.put("SKN_EQP_ST"             , StringUtils.nvlObject(row.get("SKN_EQP_ST"),""));     
+//                                  
+//                paramMap.put("CTZ_NO_ENPT"            , "");
+//                paramMap.put("SELL_GRADE"             , "");
+//                paramMap.put("INR_CORR_YN"            , "");                
+//                paramMap.put("PWR_SYS"                , "");
+//                paramMap.put("CALL_QULT_TEST"         , "");
+//                paramMap.put("DATA_PRFM"              , "");
+//                paramMap.put("SCRN_TEST"              , "");
+//                paramMap.put("FUNC_TEST"              , "");        
+//                paramMap.put("WET_YN"                 , "");
+//                paramMap.put("BOX_NO"                 , "");
+//                paramMap.put("RETUR_RSLT"             , "");
+//                paramMap.put("RETURDAY"               , "");
+//                paramMap.put("RETUR_SUGG"             , "");
+//                paramMap.put("SKN_CL"                 , "");
+//                paramMap.put("EQP_ST_DTAIL"           , "");
+//                paramMap.put("AMT_RMT_YNIL"           , "");                
+//                paramMap.put("RMT_DT"                 , "");
+//                paramMap.put("FEE_DEDC_PROC_YN"       , "");                       
+//                paramMap.put("FEE_DEDC_PROC_DT"       , "");
+//                paramMap.put("USE_PRD_DDCT_AMT"       , "");                             /*사용기간차감금액*/
+//                paramMap.put("ASIANA_CARD_NO_ENPT"    , "");                             
+//                paramMap.put("PPAY_YN                 , "");
+//                paramMap.put("CLCT_YN                 , "");
+//                paramMap.put("CLCT_DT                 , "");                
+//                paramMap.put("PAY_MTHD                , "");
+//                paramMap.put("PAY_DT                  , "");
+//                paramMap.put("IN_PROC_CHRGR_ID        , "");
+//                paramMap.put("PAY_MTHD_TRMS_YN        , "");
+//                paramMap.put("CUST_GRP                , "");        
+//                paramMap.put("BOX_PROC_CHRGR          , "");
+//                paramMap.put("BOX_PROC_DT             , "");
+//                paramMap.put("EQP_PRC                 , "");
+//                paramMap.put("XCL_MODE                , "");
+//                paramMap.put("PPAY_YN"                , "");
+                
+                
+                
+                if(null != row  ){
+                   
+                    context.getLogger().debug("///상담관리카운트///" );
+                    
+                    IRecord Record1 = dbSelectSingle("SConsultMgmtCnt", paramMap, context);  // 상담관리 카운트
+                                                   
+                    if (Record1.getInt("CNT",0) > 0){
+                    
+                        context.getLogger().debug("///매입관리카운트Y///" );
+                        
+                        IRecord Record2 = dbSelectSingle("SPrchsMgmtCntY", paramMap, context);  // 매입관리 카운트
+                        
+                        if (Record2.getInt("CNT",0) > 0){
+                            rv_duplicate_cnt  =  rv_duplicate_cnt + 1;
+//                            
+                            //rv_errcode   = 'E0';
+                            //rv_errmsg    = '존재하는 data.\n';
+//                            context.getLogger().debug("복제 카운트 +1 = " + rv_duplicate_cnt);
+//                            context.getLogger().debug("존재하는 data");
+                            
+                            context.getLogger().debug("///존재하는 데이터///" );
+                            
+                        }else{
+                            
+                            context.getLogger().debug("///상담관리수정///" );
+                                                        
+                            dbUpdate("UConsultMgmtField", paramMap, context);  // 상담관리수정
+//                            
+                            if (row.getInt("IF_PROC_DT",0) > 0){
+
+                              context.getLogger().debug("///IF상담관리수정///" );
+                                
+                                dbUpdate("UIfConsultMgmtSnc", paramMap, context);  // IF상담관리수정
+
+                            }
+                        }
+                    }else{
+                      context.getLogger().debug("///거래처카운트///" );
+                        IRecord Record3 = dbSelectSingle("SDealcoMgmt", paramMap, context);  // 거래처카운트
+                        paramMap.put("CNSL_DEALCO_CD", StringUtils.nvlObject(row.get("DEALCO_CD"),""));           // 상담거래처코드셋
+                        
+                        if (Record3.getInt("CNT",0) <= 0){
+                              context.getLogger().debug("IF상담상담 거래처 오류 COUNT +" + rv_deal_error_cnt );
+                        }
+                      context.getLogger().debug("///매입카운트///" );
+                        IRecord Record4 = dbSelectSingle("SPrchsMgmtCntN", paramMap, context);  // 매입카운트
+                        if (Record4.getInt("CNT",0) <= 0){
+                            if ("01".equals(row.get("PROGR_ST"))){
+                                paramMap.put("PROGR_ST", "02");           // 진행상태
+                            
+                                context.getLogger().debug("///PROGR_ST = 02///" );
+                            
+                            }else{
+                                paramMap.put("PROGR_ST", StringUtils.nvlObject(row.get("PROGR_ST"),""));           // 진행상태
+                            }
+                        }
+                      
+                        context.getLogger().debug("///상담관리삭제///" );
+                        dbDelete("DConsultMgmt", paramMap, context);//상담관리 삭제 
+                        
+                        context.getLogger().debug("///매입관리삭제///" );
+                        dbDelete("DPrchsMgmt", paramMap, context);//매입관리 삭제
+                        
+                        context.getLogger().debug("///상담관리상세삭제///" );
+                        dbDelete("DConsultDtl", paramMap, context);//상담관리상세 삭제
+                    
+                        context.getLogger().debug("///상담관리저장///" );
+                        dbInsert("IConsultMgmt", paramMap, context);  // 상담관리저장
+                        
+                        if(row.get("IF_PROC_DT").length() > 0){
+                            context.getLogger().debug("///IF상담관리수정///" );
+                            context.getLogger().debug("///paramap/// = "+ paramMap.toString());
+                            
+                            dbUpdate("UIfConsultMgmtSnc", paramMap, context);  // IF상담관리수정
+
+                        }
+                    }
+                }    
+                processCnt++;
+            }
+        };
+        return rh;
+    }
+
+}
+
+
+

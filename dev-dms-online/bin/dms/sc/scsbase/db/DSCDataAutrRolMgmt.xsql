@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCDataAutrRolMgmt">
+	<select id="SDataAutrRolBySv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCDataAutrRolMgmt.SDataAutrRolBySv 데이터권한역할조회(SV) */
+/* IO: 심상준,2015-04-13T12:14:42(김석영,2014-09-11T19:35:44) */
+SELECT
+        '30'     AS AUTR_CL_CD   /* 권한구분코드 */
+       ,A.MCHT_NO  AS AUTR_OBJ_CD  /* 권한대상코드 */
+  FROM  TB_MCHT A                  /* 가맹점 */
+       ,TB_CM_CD B
+ WHERE  A.CO_CD = B.CM_CD_ID
+   AND  B.CM_GRP_CD_ID = 'AFC003'
+   AND  B.MGMT_ITEM_CD4||'.'||A.SV_CD = #EMP_NO#]]>
+	</select>
+	<select id="SDataAutrRolByTeamMgr" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCDataAutrRolMgmt.SDataAutrRolByTeamMgr 데이터권한역할조회(팀장) */
+/* IO: 심상준,2015-04-13T12:14:33(김석영,2014-09-16T16:37:23) */
+SELECT
+        '30'     AS AUTR_CL_CD   /* 권한구분코드 */
+       ,A.MCHT_NO  AS AUTR_OBJ_CD  /* 권한대상코드 */
+  FROM  TB_MCHT A                  /* 가맹점 */
+       ,TB_CM_CD B
+ WHERE  A.CO_CD = B.CM_CD_ID
+   AND  B.CM_GRP_CD_ID = 'AFC003'
+   AND  B.MGMT_ITEM_CD4||'.'||A.SV_CD IN (
+                  SELECT
+                          X.EMP_NO   /* 사원번호 */
+                    FROM  TB_USER X
+                   WHERE  X.GRPC_DEPT_CD =
+                         (SELECT
+                                  Y.GRPC_DEPT_CD
+                            FROM  TB_USER Y 
+                           WHERE  Y.USER_NO = #USER_NO#
+                          )
+                  )]]>
+	</select>
+	<select id="SDataAutrRolByBase" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dsm.sc.scsbase.db.DSCDataAutrRolMgmt.SDataAutrRolByBase 데이터권한역할조회(일반) */
+/* IO: 임지후,2014-12-23T15:20:38(김석영,2014-09-16T16:37:39) */
+SELECT
+        B.USER_NO                /* 사용자번호 */
+       ,A.AUTR_SNO               /* 권한일련번호 */
+       ,A.AUTR_OBJ_CO_CD         /* 권한대상회사코드 */
+       ,A.AUTR_OBJ_BRND_CD       /* 권한대상브랜드코드 */
+       ,A.AUTR_OBJ_MCHT_NO       /* 권한대상가맹점번호 */
+  FROM  TB_DATA_AUTR_ROL A  /* 데이터권한역할 */
+       ,TB_USER_AUTR_ROL B       /* 사용자권한역할 */
+       ,TB_AUTR_ROL	C			 /* SC_권한역할  */				
+ WHERE  B.USER_NO = #USER_NO#
+   AND  TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN B.APLY_STA_DT AND B.APLY_END_DT
+   AND  B.AUTR_ROL_ID = C.AUTR_ROL_ID
+   AND  A.AUTR_ROL_ID = B.AUTR_ROL_ID
+   AND  B.USE_YN= 'Y'
+   AND  TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN B.APLY_STA_DT AND B.APLY_END_DT
+   ]]>
+	</select>
+</sqlMap>

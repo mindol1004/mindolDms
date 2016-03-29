@@ -1,0 +1,93 @@
+package dms.ep.epbcsbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]입고관리</li>
+ * <li>설  명 : <pre>입고관리</pre></li>
+ * <li>작성일 : 2015-08-19 09:19:19</li>
+ * <li>작성자 : 김상오 (myneti99)</li>
+ * </ul>
+ *
+ * @author 김상오 (myneti99)
+ */
+public class PEPCnslMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPCnslMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>[PM]입고대상조회</pre>
+	 *
+	 * @author 김상오 (myneti99)
+	 * @since 2015-08-19 09:19:19
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : STA_CNSL_DT [처리일자]
+	 *	- field : END_CNSL_DT [처리일자]
+	 *	- field : AFFIL_AGN [소속팀]
+	 *	- field : CNSL_DEALCO_CD [거래처코드]
+	 *	- field : CMPT_CD [필드5]
+	 *	- field : CNSL_MGMT_SER_NO [상담관리일련번호]
+	 *	- field : EQP_MDL_CD [단말기코드]
+	 *	- field : DPSTR [고객명]
+	 *	- field : CNSL_MGMT_NO [상담관리번호]
+	 *	- field : BOX_NO [박스넘버]
+	 *	- field : AFFIL_AGN_NM [소속팀명]
+	 *	- field : CNSL_DEALCO_NM [거래처명]
+	 *	- field : EQP_MDL_NM [단말기명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_EQP_IN_OBJ_LIST
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : EQP_MDL_CD [단말기코드]
+	 *		- field : CNSL_MGMT_SER_NO [상담관리일련번호]
+	 *		- field : CNSL_DT [상담일자]
+	 *		- field : EQP_COLOR_CD [단말기색상코드]
+	 *		- field : ORG_ID [최초작성자]
+	 *		- field : ORG_NM [최초작성자]
+	 *		- field : UKEY_AGENCY_CD [Ukey코드]
+	 *		- field : AGENCY_NM [대리점명]
+	 *		- field : CON_PLC_NM [필드11]
+	 *		- field : CNSL_DEALCO_CD [상담처코드]
+	 * </pre>
+	 */
+	public IDataSet pInqEqpInObjList(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    // 2. FM 호출
+//	    FPRSaleXclRgst fPRPRSaleXclRgst = (FPRSaleXclRgst) lookupFunctionUnit(FPRSaleXclRgst.class);
+//	    responseData.putRecordSet("RS_SALE_XCL_LIST",fPRPRSaleXclRgst.fInqSaleXclList(requestData, onlineCtx).getRecordSet("RS_SALE_XCL_LIST"));
+	    responseData = callSharedBizComponentByDirect("ep.EPSCSBase", "fInqEqpInObjList", requestData, onlineCtx);
+	                                                    
+        // 3. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+	
+	    return responseData;
+	}
+  
+}

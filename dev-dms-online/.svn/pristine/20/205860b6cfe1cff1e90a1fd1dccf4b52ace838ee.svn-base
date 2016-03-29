@@ -1,0 +1,118 @@
+package dms.nr.nrbxmbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]대리점판매수수료정산관리</li>
+ * <li>설  명 : <pre>대리점판매수수료정산관리</pre></li>
+ * <li>작성일 : 2015-08-05 10:33:55</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PNRAgnSellComMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRAgnSellComMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>대리점판매수수료정산정보조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-08-05 10:33:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [정산년월]
+	 *	- field : AGN_CD [대리점코드]
+	 *	- field : AGN_NM [대리점명]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_SELL_COM_LST
+	 *		- field : DEBT_DEALCO_CD [대리점코드]
+	 *		- field : DEAL_CO_NM [대리점명]
+	 *		- field : DEBT_ITM_AMT [수수료]
+	 *		- field : DEBT_XCL_YM [판매정산년월]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnSellComLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnSellComLst", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+
+	/**
+	 * <pre>대리점판매수수료정산정보상세 조회</pre>
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-05 10:33:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [정산년월]
+	 *	- field : AGN_CD [대리점코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_AGN_SELL_COM_DTL
+	 *		- field : CNTRT_NO [계약번호]
+	 *		- field : SVC_MGMT_NO [서비스관리번호]
+	 *		- field : DEALCO_NM [거래처명]
+	 *		- field : DEBT_ITM_AMT [수수료]
+	 *		- field : DEBT_XCL_YM [정산년월]
+	 * </pre>
+	 */
+	public IDataSet pInqAgnSellComDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		
+	    try {
+			// 1. FM 호출
+			responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqAgnSellComDtl", requestData, onlineCtx);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+		// 2. 결과값 리턴
+		responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+	
+	    return responseData;
+	}
+  
+}

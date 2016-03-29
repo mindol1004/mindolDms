@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.sc.DBC003">
+	<select id="SCntrtEndNEW" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.DBC004.SCntrtEndNEW 중도해지 계약종료목록 */
+/* IO: 이영진,2015-10-13T17:58:39(admin,2015-03-20T13:38:02) */
+SELECT  A.CNTRT_NO
+       ,MIN(SCARL_DT) AS RENTAL_CNTRT_END_DT
+       ,A.SVC_NO_ENPT
+       ,'DMS00137' AS ALRT_MSG_ID
+       ,'D07' AS ALRT_MSG_CL
+  FROM  
+      (
+        SELECT  A.CNTRT_NO
+               ,A.RENTAL_CNTRT_END_DT
+               ,B.SVC_NO_ENPT
+          FROM  TB_RENTAL_CNTRT A
+               ,TB_NR_CNTRT B
+         WHERE  A.CNTRT_NO = B.CNTRT_NO
+           AND  B.SVC_MGMT_NO = 
+               (
+                SELECT  SVC_MGMT_NO
+                  FROM  TF_NP_TERM_INFO 
+                 WHERE  IF_FILE_NM LIKE '%'||TO_CHAR(SYSDATE, 'YYYYMMDDHH24')||'%' 
+                   AND  OP_CL_CD = '1' 
+               )
+      ) A,
+      TB_HOLY
+ WHERE  SCARL_DT >= (TO_DATE(A.RENTAL_CNTRT_END_DT,'YYYYMMDD') + 14)
+   AND  HOLY_YN = 'N'
+ GROUP  BY A.CNTRT_NO,A.RENTAL_CNTRT_END_DT,A.SVC_NO_ENPT]]>
+	</select>
+</sqlMap>

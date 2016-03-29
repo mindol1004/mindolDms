@@ -1,0 +1,174 @@
+<HTML>
+<HEAD>
+<TITLE>XPLATFORM Install Page</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=euc-kr">
+<meta http-equiv="X-UA-Compatible" content="requiresActiveX=true">
+<SCRIPT LANGUAGE="JavaScript"> 
+var sKey = "HPC";  //프로젝트 고유id를 입력하시면 됩니다.
+var Server_Path = "http://" + window.location.host;	//사용하는 서버 주소
+var bOnError = false;
+var XPLATFORM_CAB_VER = "2014,6,24,1";	//cab ver 지정
+var sessionid = "";
+function fn_objectOnError() {
+	bOnError = true;
+}
+
+function fn_launchX()
+{  
+
+  var strURL = location.search;
+	var tempvalue = strURL.substring(1).split("&");
+
+	XLauncher.xadl = Server_Path +  "/kokr/HPC.xadl";	//프로젝트의 xadl 위치
+	XLauncher.onlyone = true;	//실행할 프로그램 한개 or 한개이상 실행여부 설정
+	XLauncher.splashimage = Server_Path+"/Install/img/loading_img.gif";	//loading 이미지 지정부분
+
+	XLauncher.makeshortcut("XPLATFORM", Server_Path+"/Install/img/mainicon.ico", "desktop");	// 단축 Icon 지정
+	XLauncher.launch();	//전용브라우저 실행
+
+}
+
+function fn_load()
+{  
+	
+	if(bOnError == false) {  
+		if (confirm("Launch XPLATFORM ?\n\nYes : Execute XPLATFORM browser\nNo  : Embeded Web browser")) {
+			//전용브라우저 시작
+			fn_launchX();
+			//setInterval("fn_close()", 2000);
+		} else {
+			//임베디드 시스템 시작
+			//alert(sKey);
+			XLauncher.key = sKey;
+			XLauncher.xadl = Server_Path + "/kokr/HPC.xadl";
+		
+			XLauncher.splashimage = Server_Path+"/Install/img/loading_img.gif";
+			XLauncher.download();
+ 
+			window.location.href = "./XPlatformAX.html";
+		}
+	}
+}
+
+function fn_close()
+{
+	if(navigator.appVersion.indexOf("MSIE 7.0")>=0) {
+		//window.open('about:blank','_self').close();
+		window.opener = "nothing";
+		window.open('', '_parent', '');
+		window.close();		
+	} else { 
+		window.opener = self; 
+		self.close();
+	}
+}
+</SCRIPT> 
+</HEAD>
+<BODY onload="fn_load()">
+<SCRIPT LANGUAGE="JavaScript">
+
+//  XPLATFORM Engine
+document.write('<OBJECT ID="XPlatformAX" CLASSID="CLSID:43C5FE00-DD32-4792-83DB-19AE4F88F2A6" width="0" height="0" '
+		+ 'CodeBase="./Download/XPLATFORM9.2_SetupEngine.cab#VERSION='+XPLATFORM_CAB_VER+'" onError="fn_objectOnError()">'
+		+ '</OBJECT>');
+
+//  XPLATFORM Launcher
+document.write('<OBJECT ID="XLauncher" CLASSID="CLSID:A30D5481-7381-4dd9-B0F4-0D1D37449E97" width="0" height="0" '
+  	+ 'codebase="./Download/XPLATFORM9.2_XPLauncher.cab#VERSION='+XPLATFORM_CAB_VER+'" onError="fn_objectOnError()">'
+		+ '<PARAM NAME="key" VALUE="' + sKey + '">'
+		+ '</OBJECT>');
+
+</SCRIPT>
+<table id="ins_tbl" align="center" border=0 width="600">
+  <tr>
+    <td><table width="637" border="0" align="center" cellpadding="0" cellspacing="0">
+      <tr>
+        <td height="10"></td> 
+      </tr>
+      <tr>
+        <td><img src="./img/insu_down_listbg1.gif" width="721" height="12"></td>
+      </tr>
+      <tr>
+        <td height="37" bgcolor="#EEEEEE"><table width="607" border="0" align="center" cellpadding="0" cellspacing="0">
+          <tr>
+            <td height="15"></td>
+          </tr>
+          <tr>
+            <td><table width="590" border="0" align="center" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="10" rowspan="3"><img src="./img/insu_down_img.gif" width="150" height="90"></td>
+                <td width="590" height="35"><img src="./img/insu_down_title.gif" width="204" height="27"></td>
+              </tr>
+              <!--tr>
+                <td height="45"><img src="./img/insu_down_title2.gif" width="329" height="32"></td>
+              </tr-->
+            </table></td>
+          </tr>
+          <tr>
+            <td>&nbsp;</td>
+          </tr>
+          <tr>
+            <td><table width="607" border="0" cellspacing="0" cellpadding="0">
+              <tr>
+                <td width="12" height="12"><img src="./img/insu_down_listbg_sub1.gif" width="12" height="12"></td>
+                <td width="583" height="12" bgcolor="#FFFFFF"></td>
+                <td width="12" height="12"><img src="./img/insu_down_listbg_sub2.gif" width="12" height="12"></td>
+              </tr>
+              <tr>
+                <td rowspan="5" bgcolor="#FFFFFF">&nbsp;</td>
+                <td bgcolor="#FFFFFF"><table width="570" border="0" align="center" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="10" valign="top"><img src="./img/insu_down_list_icon1.gif" width="8" height="11"></td>
+                    <td width="570">암호화 프로그램 설치여부를 묻는 보안경고창이 나타나면 반드시
+                      "<strong><font color="#FF7200">예</font></strong>"를
+                      선택하여주시기 바랍니다.<br>
+                      "아니오"를 선택하시면 보안을 위해 사용이 제한됩니다.</td>
+                  </tr>
+                </table></td>
+                <td rowspan="5" bgcolor="#FFFFFF">&nbsp;</td>
+              </tr>
+              <tr>
+                <td bgcolor="#FFFFFF">&nbsp;</td>
+              </tr>
+              <tr>
+                <td bgcolor="#FFFFFF"><table width="570" border="0" align="center" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="10" valign="top"><img src="./img/insu_down_list_icon1.gif" width="8" height="11"></td>
+                    <td width="570">윈도우 XP 서비스팩2 사용자께서는 주소 표시줄 아래 경고문구
+                      " <img src="./img/insu_down_list_icon2.gif" width="15" height="15" align="absmiddle">이
+                      사이트에서...여기를 클릭하십시오" 를 선택하시어, Active X컨트롤을 설치하시기 바랍니다.</td>
+                  </tr>
+                </table></td>
+              </tr>
+              <tr>
+                <td bgcolor="#FFFFFF">&nbsp;</td>
+              </tr>
+              <tr>
+                <td bgcolor="#FFFFFF"><table width="570" border="0" align="center" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="10" valign="top"><img src="./img/insu_down_list_icon1.gif" width="8" height="11"></td>
+                    <td width="570">프로그램 설치가 정상적이지 않을 경우에는 문의하기</font></strong>를 통해 질문
+                      하시면 신속히 답변을 드리겠습니다.</td>
+                  </tr>
+                </table></td>
+              </tr>
+              <tr>
+                <td width="12" height="12"><img src="./img/insu_down_listbg_sub3.gif" width="12" height="12"></td>
+                <td bgcolor="#FFFFFF"></td>
+                <td width="12" height="12"><img src="./img/insu_down_listbg_sub4.gif" width="12" height="12"></td>
+              </tr>
+            </table></td>
+          </tr>
+        </table></td>
+      </tr>
+      <tr>
+        <td><img src="./img/insu_down_listbg2.gif" width="720" height="11"></td>
+      </tr>
+      <tr>
+        <td height="5"></td>
+      </tr>
+    </table></td>
+  </tr>
+</table>
+</BODY>
+</HTML>

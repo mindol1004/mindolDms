@@ -1,0 +1,269 @@
+package dms.pr.prsimbase.biz;
+
+import java.util.Map;
+
+
+
+
+
+
+
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [FU]단말기운송관리</li>
+ * <li>설  명 : <pre>[FU]단말기운송관리</pre></li>
+ * <li>작성일 : 2015-07-14 20:47:57</li>
+ * <li>작성자 : 이준우 (elmsliw)</li>
+ * </ul>
+ *
+ * @author 이준우 (elmsliw)
+ */
+public class FPREqpTransportMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FPREqpTransportMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>단말기운송정보조회</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-07 17:58:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ST_DT [시작일]
+	 *	- field : ED_DT [종료일]
+	 *	- field : ST_DT_SEND [필드1]
+	 *	- field : ED_DT_SEND [필드2]
+	 *	- field : EQP_MDL_CD [모델]
+	 *	- field : EQP_MDL_NM [모델명]
+	 *	- field : EQP_SER_NO [시리얼넘버]
+	 *	- field : WAYBIL_NO [입고일자]
+	 *	- field : HDLV_SNDR_NM [발송자명]
+	 *	- field : INVE_ST_CD [상태]
+	 *	- field : EQP_WAYBIL_NO [단말기운송장번호(k)]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_LIST
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_WAYBIL_NO [단말기운송장번호]
+	 *		- field : EQP_RCV_DT [단말기수취일자]
+	 *		- field : WAYBIL_NO [운송장번호]
+	 *		- field : HDLVCO_CD [택배사코드]
+	 *		- field : HDLVCO_NM [택배사명]
+	 *		- field : HDLV_AMT [택배비]
+	 *		- field : HDLV_SNDR_NM [택배발송자명]
+	 *		- field : HDLV_SND_DT [택배발송일자]
+	 *		- field : HDLV_SND_RSN [택배발송사유]
+	 *		- field : INVE_ST_CD [회수구분코드(자산)]
+	 *		- field : LAST_IN_OUT_NO [최종출고번호(자산)]
+	 *		- field : EQP_IN_NO [단말기입고번호(입고)]
+	 *		- field : IN_DTL_CD [입고상세코드(입고)]
+	 *		- field : EQP_IN_DT [단말기입고일자(입고)-수취일자]
+	 * </pre>
+	 */
+    public IDataSet fInqEqpTransInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+    //IDataSet dsVal = new DataSet();
+    //	IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+    	IRecordSet rsPagingList = null;
+    	int intTotalCnt = 0;
+    //String strEqpInNo = "";
+    	
+    	try {
+    		// 1. DU lookup
+    	    DPREqpTransportMgmt dPREqpTransportMgmt = (DPREqpTransportMgmt) lookupDataUnit(DPREqpTransportMgmt.class);
+    		// 2. TOTAL COUNT DM호출
+    		dsCnt = dPREqpTransportMgmt.dSEqpTransInfoLstTotCnt(requestData, onlineCtx);
+    //dsVal = dPRReqpClctInRgst.dIReqpClct(requestData, onlineCtx);
+    		
+    		intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+    //strEqpInNo = String.valueOf(dsCnt.getField("EQP_IN_NO"));
+    		
+    		
+    		
+    		PagenateUtils.setPagenatedParamsToDataSet(requestData);
+    		//PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+    		// 3. LISTDM호출
+    		responseData = dPREqpTransportMgmt.dSEqpTransInfoLstPaging(requestData, onlineCtx);
+    
+    		rsPagingList = responseData.getRecordSet("RS_LIST");
+    		
+    		PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);
+    		
+    
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}		
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]단말/**
+	 * <pre>[FM]단말기운송정보등록</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-07 17:58:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_ETMM_TEMP_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : EQP_WAYBIL_NO [단말기운송장번호]
+	 *		- field : EQP_RCV_DT [단말기수취일자]
+	 *		- field : WAYBIL_NO [운송장번호]
+	 *		- field : HDLVCO_CD [택배사코드]
+	 *		- field : HDLV_AMT [택배비]
+	 *		- field : HDLV_SNDR_NM [택배발송자명]
+	 *		- field : HDLV_SND_DT [택배발송일자]
+	 *		- field : HDLV_SND_RSN [택배발송사유]
+	 *		- field : LS_CHG_USER_ID [최종수정자ID]
+	 *		- field : LS_CHG_DTM [최종수정일시]
+	 *		- field : EQP_IN_DT [단말기입고일자(입고)-수취일자]
+	 *		- field : EQP_IN_NO [단말기입고번호(입고)]
+	 *		- field : IN_DTL_CD [입고상세코드(입고)]
+	 *		- field : LAST_IN_OUT_NO [최종출고번호(자산)]
+	 *		- field : INVE_ST_CD [입고상세코드(자산)]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	 	 
+	 
+    public IDataSet fRegEqpTransInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+      //  IDataSet requestDataTrn = new DataSet();
+        try {
+    		// 1. DU lookup
+            DPREqpTransportMgmt dPREqpTransportMgmt = (DPREqpTransportMgmt) lookupDataUnit(DPREqpTransportMgmt.class);
+            DPRReqpClctInRgst dPRReqpClctInRgst = (DPRReqpClctInRgst) lookupDataUnit(DPRReqpClctInRgst.class);
+
+            // 2.  자산번호 채번
+            IDataSet assetNoDs = dPREqpTransportMgmt.dSEqpTransInfoGetAssetNo(requestData, onlineCtx);
+            requestData.putField("ASSET_NO", assetNoDs.getField("ASSET_NO"));            
+            
+            // 3. 단말기 운송조회정보 번호 채번
+            IDataSet seqNoDs = dPREqpTransportMgmt.dSEqpTransInfoSeq(requestData, onlineCtx);
+            requestData.putField("EQP_WAYBIL_NO", seqNoDs.getField("EQP_WAYBIL_NO"));
+            
+            // 3. 단말기 운송조회정보 등록
+            responseData = dPREqpTransportMgmt.dIEqpTransInfo(requestData, onlineCtx);            
+            
+            // 4. 단말기 입고 번호 채번
+            IDataSet seqNoDsIn = dPRReqpClctInRgst.dSReqpClctLstSeq(requestData, onlineCtx);
+            requestData.putField("EQP_IN_NO", seqNoDsIn.getField("EQP_IN_NO"));   //입고번호 셋
+            requestData.putField("LAST_IN_OUT_NO", seqNoDsIn.getField("EQP_IN_NO")); //최종 입출고번호 셋
+            
+            // 5. 단말기 입고정보 등록
+            responseData = dPRReqpClctInRgst.dIReqpClct(requestData, onlineCtx);
+            
+            // 6. 단말기 자산정보 수정
+            responseData = dPRReqpClctInRgst.dUReqpClctTbEqpAsset(requestData, onlineCtx);
+
+            // 7. 임대폰회수입고등록번호 채번
+            //IDataSet seqNoDsClct = dPREqpTransportMgmt.dSResqpClctInSeq(requestData, onlineCtx);
+            //requestData.putField("EQP_CLCT_OBJ_NO", seqNoDsClct.getField("EQP_CLCT_OBJ_NO"));   //임대회수등록번호 셋
+            
+            // 8. 임대폰회수입고등록
+            //responseData = dPREqpTransportMgmt.dIResqpClctIn(requestData, onlineCtx);            
+            
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	}
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]단말기운송정보수정</pre>
+	 *
+	 * @author 양재석 (jsyang)
+	 * @since 2015-08-07 17:58:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_ETMM_TEMP_LIST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_SER_NO [단말기일련번호]
+	 *		- field : ASSET_NO [자산번호]
+	 *		- field : DEL_YN [삭제여부]
+	 *		- field : EQP_WAYBIL_NO [단말기운송장번호]
+	 *		- field : EQP_RCV_DT [단말기수취일자]
+	 *		- field : WAYBIL_NO [운송장번호]
+	 *		- field : HDLVCO_CD [택배사코드]
+	 *		- field : HDLV_AMT [택배비]
+	 *		- field : HDLV_SNDR_NM [택배발송자명]
+	 *		- field : HDLV_SND_DT [택배발송일자]
+	 *		- field : HDLV_SND_RSN [택배발송사유]
+	 *		- field : LS_CHG_USER_ID [최종수정자ID]
+	 *		- field : LS_CHG_DTM [최종수정일시]
+	 *		- field : EQP_IN_DT [단말기입고일자(입고)-수취일자]
+	 *		- field : EQP_IN_NO [단말기입고번호(입고)]
+	 *		- field : IN_DTL_CD [입고상세코드(입고)]
+	 *		- field : LAST_IN_OUT_NO [최종출고번호(자산)]
+	 *		- field : INVE_ST_CD [입고상세코드(자산)]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet fUpdEqpTransInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        	    
+        try {
+    		// 1. DU lookup
+            DPREqpTransportMgmt dPREqpTransportMgmt = (DPREqpTransportMgmt) lookupDataUnit(DPREqpTransportMgmt.class);
+        	
+            DPRReqpClctInRgst dPRReqpClctInRgst = (DPRReqpClctInRgst) lookupDataUnit(DPRReqpClctInRgst.class);
+            
+    		// 2. 단말기 운송정보 수정
+    		responseData = dPREqpTransportMgmt.dUEqpTransInfo(requestData, onlineCtx);
+    		
+    		// 3. 단말기 입고, 자산 정보 수정
+    		responseData = dPRReqpClctInRgst.dUReqpClctTbEqpIn(requestData, onlineCtx);	
+    		
+            responseData = dPRReqpClctInRgst.dUReqpClctTbEqpAsset(requestData, onlineCtx);
+            
+            // 4. 임대폰회수입고수정
+            //responseData = dPREqpTransportMgmt.dUResqpClctIn(requestData, onlineCtx);
+    
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} 
+    
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,462 @@
+package dms.sc.scsbase.biz;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Properties;
+
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+import com.surem.api.sms.SureSMSAPI;
+import com.surem.net.SendReport;
+import com.surem.net.sms.SureSMSDeliveryReport;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.code.internal.HpcCode;
+import fwk.constants.DmsConstants;
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/업무공통</li>
+ * <li>단위업무명: FSCAlrtMgmt</li>
+ * <li>설  명 : 알림관리</li>
+ * <li>작성일 : 2014-08-21 13:50:46</li>
+ * <li>작성자 : 김석영 (kimsukyoung)</li>
+ * </ul>
+ *
+ * @author 김석영 (kimsukyoung)
+ */
+public class FSCAlrtMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+    //수신자구분코드
+    private final static String REVR_CL_MBR          = "10";//회원
+    private final static String REVR_CL_USER         = "20";//사용자
+    private final static String REVR_CL_MCHT_OWNER   = "30";//가맹점주
+    private final static String REVR_CL_COP          = "40";//제휴사
+    
+    //알림채널구분코드(ALRT_CHNL_CL_CD)
+    private final static String ALRT_CHNL_CL_CD_SMS     = "S";    // 알림채널구분코드 : SMS
+    private final static String ALRT_CHNL_CL_CD_LMS     = "L";    // 알림채널구분코드 : LMS
+    private final static String ALRT_CHNL_CL_CD_EMAIL   = "E";    // 알림채널구분코드 : EMAIL
+    
+    //휴대전화BL구분코드
+    private final static String  HP_NO_BL_CL_TRX_BLCK        = "10";//휴대전화거래차단
+    private final static String  HP_NO_BL_CL_SMS_RETN_BLCK   = "20";//SMS수신차단    
+
+    //수신채널구분코드(RETN_CHNL_CL_CD)
+    private final static String RETN_CHNL_CL_SMS     = "S";//SMS
+    private final static String RETN_CHNL_CL_EML     = "E";//이메일
+    private final static String RETN_CHNL_CL_DM      = "D";//DM
+    private final static String RETN_CHNL_CL_TM      = "T";//TM    
+
+    // 전송타입
+    private final static int TRAN_TYPE_SMS  = 4; // 전송타입:SMS전송
+    private final static int TRAN_TYPE_MMS   = 6;    // 전송타입:MMS전송
+    
+    // 알림동의Check브랜드코드 : HPC브랜드
+    private final static String ALRT_AGR_CHK_BRND_CD   = "H999"; // 알림동의Check브랜드코드 : HPC브랜드
+    
+	/**
+	 * Default Constructor
+	 */
+	public FSCAlrtMgmt() {
+		super();
+	}
+
+	/**
+	 * 알림발송
+	 *
+	 * @author 이유미 (leeyoumee)
+	 * @since 2014-08-21 13:50:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ALRT_WORK_CL_CD [알림업무구분코드]
+	 *	- field : ALRT_SND_REQ_CHNL_CD [알림발송요청채널코드]
+	 *	- field : REVR_CL_CD [수신자구분코드]
+	 *	- field : REVR_NO [수신자번호]
+	 *	- field : RETN_TEL_NO_ENPT [수신전화번호]
+	 *	- field : RETN_EML_ADDR_ENPT [수신이메일주소]
+	 *	- field : REQ_BRND_CD [요청브랜드코드]
+	 *	- field : MSG_PARAMS [파라미터[]]
+	 *	- field : USER_NO [사용자번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : SUCCESS [발송성공여부]
+	 * </pre>
+	 * @throws MessagingException 
+	 * @throws UnsupportedEncodingException 
+	 */
+	public IDataSet fSndAlrt(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		
+        SureSMSAPI messageApi = new SureSMSAPI() {
+            
+            public void report(SureSMSDeliveryReport deliveryReport) {
+                // System.out.println(String.format("DR: %s", deliveryReport));
+            }
+
+        };
+ 
+        String mmsg = "안녕하세요.";
+        for (int i =1 ; i<11;i++){
+        
+            SendReport sReport = messageApi.sendMain(1, "skeco", "XA-UXH-JM",
+                "DMS", "010", "9335", "6593", "심상준", "02", "6400", "3593",
+                "["+i+"]"+mmsg, "00000000", "000000");
+        }
+		/*
+		IDataSet reqData = (IDataSet) requestData.clone();
+		try {
+			// 필수값 체크
+			if ( StringUtils.isEmpty(requestData.getField("ALRT_WORK_CL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("ALRT_WORK_CL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} else if ( StringUtils.isEmpty(requestData.getField("REQ_BRND_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("REQ_BRND_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} else if ( StringUtils.isEmpty(requestData.getField("ALRT_SND_REQ_CHNL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("ALRT_SND_REQ_CHNL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} else if ( StringUtils.isEmpty(requestData.getField("REVR_CL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("REVR_CL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} else if ( StringUtils.isEmpty(requestData.getField("RETN_TEL_NO_ENPT")) && StringUtils.isEmpty(requestData.getField("RETN_EML_ADDR_ENPT")) ) {
+				throw new BizRuntimeException("HPC00236", new String[] { HpcUtils.getLangMsg("RETN_TEL_NO"), HpcUtils.getLangMsg("RETN_EML_ADDR") }); // 입력항목 {0} 또는 {1} 은/는 필수값입니다.
+			}
+
+			//수신자구분코드 입력값 Check
+			HpcCode code = HpcUtils.getCode("SCC011", requestData.getField("REVR_CL_CD"));
+			if ( code == null ) {
+				throw new BizRuntimeException("HPC00235", new String[] { HpcUtils.getLangMsg("REVR_CL_CD") }); // 유효한 코드가 아닙니다.
+			}
+
+			//수신자구분코드 '10' 회원 일 경우 필수 입력값 check
+			if ( StringUtils.equals(REVR_CL_MBR, requestData.getField("REVR_CL_CD")) ) {
+				if ( StringUtils.isEmpty(requestData.getField("REVR_NO")) ) {
+					throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("REVR_NO") }); // 필수입력항목 {0}이/가 누락되었습니다.
+				}
+			}
+
+			// SMS 발송서비스 파라미터
+			String revrClCd = reqData.getField("REVR_CL_CD");		               // 수신자구분코드(10:회원,20:사용자)
+			String recvMphNo = HpcUtils.decodeByAES(reqData.getField("RETN_TEL_NO_ENPT"));   // 수신전화번호(복호화)
+			String recvEmail = HpcUtils.decodeByAES(reqData.getField("RETN_EML_ADDR_ENPT")); // 수신이메일주소(복호화)
+			String[] msgParams = (String[]) reqData.getObjectField("MSG_PARAMS");  // 파라미터(String[])
+
+			// 알림업무구분코드로 알림서비스추출
+			DSCAlrtMgmt dSCAlrtMgmt = (DSCAlrtMgmt) lookupDataUnit(DSCAlrtMgmt.class);
+			IDataSet alrtSvcDs = dSCAlrtMgmt.dSAlrtSvc(reqData, onlineCtx);
+			IRecordSet rsAlrtSvcList = alrtSvcDs.getRecordSet("RS_ALRT_SVC_LIST");
+
+			for ( int i = 0 ; i < rsAlrtSvcList.getRecordCount() ; i++ ) {
+				IRecord record = rsAlrtSvcList.getRecord(i);
+				//String msgCtt = HpcUtils.restoreSpecialChar(_makeMsgCtt(alrtSvcDs.getField("ALRT_MSG_CTT"), msgParams)); // 2014.12.22 문자 XSS restore처리 by leeym
+				String msgTitle = record.get("ALRT_TITE_NM");  //이메일 발송시 알림제목 설정 
+				String msgCtt = _makeMsgCtt(record.get("ALRT_MSG_CTT"), msgParams);  // 2015.01.13 문자 XSS restore처리 삭제 by leeym
+
+				if ( StringUtils.isEmpty(msgCtt) ) {
+					throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("ALRT_MSG_CTT") }); // 필수입력항목 {0}이/가 누락되었습니다.
+				}
+				String alrtChnlClCd = record.get("ALRT_CHNL_CL_CD");		// 알림채널구분코드
+				String retnAgrAplyYn = record.get("RETN_AGR_APLY_YN");		// 수신동의적용여부
+
+				// 수신자구분=10:회원
+				if ( StringUtils.equals(revrClCd, REVR_CL_MBR) ) {
+					if ( StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_SMS)
+						|| StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_LMS) ) {
+						// 2014-10-23 이유미 : 불량휴대전화번호 Check
+					    // 2015-02-23 이유미 : HP_NO_BL_CL_TRX_BLCK(10) => HP_NO_BL_CL_SMS_RETN_BLCK(20) 으로 수정
+						// 거래불가휴대전화여부조회 데이터 셋팅
+						reqData.putField("ULZE_CL_CD", HP_NO_BL_CL_SMS_RETN_BLCK);    // 10:휴대전화거래불가, 20:SMS수신차단  
+						//            		reqData.putField("HP_NO", reqData.getField("RETN_TEL_NO_ENPT"));
+						reqData.putField("HP_NO", recvMphNo);    // 2015-01-29 거래불가 휴대전화여부 조회 시 복호화하여 휴대전화번호를 셋팅하도록 수정(이병일)
+						// 거래불가휴대전화여부 조회FM 호출
+						IDataSet hpTrxImpsDs = callSharedBizComponentByDirect("bsmb.BSMBSBase", "fInqHpTrxBlck", reqData, onlineCtx);
+						if ( StringUtils.equals(hpTrxImpsDs.getField("HP_TRX_BLCK_YN"), "Y") ) {
+							throw new BizRuntimeException("HPC00564", new String[] { HpcUtils.getLangMsg("BAD_TEL_NO") });			// 알림 발송 불가합니다.({0})
+						}
+
+						// 회원 SMS 수신동의여부 확인
+						if ( StringUtils.equals(retnAgrAplyYn, "Y") ) {
+							reqData.putField("MBR_NO", reqData.getField("REVR_NO"));    // 회원번호
+							//reqData.putField("BRND_CD", reqData.getField("REQ_BRND_CD"));    // 브랜드코드   
+							reqData.putField("BRND_CD", ALRT_AGR_CHK_BRND_CD);    // 브랜드코드 , 2015-01-20 HPC대표브랜드로 회원수신동의정보 Check
+							reqData.putField("RETN_CHNL_CL_CD", RETN_CHNL_CL_SMS);   // 수신채널구분코드
+
+							// 회원 SMS수신동의여부조회 FM 호출
+							IDataSet mbrRetnAgrYnDs = callSharedBizComponentByDirect("bsmb.BSMBSBase", "fInqMbrRetnAgrYn", reqData, onlineCtx);
+							if ( !StringUtils.equals(mbrRetnAgrYnDs.getField("RETN_AGR_YN"), "Y") ) {
+								throw new BizRuntimeException("HPC00564", new String[] { HpcUtils.getLangMsg("RETN_AGR_REJ") });	// 알림 발송 불가합니다.({0}) TODO 이유미 : 응답코드 / 처리방식(Exception or Return)
+							}
+						}
+
+						// 이메일이고 수신동의적용여부 'Y'
+					} else if ( StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_EMAIL) && StringUtils.equals(retnAgrAplyYn, "Y") ) {
+						// 회원이메일 수신동의여부 확인
+						reqData.putField("MBR_NO", reqData.getField("REVR_NO"));    // 회원번호
+						//reqData.putField("BRND_CD", reqData.getField("REQ_BRND_CD"));         // 브랜드코드   
+						reqData.putField("BRND_CD", ALRT_AGR_CHK_BRND_CD);         // 브랜드코드 , 2015-01-20 HPC대표브랜드로 회원수신동의정보 Check
+						reqData.putField("RETN_CHNL_CL_CD", RETN_CHNL_CL_EML);   // 수신채널구분코드
+
+						// 회원 SMS수신동의여부조회 FM 호출
+						IDataSet mbrRetnAgrYnDs = callSharedBizComponentByDirect("bsmb.BSMBSBase", "fInqMbrRetnAgrYn", reqData, onlineCtx);
+						if ( !StringUtils.equals(mbrRetnAgrYnDs.getField("RETN_AGR_YN"), "Y") ) {
+							throw new BizRuntimeException("HPC00564", new String[] { HpcUtils.getLangMsg("RETN_AGR_REJ") });	// 알림 발송 불가합니다.({0}) TODO 이유미 : 응답코드 / 처리방식(Exception or Return)
+						}
+
+					}
+				}
+				
+				//----------------------------------------------------------------------
+				// 알림발송구분코드별 분기처리 (SMS,LMS / EMAIL 발송)
+				//----------------------------------------------------------------------
+				String tranSeq = "";
+				if ( StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_SMS) || StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_LMS) ) {
+				// SMS/LMS 발송
+					// 알림발송 시퀀스 채번
+					IDataSet tranSeqDs = dSCAlrtMgmt.dSAlrtSndNo(reqData, onlineCtx);
+					tranSeq = tranSeqDs.getField("EM_TRAN_PR");
+					reqData.putField("TRAN_TYPE", TRAN_TYPE_SMS); // SMS전송
+
+					// LMS인 경우 
+					if ( StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_LMS) ) {
+						reqData.putField("MMS_SEQ", tranSeq);
+						reqData.putField("FILE_CNT", 0);
+						reqData.putField("MMS_BODY", msgCtt);
+						reqData.putField("MMS_SUBJECT", record.get("ALRT_TITE_NM"));
+
+						// SMS AGENT 테이블 등록(EM_TRAN_MMS)
+						dSCAlrtMgmt.dISndMms(reqData, onlineCtx);
+
+						// EM_TRAN 테이블 등록을 위한 파라미터 셋팅 
+						reqData.putField("TRAN_ETC4", tranSeq);
+						reqData.putField("TRAN_TYPE", TRAN_TYPE_MMS); // MMS전송
+						tranSeqDs = dSCAlrtMgmt.dSAlrtSndNo(reqData, onlineCtx);
+						tranSeq = tranSeqDs.getField("EM_TRAN_PR");
+					}
+
+					reqData.putField("TRAN_PR", tranSeq);
+					reqData.putField("TRAN_PHONE", recvMphNo);
+					reqData.putField("TRAN_CALLBACK", HpcUtils.decodeByAES(record.get("ANSW_TEL_NO_ENPT")));
+					reqData.putField("TRAN_STATUS", 1); // TIMEOUT
+					reqData.putField("TRAN_MSG", StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_SMS) ? msgCtt : "");
+
+					// SMS AGENT 테이블 등록(EM_TRAN)
+					dSCAlrtMgmt.dISndSms(reqData, onlineCtx);
+					
+				} else if ( StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_EMAIL) ) {
+				//이메일 발송	
+					IDataSet reqSendEmailDs= new DataSet();
+					 //수신자 이메일주소
+					reqSendEmailDs.putField("RECV_EMAIL_ADDR", recvEmail);
+					//발신자 이메일주소
+					reqSendEmailDs.putField("SENDER_EMAIL_ADDR", HpcUtils.decodeByAES(record.get("ANSW_EML_ADDR_ENPT"))); 
+					reqSendEmailDs.putField("EMAIL_TITLE", msgTitle);  //메일제목
+					reqSendEmailDs.putField("EMAIL_CONTENT", msgCtt);   //메일내용
+					//이메일 발송 fm 호출
+					_sendEmail(reqSendEmailDs, onlineCtx);
+					
+				}
+
+				// 알림발송내역 테이블에 등록
+				IDataSet reqAlrtHstDs = (IDataSet) reqData.clone();
+				reqAlrtHstDs.putField("ALRT_SVC_NO", record.get("ALRT_SVC_NO"));
+				reqAlrtHstDs.putField("ALRT_SND_REQ_NO", tranSeq);
+				reqAlrtHstDs.putField("ALRT_CHNL_CL_CD", alrtChnlClCd); // column명 수정 2014-12-30 by leeym
+				if ( StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_SMS) || StringUtils.equals(alrtChnlClCd, ALRT_CHNL_CL_CD_LMS) ) {
+					reqAlrtHstDs.putField("RETN_TEL_NO", recvMphNo != null ? HpcUtils.maskingTelNo(recvMphNo) : "");
+					reqAlrtHstDs.putField("RETN_TEL_NO_ENPT", reqAlrtHstDs.getField("RETN_TEL_NO_ENPT"));
+					reqAlrtHstDs.putField("RETN_EML_ADDR", "");
+					reqAlrtHstDs.putField("RETN_EML_ADDR_ENPT", "");
+				} else {
+					reqAlrtHstDs.putField("RETN_TEL_NO",  "");
+					reqAlrtHstDs.putField("RETN_TEL_NO_ENPT", "");
+					reqAlrtHstDs.putField("RETN_EML_ADDR", recvEmail != null ? HpcUtils.maskingEmail(recvEmail) : "");
+					reqAlrtHstDs.putField("RETN_EML_ADDR_ENPT", reqAlrtHstDs.getField("RETN_EML_ADDR_ENPT"));
+				}
+				reqAlrtHstDs.putField("ALRT_MSG_CTT", msgCtt);
+
+				dSCAlrtMgmt.dIAlrtSndItm(reqAlrtHstDs, onlineCtx);
+			}
+			    
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+        */
+		responseData.putField(DmsConstants.IS_SUCCESS, true);
+		return responseData;
+	}
+
+	/**
+	 * 알림메시지 생성
+	 * @param msg
+	 * @param params
+	 * @return
+	 */
+	private String _makeMsgCtt(String msg, String[] params) {		
+		if ( params != null && msg != null ) {
+			for ( int i = 0 ; i < params.length ; i++ ) {
+				msg = msg.replace("{" + i + "}", params[i]);
+			}
+		}
+				
+		return msg;
+	}
+
+	/**
+	 * 알림서비스발송이력조회
+	 *
+	 * @author 이유미 (leeyoumee)
+	 * @since 2014-08-21 13:50:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ALRT_SND_REQ_MM [알림발송요청월]
+	 *	- field : ALRT_SVC_NO [알림서비스번호]
+	 *	- field : REVR_CL_CD [수신자구분코드]
+	 *	- field : REVR_NO [수신자번호]
+	 *	- field : RETN_TEL_NO [수신전화번호]
+	 *	- field : RETN_TEL_NO_ENPT [수신전화번호암호화]
+	 *	- field : RETN_EML_ADDR [수신이메일주소]
+	 *	- field : RETN_EML_ADDR_ENPT [수신이메일주소암호화]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_ALRT_SVC_SND_LIST
+	 *		- field : ALRT_SND_REQ_DTM [알림발송요청일시]
+	 *		- field : ALRT_SVC_NO [알림서비스번호]
+	 *		- field : ALRT_SND_REQ_CHNL_CD [알림발송요청채널코드]
+	 *		- field : ALRT_SND_REQ_CHNL_CD_NM [알림발송요청채널코드명]
+	 *		- field : ALRT_WORK_CL_CD [알림업무구분코드]
+	 *		- field : ALRT_WORK_CL_CD_NM [알림업무구분코드명]
+	 *		- field : ALRT_CHNL_CL_CD [알림채널구분코드]
+	 *		- field : ALRT_CHNL_CL_CD_NM [알림채널구분코드명]
+	 *		- field : REVR_CL_CD [수신자구분]
+	 *		- field : REVR_NO [수신자번호]
+	 *		- field : RETN_TEL_NO [수신전화번호]
+	 *		- field : RETN_EML_ADDR [수신이메일주소]
+	 *		- field : ALRT_MSG_CTT [알림메시지내용]
+	 *		- field : SND_ST_CD [전송결과코드]
+	 *		- field : SND_FAIL_RSN_CTT [발송실패사유내용]
+	 * </pre>
+	 */
+	public IDataSet fInqAlrtSvcSndHst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone(); //원거래의 DataSet 훼손을 막기 위한 clone
+		IRecordSet alrtSvcHstRs = null;
+		int alrtSvcHstTtCnt = 0;
+		try {
+			// 1. DU lookup
+			DSCAlrtMgmt dSCAlrtMgmt = (DSCAlrtMgmt) lookupDataUnit(DSCAlrtMgmt.class);
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dSCAlrtMgmt.dSAlrtSvcSndHstTotCnt(requestData, onlineCtx);
+			alrtSvcHstTtCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+			// 3. LIST DM 호출
+			responseData = dSCAlrtMgmt.dSAlrtSvcSndHstPaging(reqDs, onlineCtx);
+			alrtSvcHstRs = responseData.getRecordSet("RS_ALRT_SVC_SND_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(alrtSvcHstRs, reqDs, alrtSvcHstTtCnt);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 임지후 (jihooyim)
+	 * @since 2014-08-21 13:50:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	private  IDataSet _sendEmail(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    
+	    try {
+	    	//입력 파라미터 확인 
+	    	// 필수값 체크
+	    	if ( StringUtils.isEmpty(requestData.getField("SENDER_EMAIL_ADDR")) ) {
+				throw new BizRuntimeException("HPC00716"); // 필수입력항목 발신자 이메일주소가 누락되었습니다. 
+			}	
+			if ( StringUtils.isEmpty(requestData.getField("RECV_EMAIL_ADDR")) ) {
+				throw new BizRuntimeException("HPC00717"); // 필수입력항목 수신자 이메일주소가 누락되었습니다.  
+			}	
+			if ( StringUtils.isEmpty(requestData.getField("EMAIL_TITLE")) ) {
+				throw new BizRuntimeException("HPC00718"); // 필수입력항목 이메일 제목이 누락되었습니다.   
+			}	
+			if ( StringUtils.isEmpty(requestData.getField("EMAIL_CONTENT")) ) {
+				throw new BizRuntimeException("HPC00719"); // 필수입력항목 이메일 내용이 누락되었습니다.   
+			}	
+			
+			String senderEmailAddr = requestData.getField("SENDER_EMAIL_ADDR");
+	    	String recvEmail = requestData.getField("RECV_EMAIL_ADDR");
+	    	String msgTitle = requestData.getField("EMAIL_TITLE");
+	    	String msgCtt  = requestData.getField("EMAIL_CONTENT");
+	    	
+	        //발신자 정보
+	        InternetAddress senderInfo = new InternetAddress(senderEmailAddr);	        
+	        //수신자 정보
+	        InternetAddress recipientInfo = new InternetAddress(recvEmail);
+	      			       
+	        //프로토콜 등 송신환경 설정
+	        HpcCode cnctInfo = HpcUtils.getCode("SCC021","DEFAULT");
+	        
+	    	String charSet = cnctInfo.getMgmtItemCd5();
+	        Properties props = System.getProperties();
+	        props.put("mail.transport.protocol", cnctInfo.getMgmtItemCd1());  
+	        props.put("mail.smtp.host",  cnctInfo.getMgmtItemCd2());  
+	        props.put("mail.smtp.port", cnctInfo.getMgmtItemCd3());  
+	        props.put("mail.smtp.auth", cnctInfo.getMgmtItemCd4());  
+	        	         
+	        
+	        //세션 설정
+	        Session session = Session.getDefaultInstance(props,null);
+	        session.setDebug(true); //for debug	          
+	        MimeMessage mimeMessage = new MimeMessage(session);
+	        
+	        //발신자   
+	        mimeMessage.setFrom(senderInfo); 
+	        //수신자 
+	        mimeMessage.setRecipient(Message.RecipientType.TO, recipientInfo);
+	        //이메일 제목	       
+	        mimeMessage.setSubject(msgTitle ,charSet);
+	        //이메일 내용
+	        mimeMessage.setText(msgCtt, charSet);	        
+	       // 이메일 헤더
+	        mimeMessage.setHeader("content-Type", "text/html");
+	        
+	        //발송
+	        Transport.send(mimeMessage);
+	        
+	    } catch (AddressException addr_e) {
+	    	 throw new BizRuntimeException("DMS00009", addr_e);
+	    } catch (MessagingException msg_e) {
+	         throw new BizRuntimeException("DMS00009", msg_e);
+	    } catch (BizRuntimeException e) {
+	    	throw e;
+	    } catch (Exception e) {
+	    	throw new BizRuntimeException("DMS00009", e);
+	    } 	    
+	    return responseData;
+	}
+}

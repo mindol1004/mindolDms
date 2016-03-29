@@ -1,0 +1,603 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  comDataset.xjs
+ * 03. js 설명 : 공통 DataSet관련 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+
+/************************************************************************************************
+ * gfn_isUpdated                        : 데이터셋이 변경 됐는지 체크
+ * gfn_getDataset                       : 콤포넌트에 바인딩되어있는 데이타셋을 구한다.
+ * gfn_copyCheckedRow                   : source dataset의 check된 row의 데이타를 target dataset으로 카피.
+ * gfn_filterSingle                     : Dataset 단일 Filter
+ * gfn_filterSingle2                    : Dataset Filter된 문자열 포함 시 모두 필터됨 (like %검색어% 와 동일)
+ * gfn_filterMulti                      : Dataset 다중 Filter
+ * gfn_singleRow2Array                  : Dataset의 해당 Row를 Column 수만큼의 Array로 만든다.
+ * gfn_multiRow2Array                   : Dataset의 선택된 Row등을 Column 수만큼의 Array로 만든다.
+ * gfn_copySingleRow2Dataset            : Dataset의 해당 Row를 Column 수만큼의 Dataset 만든다.
+ * gfn_copyMultiRow2Dataset             : Dataset의 선택된 Row들을 Column 수만큼의 Dataset으로 만든다.
+ * gfn_checkValueDs                     : 입력된 데이터셋의 컬럼값 NULL CHECK
+ * gfn_checkValueDsRow                  : 입력된 데이셋의 특정 Row의 컬럼값 NULL CHECK
+ * gfn_nvlZero                          : Dataset에서 Null 값을 0으로 치환하는 함수
+ * gfn_makeDataSetMulti                 : DATASET 동적생성
+ * gfn_makeDataSet                      : DATASET 동적생성
+ * gfn_saveMiplatformXml                : Report Design용 XML 파일을 리턴한다.
+ * gfn_saveReportDesigndXml             : Report Design용 XML 파일을 리턴한다.
+ * gfn_delDs                            : 데이타셋 행 삭제 처리 함수(Check된 Row Multi삭제)
+ * gfn_importExcel                      : 선택된 Excel 파일을 Dataset으로 변환한다.
+ * gfn_importExcelRtnPath				: 선택된 Excel 파일을 Dataset으로 변환하고 경로를 리턴한다.
+ * gfn_importCSV                        : 선택된 CSV 파일을 Dataset으로 변환한다.
+ * gfn_importTXT                        : 선택된 TXT 파일을 Dataset으로 변환한다.
+ * gfn_dsTrim							: Dataset의 수정,신규입력 데이터의 trim을 처리한다. 
+************************************************************************************************/
+
+/************************************************************************************************
+ * Function : 데이터셋이 변경 됐는지 체크
+ * @param   : objDs : dataset object
+ * Return   : true - 데이터셋 업데이트 됨, false - 데이터셋 변경 없음
+************************************************************************************************/
+function gfn_isUpdated(objDs)
+{
+	if(objDs == null) return false;
+	if(objDs.getDeletedRowCount() > 0) return true;
+	if(objDs.rowcount == 0) return false;
+
+	for(var i=0; i<objDs.rowcount; i++){
+		if(objDs.getRowType(i) != 1) return true;
+	}
+
+	return false;
+}
+
+/************************************************************************************************
+ * Function : Form에 있는 모든 데이터셋 중에서 변경여부 체크
+ * @param   : objForm : Object Form
+ * @param   : sExDs : 검색예외 Dataset
+ * Return   : true - 데이터셋 업데이트 됨, false - 데이터셋 변경 없음
+************************************************************************************************/
+function gfn_isFormUpdated(objForm ,sExDs)
+{
+	if ( gfn_isNull(sExDs) ) sExDs = " ";
+	
+	var _objComp = objForm.all;
+
+	for (var i=0; i<_objComp.length; i++) {
+		if ( (_objComp[i].toString() == "[object Dataset]") && ((_objComp[i].name).indexOf(sExDs) == -1) ) {
+			if ( gfn_isUpdated(_objComp[i]) ) {
+				return true;
+			}
+		}
+	}
+	
+	return false;
+}
+/************************************************************************************************
+ * Function : 콤포넌트에 바인딩되어있는 데이타셋을 구한다.
+ * @param   : obj - object
+ * Return   : object에 바인딩된 데이타셋
+************************************************************************************************/
+ function gfn_getDataset(obj)
+ {
+	if(obj instanceof Grid)
+		return obj.binddataset;
+	else{
+		var bindlist = this.binds;
+
+		for(var i=0; i<bindlist.length; i++){
+			if(obj.name == bindlist[i].compid)
+				return bindlist[i].datasetid;
+		}
+	}
+}
+
+/************************************************************************************************
+ * Function : source dataset의 check된 row의 데이타를 target dataset으로 카피.
+ *            target dataset을 컬럼정의없이 만들어 놓고 사용.
+ * @param   : objSrcDs	- source dataset
+ * @param   : objTgtDs	- target dataset
+ * @param   : sChkColId	- check컬럼(string)
+ * @param   : bCheck - check : true(default), uncheck : false
+ * Return   : Boolean - copy row 존재:true/ 존재한 row 수, copy row 없음 : flase/0
+************************************************************************************************/
+function gfn_copyCheckedRow(objSrcDs, objTgtDs, sChkColId, bCheck)
+{
+	if (objSrcDs.rowcount == 0) return 0;
+	if (gfn_isNull(sChkColId)) sChkColId = "ROW_CHK";
+	if (gfn_isNull(bCheck)) bCheck = false;
+	if (objSrcDs.getColumnInfo(sChkColId) == null) return 0;
+
+	var iRow = -1, iChkCnt = 0;
+
+	objTgtDs.assign(objSrcDs);
+	objTgtDs.clearData();
+
+	for(var i=0; i<objSrcDs.rowcount; i++){
+		if(objSrcDs.getColumn(i, sChkColId) == bCheck){
+			iRow = objTgtDs.addRow();
+			objTgtDs.copyRow(iRow, objSrcDs, i);
+			iChkCnt++;
+		}
+	}
+	return iChkCnt;
+}
+
+/************************************************************************************************
+ * Function : Dataset 단일 Filter
+ * @param   : objDS	- Dataset object
+ * @param   : sColId - 필터 컬럼명
+ * @param   : sFilter - 필터 문자열
+ * @param   : bOper - 필터 연산자	"true(default): '==', false: '!='"
+ * Return   : void
+************************************************************************************************/
+function gfn_filterSingle(objDS, sColId, sFilter, bOper)
+{
+	if(objDS == null) return;
+	if(gfn_isNull(bOper)) bOper = true;
+
+	var sOper;
+
+	if(bOper) sOper = " == ";
+	else sOper = " != ";
+
+	if(gfn_isNull(sColId) || gfn_isNull(sFilter))
+		objDS.filter("");
+	else
+		objDS.filter(sColId + sOper + wrapQuote(sFilter));
+}
+
+/************************************************************************************************
+ * Function : Dataset Filter된 문자열 포함 시 모두 필터됨 (like %검색어% 와 동일)
+ * @param   : objDS	- Dataset object
+ * @param   : sColId - 필터 컬럼명
+ * @param   : sFilter - 필터 문자열
+ * Return   : void
+************************************************************************************************/
+function gfn_filterSingle2(objDS, sColId, sFilter)
+{
+	if(objDS == null) return;
+
+	if(gfn_isNull(sColId) || gfn_isNull(sFilter))
+		objDS.filter("");
+	else
+		objDS.filter(strCol + ".toString().indexOf("+wrapQuote(sFilter)+") > -1");
+}
+
+/************************************************************************************************
+ * Function : Dataset 다중 Filter
+ * @param   : objDS	- Dataset object
+ * @param   : sColIds - 필터 컬럼명
+ * @param   : sFilterExprs - 필터 문자열
+ * @param   : bOper - 필터 연산자	"true(default): '==', false: '!='"
+ * Return   : void
+************************************************************************************************/
+function gfn_filterMulti(objDS, sColId, sFilters, bOper)
+{
+	if(objDS == null) return;
+
+
+	if(gfn_isNull(sColId) || gfn_isNull(sFilters))
+		objDS.filter("");
+	else{
+		var aFilter = sFilters.split(",");
+		var sOper, sAO, sFilterExpr;
+
+		if(gfn_isNull(bOper)) bOper = true;
+
+		if(bOper){
+			sOper = "==";
+			sAO = "||";
+		}
+		else{
+			sOper = "!=";
+			sAO = "&&";
+		}
+
+		for(var i=0; i<aFilter.length; i++){
+			if(i > 0) sFilterExpr += " " + sAO + " ";
+
+			sFilterExpr = sColId + sOper + wrapQuote(aFilter[i]);
+		}
+
+		objDS.filter(sFilterExpr);
+	}
+}
+
+/************************************************************************************************
+ * Function : Dataset의 해당 Row를 Column 수만큼의 Array로 만든다.
+ * @param   : objDs - Dataset Object
+ * @param   : iRow - Dataset Row Number
+ * Return   : 변환된 Array
+************************************************************************************************/
+function gfn_singleRow2Array(objDs, iRow)
+{
+	if(objDs == null || objDs.rowcount == 0) return null;
+	if(gfn_isNull(iRow)) iRow = 0;
+
+	var aResult = new Array();
+
+	for(var i=0; i<objDs.getColCount(); i++)
+		aResult[i] = objDs.getColumn(iRow, objDs.getColID(i));
+
+	return aResult;
+}
+
+/************************************************************************************************
+ * Function : Dataset의 선택된 Row등을 Column 수만큼의 Array로 만든다.
+ * @param   : objDs - Dataset Object
+ * @param   : sChkColId - Checkbox ColId
+ * Return   : 변환된 Array
+************************************************************************************************/
+function gfn_multiRow2Array(objDs, sChkColId)
+{
+	if(objDs == null || objDs.rowcount == 0) return null;
+	if(gfn_isNull(sChkColId)) sChkColId = "ROW_CHK";
+
+	var aResult = new Array();
+	var aTmp = new Array();
+
+	for(var i=0,k=0; i<objDs.rowcount; i++){
+		if(objDs.getColumn(i, sChkColId) == CONST_CHECKED){
+			for(var j=0; j<objDs.getColCount(); j++)
+				aTmp[j] = objDs.getColumn(i, objDs.getColID(j));
+
+			aResult[k++] = aTmp;
+		}
+	}
+
+	return aResult;
+}
+
+/************************************************************************************************
+ * Function : Dataset의 해당 Row를 Column 수만큼의 Dataset 만든다.
+ * @param   : objDs - Dataset Object
+ * @param   : iRow - Dataset Row Number
+ * Return   : 해당 행의 데이터만 있는 Dataset
+************************************************************************************************/
+function gfn_copySingleRow2Dataset(objDs, iRow)
+{
+	if(gfn_isNull(iRow)) return null;
+	if(objDs == null || objDs.rowcount == 0) return null;
+
+	var objDsRtn = new Dataset();
+	var iAddRow = objDsRtn.addRow();
+
+	objDsRtn.assign(objSrcDs);
+	objDsRtn.clearData();
+	objDsRtn.copyRow(iAddRow, objDs, iRow);
+
+	return objDsRtn;
+}
+
+/************************************************************************************************
+ * Function : Dataset의 선택된 Row들을 Column 수만큼의 Dataset으로 만든다.
+ * @param   : objDs - Dataset Object
+ * @param   : sChkColId - Checkbox ColId
+ * Return   : 변환된 Dataset
+************************************************************************************************/
+function gfn_copyMultiRow2Dataset(objDs, sChkColId)
+{
+	if(objDs == null || objDs.rowcount == 0) return null;
+	if(gfn_isNull(sChkColId)) sChkColId = "ROW_CHK";
+
+	var iAddRow = -1;
+	var objDsRtn = new Dataset();
+
+	gfn_copyCheckedRow(objDs, objDsRtn, sChkColId, true);
+
+	return objDsRtn;
+}
+
+/************************************************************************************************
+ * Function : 입력된 데이터셋의 컬럼값 NULL CHECK
+ * @param   : objDs - Dataset Object
+ * @param   : sColId : Col Id ex) "SAMPLE_ID1=SAMPLE_NM1,SAMPLE_ID2=SAMPLE_NM2"
+ * Return   : boolean
+************************************************************************************************/
+function gfn_checkValueDs(objDs, sColIds)
+{
+	if(objDs == null) return true;
+	if(gfn_isNull(sColIds)) return true;
+
+	var iRowStatus = -1;
+
+	for(var i=0; i<objDs.rowcount; i++){
+		iRowStatus = objDs.getRowType(i);
+
+		if(iRowStatus == Dataset.ROWTYPE_INSERT || iRowStatus == Dataset.ROWTYPE_UPDATE){
+			if(!gfn_checkValueDsRow(objDs, sColIds, i)) return false;
+		}
+	}
+
+	return true;
+}
+
+/************************************************************************************************
+ * Function : 입력된 데이셋의 특정 Row의 컬럼값 NULL CHECK
+ * @param   : objDs : dataset object
+ * @param   : sColId : Col Id ex) "SAMPLE_ID1=SAMPLE_NM1,SAMPLE_ID2=SAMPLE_NM2"
+ * Return   : boolean
+************************************************************************************************/
+function gfn_checkValueDsRow(objDs, sColIds, iRow)
+{
+	var aColIdSet = sColIds.split(",");
+	var aColId;
+
+	for(var i=0; i<aColIdSet.length; i++){
+		aColId = aColIdSet[i].split("=");
+		if(!gfn_isNull(aColId[0]) && gfn_isNull(objDs.getColumn(iRow, aColId[0]))){
+			alert(aColId[1] + " 을(를) 입력하세요.");
+			objDs.rowposition = iRow;
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/************************************************************************************************
+ * Function : Dataset에서 Null 값을 0으로 치환하는 함수
+ * @param   : objDs : dataset object
+ * @param   : e : DSColChangeEventInfo 
+ * Return   : void
+************************************************************************************************/
+function gfn_nvlZero(objDs, e)
+{
+	var sChkValue = new String(e.newvalue);
+
+	objDs.setColumn(e.row, e.columnid, gfn_nvl(sChkValue, "0"));
+}
+
+/************************************************************************************************
+ * Function : DATASET 동적생성
+ * @param   : sDsName - 생성할 DATASET 기준ID
+ * @param   : nDsCnt  - 생성할 DATASET 갯수
+ * Return   : 최종 생성 Dataset Name
+************************************************************************************************/
+function gfn_makeDataSetMulti(sDsName, nDsCnt){
+	if(gfn_isNull(sDsName)) sDsName = "dsMakeTemp";
+
+	var sMakeDsName;
+	for ( i=0; i<nDsCnt; i++ ) {
+		sMakeDsName = sDsName + i.toString();
+		gfn_makeDataSet(sMakeDsName);
+	}
+
+	return sMakeDsName;
+}
+
+/************************************************************************************************
+ * Function : DATASET 동적생성
+ * @param   : sDsName - 생성할 DATASET ID
+ * Return   : Dataset
+************************************************************************************************/
+function gfn_makeDataSet(sDsName){
+	if(gfn_isNull(sDsName)) return;
+	
+	if( isValidObject(sDsName)) {
+		//trace("이미존재하는 데이타셋");
+		return eval(sDsName);
+	}
+
+	var objDataset = new Dataset();
+
+	objDataset.name = sDsName;
+	this.addChild(sDsName, objDataset);
+	
+	return objDataset;
+}
+
+/************************************************************************************************
+ * Function : Report Design용 XML 파일을 리턴한다.
+ * @param   : objDs:Dataset - Dataset Object
+ * Return   : XML 파일 Format
+************************************************************************************************/
+function gfn_saveMiplatformXml(objDs:Dataset)
+{
+	var objExt = new ExtCommon();
+	var sRtn:String = objExt.ds2mp_SaveXml(objDs, "A", true, "euc-kr");
+	objExt = null;
+	sRtn = sRtn.substr(sRtn.indexOf("<root>")+6);
+
+	return sRtn.substr(0, sRtn.length - 8);
+}
+
+/************************************************************************************************
+ * Function : Report Design용 XML 파일을 리턴한다.
+ * @param   : dsArr - Dataset Object Array
+ * Return   : XML 파일 Format
+************************************************************************************************/
+function gfn_saveReportDesigndXml(dsArr)
+{
+	var returnStr = "\n";
+	var defaultHeader = "<?xml version=\"1.0\" encoding=\"euc-kr\"?>\n" + "<root>	\n";
+	var bodyStr = "";
+	var defaultFooter = "</root> \n";
+	for(var i=0 ; i<dsArr.length; i++){
+		bodyStr += gfn_saveMiplatformXml(dsArr[i]);
+	}
+
+	returnStr += defaultHeader + bodyStr + defaultFooter;
+
+	return returnStr;
+}
+
+/************************************************************************************************
+ * Function : 데이타셋 행 삭제 처리 함수(Check된 Row Multi삭제)
+ * @param   : dsObj 	: 처리대상 데이타셋 오브젝트
+ * @param   : sChkCol 	: 처리대상 컬럼명( 디폴틀 : DATASET_COLUMN_CHECK
+ * Return   : 삭제된 Row수 ( -1 : 삭제취소)
+************************************************************************************************/
+function gfn_delDs(dsObj, sChkCol)
+{
+	var sConfirm = gfn_message("C","체크된 자료를 삭제하시겠습니까?");	//체크된 자료를 삭제하시겠습니까?
+	// CONST_RETURN_YES : "1"
+	if (sConfirm != CONST_RETURN_YES) return -1;
+	
+	if ( gfn_isNull(dsObj) ) return -1;
+	// DATASET_COLUMN_CHECK : "chkrow"
+	if ( gfn_isNull(dsObj) ) sChkCol = DATASET_COLUMN_CHECK;
+	
+	dsObj.enableevent = false;
+	var nDeleteRowCount = 0;
+	for(var i=dsObj.rowcount-1;i>=0;i--)
+	{
+		// CONST_CHECKED : "1"
+		if(dsObj.getColumn(i, sChkCol) == CONST_CHECKED) {
+			nDeleteRowCount++;
+			dsObj.deleteRow(i);
+		}
+	}	
+	dsObj.enableevent = true;	
+
+	return nDeleteRowCount;
+}
+
+/************************************************************************************************
+ * Function : 선택된 Excel 파일을 Dataset으로 변환한다.
+ * @param   : objDs - Dataset Object
+ * @param   : iSheetInx - SheetIndex ( 0~)
+ * @param   : iStartRow - 가져올 엑셀 데이터의 시작 행 위치( 1~)
+ * Return   : 성공 여부(성공 : 0 / 실패 : -1)
+************************************************************************************************/
+function gfn_importExcel(objDs, iSheetInx, iStartRow)
+{
+	if(gfn_isNull(iSheetInx)) iSheetInx = 0;
+	if(gfn_isNull(iStartRow)) iStartRow = 1;
+
+	var objFileDialog = new FileDialog;
+	objFileDialog.filter = gfn_getExtFilterString(FILE_TYPE_XLS);
+	var sFile = objFileDialog.open("SELECT EXCEL FILE", FileDialog.LOAD, "%MYDOCUMENT%");
+
+	if(sFile == null) return;
+	var sExcelFile = sFile.fullpath;
+
+	var objExt = new ExtCommon();
+	var sRtn = objExt.excelImportByIndexIS(sExcelFile, iSheetInx, objDs, 1, 1, 2, iStartRow);
+
+	objExt = null;
+
+	return sRtn;
+}
+
+/************************************************************************************************
+ * Function : 선택된 Excel 파일을 Dataset으로 변환하고 경로를 리턴한다.
+ * @param   : objDs - Dataset Object
+ * @param   : iSheetInx - SheetIndex ( 0~)
+ * @param   : iStartRow - 가져올 엑셀 데이터의 시작 행 위치( 1~)
+ * Return   : 파일경로
+************************************************************************************************/
+function gfn_importExcelRtnPath(objDs, iSheetInx, iStartRow)
+{
+	if(gfn_isNull(iSheetInx)) iSheetInx = 0;
+	if(gfn_isNull(iStartRow)) iStartRow = 1;
+
+	var objFileDialog = new FileDialog;
+	objFileDialog.filter = gfn_getExtFilterString(FILE_TYPE_XLS);
+	var sFile = objFileDialog.open("SELECT EXCEL FILE", FileDialog.LOAD, "%MYDOCUMENT%");
+
+	if(sFile == null) return;
+	var sExcelFile = sFile.fullpath;
+
+	var objExt = new ExtCommon();
+	var sRtn = objExt.excelImportByIndexIS(sExcelFile, iSheetInx, objDs, 1, 1, 2, iStartRow);
+
+	objExt = null;
+
+	return sExcelFile;
+}
+/************************************************************************************************
+ * Function : 선택된 CSV 파일을 Dataset으로 변환한다.
+ * @param   : objDs - Dataset Object
+ * @param   : objEdt - Edit Object
+ * Return   : 성공 여부(성공 : 0 / 실패 : -1)
+************************************************************************************************/
+function gfn_importCSV(objDs, objEdt, sDelimiter)
+{
+	var objFileDialog = new FileDialog;
+	objFileDialog.filter = gfn_getExtFilterString(FILE_TYPE_CSV);
+	var sFile = objFileDialog.open("SELECT CSV FILE", FileDialog.LOAD, "", "");
+
+	if(sFile == null) return;
+	var sCSVFile = sFile.fullpath;
+
+	if(objEdt != null)
+		objEdt.value = sCSVFile;
+
+	var objExt = new ExtCommon();
+	var sRtn = objExt.csv2Ds(sCSVFile, objDs.name, false, "", sDelimiter, true);
+	objExt = null;
+
+	return sRtn;
+}
+
+/************************************************************************************************
+ * Function : 선택된 TXT 파일을 Dataset으로 변환한다.
+ * @param   : objDs - Dataset Object
+ * @param   : objEdt - Edit Object
+ * @param   : sDelimiter - 구분자
+ * Return   : 성공 여부(성공 : 0 / 실패 : -1)
+************************************************************************************************/
+function gfn_importTXT(objDs, objEdt, sDelimiter)
+{
+	var objFileDialog = new FileDialog;
+
+	objFileDialog.filter = gfn_getExtFilterString(FILE_TYPE_TXT);
+	var sFile = objFileDialog.open("SELECT TEXT FILE", FileDialog.LOAD);
+
+	if(sFile == null) return;
+	var sTXTFile = sFile.fullpath;
+
+	if(objEdt != null)
+		objEdt.value = sTXTFile;
+
+	var objExt = new ExtCommon();
+	var sRtn = objExt.csv2Ds(sTXTFile, objDs.name, false, "", sDelimiter, true);
+	objExt = null;
+
+	return sRtn;
+}
+
+/*********************************************************************************************************
+ * Function : Dataset의 수정,신규입력 데이터의 trim을 처리한다. 
+ * @param   : objDs - Dataset Object
+ * @param   : objColList - Dataset의 trim 대상 컬럼 (구분자 ",") 입력값이 없는 경우는 전체 컬럼 대상
+ * Return   : void
+*********************************************************************************************************/
+function gfn_dsTrim(objDs,objColList)
+{
+	var trimText = "";
+    var colArray = "";
+    var colId ="";
+   	if(objColList != null && objColList != ""){
+		colArray = objColList.split(",");
+   	}
+  
+	for(var i=0; i<objDs.getRowCount();i++){
+		if(objDs.getRowType(i) == Dataset.ROWTYPE_INSERT || objDs.getRowType(i) == Dataset.ROWTYPE_UPDATE ){
+		 //신규나 업데이트된 row만 수정 
+		
+			if(colArray.length >0 ){
+			 //trim대상컬럼을 따로 지정한 경우 
+				for(var j=0; j<colArray.length;j++){ 	
+					colId = gfn_trim(colArray[j]);
+					trimText = gfn_trim(objDs.getColumn(i,colId)); //좌우공백제거값 
+					objDs.setColumn(i,colId,trimText);
+				}//column loop end
+			} else { 
+			//전체컬럼값을 trim처리  
+				for(var j=0; j<objDs.getColCount();j++){ 	
+					trimText = gfn_trim(objDs.getColumn(i,j)); //좌우공백제거값 
+					objDs.setColumn(i,j,trimText);
+				}//column loop end
+			}
+		}
+	} //row loop end    
+}]]></Script>

@@ -1,0 +1,160 @@
+package dms.nr.nrsfxbase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+import fwk.common.CommonArea;
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]FPA잔존가관리</li>
+ * <li>설  명 : <pre>[FU]FPA잔존가관리</pre></li>
+ * <li>작성일 : 2015-10-15 13:35:04</li>
+ * <li>작성자 : 문재웅 (jaiwoong)</li>
+ * </ul>
+ *
+ * @author 문재웅 (jaiwoong)
+ */
+public class FNRFpaRemprcMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRFpaRemprcMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>[FM]FPA잔존가모델조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-15 13:36:27
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaRemprcEqpMdlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet usrListRs = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DNRFpaRemprcMgmt dNRFpaRemprcMgmt = (DNRFpaRemprcMgmt) lookupDataUnit(DNRFpaRemprcMgmt.class);
+
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRFpaRemprcMgmt.dSFpaRemprcEqpMdlTotCnt(requestData, onlineCtx);
+            IRecordSet sumRs = dsCnt.getRecordSet("RS_SUM_LIST");
+            
+            intTotalCnt = Integer.parseInt(sumRs.get(0,"TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+            
+            // 3. LISTDM호출
+            responseData = dNRFpaRemprcMgmt.dSFpaRemprcEqpMdlLstPaging(requestData, onlineCtx);
+            usrListRs = responseData.getRecordSet("RS_FPA_REMPRC_EQP_MDL_LIST");  
+            
+            // 4.결과값 리턴
+            responseData.putRecordSet("RS_SUM_LIST", sumRs);
+            PagenateUtils.setPagenatedParamToRecordSet(sumRs, requestData, intTotalCnt);
+            
+            responseData.putRecordSet("RS_FPA_REMPRC_EQP_MDL_LIST",usrListRs);
+            PagenateUtils.setPagenatedParamToRecordSet(usrListRs, requestData, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]FPA잔존가조회</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-15 13:36:49
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaRemprcLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IRecordSet usrListRs = null;
+        int intTotalCnt = 0;
+
+        try {
+            // 1. DU lookup
+            DNRFpaRemprcMgmt dNRFpaRemprcMgmt = (DNRFpaRemprcMgmt) lookupDataUnit(DNRFpaRemprcMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNRFpaRemprcMgmt.dSFpaRemprcLst(requestData, onlineCtx);
+            usrListRs = responseData.getRecordSet("RS_FPA_REMPRC_LIST");  
+            
+            // 3.결과값 리턴
+            responseData.putRecordSet("RS_FPA_REMPRC_LIST",usrListRs);
+            PagenateUtils.setPagenatedParamToRecordSet(usrListRs, requestData, intTotalCnt);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[FM]FPA잔존가 등록/수정</pre>
+	 *
+	 * @author 문재웅 (jaiwoong)
+	 * @since 2015-10-16 10:17:20
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fFpaRemprcSave(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet reqDs = new DataSet();
+        // 처리 결과값을 responseData에 넣어서 리턴하십시요 
+        try {           
+            // 1. DU lookup
+            DNRFpaRemprcMgmt dNRFpaRemprcMgmt = (DNRFpaRemprcMgmt) lookupDataUnit(DNRFpaRemprcMgmt.class);
+            
+            String USER_NO = requestData.getField("USER_NO");
+            // 2. 업무 DM호출
+            // FPA 잔존가등록
+            IRecordSet rs = requestData.getRecordSet("RS_REMPRC_LIST"); 
+            for(int idx=0; idx<rs.getRecordCount(); ++idx){
+                reqDs.initField();
+                reqDs.putFieldMap( rs.getRecord(idx) );
+                reqDs.putField("USER_NO", USER_NO);
+                
+                reqDs.putField("EQP_MDL_CD", requestData.getField("EQP_MDL_CD_M"));
+                reqDs.putField("CAPA_CD", requestData.getField("CAPA_CD"));
+                reqDs.putField("OP_CL_CD", requestData.getField("OP_CL_CD"));
+                reqDs.putField("EQP_REMPRC_RMK", requestData.getField("EQP_REMPRC_RMK"));
+                responseData = dNRFpaRemprcMgmt.dIFpaRemprcSave(reqDs, onlineCtx);
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;    }
+  
+}

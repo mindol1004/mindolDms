@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR018">
+	<select id="SIFInsuInvObj" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR018.SIFInsuInvObj 인터페이스테이블 보증보험대상 정보 조회 */
+/* IO: 안진갑,2015-10-27T17:36:30(안진갑,2015-10-27T17:31:51) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,INSU_SVC_NO
+       ,CUST_TYP_CD
+       ,CTZ_COPREG_NO
+       ,CTZ_COPREG_NO_ENPT
+       ,CUST_NM
+       ,CUST_NM_ENPT
+       ,BLICENS_NO
+       ,INSU_MGMT_NO
+       ,SVC_MGMT_NO
+       ,RENTAL_SER_NO
+       ,RENTAL_SCRB_DT
+       ,RENTAL_TERM_DT
+       ,TTUL_CHG_DT
+       ,INSU_SCUR_NO
+       ,INSU_STA_DT
+       ,INSU_END_DT
+       ,INSU_SCRB_AMT
+       ,INSU_INV_AMT
+       ,FST_ARR_DT
+       ,INSU_RENTAL_INFO
+       ,CUST_CNTC_TEL_NO
+       ,CUST_CNTC_TEL_NO_ENPT
+       ,CUST_ZIPCD
+       ,CUST_BAS_ADDR
+       ,CUST_DTL_ADDR
+       ,CUST_DTL_ADDR_ENPT
+       ,ACNT_BAS_ADDR
+       ,ACNT_DTL_ADDR
+       ,ACNT_DTL_ADDR_ENPT
+       ,TEEN_NM
+       ,TEEN_NM_ENPT
+       ,TEEN_CTZ_REG_NO
+       ,TEEN_CTZ_REG_NO_ENPT
+       ,PSNL_RGEN_YN
+       ,PSNL_RGEN_STEP
+       ,PSNL_RGEN_RIBR_YN
+       ,PSNL_RGEN_RIBR_AMT
+       ,BRC_EXM_YN
+       ,NEWLINE
+  FROM  TF_INSU_INV_OBJ
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<insert id="IInsuInv" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR018.IInsuInv 보증보험청구등록 */
+/* IO: 안진갑,2015-10-27T17:56:49(안진갑,2015-10-27T17:39:11) */
+INSERT  INTO TB_INSU_INV
+(
+  INSU_INV_NO
+ ,UKEY_INSU_NO
+ ,UKEY_INSURE_MGMT_NO
+ ,INV_ST_CD
+ ,UKEY_INV_DT
+ ,UKEY_INV_AMT
+ ,DMS_INV_DT
+ ,DMS_INV_AMT
+ ,UNPD_RENTAL_FEE
+ ,DMG_CMP_UNRTN_AMT
+ ,ARR_ADD_AMT
+ ,RECV_ST_CD
+ ,UKEY_RECV_DT
+ ,UKEY_RECV_AMT
+ ,RSN_CD
+ ,INSU_INV_MEMO
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+ ,INV_PROC_DT
+)
+VALUES
+(
+  SQ01_TB_INSU_INV.NEXTVAL
+ ,#UKEY_INSU_NO#
+ ,#UKEY_INSURE_MGMT_NO#
+ ,#INV_ST_CD#
+ ,#UKEY_INV_DT#
+ ,#UKEY_INV_AMT#
+ ,#DMS_INV_DT#
+ ,#DMS_INV_AMT#
+ ,#UNPD_RENTAL_FEE#
+ ,#DMG_CMP_UNRTN_AMT#
+ ,#ARR_ADD_AMT#
+ ,#RECV_ST_CD#
+ ,#UKEY_RECV_DT#
+ ,#UKEY_RECV_AMT#
+ ,#RSN_CD#
+ ,#INSU_INV_MEMO#
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+ ,#INV_PROC_DT#
+)]]>
+	</insert>
+	<update id="UIFInsuInvObj" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR018.UIFInsuInvObj 인터페이스 테이블 업데이트 */
+/* IO: 안진갑,2015-10-27T17:58:21(안진갑,2015-10-27T17:44:17) */
+UPDATE  TF_INSU_INV_OBJ
+   SET  PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #PROC_DT#]]>
+	</update>
+</sqlMap>

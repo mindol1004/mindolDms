@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInsuMxclMgmt">
+	<select id="SInsuMxclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInsuMxclTotCnt 보증보험금(지급)총건수 */
+/* IO: 김혁범,2015-10-26T17:15:52(김혁범,2015-10-14T10:28:20) */
+SELECT   COUNT(1) AS TOTAL_CNT        
+  FROM
+      (
+       SELECT  A.DEBT_XCL_YM /*정산년월*/
+              ,COUNT(A.DEBT_ITM_AMT) AS DEBT_ITM_AMT_CNT
+              ,SUM(A.DEBT_ITM_AMT) AS DEBT_ITM_SUM_AMT /*총금액*/
+              ,B.XCL_AMT /*DMS금액*/
+              ,B.XCL_UKEY_INV_AMT /*SGI금액*/
+              ,A.DEBT_SLIP_NO /*전표번호*/
+              ,NVL(C.SLIP_CL_CD,'00') AS SLIP_CL_CD/*전표상태*/
+              ,A.DEBT_SLIP_DT /*처리일자*/
+              ,B.INVE_MATCHED /*보험금일치여부*/
+              ,D.SGI_INSURE_MGMT_NO /*보험관리번호*/
+              ,'' AS M_CNT
+              ,'' AS M_PRC
+              ,'' AS YYYYMM
+              ,'' AS YYYY
+         FROM  TB_XCL_DEBT A
+              ,(
+                SELECT  XCL_AMT /*DMS*/
+                       ,XCL_UKEY_INV_AMT /*SGI*/
+                       ,CASE WHEN XCL_AMT-XCL_UKEY_INV_AMT =0 THEN 'Y' ELSE 'N' END AS INVE_MATCHED /*(DMS - UKEY) 금액이 0이면 Y ,N*/
+                       ,XCL_DEALCO_CD
+                       ,SGI_INSU_NO
+                  FROM  TB_ETC_XCL  
+                 WHERE  XCL_ITM_CD = 'HP'     
+               )B
+              ,TB_SLIP C
+              ,TB_INSU_SGI D
+        WHERE  A.XCL_CL = 'HP'
+          AND  B.XCL_DEALCO_CD = A.DEBT_AGN_CD
+          AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+          AND  B.SGI_INSU_NO = D.SGI_INSU_NO(+) 
+          AND  A.OP_CL_CD = 'NR'
+          AND  B.INVE_MATCHED = 'Y' /*보험금일치여부가 'Y'일때 전표를 보여준다*/
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+               A.DEBT_XCL_YM = #XCL_YM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="SGI_INSURE_MGMT_NO"><![CDATA[
+               D.SGI_INSURE_MGMT_NO  = #SGI_INSURE_MGMT_NO#
+]]></isNotEmpty><![CDATA[ 
+     GROUP BY A.DEBT_XCL_YM
+             ,A.DEBT_ITM_AMT
+             ,B.XCL_AMT
+             ,B.XCL_UKEY_INV_AMT 
+             ,A.DEBT_SLIP_NO
+             ,NVL(C.SLIP_CL_CD,'00')
+             ,A.DEBT_SLIP_DT
+             ,B.INVE_MATCHED
+             ,D.SGI_INSURE_MGMT_NO
+     )PA]]>
+	</select>
+	<select id="SInsuMxclLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInsuMxclLstPaging 보증보험금(지급)조회 */
+/* IO: 김혁범,2015-10-23T15:35:47(김혁범,2015-10-14T10:28:54) */
+SELECT  SUBSTR(A.XCL_DT,0,6) AS XCL_DT  /*정산년월*/
+       ,A.SGI_INSU_NO /*보증보험관리번호*/
+       /*보험금요청상태*/
+       ,A.XCL_AMT     /*DMS금액*/ 
+       ,A.XCL_UKEY_INV_AMT  /*SGI금액*/
+       ,CASE
+           WHEN A.XCL_AMT - A.XCL_UKEY_INV_AMT = 0
+           THEN 'Y'
+        ELSE 'N'
+        END AS INVE_MATCHED /*보험금일치여부*/ 
+       ,A.XCL_DEALCO_CD
+ FROM  TB_ETC_XCL A
+      ,TB_INSU_SGI B
+WHERE  A.SGI_INSU_NO = B.SGI_INSU_NO(+)
+  AND  A.XCL_ITM_CD = 'HP'
+  AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+       SUBSTR(A.XCL_DT,0,6) = #XCL_YM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="SGI_INSURE_MGMT_NO"><![CDATA[
+       A.SGI_INSU_NO  = #SGI_INSURE_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInsuMxclSlipLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInsuMxclSlipLstPaging 보증보험금(지급)전표조회 */
+/* IO: 김혁범,2015-10-23T14:40:21(김혁범,2015-10-15T17:55:15) */
+SELECT  A.BOND_XCL_YM AS YYYYMM /*정산년월일*/
+       ,SUBSTR(A.BOND_XCL_YM,0,4) AS YYYY /*정산년월*/
+       ,C.CNT AS M_CNT /*총건수*/
+       ,C.DMS_AMT_SUM  /*DMS금액합계*/
+       ,A.BOND_ITM_AMT AS M_PRC /*채권항목금액*/
+       ,A.BOND_SLIP_NO AS SLIP_NO /*전표번호*/
+       ,B.SLIP_ST_CD /*전표상태코드*/
+       ,A.BOND_SLIP_DT AS SLIP_DT /*전표처리일자*/
+       ,C.MATCHED_YN /*보험금일치여부*/
+  FROM  TB_XCL_BOND A 
+       ,TB_SLIP B
+       ,(
+        SELECT  SUBSTR(XCL_DT,0,6) AS XCL_YM
+               ,XCL_ITM_CD
+               ,ETC_XCL_TS
+               ,COUNT(ETC_XCL_NO) AS CNT
+               ,NVL(SUM(XCL_AMT),0) AS SGI_AMT_SUM
+               ,NVL(SUM(XCL_UKEY_INV_AMT),0) AS DMS_AMT_SUM
+               ,MIN(DECODE(XCL_AMT-XCL_UKEY_INV_AMT,0,'Y','N')) AS MATCHED_YN
+          FROM  TB_ETC_XCL
+        GROUP BY SUBSTR(XCL_DT,0,6)
+                ,XCL_ITM_CD
+                ,ETC_XCL_TS
+       ) C
+ WHERE  A.BOND_SLIP_NO = B.SLIP_NO(+)
+   AND A.BOND_XCL_YM    = C.XCL_YM
+   AND A.XCL_ITM_CL     = C.XCL_ITM_CD
+   AND A.BOND_SALE_TS   = C.ETC_XCL_TS
+   AND A.OP_CL_CD       = 'NR'
+   AND A.XCL_ITM_CL     = 'HP'
+   AND A.BOND_XCL_YM = #XCL_YM#]]>
+	</select>
+	<select id="SInsuMxclSumTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInsuMxclSumTotCnt 보증보험금(지급)채권금액 총건수,총금액 */
+/* IO: 김혁범,2015-10-23T16:31:17(김혁범,2015-10-16T16:19:55) */
+SELECT  SUM(A.BOND_ITM_AMT) AS M_AMT
+       ,B.CNT AS M_CNT
+  FROM  TB_XCL_BOND A
+       ,(SELECT  SUBSTR(XCL_DT,0,6) AS XCL_YM
+                ,XCL_ITM_CD
+                ,ETC_XCL_TS
+                ,COUNT(ETC_XCL_NO)     AS CNT
+           FROM  TB_ETC_XCL
+          WHERE  XCL_ITM_CD = 'HP'
+          GROUP  BY SUBSTR(XCL_DT,0,6), XCL_ITM_CD, ETC_XCL_TS
+        ) B
+ WHERE  A.BOND_XCL_YM = B.XCL_YM
+   AND  A.XCL_ITM_CL = B.XCL_ITM_CD
+   AND  A.BOND_SALE_TS = B.ETC_XCL_TS 
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_ITM_CL = 'HP'
+   AND  A.BOND_XCL_YM = #XCL_YM#
+ GROUP  BY B.CNT]]>
+	</select>
+	<select id="SInqInsuMxclAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInqInsuMxclAllExcel 보증보험금(지급)전체엑셀다운로드 */
+/* IO: 김혁범,2015-10-26T17:17:16(김혁범,2015-10-20T11:16:21) */
+SELECT  SUBSTR(A.XCL_DT,0,6) AS "정산년월"  
+       ,A.SGI_INSU_NO AS "보증보험관리번호" 
+       /*보험금요청상태*/
+       ,A.XCL_AMT AS "DMS금액"      
+       ,A.XCL_UKEY_INV_AMT AS "SGI금액"  
+       ,CASE
+           WHEN A.XCL_AMT - A.XCL_UKEY_INV_AMT = 0
+           THEN 'Y'
+        ELSE 'N'
+        END AS "보험금일치여부" 
+ FROM  TB_ETC_XCL A
+      ,TB_INSU_SGI B
+WHERE  A.SGI_INSU_NO = B.SGI_INSU_NO(+)
+  AND  A.XCL_ITM_CD = 'HP'
+  AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+       SUBSTR(A.XCL_DT,0,6) = #XCL_YM#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInsuRfndXclSlipLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInsuRfndXclSlipLstPaging 보증보험금(환급)전표조회 */
+/* IO: 김혁범,2015-10-26T17:12:06(김혁범,2015-10-21T17:12:15) */
+SELECT  A.DEBT_XCL_YM AS YYYYMM /*정산년월일*/
+       ,SUBSTR(A.DEBT_XCL_YM,0,4) AS YYYY /*정산년월*/
+       ,C.CNT AS M_CNT /*총건수*/
+       ,C.DMS_AMT_SUM  /*DMS금액합계*/
+       ,A.DEBT_ITM_AMT AS M_PRC /*채권항목금액*/
+       ,A.DEBT_SLIP_NO AS SLIP_NO /*전표번호*/
+       ,B.SLIP_ST_CD /*전표상태코드*/
+       ,A.DEBT_SLIP_DT AS SLIP_DT /*전표처리일자*/
+       ,C.MATCHED_YN /*보험금일치여부*/
+  FROM  TB_XCL_DEBT A 
+       ,TB_SLIP B
+       ,(
+         SELECT  SUBSTR(XCL_DT,0,6) AS XCL_YM
+                ,XCL_ITM_CD
+                ,ETC_XCL_TS
+                ,COUNT(ETC_XCL_NO) AS CNT
+                ,NVL(SUM(XCL_AMT),0) AS SGI_AMT_SUM
+                ,NVL(SUM(XCL_UKEY_INV_AMT),0) AS DMS_AMT_SUM
+                ,MIN(DECODE(XCL_AMT-XCL_UKEY_INV_AMT,0,'Y','N')) AS MATCHED_YN
+           FROM  TB_ETC_XCL
+         GROUP BY SUBSTR(XCL_DT,0,6)
+                 ,XCL_ITM_CD
+                 ,ETC_XCL_TS
+        ) C
+ WHERE  A.DEBT_SLIP_NO = B.SLIP_NO(+)
+   AND  A.DEBT_XCL_YM    = C.XCL_YM
+   AND  A.XCL_CL     = C.XCL_ITM_CD
+   AND  A.DEBT_PRCH_TS   = C.ETC_XCL_TS
+   AND  A.OP_CL_CD       = 'NR'
+   AND  A.XCL_CL     = 'HR'
+   AND  A.DEBT_XCL_YM =  #XCL_YM#]]>
+	</select>
+	<select id="SInsuRfndXclSumTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInsuRfndXclSumTotCnt 보증보험금(환급)채무금액 총건수,총금액 */
+/* IO: 김혁범,2015-10-23T16:52:47(김혁범,2015-10-21T17:19:01) */
+SELECT  SUM(A.DEBT_ITM_AMT) AS M_AMT
+       ,B.CNT AS M_CNT
+  FROM  TB_XCL_DEBT A
+       ,(SELECT  SUBSTR(XCL_DT,0,6) AS XCL_YM
+                ,XCL_ITM_CD
+                ,ETC_XCL_TS
+                ,COUNT(ETC_XCL_NO)     AS CNT
+           FROM  TB_ETC_XCL
+          WHERE  XCL_ITM_CD = 'HR'
+          GROUP  BY SUBSTR(XCL_DT,0,6), XCL_ITM_CD, ETC_XCL_TS
+        ) B
+ WHERE  A.DEBT_XCL_YM = B.XCL_YM
+   AND  A.XCL_CL = B.XCL_ITM_CD
+   AND  A.DEBT_PRCH_TS = B.ETC_XCL_TS 
+   AND  A.OP_CL_CD = 'NR'   
+   AND  A.XCL_CL = 'HR'
+   AND  A.DEBT_XCL_YM = #XCL_YM#
+ GROUP  BY B.CNT]]>
+	</select>
+	<select id="SInsuRfndXclLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInsuRfndXclLstPaging 보증보험금(환급)조회 */
+/* IO: 김혁범,2015-10-26T17:07:15(김혁범,2015-10-21T17:21:06) */
+SELECT  SUBSTR(A.XCL_DT,0,6) AS XCL_DT  /*정산년월*/
+       ,A.SGI_INSU_NO /*보증보험관리번호*/
+       /*보험금요청상태*/
+       ,A.XCL_AMT     /*DMS금액*/ 
+       ,A.XCL_UKEY_INV_AMT  /*SGI금액*/
+       ,CASE
+           WHEN A.XCL_AMT - A.XCL_UKEY_INV_AMT = 0
+           THEN 'Y'
+        ELSE 'N'
+        END AS INVE_MATCHED /*보험금일치여부*/ 
+       ,A.XCL_DEALCO_CD
+ FROM  TB_ETC_XCL A
+      ,TB_INSU_SGI B
+WHERE  A.SGI_INSU_NO = B.SGI_INSU_NO(+)
+  AND  A.XCL_ITM_CD = 'HR'
+  AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+       SUBSTR(A.XCL_DT,0,6) = #XCL_YM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="SGI_INSURE_MGMT_NO"><![CDATA[
+       A.SGI_INSU_NO  = #SGI_INSURE_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInsuRfndXclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInsuRfndXclTotCnt 보증보험금(환급)총건수 */
+/* IO: 김혁범,2015-10-26T17:14:33(김혁범,2015-10-21T17:23:22) */
+SELECT   COUNT(1) AS TOTAL_CNT        
+  FROM
+      (
+       SELECT  A.DEBT_XCL_YM /*정산년월*/
+              ,COUNT(A.DEBT_ITM_AMT) AS DEBT_ITM_AMT_CNT
+              ,SUM(A.DEBT_ITM_AMT) AS DEBT_ITM_SUM_AMT /*총금액*/
+              ,B.XCL_AMT /*DMS금액*/
+              ,B.XCL_UKEY_INV_AMT /*SGI금액*/
+              ,A.DEBT_SLIP_NO /*전표번호*/
+              ,NVL(C.SLIP_CL_CD,'00') AS SLIP_CL_CD/*전표상태*/
+              ,A.DEBT_SLIP_DT /*처리일자*/
+              ,B.INVE_MATCHED /*보험금일치여부*/
+              ,D.SGI_INSURE_MGMT_NO /*보험관리번호*/
+              ,'' AS M_CNT
+              ,'' AS M_PRC
+              ,'' AS YYYYMM
+              ,'' AS YYYY
+         FROM  TB_XCL_DEBT A
+              ,(
+                SELECT  XCL_AMT /*DMS*/
+                       ,XCL_UKEY_INV_AMT /*SGI*/
+                       ,CASE WHEN XCL_AMT-XCL_UKEY_INV_AMT =0 THEN 'Y' ELSE 'N' END AS INVE_MATCHED /*(DMS - UKEY) 금액이 0이면 Y ,N*/
+                       ,XCL_DEALCO_CD
+                       ,SGI_INSU_NO
+                  FROM  TB_ETC_XCL  
+                 WHERE  XCL_ITM_CD = 'HR'     
+               )B
+              ,TB_SLIP C
+              ,TB_INSU_SGI D
+        WHERE  A.XCL_CL = 'HR'
+          AND  B.XCL_DEALCO_CD = A.DEBT_AGN_CD
+          AND  A.DEBT_SLIP_NO = C.SLIP_NO(+)
+          AND  B.SGI_INSU_NO = D.SGI_INSU_NO(+) 
+          AND  A.OP_CL_CD = 'NR'
+          AND  B.INVE_MATCHED = 'Y' /*보험금일치여부가 'Y'일때 전표를 보여준다*/
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+               A.DEBT_XCL_YM = #XCL_YM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="SGI_INSURE_MGMT_NO"><![CDATA[
+               D.SGI_INSURE_MGMT_NO  = #SGI_INSURE_MGMT_NO#
+]]></isNotEmpty><![CDATA[ 
+     GROUP BY A.DEBT_XCL_YM
+             ,A.DEBT_ITM_AMT
+             ,B.XCL_AMT
+             ,B.XCL_UKEY_INV_AMT 
+             ,A.DEBT_SLIP_NO
+             ,NVL(C.SLIP_CL_CD,'00')
+             ,A.DEBT_SLIP_DT
+             ,B.INVE_MATCHED
+             ,D.SGI_INSURE_MGMT_NO
+     )PA]]>
+	</select>
+	<select id="SInqInsuRfndXclAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuMxclMgmt.SInqInsuRfndXclAllExcel 보증보험금(환급)전체엑셀다운로드 */
+/* IO: 김혁범,2015-10-26T17:17:12(김혁범,2015-10-22T13:51:51) */
+SELECT  SUBSTR(A.XCL_DT,0,6) AS "정산년월"  
+       ,A.SGI_INSU_NO AS "보증보험관리번호" 
+       /*보험금요청상태*/
+       ,A.XCL_AMT AS "DMS금액"      
+       ,A.XCL_UKEY_INV_AMT AS "SGI금액"  
+       ,CASE
+           WHEN A.XCL_AMT - A.XCL_UKEY_INV_AMT = 0
+           THEN 'Y'
+        ELSE 'N'
+        END AS "보험금일치여부" 
+ FROM  TB_ETC_XCL A
+      ,TB_INSU_SGI B
+WHERE  A.SGI_INSU_NO = B.SGI_INSU_NO(+)
+  AND  A.XCL_ITM_CD = 'HR'
+  AND  A.OP_CL_CD = 'NR'
+]]><isNotEmpty prepend="AND" property="XCL_YM"><![CDATA[
+       SUBSTR(A.XCL_DT,0,6) = #XCL_YM#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

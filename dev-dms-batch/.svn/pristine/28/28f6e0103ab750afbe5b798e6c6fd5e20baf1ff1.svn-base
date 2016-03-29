@@ -1,0 +1,182 @@
+package dms.ep;
+
+import java.util.HashMap;
+import nexcore.framework.bat.IBatchContext;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.logging.Log;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : DMS-IF/인터페이스</li>
+ * <li>서브 업무명 : BIF110</li>
+ * <li>설  명 : <pre>[EP]단말기별 회수일자</pre></li>
+ * <li>작성일 : 2015-08-10 11:07:57</li>
+ * <li>작성자 : 이준우 (newnofixing)</li>
+ * </ul>
+ */
+public class DBE005 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+
+    /**
+     * 배치 생성자. 상위클래스 생성자 호출
+     */
+    public DBE005() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        Log log = getLog(context);
+		
+		processCnt = 0;
+		taskNo = "";
+		procFileName = "";
+		
+		IOnlineContext  onlineCtx  = makeOnlineContext(context);
+		IDataSet reqDS = new DataSet();
+		IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq", reqDS, onlineCtx);
+		taskNo = resDS.getField("TASK_NO");
+		
+		reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "EP");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS, onlineCtx);
+
+        log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+		
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+        // 트랜잭션 시작
+        txBegin();  
+        dbStartSession();
+        dbBeginBatch();
+        
+        /* SQL ParmaMap 설정 */
+        HashMap<String, Object> paramMap = new HashMap<String,Object>();
+        paramMap.put("PROC_DT", context.getInParameter("PROC_DT"));             //파라메터 날짜받기
+        
+        try {
+            dbSelect("SIfByeqpClctDt", paramMap, makeRecordHandler(context), context); // IF_단말기별회수일자 조회  
+            
+        } catch (Exception e) {         
+            throw new BizRuntimeException("M00001", e);
+        }
+        
+        // 트랜잭션 커밋
+        dbEndBatch();
+        dbEndSession();
+        txCommit();
+    }
+        
+    
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext    onlineCtx  = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_CNT", "" + processCnt);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        }else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+        }
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "dUBatTaskOpHst", reqDS, onlineCtx);
+        
+        Log log = getLog(context);
+        if(log.isDebugEnabled()) {
+            log.debug("공유컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+    }
+    
+    /**
+     * 상담관리상세대상IF조회 후 레코드 단위로 상담관리상세대상 테이블에 입력
+     * 
+     */
+    public AbsRecordHandler makeRecordHandler(IBatchContext context) {
+    
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+            
+            @Override
+            public void handleRecord(IRecord row) {
+
+                context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+//                context.getLogger().debug("XXXXXXXXXXXXX " + row);
+                                 
+                HashMap<String, Object> paramMap = new HashMap<String,Object>();                    
+                                
+                paramMap.put("IF_PROC_DT", StringUtils.nvlObject(row.get("IF_PROC_DT"),""));
+                paramMap.put("IF_FILE_NM", StringUtils.nvlObject(row.get("IF_FILE_NM"),""));
+                paramMap.put("IF_SEQ", StringUtils.nvlObject(row.get("IF_SEQ"),""));
+                
+                paramMap.put("CNSL_MGMT_NO", StringUtils.nvlObject(row.get("CNSL_MGMT_NO"),""));
+                paramMap.put("CLCT_DT", StringUtils.nvlObject(row.get("CLCT_DT"),""));
+                paramMap.put("UPDATE_COUNT", StringUtils.nvlObject(row.get("UPDATE_CNT"),""));
+                
+//                context.getLogger().debug("###paramMap####### : ");
+                
+                if(null != row  ){
+//                    context.getLogger().debug("###paramMap####### : " + paramMap.toString());
+//                    context.getLogger().debug("상담관리 수정");
+                    dbUpdate("UConsultMgmt", paramMap, context);  // 상담관리 수정
+//                    context.getLogger().debug("매입관리 수정");
+                    dbUpdate("UPrchsMgmt", paramMap, context);  // 매입관리 수정
+//                    
+                    IRecord Record = dbSelectSingle("SPrchsOutMCnt", paramMap, context); //매입출고 카운트
+                    
+                    if(Record.getInt("CNT",0) > 0){
+                        dbDelete("DPrchsOutM", paramMap, context);             //매입출고이전정보 삭제
+                    } 
+//                    context.getLogger().debug("매입출고 등록");
+                    dbInsert("IPrchsOutM", paramMap, context);  // 매입출고 등록
+//                    context.getLogger().debug("IF상담관리상세수정");
+                    dbUpdate("UIfByeqpClctDt", paramMap, context);  // IF_단말기별회수일자 수정
+                    
+                }
+                processCnt++;
+            }
+        };
+        return rh;
+    }
+
+}
+
+
+

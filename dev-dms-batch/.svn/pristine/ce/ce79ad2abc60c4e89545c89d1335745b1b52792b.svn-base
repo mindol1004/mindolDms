@@ -1,0 +1,249 @@
+package dms.pr;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+
+import nexcore.framework.bat.IBatchContext;
+
+import org.apache.commons.logging.Log;
+
+import bsh.StringUtil;
+import nexcore.framework.bat.base.AbsBatchComponent;
+import nexcore.framework.bat.base.AbsRecordHandler;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.DateUtils;
+import nexcore.framework.core.util.StringUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>서브 업무명 : BPR008</li>
+ * <li>설  명 : <pre>[PR]리패키징승인정보전송</pre></li>
+ * <li>작성일 : 2015-08-11 09:33:58</li>
+ * <li>작성자 : 양재석 (jsyang)</li>
+ * </ul>
+ */
+public class DBP009 extends AbsBatchComponent {
+    private int processCnt = 0;
+    private String taskNo = "";
+    private String procFileName = "";
+    
+    public DBP009() {
+        super();
+    }
+
+    /**
+     * 배치 전처리 메소드. 
+     * 여기서 Exception 발생시 execute() 메소드는 실행되지 않고, afterExecute() 는 실행됨
+     */
+    public void beforeExecute(IBatchContext context) {
+        
+        processCnt = 0;
+        taskNo = "";
+        procFileName = "";
+
+        IOnlineContext onlineCtx = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "fInqTaskNoSeq",
+                reqDS, onlineCtx);
+        taskNo = resDS.getField("TASK_NO");
+
+        reqDS.putField("TASK_DT", DateUtils.getCurrentDate());
+        reqDS.putField("TASK_ID", context.getInParameter("TASK_ID"));
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("TASK_NM", context.getInParameter("TASK_NM"));
+        reqDS.putField("GRP_ID", "PR");
+        reqDS.putField("INST_CD", "DMS");
+        reqDS.putField("BAT_TASK_PROC_ST_CD", "B");
+        reqDS.putField("PROC_CNT", "0");
+        reqDS.putField("FS_REG_USER_ID", "BAT");
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+
+        callOnlineBizComponent("sc.SCSBase", "fRegBatTaskOpHst", reqDS,
+                onlineCtx);
+        /*
+        Log log = getLog(context);
+        if (log.isDebugEnabled()) {
+            log.debug("BPR008(리패키징승인정보전송)_컴포넌트 호출 시작 :");
+
+            log.debug(resDS);
+        }
+        */
+    }
+
+    /**
+     * 배치 메인 메소드
+     */
+    public void execute(final IBatchContext context) {
+        // 트랜잭션 시작
+        txBegin();
+        dbStartSession();
+        dbBeginBatch();
+                
+        try {
+            dbSelect("SIfRpkgAprvInfo", null, makeRecordHandler(context), context); // 리패키징승인정보전송 조회 및 관련로직 처리
+        } catch (Exception e) {
+            throw new BizRuntimeException("M00001", e);
+        }
+                
+        // 트랜잭션 커밋
+        dbEndBatch();
+        dbEndSession();
+        txCommit();
+    }
+    
+    /**
+     * 배치 후처리 메소드. 
+     * beforeExecute(), execute() 의 Exception 발생 여부와 관계없이 이 메소드는 실행됨
+     */
+    public void afterExecute(IBatchContext context) {
+        IOnlineContext onlineCtx = makeOnlineContext(context);
+        IDataSet reqDS = new DataSet();
+        reqDS.putField("TASK_NO", taskNo);
+        reqDS.putField("PROC_CNT", "" + processCnt);
+        reqDS.putField("PROC_FILE_NM", procFileName);
+        reqDS.putField("LS_CHG_USER_ID", "BAT");
+        if (super.exceptionInExecute == null) {
+            // execute() 정상인 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "S");
+        } else {
+            // execute() 에서 에러 발생할 경우
+            reqDS.putField("BAT_TASK_PROC_ST_CD", "F");
+        }
+        IDataSet resDS = callOnlineBizComponent("sc.SCSBase", "dUBatTaskOpHst",
+                reqDS, onlineCtx);
+        /*
+        Log log = getLog(context);
+        if (log.isDebugEnabled()) {
+            log.debug("BPR008(리패키징승인정보전송)_컴포넌트 호출 결과:");
+            log.debug(resDS);
+        }
+        */
+    }
+    /**
+     * 리패키징승인정보전송 조회 및 관련로직 처리
+     * 
+     */
+    public AbsRecordHandler makeRecordHandler(IBatchContext context) {
+        AbsRecordHandler rh = new AbsRecordHandler(context) {
+            
+            @Override
+            public void handleRecord(IRecord row) {                                                             
+                context.setProgressCurrent(getCurrentRecordCount()); // 진행률 표시
+                //context.getLogger().debug("########### : " + row);
+
+                HashMap<String, Object> paramMap = new HashMap<String,Object>();
+                paramMap.put("EQP_MDL_CD", StringUtils.nvlObject(row.get("EQP_MDL_CD"),""));
+                paramMap.put("EQP_SER_NO", StringUtils.nvlObject(row.get("EQP_SER_NO"),""));
+                paramMap.put("APRV_PROC_DT", StringUtils.nvlObject(row.get("APRV_PROC_DT"),""));
+                paramMap.put("APRV_YN", StringUtils.nvlObject(row.get("APRV_YN"),""));
+                IRecord record = dbSelectSingle("SInqEqpAssetNo", row, context);  // 단말기자산번호조회     
+                IRecord recordTemp = null;
+                if( null != record ){
+                    paramMap.put("ASSET_NO", StringUtils.nvlObject(record.get("ASSET_NO"),""));
+                    //context.getLogger().debug("ASSET_NO(자산번호) : " + paramMap.get("ASSET_NO"));
+                    if("I".equals(row.get("APRV_CL_CD"))){  //초기등록
+                        //단말기 계약 정보 조회
+                        IRecord record2 = dbSelectSingle("SEqpCntrtInfo", paramMap, context);  // 단말기계약정보조회(월렌탈료,계약기간)
+                        if( null != record2 ){
+                            paramMap.put("CNTRT_NO", StringUtils.nvlObject(record2.get("CNTRT_NO"), "")); // 계약번호
+                            //context.getLogger().debug("CNTRT_NO(계약번호) : " + paramMap.get("CNTRT_NO"));
+                            //context.getLogger().debug("APRV_YN(승인여부) : " + paramMap.get("APRV_YN"));
+                            if("Y".equals(row.get("APRV_YN"))){ //승인여부
+                                String strStaDt = paramMap.get("APRV_PROC_DT").toString();
+                                String strEndSchdDt = DateUtils.addMonth(strStaDt, Integer.parseInt(record2.get("RENTAL_CNTRT_PRD")));
+                                strEndSchdDt = DateUtils.addDay(strEndSchdDt, -1);
+                                paramMap.put("RENT_END_SCHD_DT", strEndSchdDt);
+                                //context.getLogger().debug("APRV_PROC_DT(승인일자) : " + paramMap.get("APRV_PROC_DT"));
+                                //context.getLogger().debug("RENT_END_SCHD_DT(종료예정일자) : " + paramMap.get("RENT_END_SCHD_DT"));
+                                //1. 단말기계약 정보 수정(렌트시작일자,렌트종료예정일자,렌트승인여부)
+                                dbUpdate("UEqpCntrtInfoUpd", paramMap, context); 
+                                //2. 단말기계약상세생성(월별렌탈료)
+                                int nStaMth = Integer.parseInt(strStaDt.substring(0, 6));
+                                int nEndMth = Integer.parseInt(strEndSchdDt.substring(0, 6));
+                                int nSMthDay = DateUtils.getDaysOfMonth(strStaDt) - Integer.parseInt(strStaDt.substring(6, 8)) + 1;
+                                int nEMthDay = Integer.parseInt(strEndSchdDt.substring(6, 8));
+                                String strTemp = "";
+                                BigDecimal nRentalFee = new BigDecimal(0);
+                                BigDecimal nRemprc = new BigDecimal(0); //잔존가
+                                long nStaRentalFee = 0; //첫달
+                                long nRFee = 0;
+                                nRemprc = new BigDecimal(record2.getLong("EQP_PRCH_AMT")); //매입금액을 최초 잔존가로
+                                for(int i = nStaMth; i <= nEndMth; ){
+                                    //렌탈료계산
+                                    nRentalFee = record2.getBigDecimal("MM_RENTAL_FEE");
+                                    if(i == nStaMth && !"01".equals(strStaDt.substring(0, 8))){
+                                        nRFee = nSMthDay * (Long.valueOf(nRentalFee.toString()) / DateUtils.getDaysOfMonth(strStaDt));
+                                        nRentalFee = new BigDecimal(nRFee);
+                                        nStaRentalFee = nRFee;
+                                    } 
+                                    if(i == nEndMth && nStaMth != nEndMth){
+                                        strTemp = DateUtils.getLastDayOfMonth(strEndSchdDt);
+                                        if(!strTemp.equals(strEndSchdDt)){
+                                            nRFee = record2.getLong("MM_RENTAL_FEE");
+                                            nRentalFee = new BigDecimal(nRFee - nStaRentalFee);
+                                        }
+                                    }
+                                    nRemprc = new BigDecimal(Long.valueOf(nRemprc.toString()) - Long.valueOf(nRentalFee.toString()));
+                                    paramMap.put("RENTAL_FEE", nRentalFee);
+                                    paramMap.put("RENT_YM", String.valueOf(i)); //렌트년월
+                                    paramMap.put("REMPRC", nRemprc);
+                                    //context.getLogger().debug("RENT_YM(렌트년월) : " + paramMap.get("RENT_YM"));
+                                    //context.getLogger().debug("RENTAL_FEE(렌탈료) : " + paramMap.get("RENTAL_FEE"));
+                                    //단말기계약상세저장
+                                    dbInsert("IEqpCntrtDtlReg", paramMap, context);
+                                    //다음달구하기
+                                    strTemp = String.valueOf(i) + "01";
+                                    strTemp = DateUtils.addMonth(strTemp,1);
+                                    i = Integer.parseInt(strTemp.substring(0, 6));
+                                }
+                                //3. 단말기출고번호조회
+                                recordTemp = dbSelectSingle("SInqEqpOutSeq", record, context);
+                                paramMap.put("EQP_OUT_NO", StringUtils.nvlObject(recordTemp.get("EQP_OUT_NO"), "")); // 계약번호
+                                //4. 단말기출고데이터생성
+                                paramMap.put("EQP_OUT_DT", StringUtils.nvlObject(paramMap.get("APRV_PROC_DT"), "")); // 출고일자
+                                paramMap.put("OUT_DTL_CD", "10"); // 출고상세코드
+                                paramMap.put("OUT_DEALCO_CD", "0000000000"); // 출고처코드 SKT
+                                //context.getLogger().debug("########### : " + paramMap.toString());
+                                dbInsert("IEqpOutReg", paramMap, context);
+                                // 5.자산정보수정
+                                dbUpdate("UEqpAssetInfoUpd", paramMap, context); 
+                            }
+                            else{
+                                //1. 단말기계약 정보반려상태 수정(렌트승인여부)
+                                dbUpdate("UEqpCntrtInfoRjctStatUpd", paramMap, context); 
+                            }
+                            //I/F 테이블(TF_RPKG_APRV_INFO) 처리완료 상태 변경
+                            dbUpdate("UIfRpkgAprvInfoUpd", row, context); 
+                        }
+                    }
+                    else if("R".equals(row.get("APRV_CL_CD"))){  //리패키징
+                        //1. 단말기감정승인상태 변경
+                        dbUpdate("UEqpJdgAprvStatUpd", paramMap, context);
+                        if("Y".equals(row.get("APRV_YN"))){ //승인여부
+                            //2. 단말기출고번호조회
+                            recordTemp = dbSelectSingle("SInqEqpOutSeq", record, context);
+                            paramMap.put("EQP_OUT_NO", StringUtils.nvlObject(recordTemp.get("EQP_OUT_NO"), "")); // 계약번호
+                            //3. 단말기출고데이터생성
+                            paramMap.put("EQP_OUT_DT", StringUtils.nvlObject(paramMap.get("APRV_PROC_DT"), "")); // 출고일자
+                            paramMap.put("OUT_DTL_CD", "10"); // 출고상세코드
+                            paramMap.put("OUT_DEALCO_CD", "0000000000"); // 출고처코드 SKT
+                            //context.getLogger().debug("########### : " + paramMap.toString());
+                            dbInsert("IEqpOutReg", paramMap, context);
+                            //4.자산정보수정
+                            dbUpdate("UEqpAssetInfoUpd", paramMap, context);
+                        }
+                        //5. I/F 테이블(TF_RPKG_APRV_INFO) 처리완료 상태 변경
+                        dbUpdate("UIfRpkgAprvInfoUpd", row, context); 
+                    }
+                }
+                processCnt++;
+            }
+        };
+        return rh;
+    }
+}

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRInsuFeeMgmt">
+	<select id="SInqInsuFeeLstDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInqInsuFeeLstDtl 보증보험료정산상세조회 */
+/* IO: 안진갑,2015-10-16T16:55:25(장미진,2015-10-13T16:46:57) */
+SELECT  SUBSTR(A.NEW_CNTRT_DT,0,6) AS FEE_YM   /*정산년월*/
+       ,A.SVC_MGMT_NO                          /*서비스관리번호*/
+       ,C.EQP_MDL_NM                           /*모델명*/        
+       ,A.RENTAL_CNTRT_STA_DT                  /*계약일*/
+       ,DECODE(D.SGI_INSURE_MGMT_NO, NULL, E.UKEY_INSURE_MGMT_NO) AS INSURE_MGMT_NO /*보험관리번호*/
+       ,DECODE(D.SGI_INSURE_STA_DT, NULL, E.UKEY_INSURE_STA_DT) AS INSURE_STA_DT    /*보험가입일자*/
+       ,E.UKEY_INSURE_FEE                      /* DMS금액*/
+       ,D.SGI_INSURE_FEE                       /*SGI보험료*/
+       ,DECODE(E.UKEY_INSURE_FEE-D.SGI_INSURE_FEE,0,'Y','N') AS IS_FEE_MATCHED /*일치여부*/						       
+  FROM  TH_NR_CNTRT_HST A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_MDL C       
+       ,TB_INSU_SGI D
+       ,TB_INSU_UKEY E
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO(+)
+   AND  A.CNTRT_NO = E.CNTRT_NO(+)
+   AND  A.OP_TYP_CD = '01'
+   AND  D.OP_TYP_CD (+)= 'A1'
+   AND  E.OP_TYP_CD (+)= '01'
+   AND  SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) = #FEE_YM#
+]]><isNotEmpty prepend="AND" property="INSURE_MGMT_NO"><![CDATA[
+        (D.SGI_INSURE_MGMT_NO  = #INSURE_MGMT_NO# OR D.UKEY_INSURE_MGMT_NO = #INSURE_MGMT_NO#)
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SInqInsuFeeLstSlip" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInqInsuFeeLstSlip 보증보험료정산전표조회 */
+/* IO: 안진갑,2015-10-16T14:54:24(장미진,2015-10-13T16:48:20) */
+SELECT  COUNT(A.CNTRT_NO) AS CNT
+       ,A.FEE_YM             
+       ,NVL(SUM(A.SGI_INSURE_FEE),0) AS INSURE_FEE_SUM
+       ,A.XCL_SLIP_NO
+       ,A.XCL_ST_CD
+       ,A.XCL_PROC_DT
+       ,A.IS_FEE_MATCHED
+  FROM  (
+         SELECT  A.CNTRT_NO
+                ,SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) AS FEE_YM
+                ,B.SGI_INSURE_FEE
+                ,D.XCL_SLIP_NO
+                ,D.XCL_ST_CD
+                ,D.XCL_PROC_DT
+                ,DECODE(C.UKEY_INSURE_FEE-B.SGI_INSURE_FEE,0,'Y','N') AS IS_FEE_MATCHED
+           FROM  TH_NR_CNTRT_HST A
+                ,TB_INSU_SGI B
+                ,TB_INSU_UKEY C
+                ,TB_ETC_XCL D
+          WHERE  A.CNTRT_NO = B.CNTRT_NO(+)
+            AND  A.CNTRT_NO = C.CNTRT_NO(+)                
+            AND  B.SGI_INSU_NO = D.SGI_INSU_NO(+)
+            AND  A.OP_TYP_CD = '01'
+            AND  B.OP_TYP_CD (+)= 'A1'
+            AND  C.OP_TYP_CD (+)= '01'
+            AND  (D.XCL_CL_CD = 'IP' OR D.XCL_CL_CD IS NULL)
+            AND  SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) = #FEE_YM#
+]]><isNotEmpty prepend="AND" property="INSURE_MGMT_NO"><![CDATA[
+                (B.SGI_INSURE_MGMT_NO = #INSURE_MGMT_NO# OR C.UKEY_INSURE_MGMT_NO  = #INSURE_MGMT_NO#)
+]]></isNotEmpty><![CDATA[ 
+        ) A
+ GROUP  BY A.FEE_YM, A.XCL_ST_CD, A.XCL_SLIP_NO, A.XCL_PROC_DT, A.IS_FEE_MATCHED]]>
+	</select>
+	<select id="SInqInsuFeeLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInqInsuFeeLstTotCnt 보증보험료정산조회합계 */
+/* IO: 장미진,2015-10-14T16:03:26(장미진,2015-10-13T16:50:20) */
+SELECT  COUNT(SVC_MGMT_NO) AS TOTAL_CNT
+	   ,NVL(SUM(SGI_INSURE_FEE),0) AS TOTAL_SUM		
+  FROM  (SELECT  ROW_NUMBER() OVER (ORDER BY SVC_MGMT_NO) AS ROWNO
+                ,SUBSTR(A.NEW_CNTRT_DT,0,6) AS FEE_YM   /*정산년월*/
+                ,A.SVC_MGMT_NO                          /*서비스관리번호*/
+                ,E.EQP_MDL_NM                           /*모델명*/
+                ,A.NEW_CNTRT_DT                         /*계약일*/
+                ,B.SGI_INSURE_MGMT_NO                   /*보험관리번호*/
+                ,B.SGI_INSURE_STA_DT                    /*보험가입일자*/
+                ,0 AS INSURE_FEE                        /* DMS금액 계산금액필요*/
+                ,B.SGI_INSURE_FEE                       /*SGI보험료*/
+                ,CASE WHEN 0 = B.SGI_INSURE_FEE THEN 'Y'
+                      ELSE 'N'
+                 END INVE_MATCHED     					/*일치여부*/						
+           FROM  TB_NR_CNTRT A
+                ,TB_INSU_SGI B
+                ,TB_EQP_CNTRT C
+                ,TB_EQP_ASSET D
+                ,TB_EQP_MDL E
+         WHERE  A.CNTRT_NO = B.CNTRT_NO(+)
+           AND  A.CNTRT_NO = C.CNTRT_NO
+           AND  C.ASSET_NO = D.ASSET_NO
+           AND  D.EQP_MDL_CD = E.EQP_MDL_CD
+           ) PA
+]]><dynamic prepend="WHERE"><![CDATA[          
+]]><isNotEmpty prepend="AND" property="FEE_YM"><![CDATA[
+                PA.FEE_YM = #FEE_YM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="INSURE_MGMT_NO"><![CDATA[
+                PA.UKEY_INSURE_MGMT_NO  = #INSURE_MGMT_NO#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEqual prepend="AND" property="INVE_MATCHED" compareValue="%"><![CDATA[              
+	            INVE_MATCHED = #INVE_MATCHED#
+]]></isNotEqual><![CDATA[
+]]></dynamic><![CDATA[
+ AND ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInsuFeeAllExcel" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsisbase.db.DNRInsuFeeMgmt.SInsuFeeAllExcel 보증보험료정산전체엑셀 */
+/* IO: 안진갑,2015-10-16T17:35:41(장미진,2015-10-14T15:56:51) */
+SELECT  SUBSTR(A.NEW_CNTRT_DT,0,6) AS "정산년월"
+       ,A.SVC_MGMT_NO AS "서비스관리번호"
+       ,C.EQP_MDL_NM AS "모델명"        
+       ,TO_CHAR(TO_DATE(A.RENTAL_CNTRT_STA_DT, 'YYYYMMDD'), 'YYYY-MM-DD') AS "계약일"
+       ,DECODE(D.SGI_INSURE_MGMT_NO, NULL, E.UKEY_INSURE_MGMT_NO) AS "보험관리번호"
+       ,TO_CHAR(TO_DATE(DECODE(D.SGI_INSURE_STA_DT, NULL, E.UKEY_INSURE_STA_DT), 'YYYYMMDD'), 'YYYY-MM-DD') AS "보험가입일자"
+       ,E.UKEY_INSURE_FEE AS "DMS금액"
+       ,D.SGI_INSURE_FEE AS "SGI보험료"
+       ,DECODE(E.UKEY_INSURE_FEE-D.SGI_INSURE_FEE,0,'일치','미일치') AS "일치여부"						       
+  FROM  TH_NR_CNTRT_HST A
+       ,TB_RENTAL_CNTRT B
+       ,TB_EQP_MDL C       
+       ,TB_INSU_SGI D
+       ,TB_INSU_UKEY E
+ WHERE  A.CNTRT_NO = B.CNTRT_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO(+)
+   AND  A.CNTRT_NO = E.CNTRT_NO(+)
+   AND  A.OP_TYP_CD = '01'
+   AND  D.OP_TYP_CD (+)= 'A1'
+   AND  E.OP_TYP_CD (+)= '01'
+   AND  SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) = #FEE_YM#]]>
+	</select>
+</sqlMap>

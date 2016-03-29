@@ -1,0 +1,284 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="WorkFrame" classname="MainTemp" inheritanceid="" position="absolute 0 0 1058 607" titletext="Work영역" oninit="WorkFrame_oninit" onload="WorkFrame_onload" onclose="WorkFrame_onclose" onactivate="WorkFrame_onactivate" onsize="WorkFrame_onsize" scrollbars="none" style="background:#ffffffff;font:Dotum,10,bold antialias;" onbeforeclose="WorkFrame_onbeforeclose">
+    <Layouts>
+      <Layout width="1058" height="607">
+        <Static id="st_Navi" text="업무화면" usedecorate="true" wordwrap="word" class="workTitle" position="absolute 20 11 1009 30" anchor="left top right" onclick="st_Navi_onclick"/>
+        <Div id="div_Bottom" anchor="left right bottom" taborder="1" style="background:#ffffffff;border:0 solid #ffffffff ;" scrollbars="none" position="absolute 0 586 1058 607">
+          <Layouts>
+            <Layout>
+              <Static id="stStatusText" onclick="div_Bottom_stStatusText_onclick" class="sta_status" position="absolute 0 0 1058 23" anchor="left right bottom"/>
+              <Edit id="edt_disProgId" taborder="3" visible="false" position="absolute 747 4 1038 19" anchor="top right" style="background:transparent;border:0 none #808080ff ;align:right middle;" readonly="true"/>
+            </Layout>
+          </Layouts>
+        </Div>
+        <Div id="DivWork" taborder="3" style="align:center top;" asyncmode="false" class="div_workform" position="absolute 20 48 1058 576" tooltiptype="inplace" anchor="all">
+          <Layouts>
+            <Layout/>
+          </Layouts>
+        </Div>
+        <Static id="Static01" class="work_tab_bottom" position="absolute 3 36 1055 37" anchor="left top right"/>
+        <Static id="Static04" text="w&#13;&#10;20" class="tip_guide" visible="false" position2="absolute l:0 w:20 t:56 h:90" positiontype="position2"/>
+        <Static id="Static00" text="w&#13;&#10;20" class="tip_guide" visible="false" position2="absolute l:1038 w:20 t:48 h:90" positiontype="position2"/>
+        <Static id="Static03" text="h14" class="tip_guide" visible="false" position2="absolute l:48 w:44 t:0 h:14" positiontype="position2"/>
+        <Static id="Static05" text="h37" class="tip_guide" visible="false" position2="absolute l:104 w:44 t:0 h:37" positiontype="position2" onclick="Static05_onclick"/>
+        <Static id="Static06" text="h10" class="tip_guide" visible="false" anchor="default" position="absolute 48 576 92 586" positiontype="position"/>
+        <Static id="Static08" text="h10" class="tip_guide" visible="false" position2="absolute l:48 w:44 t:37 h:10" positiontype="position2"/>
+        <Static id="Static09" text="h5" class="tip_guide" visible="false" position2="absolute l:488 w:44 t:31 h:5" positiontype="position2"/>
+        <Button id="Button16" taborder="5" class="btn_common_fav_on" position="absolute 1075 8 1095 28" visible="false"/>
+        <Button id="btn_MyMenu" taborder="6" class="btn_common_fav_off" position="absolute 1018 8 1038 28" visible="false" onclick="btn_MyMenu_onclick" anchor="top right"/>
+        <Static id="st_menuInfo" position="absolute 152 11 1010 31" style="padding:0 0 0 16;align:right middle;font:돋움,10;" usedecorate="true" anchor="top right"/>
+      </Layout>
+    </Layouts>
+    <Objects/>
+    <Bind>
+      <BindItem id="item1" compid="DivWork" propid="text" datasetid="ds_menuInfo" columnid="MSG"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : WorkFrame.xfdl
+ * 03. 화면 설명 : 업무화면 공통
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/ 
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/  
+var pv_winKey;		//업무화면 Key코드
+var pv_menuId;		//메뉴 ID
+var pv_programId;   //프로그램 ID
+var pv_menuUrl;		//업무화면 Url
+var pv_menuTitle;	//업무화면 Title
+var pv_menuTitle2;	//업무화면 Title2
+var pv_helpUrl;		//도움말 URL
+var pv_args;		
+var pv_menuMultiYn; //다국어구현여부
+var pv_pgmVarNm;    //프로그램변수명
+var pv_respDevPsnNm; //담당개발자명
+var pv_adminFlag;	//관리자여부
+
+var fv_prtlog_yn;	//프린트Log를 저장할지 여부
+var fv_datalog_yn;  //데이터Log를 저장할지 여부
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form Init
+-----------------------------------------------------------------------------------------------*/
+function WorkFrame_oninit(obj:Form, e:InitEventInfo)
+{	
+	pv_winKey			= getOwnerFrame().arguments["winKey"];   //key
+	pv_menuId      		= getOwnerFrame().arguments["menuId"];   //menuid
+	pv_menuUrl     		= getOwnerFrame().arguments["menuUrl"];   //menuUrl
+	pv_menuTitle   		= getOwnerFrame().arguments["menuTitle"];  //menuTitle
+	pv_menuTitle2  		= getOwnerFrame().arguments["menuTitle2"];  //menuTitle2
+	pv_programId   		= getOwnerFrame().arguments["programId"];  //programId
+	pv_helpUrl	   		= getOwnerFrame().arguments["helpUrl"];    //도움말 URL
+	pv_args		   		= getOwnerFrame().arguments["args"];     // 넘어온 argument
+	//pv_menuMultiYn 		= getOwnerFrame().arguments["menuMultiYn"];  
+    pv_adminFlag   		= getOwnerFrame().arguments["adminFlag"];     //"ncTrId=" + trID + " ncPInfoFlag=" + fv_datalog_yn                                                     
+    pv_pgmVarNm 		= getOwnerFrame().arguments["pgmVarNm"]; 
+    pv_respDevPsnNm 	= getOwnerFrame().arguments["respDevPsnNm"]; 
+    pv_arrParam 		= getOwnerFrame().arguments["arrParam"];
+
+	fv_datalog_yn  		= getOwnerFrame().arguments["pInfoflag"];  //ncPInfoFlag  
+	obj.mainformtype    = "work";
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onload
+-----------------------------------------------------------------------------------------------*/
+function WorkFrame_onload(obj:Form, e:LoadEventInfo)
+{	
+    var strLastIndex = pv_menuTitle2.lastIndexOf(">");
+    var strThreeMenuTitle = pv_menuTitle2.substr(0, strLastIndex);
+    	
+	this.st_Navi.text = pv_menuTitle;
+	this.st_menuInfo.text = "<fc v='#999999'><fs v='9'><b v='false'> " + strThreeMenuTitle + ">" + pv_menuTitle + "</fc></fs></b>";
+	
+	//운영에서는 보이지 않음
+	if(gv_RunMode != "Prod")
+	{
+		div_Bottom.edt_disProgId.visible = true;
+		div_Bottom.edt_disProgId.value = pv_menuUrl;
+	}	
+	
+	var objFont = gfn_getObjFont(12,"Dotum");
+	var objTextSize = gfn_getTextSize(st_Navi.text, objFont); //textsize 공통	
+    st_Navi.position.width = objTextSize.cx +25;
+    var objTextSize2 = gfn_getTextSize(st_menuInfo.text, objFont); //textsize 공통	
+    st_menuInfo.position.width = objTextSize2.cx;
+    st_menuInfo.position.right = btn_MyMenu.position.left-5; 
+    
+    var pv_loadUrl = pv_menuUrl.indexOf("xfdl?") > 0 ? pv_menuUrl.substr(0, pv_menuUrl.indexOf("xfdl?") + 4) : pv_menuUrl;
+	this.DivWork.url = pv_loadUrl;
+	this.DivWork.programId = pv_menuId;
+
+	//2015.1.2 해당 화면이 메뉴에 등록되지 않은 경우 비활성화 
+	var idx = gds_frm.findRow("MENU_ID", pv_menuId);	
+	if(idx > -1 ){
+		//My Menu존재 여부
+		if ( gds_userFavi.findRow("MENU_ID", pv_menuId) != -1) {
+			btn_MyMenu.class = "btn_common_fav_on";
+		} else {
+			btn_MyMenu.class = "btn_common_fav_off";
+		}
+		btn_MyMenu.visible = true;
+	} else {
+		btn_MyMenu.visible = false;
+	}	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onactivate
+-----------------------------------------------------------------------------------------------*/
+function WorkFrame_onactivate(obj:Form, e:ActivateEventInfo)
+{	//기로드된 메뉴에 대해서도 Activate시 My Menu 변경사항 적용 2014.10.27 lym
+	//My Menu존재 여부
+	if ( gds_userFavi.findRow("MENU_ID", pv_menuId) != -1) {
+		btn_MyMenu.class = "btn_common_fav_on";
+	} else {
+		btn_MyMenu.class = "btn_common_fav_off";
+	}
+	//setfocus 중복 문제로 해당 소스 막음 2014.11.12 심상준
+	DivWork.setFocus();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onclose
+-----------------------------------------------------------------------------------------------*/
+function WorkFrame_onclose(obj:Form, e:CloseEventInfo)
+{    
+	if(!gfn_isNull(pv_winKey) == true) {
+		gfn_frameOnClose(pv_winKey);
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onclose
+-----------------------------------------------------------------------------------------------*/
+function WorkFrame_onbeforeclose(obj:Form, e:CloseEventInfo)
+{    
+	var sFunc = "Form_checkBeforeClose";
+	// 존재하지 않는 함수 체크
+	if (DivWork[sFunc] != undefined) {
+		// 함수 타입인지 체크
+		if (typeof eval("DivWork."+sFunc) == "function") {
+			if ( !DivWork.Form_checkBeforeClose() ) return false;
+		}
+	}
+
+	//if ( !gfn_formBeforeOnClose(DivWork) ) return false;
+
+	return true;
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Transaction 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : My Menu저장
+ * param    : obj - Button
+ * param    : e - ClickEventInfo
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function fn_saveMyMenu() 
+{
+	var sSvcID		 = "saveMyMenu";
+	var sTrID		 = "PSCMenuMgmt_pSaveUserFavi";
+	var sPtrn		 = "M";  //입력C,조회R,수정U,삭제D,복합M
+	var sInputDs	 = "RS_USER_FAVI_LIST=gds_userFavi:u";
+	var sOutputDs	 = "";
+	var sArgs		 = "";
+	var sCallBackFnc = "fn_callBack";
+
+	gfn_transaction(sSvcID, sTrID, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc);
+}
+
+/*===============================================================================================
+ * [ PART 5 ] CallBack 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * 설명   : Transaction CallBack
+ * param   : sSvcID, iErrorCode, sErrorMsg(ncMsgId,ncMsg)
+ * return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg, ncMsgId, ncMsg)
+{
+ 	//trace("sSvcID ==>> "+sSvcID+" : iErrorCode ==>> "+iErrorCode+" : sErrorMsg ==>> "+sErrorMsg);
+	switch(sSvcID) {
+		//오늘
+		case "saveMyMenu" : 
+			if ( iErrorCode == 0 ) {
+				gfn_message("B","DMS00000");	//MSGI0001 : 정상 처리되었습니다.
+			} else {
+				//에러처리
+				gfn_message("A",ncMsg);
+			}
+			break;
+		default :
+			break;
+	}
+}
+
+/*===============================================================================================
+ * [ PART 6 ] Event Function ( Main Button )
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : 즐겨찾기 클릭시 My Menu 추가, 삭제 처리
+ * param    : obj - Button
+ * param    : e - ClickEventInfo
+ * return   : void
+-----------------------------------------------------------------------------------------------*/
+function btn_MyMenu_onclick(obj:Button,  e:ClickEventInfo)
+{
+	gds_userFavi.enableevent = false;
+	var sBtnClass = obj.class;
+	if ( sBtnClass == "btn_common_fav_off" ) {
+		if ( gds_userFavi.findRow("MENU_ID", pv_menuId) == -1 ) {
+			var nRow = gds_userFavi.addRow();
+			gds_userFavi.setColumn(nRow, "MENU_ID", pv_menuId);
+			gds_userFavi.setColumn(nRow, "MENU_NM", pv_menuTitle);
+			gds_userFavi.setColumn(nRow, "FRM_URL", pv_menuUrl);	
+			gds_userFavi.setColumn(nRow, "FRM_ID", pv_programId);
+			
+			obj.class = "btn_common_fav_on";
+		}	
+	} else {
+		var nRow = gds_userFavi.findRow("MENU_ID", pv_menuId);
+		if ( nRow != -1 ) {
+			gds_userFavi.deleteRow(nRow);
+			
+			obj.class = "btn_common_fav_off";
+		}
+	}
+	gds_userFavi.enableevent = true;
+	
+	if ( gfn_isUpdated(gds_userFavi) ) {
+		this.fn_saveMyMenu();
+	}
+}
+
+/*===============================================================================================
+ * [ PART 7 ] Event Function ( Others )
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 8 ] User Defined Function
+================================================================================================*/
+]]></Script>
+  </Form>
+</FDL>

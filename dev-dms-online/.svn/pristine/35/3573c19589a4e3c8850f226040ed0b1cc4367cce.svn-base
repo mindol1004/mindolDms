@@ -1,0 +1,185 @@
+package dms.nr.nrsisbase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]미납채권조회및제각관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-11-11 09:38:22</li>
+ * <li>작성자 : 김혁범 (kezmain1)</li>
+ * </ul>
+ *
+ * @author 김혁범 (kezmain1)
+ */
+public class FNRUnpdBondDisProcMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRUnpdBondDisProcMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 김혁범 (kezmain1)
+	 * @since 2015-11-11 09:39:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqUnpdBondDisProcLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		
+	    IDataSet responseData = new DataSet();
+	    IDataSet dsCnt = new DataSet();
+	    IRecordSet rsList = null;
+	    IRecordSet rsList2 = null;
+	    int intTotalCnt = 0;
+	    
+	    try {
+		    // 1. DU lookup
+	    	DNRUnpdBondDisProcMgmt dNRUnpdBondDisProcMgmt = (DNRUnpdBondDisProcMgmt) lookupDataUnit(DNRUnpdBondDisProcMgmt.class);
+	    		    	
+	    	// 2. TOTAL COUNT DM호출            
+			dsCnt = dNRUnpdBondDisProcMgmt.dSUnpdBondDisProcTotCnt(requestData, onlineCtx);
+	        intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+	        PagenateUtils.setPagenatedParamsToDataSet(requestData);
+
+			// 3. LISTDM호출
+			responseData = dNRUnpdBondDisProcMgmt.dSUnpdBondDisProcLstPaging(requestData, onlineCtx);
+			rsList = responseData.getRecordSet("RS_UNPD_BOND_DIS_PRO_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(rsList, requestData, intTotalCnt);
+			
+			//미납채권 미납총금액 조회
+            IDataSet dsRtn = dNRUnpdBondDisProcMgmt.dSUnpdBondDisProcTotSum(requestData, onlineCtx);
+            rsList2 = dsRtn.getRecordSet("RS_TOT_SUM");
+            PagenateUtils.setPagenatedParamToRecordSet(rsList2, requestData, intTotalCnt);
+            
+            responseData.putRecordSet("RS_UNPD_BOND_DIS_PRO_LIST", rsList);
+            responseData.putRecordSet("RS_TOT_SUM", rsList2); //현재월총건수
+
+	    } catch ( BizRuntimeException e ) {
+	    	throw e; //시스템 오류가 발생하였습니다.
+	    }
+	
+	    return responseData;
+	}
+
+    /**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-11-11 09:38:22
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUnpdBondDisProcSlipCreate(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try{
+            requestData.putField("USER_NO", ca.getUserNo());
+            // 1. DU lookup
+            DNRUnpdBondDisProcMgmt dNRUnpdBondDisProcMgmt = (DNRUnpdBondDisProcMgmt) lookupDataUnit(DNRUnpdBondDisProcMgmt.class);
+            // 2. 미납/제각 전표용테이블 입력
+            dNRUnpdBondDisProcMgmt.dIUnpdDisSlip(requestData, onlineCtx);
+            // 3. 배치 CALL
+            
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+
+            // call on-demand batch job
+            HashMap params = new HashMap<String,String>();
+            params.put("TASK_ID", "EPR010");
+            params.put("TASK_NM", "전표발행");
+            params.put("USER_NO", ca.getUserNo());
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");               
+            params.put("POST_SLIP_DATASET", dsXml);
+            String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+            
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다. 
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2016-01-13 17:26:44
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUnpdBondDisProcSlipCancle(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try{
+            
+            // 1. DU lookup
+            DNRUnpdBondDisProcMgmt dNRUnpdBondDisProcMgmt = (DNRUnpdBondDisProcMgmt) lookupDataUnit(DNRUnpdBondDisProcMgmt.class);
+            // 2. 미납/제각 전표용테이블 입력
+            dNRUnpdBondDisProcMgmt.dDUnpdDisSlip(requestData, onlineCtx);
+            
+            // 3. 배치 CALL
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+            DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+            String dsXml = bout.toString("UTF-8");
+
+            // call on-demand batch job
+            HashMap params = new HashMap<String,String>();
+            params.put("TASK_ID", "EPR011");
+            params.put("TASK_NM", "전표삭제");
+            params.put("USER_NO", ca.getUserNo());
+            params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");               
+            params.put("POST_SLIP_DATASET", dsXml);
+
+            String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+            waitBatchJobEnd(jobExecutionId, 10000);
+            int result = getJobReturnCode(jobExecutionId);
+            
+            if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다 
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+  
+}

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRComStlMgmt">
+	<select id="SComStlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNRComStlMgmt.SComStlTotCnt 수수료정산조회총건수 */
+/* IO: 이영진,2015-11-05T17:08:01(장미진,2015-08-03T09:54:59) */
+SELECT 
+         COUNT(*) AS CNT
+        ,NVL(SUM(PA.EQP_INSURE_FEE_TOT),0) AS AMT
+        ,MAX(PA.XCL_YM) AS YYYYMM
+        ,MAX(PA.SLIP_NO) AS SLIP_NO
+        ,MAX(SUBSTR(PA.SLIP_DT,1,4)) AS YYYY 
+        ,MAX(BIZ_REG_NO) AS BIZ_REG_NO
+  FROM (SELECT
+                ROW_NUMBER() OVER(ORDER BY A.CNTRT_NO) AS ROWNO
+               ,C.XCL_YM
+               ,A.CNTRT_NO
+               ,B.SVC_MGMT_NO
+               ,B.EQP_SER_NO
+               ,B.NEW_CNTRTR_NM
+               ,B.NEW_CNTRTR_NM_ENPT
+               ,B.SVC_NO
+               ,B.SVC_NO_ENPT
+               ,A.EQP_MDL_CD
+               ,D.EQP_MDL_NM
+               ,F.OUT_PRC
+               ,C.EQP_INSURE_FEE
+               ,C.EQP_DAY_INSURE_FEE
+               ,C.SCRB_NOD
+               ,C.EQP_INSURE_FEE_TOT
+               ,A.RENTAL_CNTRT_STA_DT
+               ,A.RENTAL_CNTRT_END_DT
+               ,C.SLIP_NO
+               ,H.SLIP_DT
+               ,H.SLIP_ST_CD
+               ,H.TAX_BILL_NO
+               ,H.TAX_BILL_ST_CD
+               ,(SELECT DEALCO_BLICENS_NO FROM TB_DEALCO WHERE DEALCO_CD = '1000000005') AS BIZ_REG_NO
+          FROM  TB_RENTAL_CNTRT A 
+               ,TB_NR_CNTRT B
+               ,TB_EQP_INSURE_CMMS C
+               ,TB_EQP_MDL D
+               ,TB_EQP_STRD_INFO E
+               ,TB_RENTAL_POLY F
+               ,
+               (
+                SELECT  
+                        MAX(RENTAL_POLY_NO) AS RENTAL_POLY_NO
+                  FROM  TB_RENTAL_POLY
+                 GROUP  BY EQP_MDL_CD
+               ) G
+               ,TB_SLIP H
+         WHERE  A.CNTRT_NO = B.CNTRT_NO
+           AND  A.CNTRT_NO = C.CNTRT_NO
+           AND  A.EQP_MDL_CD = D.EQP_MDL_CD
+           AND  D.EQP_MDL_CD = E.EQP_MDL_CD
+           AND  A.EQP_MDL_CD = F.EQP_MDL_CD
+           AND  F.RENTAL_POLY_NO = G.RENTAL_POLY_NO
+           AND  C.SLIP_NO = H.SLIP_NO(+)
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+           B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+           A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DEPR_STRD_YM"><![CDATA[
+           C.XCL_YM = #DEPR_STRD_YM#
+]]></isNotEmpty><![CDATA[
+       ) PA]]>
+	</select>
+	<select id="SComStlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNRComStlMgmt.SComStlPaging 수수료정산조회 */
+/* IO: 이영진,2015-10-20T14:26:10(장미진,2015-08-03T09:55:37) */
+SELECT
+        *
+  FROM  (SELECT
+                ROW_NUMBER() OVER(ORDER BY A.CNTRT_NO) AS ROWNO
+               ,C.XCL_YM
+               ,A.CNTRT_NO
+               ,B.SVC_MGMT_NO
+               ,B.EQP_SER_NO
+               ,B.NEW_CNTRTR_NM
+               ,B.NEW_CNTRTR_NM_ENPT
+               ,B.SVC_NO
+               ,B.SVC_NO_ENPT
+               ,A.EQP_MDL_CD
+               ,D.EQP_MDL_NM
+               ,F.OUT_PRC
+               ,C.EQP_INSURE_FEE
+               ,C.EQP_DAY_INSURE_FEE
+               ,C.SCRB_NOD
+               ,C.EQP_INSURE_FEE_TOT
+               ,A.RENTAL_CNTRT_STA_DT
+               ,A.RENTAL_CNTRT_END_DT
+               ,C.SLIP_NO
+               ,H.SLIP_DT
+               ,H.SLIP_ST_CD
+               ,H.TAX_BILL_NO
+               ,H.TAX_BILL_ST_CD
+          FROM  TB_RENTAL_CNTRT A 
+               ,TB_NR_CNTRT B
+               ,TB_EQP_INSURE_CMMS C
+               ,TB_EQP_MDL D
+               ,TB_EQP_STRD_INFO E
+               ,TB_RENTAL_POLY F
+               ,
+               (
+                SELECT  
+                        MAX(RENTAL_POLY_NO) AS RENTAL_POLY_NO
+                  FROM  TB_RENTAL_POLY
+                 GROUP  BY EQP_MDL_CD
+               ) G
+               ,TB_SLIP H
+         WHERE  A.CNTRT_NO = B.CNTRT_NO
+           AND  A.CNTRT_NO = C.CNTRT_NO
+           AND  A.EQP_MDL_CD = D.EQP_MDL_CD
+           AND  D.EQP_MDL_CD = E.EQP_MDL_CD
+           AND  A.EQP_MDL_CD = F.EQP_MDL_CD
+           AND  F.RENTAL_POLY_NO = G.RENTAL_POLY_NO
+           AND  C.SLIP_NO = H.SLIP_NO(+)
+]]><isNotEmpty prepend="AND" property="SVC_MGMT_NO"><![CDATA[
+           B.SVC_MGMT_NO = #SVC_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+           A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="DEPR_STRD_YM"><![CDATA[
+           C.XCL_YM = #DEPR_STRD_YM#
+]]></isNotEmpty><![CDATA[) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<delete id="DComStl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNRComStlMgmt.DComStl 단말기보험료수수료 삭제 */
+/* IO: 이영진,2015-10-19T10:31:55(안진갑,2015-07-23T13:43:45) */
+DELETE
+  FROM  TB_EQP_INSURE_CMMS
+ WHERE  XCL_YM = #DEPR_STRD_YM#]]>
+	</delete>
+	<insert id="IComStl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNRComStlMgmt.IComStl 단말기보험료수수료 등록 */
+/* IO: 이영진,2015-10-19T10:34:10(이영진,2015-10-16T17:42:11) */
+INSERT
+  INTO  TB_EQP_INSURE_CMMS
+SELECT
+        XCL_YM
+       ,CNTRT_NO
+       ,EQP_INSURE_FEE
+       ,TRUNC(EQP_INSURE_FEE*12/365,-1) AS EQP_DAY_INSURE_FEE
+       ,CNTRT_END_DT - CNTRT_STA_DT AS SCRB_NOD
+       ,TRUNC(EQP_INSURE_FEE*12/365,-1)*(CNTRT_END_DT - CNTRT_STA_DT) AS EQP_INSURE_FEE_TOT
+       ,'' AS SLIP_NO
+       ,#USERNO# AS FS_REG_USER_ID
+       ,SYSDATE AS FS_REG_DTM
+       ,#USERNO# AS LS_CHG_USER_ID
+       ,SYSDATE AS LS_CHG_DTM
+  FROM (
+        SELECT
+                #DEPR_STRD_YM# AS XCL_YM
+               ,A.CNTRT_NO
+               ,A.RENTAL_CNTRT_STA_DT
+               ,A.RENTAL_CNTRT_END_DT
+               ,B.OP_TYP_CD
+               ,B.OP_PROC_DT
+               ,CASE WHEN A.RENTAL_CNTRT_STA_DT > TO_CHAR(TO_DATE(#DEPR_STRD_YM#, 'YYYYMM'),'YYYYMMDD') THEN A.RENTAL_CNTRT_STA_DT
+                ELSE TO_CHAR(TO_DATE(#DEPR_STRD_YM#, 'YYYYMM'),'YYYYMMDD') END AS CNTRT_STA_DT
+               ,CASE WHEN B.OP_TYP_CD = '07' AND A.RENTAL_CNTRT_END_DT > B.OP_PROC_DT 
+                THEN CASE WHEN B.OP_PROC_DT < TO_CHAR(LAST_DAY(TO_DATE(#DEPR_STRD_YM#,'YYYYMM')),'YYYYMMDD')
+                     THEN B.OP_PROC_DT ELSE TO_CHAR(LAST_DAY(TO_DATE(#DEPR_STRD_YM#,'YYYYMM')),'YYYYMMDD') END
+                ELSE CASE WHEN A.RENTAL_CNTRT_END_DT < TO_CHAR(LAST_DAY(TO_DATE(#DEPR_STRD_YM#,'YYYYMM')),'YYYYMMDD')
+                     THEN A.RENTAL_CNTRT_END_DT ELSE TO_CHAR(LAST_DAY(TO_DATE(#DEPR_STRD_YM#,'YYYYMM')),'YYYYMMDD') END
+                END AS CNTRT_END_DT
+               ,A.EQP_MDL_CD
+               ,C.EQP_INSURE_FEE
+          FROM  TB_RENTAL_CNTRT A 
+               ,TB_NR_CNTRT B
+               ,TB_EQP_INSURE C
+               ,
+               (
+                SELECT  
+                        MAX(EQP_INSURE_NO) AS EQP_INSURE_NO
+                  FROM  TB_EQP_INSURE
+                 GROUP  BY EQP_MDL_CD
+               ) D
+         WHERE  A.CNTRT_NO = B.CNTRT_NO
+           AND  TO_CHAR(LAST_DAY(TO_DATE(#DEPR_STRD_YM#,'YYYYMM')),'YYYYMMDD') >= A.RENTAL_CNTRT_STA_DT
+           AND  TO_CHAR(TO_DATE(#DEPR_STRD_YM#, 'YYYYMM'),'YYYYMMDD') <= A.RENTAL_CNTRT_END_DT
+           AND  ( B.OP_TYP_CD <> '07' OR B.OP_PROC_DT >= TO_CHAR(TO_DATE(#DEPR_STRD_YM#, 'YYYYMM'),'YYYYMMDD') )
+           AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+           AND  C.EQP_INSURE_NO = D.EQP_INSURE_NO
+       ) A]]>
+	</insert>
+	<select id="SCntForValid" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrseibase.db.DNRComStlMgmt.SCntForValid 유효성체크를 위한 데이타건수 조회 */
+/* IO: 이영진,2015-10-20T10:01:37(안진갑,2015-09-23T15:47:01) */
+SELECT  COUNT(1) AS CNT
+       ,COUNT(1) - NVL(SUM(DECODE(NVL(XCL_ST_CD,'05'),'05',0,1)),0)  AS CNT_DIFF
+  FROM  TB_ETC_XCL
+ WHERE  XCL_ITM_CD='TC'
+   AND  SUBSTR(XCL_DT,0,6) = #DEPR_STRD_YM#]]>
+	</select>
+</sqlMap>

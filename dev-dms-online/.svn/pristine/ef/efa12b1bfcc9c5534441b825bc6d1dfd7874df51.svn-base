@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DBIBoxBarcdMgmt">
+	<select id="SBoxBarcdDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcdDtlLst 박스바코드 상세조회 */
+/* IO: 박홍서,2015-07-13T10:24:53(개발자,2015-06-29T13:47:04) */
+SELECT  MGMT_BARCD AS MGMT_BAR_CD
+       ,BOX_BARCD AS BOX_BAR_CD
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TB_BOX_BARCD_DTL
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="MGMT_BAR_CD" prepend="AND"><![CDATA[
+        MGMT_BARCD = #MGMT_BAR_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_BAR_CD" prepend="AND"><![CDATA[
+        BOX_BARCD = #BOX_BAR_CD#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<insert id="IBoxBarcd" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.IBoxBarcd 박스바코드 입력 */
+/* IO: 박홍서,2015-07-09T15:54:23(박홍서,2015-07-09T15:54:23) */
+INSERT
+  INTO  TB_BOX_BARCD
+       (
+        BOX_BARCD
+       ,OP_CL_CD
+       ,BOX_ST_CD
+       ,BOX_ST_SCL_CD
+       ,MAX_QTY
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+        #BOX_BAR_CD#
+       ,#OP_CL_CD#
+       ,#BOX_ST_CD#
+       ,#BOX_ST_SCL_CD#
+       ,#MAX_QTY#
+       ,#USER_NO#
+       ,SYSDATE
+       ,#USER_NO#
+       ,SYSDATE
+      )]]>
+	</insert>
+	<update id="UBoxBarcdSet" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.UBoxBarcdSet 박스바코드 세팅 */
+/* IO: 박홍서,2015-07-10T17:42:29(개발자,2015-06-29T17:04:42) */
+MERGE INTO  TB_BOX_BARCD_DTL A
+     USING  DUAL
+        ON (
+            A.MGMT_BARCD = #MGMT_BAR_CD#
+           )
+WHEN MATCHED THEN
+    UPDATE
+       SET  BOX_BARCD = #BOX_BAR_CD#
+           ,LS_CHG_USER_ID = #USER_NO#
+           ,LS_CHG_DTM     = SYSDATE
+WHEN NOT MATCHED THEN
+    INSERT (
+            MGMT_BARCD
+           ,BOX_BARCD
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+           )
+   VALUES
+          (
+            #MGMT_BAR_CD#
+           ,#BOX_BAR_CD#
+           ,#USER_NO#
+           ,SYSDATE
+           ,#USER_NO#
+           ,SYSDATE
+          )]]>
+	</update>
+	<select id="SBoxBarcdSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcdSeq 박스바코드 채번 */
+/* IO: 박홍서,2015-08-12T10:01:30(박홍서,2015-07-02T09:10:16) */
+SELECT  #BOX_CD#||LPAD(SQ01_TB_BOX_BARCD.NEXTVAL,9,0) AS BOX_BAR_CD
+  FROM  DUAL]]>
+	</select>
+	<select id="SBoxBarcd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcd 박스바코드 조회 */
+/* IO: 이하나,2015-09-09T15:12:08(박홍서,2015-07-13T09:31:11) */
+SELECT  BOX_BARCD AS BOX_BAR_CD
+       ,OP_CL_CD
+       ,BOX_ST_CD
+       ,BOX_ST_SCL_CD
+       ,MAX_QTY
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+  FROM  TB_BOX_BARCD
+]]><dynamic prepend="WHERE"><![CDATA[ 
+]]><isNotEmpty property="BOX_BAR_CD" prepend="AND"><![CDATA[
+        BOX_BARCD = #BOX_BAR_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MGMT_BAR_CD" prepend="AND"><![CDATA[
+        BOX_BARCD IN 
+       (
+         SELECT  BOX_BARCD 
+           FROM  TB_BOX_BARCD_DTL
+          WHERE  MGMT_BARCD = #MGMT_BAR_CD#
+       )
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SEqpseq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SEqpseq 단말기일련번호조회 */
+/* IO: 이영진,2015-08-31T16:21:47(이영진,2015-08-31T16:20:38) */
+SELECT A.EQP_MDL_CD         /* 모델코드 */
+       ,B.EQP_MDL_NM        /* 모델명 */
+       ,A.EQP_SER_NO        /* 일련 번호 */
+       ,A.CNSL_MGMT_NO      /* 상담 관리 번호 */
+       ,A.CNSL_DT           /* 상담일자 */
+  FROM TB_EP_CST_CONSULT_MGMT A
+       ,TB_EQP_MDL B
+ WHERE A.EQP_SER_NO = #EQP_SER_NO#
+   AND A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N']]>
+	</select>
+</sqlMap>

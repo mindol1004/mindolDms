@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPFPASaleMgmt">
+	<select id="SFpaSaleList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleList FPA상품판매관리조회 */
+/* IO: 이민재,2016-02-16T11:26:42(이민재,2016-02-16T10:24:23) */
+SELECT  A.GNRL_SELL_NO                                /* 일반판매번호 */
+       ,A.GNRL_SELL_CHG_SEQ                           /* 일반판매변경순번 */
+	   ,A.SELL_CHG_HST_CL                             /* 판매변경이력구분 */
+       ,A.SELL_DTM                                    /* 판매일자 */
+	   ,A.SELL_CHG_DTM                                /* 변경일자 */
+       ,A.SALEPLC                                     /* 매출처코드 */
+       ,C.DEALCO_NM AS SALEPLC_NM                     /* 매출처 */
+       ,C.DEALCO_BLICENS_NO AS SALEPLC_BLICENS_NO     /* 매출처사업자번호 */
+       ,C.UKEY_AGN_CD AS SALEPLC_UKEY                 /* 매출처U.KEY코드 */
+	   ,'1' AS PROD_CL                                /* 상품구분 */
+       ,B.SELL_QTY AS SALE_QTY                        /* 수량 */
+	   ,B.SELL_PRC                                    /* 판매가 */
+	   ,B.SELL_PCOST                                  /* 매입가(판매원가) */
+	   ,B.SURTAX                                      /* 부가세 */
+       ,B.SELL_UPRC                                   /* 공급가액(판매단가) */
+       ,A.SELL_CL_CD								  /* 판매구분 */
+       ,A.CUR_CL_CD                                   /* 화폐 구분 코드 */
+       ,A.XRATE_APPLY_AMT                             /* 환율 적용 금액 */
+       ,A.XRATE_APPLY_DT                              /* 환율 적용 일자 */
+  FROM  TB_EP_FPA_SALE A 
+       ,(SELECT  GNRL_SELL_NO 
+                ,GNRL_SELL_CHG_SEQ
+		        ,NVL(COUNT(GNRL_SELL_NO),0) AS SELL_QTY
+                ,NVL(ROUND(SUM(SELL_PRC)),0) AS SELL_PRC
+                ,NVL(ROUND(SUM(SELL_PCOST)),0) AS SELL_PCOST
+                ,NVL(ROUND(SUM(SURTAX)),0) AS SURTAX
+                ,NVL(ROUND(SUM(SELL_UPRC)),0) AS SELL_UPRC
+		       FROM  TB_EP_FPA_EQUIPMENT_SALE
+          WHERE  DEL_YN = 'N'
+          GROUP  BY GNRL_SELL_NO ,GNRL_SELL_CHG_SEQ) B
+       ,TB_DEALCO C
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  A.SALEPLC = C.DEALCO_CD(+)
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+	                             FROM  TB_EP_FPA_SALE
+		  					    WHERE  GNRL_SELL_NO = A.GNRL_SELL_NO)
+   AND  A.SELL_CHG_HST_CL NOT IN ('07','08')	
+   AND  A.DEL_YN = 'N'
+   AND  SUBSTR(A.SELL_DTM,0,8) BETWEEN #SELL_STA_DTM# AND #SELL_END_DTM#
+]]><isNotEmpty property="SALEPLC" prepend="AND"><![CDATA[
+        A.SALEPLC = #SALEPLC#      
+]]></isNotEmpty><![CDATA[
+ ORDER  BY A.SELL_DTM DESC]]>
+	</select>
+	<select id="SFpaSaleMasterDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleMasterDtl FPA상품판매등록상세조회 */
+/* IO: 이민재,2016-03-08T15:41:29(이민재,2016-02-16T10:24:45) */
+SELECT  A.GNRL_SELL_NO                                          /* 일반판매번호 */
+	   ,A.GNRL_SELL_CHG_SEQ                                     /* 일반판매변경순번 */
+       ,A.SELL_DTM                                              /* 판매일시 */
+       ,A.SELL_CHRGR_ID                                         /* 판매담당자ID */
+       ,A.SELL_CHG_HST_CL                                       /* 판매변경이력구분 */
+       ,A.SELL_CHG_DTM                                          /* 판매변경일시 */
+       ,A.SELL_CHGR_ID                                          /* 판매변경자ID */
+       ,A.RMK                                                   /* 비고 */
+       ,A.SALEPLC                                               /* 매출처코드 */
+       ,(SELECT  DEALCO_NM 
+           FROM  TB_DEALCO 
+          WHERE  DEALCO_CD = A.SALEPLC) AS SALEPLC_NM           /* 매출처명 */
+       ,A.ATFIL_ID                                              /* 첨부파일ID */
+       ,A.SELL_CL_CD                                            /* 판매구분 */
+       ,A.SELL_AMT                                              /* 판매금액 */
+       ,A.CUR_CL_CD                                             /* 화폐구분코드 */
+       ,A.XRATE_APPLY_AMT                                       /* 환율적용금액 */
+       ,A.XRATE_APPLY_DT                                        /* 환율적용일자 */
+       ,A.MQ_YN                                                 /* MQ여부 */
+       ,B.XCL_SLIP_NO                                           /* 전표번호 */
+       ,B.XCL_SLIP_ST                                           /* 전표상태 */ 
+       ,C.SLIP_ST_CD                                            /* 원가전표상태 */
+  FROM  TB_EP_FPA_SALE A
+       ,TB_EP_EQP_SALE B
+       ,TB_SLIP C
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO(+)
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ(+)
+   AND  B.INVE_PCOST_SLIP_NO = C.SLIP_NO(+)
+   AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ) 
+							     FROM  TB_EP_FPA_SALE
+							    WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#)
+   AND  A.DEL_YN = 'N']]>
+	</select>
+	<select id="SFpaSaleItemDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleItemDtl FPA상품판매등록상세조회 */
+/* IO: 이민재,2016-02-17T10:59:30(이민재,2016-02-16T10:25:01) */
+SELECT  A.GNRL_SELL_NO                                          /* 일반판매번호 */
+       ,A.GNRL_SELL_CHG_SEQ                                     /* 일반판매변경순번 */
+	   ,A.SELL_DTM                                              /* 판매일시 */
+	   ,A.SELL_CHG_HST_CL                                       /* 판매변경이력구분 */
+       ,'1' AS PROD_CL                                          /* 상품구분 */
+       ,B.SELL_SEQ                                              /* 판매순번 */
+       ,B.CNSL_MGMT_NO                                          /* 상담관리번호 */
+       ,B.PROD_SER_NO                                           /* 상품일련번호 */
+       ,B.EQP_MDL_CD                                            /* 모델코드 */
+       ,B.EQP_SER_NO                                            /* 단말기일련번호 */
+ 	   ,B.EQP_COLOR_CD                                          /* 모델색상 */
+       ,NVL(B.SELL_UPRC,0) AS SELL_UPRC                         /* 공급가액(판매단가) */
+       ,NVL(B.SELL_PCOST,0) AS SELL_PCOST                       /* 매입가(판매원가) */
+       ,NVL(B.SURTAX,0) AS SURTAX                               /* 부가세 */
+       ,NVL(B.SELL_PRC,0) AS SELL_AMT                           /* 판매가격 */
+       ,NVL(B.XRATE_APPLY_AMT,0) AS XRATE_APPLY_AMT             /* 환율금액 */
+       ,1 AS SALE_QTY                                           /* 판매수량 */
+       ,C.EQP_MDL_NM                                            /* 모델명 */
+       ,C.MFACT_CD                                              /* 제조사코드 DMS101 */
+  FROM  TB_EP_FPA_SALE A
+       ,TB_EP_FPA_EQUIPMENT_SALE B
+       ,TB_EQP_MDL C
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                 FROM  TB_EP_FPA_SALE
+                                WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+                                  AND  DEL_YN = 'N')  
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N']]>
+	</select>
+	<select id="SFpaSaleGnrlNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleGnrlNo FPA상품판매번호채번 */
+/* IO: 이민재,2016-03-09T15:43:45(이민재,2016-02-16T10:25:32) */
+SELECT  'F' || LPAD(NVL(TO_NUMBER(MAX(SUBSTR(GNRL_SELL_NO,2))) ,0) + 1 ,10 ,'0') AS GNRL_SELL_NO 
+  FROM  TB_EP_FPA_SALE]]>
+	</select>
+	<select id="SFpaSaleGnrlChgNo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleGnrlChgNo FPA상품판매변경순번채번 */
+/* IO: 이민재,2016-02-16T16:06:58(이민재,2016-02-16T10:25:47) */
+SELECT  TO_CHAR(MAX(GNRL_SELL_CHG_SEQ) +1) AS GNRL_SELL_CHG_SEQ
+  FROM  TB_EP_FPA_SALE
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#]]>
+	</select>
+	<select id="SFpaSaleEquipmentSellSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleEquipmentSellSeq FPA상품판매단말기판매순번채번 */
+/* IO: 이민재,2016-02-16T16:07:18(이민재,2016-02-16T10:26:05) */
+SELECT  NVL(TO_NUMBER(MAX(SELL_SEQ)),0)+1 AS SELL_SEQ 
+  FROM  TB_EP_FPA_EQUIPMENT_SALE]]>
+	</select>
+	<insert id="IFpaGnrlSale" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.IFpaGnrlSale FPA상품판매등록일반판매저장 */
+/* IO: 이민재,2016-02-16T15:53:20(이민재,2016-02-16T10:26:30) */
+INSERT 
+  INTO  TB_EP_FPA_SALE 
+       (
+        GNRL_SELL_NO             /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ        /* 일반 판매 변경 순번 */
+       ,SELL_DTM                 /* 판매 일시 */
+       ,SELL_CHRGR_ID            /* 판매 담당자 ID */
+       ,SELL_CHG_HST_CL          /* 판매 변경 이력 구분 */
+       ,SELL_CHG_DTM             /* 판매 변경 일시 */
+       ,SELL_CHGR_ID             /* 판매 변경자 ID */
+       ,SELL_CNCL_YN             /* 판매 취소 여부 */
+       ,SELL_CNCL_DTM            /* 판매 취소 일시 */
+       ,SALEPLC                  /* 매출처 */
+       ,ATFIL_ID                 /* 첨부파일 ID */
+       ,RMK                      /* 비고 */
+       ,SELL_CL_CD               /* 판매구분코드 */
+       ,SELL_AMT                 /* 판매금액 */
+       ,CUR_CL_CD                /* 화폐구분코드 */
+       ,XRATE_APPLY_AMT          /* 환율적용금액 */
+       ,XRATE_APPLY_DT           /* 환율적용일자 */
+       ,MQ_YN                    /* MQ여부 */
+       ,DEL_YN                   /* 삭제여부 */
+       ,UPDATE_COUNT             /* UPDATE COUNT */
+       ,FS_REG_USER_ID           /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM               /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID           /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM               /* 최종 변경 일시 */
+       )
+VALUES
+      (
+        #GNRL_SELL_NO#           /* 일반 판매 번호 */
+       ,#GNRL_SELL_CHG_SEQ#      /* 일반 판매 변경 순번 */
+       ,#SELL_DTM#               /* 판매 일시 */
+       ,#SELL_CHRGR_ID#          /* 판매 담당자 ID */
+       ,#SELL_CHG_HST_CL#        /* 판매 변경 이력 구분 */
+       ,#SELL_CHG_DTM#           /* 판매 변경 일시 */
+       ,#SELL_CHGR_ID#           /* 판매 변경자 ID */
+       ,#SELL_CNCL_YN#           /* 판매 취소 여부 */
+       ,#SELL_CNCL_DTM#          /* 판매 취소 일시 */
+       ,#SALEPLC#                /* 매출처 */
+       ,#ATFIL_ID#               /* 첨부파일 ID */
+       ,#RMK#                    /* 비고 */
+       ,#SELL_CL_CD#             /* 판매구분코드 */
+       ,#SELL_AMT#               /* 판매금액 */
+       ,#CUR_CL_CD#              /* 화폐구분코드 */
+       ,#XRATE_APPLY_AMT#        /* 환율적용금액 */
+       ,#XRATE_APPLY_DT#         /* 환율적용일자 */
+       ,#MQ_YN#                  /* MQ여부 */
+       ,'N'                      /* 삭제여부 */
+       ,1                        /* UPDATE COUNT */
+       ,#USERNO#                 /* 최초 등록 사용자 ID */
+       ,SYSDATE                  /* 최초 등록 일시 */
+       ,#USERNO#                 /* 최종 변경 사용자 ID */
+       ,SYSDATE                  /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<insert id="IFpaSaleEquipment" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.IFpaSaleEquipment FPA상품판매등록단말기판매저장 */
+/* IO: 이민재,2016-02-17T15:43:34(이민재,2016-02-16T10:26:45) */
+INSERT 
+  INTO  TB_EP_FPA_EQUIPMENT_SALE
+       (
+        GNRL_SELL_NO          /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ     /* 일반 판매 변경 순번 */
+       ,SELL_SEQ              /* 판매순번 */
+       ,CNSL_MGMT_NO          /* 상담관리번호 */
+       ,PROD_SER_NO           /* 상품일련번호 */
+       ,EQP_SER_NO            /* 단말기일련번호 */
+       ,EQP_MDL_CD            /* 모델코드 */
+       ,EQP_COLOR_CD          /* 색상코드 */
+       ,SELL_UPRC             /* 판매단가 */ 
+       ,SELL_PCOST            /* 판매원가 */
+       ,SURTAX                /* 부가세 */
+       ,SELL_PRC              /* 판매가격 */
+       ,XRATE_APPLY_AMT       /* 환율금액 */       
+       ,SELL_CNCL_YN          /* 판매취소여부 */
+       ,SELL_CNCL_DTM         /* 판매취소일시 */
+       ,DEL_YN                /* 삭제여부 */
+       ,UPDATE_COUNT          /* UPDATE COUNT */
+	   ,FS_REG_USER_ID        /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM            /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID        /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM            /* 최종 변경 일시 */
+       
+       )
+VALUES
+      (
+        #GNRL_SELL_NO#        /* 일반 판매 번호 */
+       ,#GNRL_SELL_CHG_SEQ#   /* 일반 판매 변경 순번 */
+       ,#SELL_SEQ#            /* 판매순번 */
+       ,#CNSL_MGMT_NO#        /* 상담관리번호 */
+       ,#PROD_SER_NO#         /* 상품일련번호 */
+       ,#EQP_SER_NO#          /* 단말기일련번호 */
+       ,#EQP_MDL_CD#          /* 모델코드 */
+       ,#EQP_COLOR_CD#        /* 색상코드 */
+       ,#SELL_UPRC#           /* 판매단가 */ 
+       ,#SELL_PCOST#          /* 판매원가 */
+       ,#SURTAX#              /* 부가세 */
+       ,#SELL_AMT#            /* 판매가격 */
+       ,#XRATE_APPLY_AMT#     /* 환율금액 */       
+       ,#SELL_CNCL_YN#        /* 판매취소여부 */
+       ,#SELL_CNCL_DTM#       /* 판매취소일시 */
+       ,#DEL_YN#              /* 삭제여부 */
+       ,1                     /* UPDATE COUNT */
+       ,#USERNO#              /* 최초 등록 사용자 ID */
+       ,SYSDATE               /* 최초 등록 일시 */
+       ,#USERNO#              /* 최종 변경 사용자 ID */
+       ,SYSDATE               /* 최종 변경 일시 */
+      )]]>
+	</insert>
+	<select id="SFpaSaleDisTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleDisTotCnt FPA재고상품총건수 */
+/* IO: 이민재,2016-03-09T11:28:59(이민재,2016-02-16T16:44:08) */
+SELECT  /*+ USE_HASH(A B) */
+        COUNT(*) AS TOTAL_CNT
+  FROM  TB_EP_FPA_EQP_MGMT A
+       ,TB_EQP_MDL B
+ WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+   AND  A.PRCH_CONF_YN = 'Y' 
+   AND  A.SELL_YN = 'N'
+   AND  A.DEL_YN = 'N']]>
+	</select>
+	<select id="SFpaSaleDisLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleDisLst FPA재고상품조회 */
+/* IO: 이민재,2016-03-09T11:28:51(이민재,2016-02-16T16:44:24) */
+SELECT  PA.*
+  FROM  (
+         SELECT  /*+ USE_HASH(A B) */
+                 ROW_NUMBER() OVER(ORDER BY A.CNSL_MGMT_NO) AS ROWNO
+                ,A.CNSL_MGMT_NO	                                    /* 상담 관리 번호 */
+                ,A.EQP_MDL_CD	                                    /* 단말기 모델 코드 */
+                ,A.EQP_SER_NO	                                    /* 단말기 일련 번호 */
+                ,A.EQP_COLOR_CD	                                    /* 단말기 색상 코드 */
+                ,A.IMEI	                                            /* IMEI */
+                ,A.PRCH_AMT	                                        /* 매입 금액 */
+                ,A.SELL_GRADE	                                    /* 판매 등급 */
+                ,A.SELL_PRC	                                        /* 판매 가격 */
+                ,(A.SELL_PRC) * 1 * 0.1 AS SURTAX                   /* 부가세 */
+                ,(A.SELL_PRC) * 1 * 0.1 + A.SELL_PRC AS SELL_AMT    /* 판매가(부가세포함), 확정판매금액 */
+                ,A.IN_CONF_DT	                                    /* 입고 확정 일자 */
+                ,A.IN_PROC_CHRGR_ID	                                /* 입고 처리 담당자 ID */
+                ,A.INPT	                                            /* 검수자 */
+                ,A.TLY_DT	                                        /* 검수 일자 */
+                ,A.MID_TERM_YN	                                    /* 중도 해지 여부 */
+                ,A.PRCH_CONF_YN	                                    /* 매입 확정 여부 */
+                ,A.PRCH_CONF_DT	                                    /* 매입 확정 일자 */
+                ,A.BOX_NO	                                        /* 박스 번호 */
+                ,A.BOX_PROC_CHRGR	                                /* 박스 처리 담당자 */
+                ,A.BOX_PROC_DTM	                                    /* 박스 처리 일시 */
+                ,A.PROGR_ST	                                        /* 진행 상태 */
+                ,A.SELL_YN	                                        /* 판매 여부 */
+                ,A.SELL_PROXY_YN	                                /* 판매 대행 여부 */
+                ,A.PROD_SER_NO	                                    /* 상품 일련 번호 */
+                ,B.EQP_MDL_NM                                       /* 모델명 */
+                ,B.PROD_CL                                          /* 상품구분 */
+                ,B.MFACT_CD                                         /* 제조사코드 */
+                ,'01' AS SELL_CHG_HST_CL                            /* 구분 */
+                ,'1' AS SALE_QTY                                    /* 판매수량 */
+           FROM  TB_EP_FPA_EQP_MGMT A
+                ,TB_EQP_MDL B
+          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+            AND  A.PRCH_CONF_YN = 'Y' 
+            AND  A.SELL_YN = 'N'
+            AND  A.DEL_YN = 'N'
+       ) PA
+WHERE  ROWNO BETWEEN #firstRowIndex# AND #lastRowIndex#]]>
+	</select>
+	<update id="UFpaEqpMgmt" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.UFpaEqpMgmt FPA단말기판매정보수정 */
+/* IO: 이민재,2016-02-25T09:32:59(이민재,2016-02-17T11:15:38) */
+UPDATE  TB_EP_FPA_EQP_MGMT
+   SET  SELL_YN           = #SELL_YN#          /* 판매여부 */
+   	   ,SELL_PROXY_YN     = #SELL_PROXY_YN#    /* 판매대행여부 */
+   	   ,PROGR_ST          = #PROGR_ST#         /* 진행상태 */
+   	   ,UPDATE_COUNT      = UPDATE_COUNT+1
+       ,LS_CHG_USER_ID    = #USERNO#           /* 최종변경사용자ID */  
+       ,LS_CHG_DTM        = SYSDATE            /* 최종변경일시 */ 
+ WHERE  CNSL_MGMT_NO      = #CNSL_MGMT_NO#]]>
+	</update>
+	<select id="SFpaSaleDisListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleDisListTotCnt FPA상품판매재고조회총건수 */
+/* IO: 이민재,2016-03-09T11:29:10(이민재,2016-02-17T16:41:10) */
+SELECT  /*+ USE_HASH(A B) */
+        COUNT(*) AS TOTAL_CNT
+  FROM  TB_EP_FPA_EQP_MGMT A
+       ,TB_EQP_MDL B
+ WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+   AND  A.PRCH_CONF_YN = 'Y' 
+   AND  A.SELL_YN = 'N'
+   AND  A.DEL_YN = 'N'
+   AND  A.MQ_YN = #MQ_YN#
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+        UPPER(A.PROD_SER_NO) LIKE UPPER(#PROD_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+        UPPER(A.EQP_SER_NO) LIKE UPPER(#EQP_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+        A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MFACT_CD" prepend="AND"><![CDATA[
+        B.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SFpaSaleDisListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleDisListPaging FPA상품판매재고조회 */
+/* IO: 이민재,2016-03-09T11:29:18(이민재,2016-02-17T16:41:28) */
+SELECT  PA.*
+  FROM  (
+         SELECT  /*+ USE_HASH(A B) */
+                 ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD, A.CNSL_MGMT_NO) AS ROWNO
+                ,A.CNSL_MGMT_NO	                                    /* 상담 관리 번호 */
+                ,A.EQP_MDL_CD	                                    /* 단말기 모델 코드 */
+                ,A.EQP_SER_NO	                                    /* 단말기 일련 번호 */
+                ,A.EQP_COLOR_CD	                                    /* 단말기 색상 코드 */
+                ,A.IMEI	                                            /* IMEI */
+                ,A.PRCH_AMT	                                        /* 매입 금액 */
+                ,A.PRCH_AMT	AS SELL_PCOST                           /* 매입 원가 */
+                ,A.SELL_GRADE	                                    /* 판매 등급 */
+                ,A.SELL_PRC	                                        /* 판매 가격 */
+                ,A.SELL_PRC	AS SELL_UPRC                            /* 공급가액 */
+                ,(A.SELL_PRC) * 1 * 0.1 AS SURTAX                   /* 부가세 */
+                ,(A.SELL_PRC) * 1 * 0.1 + A.SELL_PRC AS SELL_AMT    /* 판매가(부가세포함), 확정판매금액 */
+                ,A.IN_CONF_DT	                                    /* 입고 확정 일자 */
+                ,A.IN_PROC_CHRGR_ID	                                /* 입고 처리 담당자 ID */
+                ,A.INPT	                                            /* 검수자 */
+                ,A.TLY_DT	                                        /* 검수 일자 */
+                ,A.MID_TERM_YN	                                    /* 중도 해지 여부 */
+                ,A.PRCH_CONF_YN	                                    /* 매입 확정 여부 */
+                ,A.PRCH_CONF_DT	                                    /* 매입 확정 일자 */
+                ,A.BOX_NO	                                        /* 박스 번호 */
+                ,A.BOX_PROC_CHRGR	                                /* 박스 처리 담당자 */
+                ,A.BOX_PROC_DTM	                                    /* 박스 처리 일시 */
+                ,A.PROGR_ST	                                        /* 진행 상태 */
+                ,A.SELL_YN	                                        /* 판매 여부 */
+                ,A.SELL_PROXY_YN	                                /* 판매 대행 여부 */
+                ,A.PROD_SER_NO	                                    /* 상품 일련 번호 */
+                ,B.EQP_MDL_NM                                       /* 모델명 */
+                ,B.PROD_CL                                          /* 상품구분 */
+                ,B.MFACT_CD                                         /* 제조사코드 */
+                ,'01' AS SELL_CHG_HST_CL                            /* 구분 */
+                ,'1' AS SALE_QTY                                    /* 판매수량 */
+           FROM  TB_EP_FPA_EQP_MGMT A
+                ,TB_EQP_MDL B
+          WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+            AND  A.PRCH_CONF_YN = 'Y' 
+            AND  A.SELL_YN = 'N'
+            AND  A.DEL_YN = 'N'
+            AND  A.MQ_YN = #MQ_YN#
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+                 UPPER(A.PROD_SER_NO) LIKE UPPER(#PROD_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+                 UPPER(A.EQP_SER_NO) LIKE UPPER(#EQP_SER_NO#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+                 A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                 A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="MFACT_CD" prepend="AND"><![CDATA[
+                 B.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[            
+       ) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SFpaSaleCnclListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleCnclListTotCnt FPA상품판매취소총건수 */
+/* IO: 이민재,2016-03-08T15:48:13(이민재,2016-02-25T10:07:45) */
+SELECT  COUNT(*) AS TOTAL_CNT 
+  FROM  TB_EP_FPA_SALE A
+       ,TB_EP_FPA_EQUIPMENT_SALE B
+       ,TB_EQP_MDL C
+       ,TB_EP_FPA_EQP_MGMT D
+       ,TB_EP_EQP_SALE E
+       ,TB_SLIP F
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  A.GNRL_SELL_NO = E.GNRL_SELL_NO(+)
+   AND  A.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ(+)
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND  B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+   AND  E.INVE_PCOST_SLIP_NO = F.SLIP_NO(+)
+   AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                 FROM  TB_EP_FPA_SALE
+                                WHERE  GNRL_SELL_NO = A.GNRL_SELL_NO
+                                  AND  DEL_YN = 'N')  
+   AND  D.SELL_YN = 'Y'
+   AND  D.SELL_PROXY_YN = 'N'                               
+   AND  (E.XCL_SLIP_NO IS NULL OR E.XCL_SLIP_ST IN ('00','05'))  
+   AND  (F.SLIP_NO IS NULL OR F.SLIP_ST_CD IN ('00','05'))                                
+   AND  A.DEL_YN = 'N'
+   AND  B.DEL_YN = 'N'
+]]><isNotEmpty property="SALEPLC" prepend="AND"><![CDATA[
+        A.SALEPLC = #SALEPLC#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+        B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+        B.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+        B.PROD_SER_NO = #PROD_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+        B.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SFpaSaleCnclListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaSaleCnclListPaging FPA상품판매취소조회 */
+/* IO: 이민재,2016-03-08T15:47:34(이민재,2016-02-25T10:08:03) */
+SELECT  PA.*
+  FROM  (
+         SELECT  ROW_NUMBER() OVER(ORDER BY A.SELL_DTM DESC, A.GNRL_SELL_NO DESC) AS ROWNO
+                ,A.GNRL_SELL_NO                                          /* 일반판매번호 */
+                ,A.GNRL_SELL_CHG_SEQ                                     /* 일반판매변경순번 */
+	            ,A.SELL_DTM                                              /* 판매일시 */
+	            ,A.SELL_CHG_HST_CL                                       /* 판매변경이력구분 */
+	            ,A.SALEPLC                                               /* 매출처코드 */
+	            ,(SELECT  DEALCO_NM 
+                    FROM  TB_DEALCO 
+                   WHERE  DEALCO_CD = A.SALEPLC) AS SALEPLC_NM           /* 매출처 */
+                ,B.SELL_SEQ                                              /* 판매순번 */
+                ,B.CNSL_MGMT_NO                                          /* 상담관리번호 */
+                ,B.PROD_SER_NO                                           /* 상품일련번호 */
+                ,B.EQP_MDL_CD                                            /* 모델코드 */
+                ,B.EQP_SER_NO                                            /* 단말기일련번호 */
+ 	            ,B.EQP_COLOR_CD                                          /* 모델색상 */
+                ,NVL(B.SELL_UPRC,0) AS SELL_UPRC                         /* 공급가액(판매단가) */
+                ,NVL(B.SELL_PCOST,0) AS SELL_PCOST                       /* 매입가(판매원가) */
+                ,NVL(B.SURTAX,0) AS SURTAX                               /* 부가세 */
+                ,NVL(B.SELL_PRC,0) AS SELL_AMT                           /* 판매가격 */
+                ,NVL(B.XRATE_APPLY_AMT,0) AS XRATE_APPLY_AMT             /* 환율금액 */
+                ,C.EQP_MDL_NM                                            /* 모델명 */
+                ,C.MFACT_CD                                              /* 제조사코드 DMS101 */
+           FROM  TB_EP_FPA_SALE A
+                ,TB_EP_FPA_EQUIPMENT_SALE B
+                ,TB_EQP_MDL C
+                ,TB_EP_FPA_EQP_MGMT D
+                ,TB_EP_EQP_SALE E
+                ,TB_SLIP F
+          WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+            AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+            AND  A.GNRL_SELL_NO = E.GNRL_SELL_NO(+)
+            AND  A.GNRL_SELL_CHG_SEQ = E.GNRL_SELL_CHG_SEQ(+)
+            AND  B.EQP_MDL_CD = C.EQP_MDL_CD(+)
+            AND  B.CNSL_MGMT_NO = D.CNSL_MGMT_NO
+            AND  E.INVE_PCOST_SLIP_NO = F.SLIP_NO(+)
+            AND  A.GNRL_SELL_CHG_SEQ = (SELECT  MAX(GNRL_SELL_CHG_SEQ)
+                                          FROM  TB_EP_FPA_SALE
+                                         WHERE  GNRL_SELL_NO = A.GNRL_SELL_NO
+                                           AND  DEL_YN = 'N')  
+            AND  D.SELL_YN = 'Y'
+            AND  D.SELL_PROXY_YN = 'N'                               
+            AND  (E.XCL_SLIP_NO IS NULL OR E.XCL_SLIP_ST IN ('00','05')) 
+            AND  (F.SLIP_NO IS NULL OR F.SLIP_ST_CD IN ('00','05'))                                
+            AND  A.DEL_YN = 'N'
+            AND  B.DEL_YN = 'N'
+]]><isNotEmpty property="SALEPLC" prepend="AND"><![CDATA[
+                 A.SALEPLC = #SALEPLC#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_MDL_CD" prepend="AND"><![CDATA[
+                 B.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="EQP_SER_NO" prepend="AND"><![CDATA[
+                 B.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="PROD_SER_NO" prepend="AND"><![CDATA[
+                 B.PROD_SER_NO = #PROD_SER_NO#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="CNSL_MGMT_NO" prepend="AND"><![CDATA[
+                 B.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[            
+        )PA
+ WHERE  PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IFpaGnrlSaleCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.IFpaGnrlSaleCncl FPA상품판매취소일반판매저장 */
+/* IO: 이민재,2016-02-25T14:12:05(이민재,2016-02-25T13:18:18) */
+INSERT 
+  INTO  TB_EP_FPA_SALE 
+       (
+        GNRL_SELL_NO             /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ        /* 일반 판매 변경 순번 */
+       ,SELL_DTM                 /* 판매 일시 */
+       ,SELL_CHRGR_ID            /* 판매 담당자 ID */
+       ,SELL_CHG_HST_CL          /* 판매 변경 이력 구분 */
+       ,SELL_CHG_DTM             /* 판매 변경 일시 */
+       ,SELL_CHGR_ID             /* 판매 변경자 ID */
+       ,SELL_CNCL_YN             /* 판매 취소 여부 */
+       ,SELL_CNCL_DTM            /* 판매 취소 일시 */
+       ,SALEPLC                  /* 매출처 */
+       ,ATFIL_ID                 /* 첨부파일 ID */
+       ,RMK                      /* 비고 */
+       ,SELL_CL_CD               /* 판매구분코드 */
+       ,SELL_AMT                 /* 판매금액 */
+       ,CUR_CL_CD                /* 화폐구분코드 */
+       ,XRATE_APPLY_AMT          /* 환율적용금액 */
+       ,XRATE_APPLY_DT           /* 환율적용일자 */
+       ,MQ_YN                    /* MQ여부 */
+       ,DEL_YN                   /* 삭제여부 */
+       ,UPDATE_COUNT             /* UPDATE COUNT */
+       ,FS_REG_USER_ID           /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM               /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID           /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM               /* 최종 변경 일시 */
+       )
+SELECT  GNRL_SELL_NO             /* 일반 판매 번호 */
+       ,#GNRL_SELL_CHG_SEQ_NEW#  /* 일반 판매 변경 순번 */
+       ,SELL_DTM                 /* 판매 일시 */
+       ,SELL_CHRGR_ID            /* 판매 담당자 ID */
+       ,#SELL_CHG_HST_CL#        /* 판매 변경 이력 구분 */
+       ,SELL_CHG_DTM             /* 판매 변경 일시 */
+       ,SELL_CHGR_ID             /* 판매 변경자 ID */
+       ,#SELL_CNCL_YN#           /* 판매 취소 여부 */
+       ,#SELL_CNCL_DTM#          /* 판매 취소 일시 */
+       ,SALEPLC                  /* 매출처 */
+       ,ATFIL_ID                 /* 첨부파일 ID */
+       ,RMK                      /* 비고 */
+       ,SELL_CL_CD               /* 판매구분코드 */
+       ,SELL_AMT - #SELL_AMT#    /* 판매금액 */
+       ,CUR_CL_CD                /* 화폐구분코드 */
+       ,XRATE_APPLY_AMT - #XRATE_APPLY_AMT#  /* 환율적용금액 */
+       ,XRATE_APPLY_DT           /* 환율적용일자 */
+       ,MQ_YN                    /* MQ여부 */
+       ,DEL_YN                   /* 삭제여부 */
+       ,UPDATE_COUNT             /* UPDATE COUNT */
+       ,FS_REG_USER_ID           /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM               /* 최초 등록 일시 */
+       ,#USERNO#                 /* 최종 변경 사용자 ID */
+       ,SYSDATE                  /* 최종 변경 일시 */
+  FROM  TB_EP_FPA_SALE
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#]]>
+	</insert>
+	<insert id="IFpaSaleEquipmentCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.IFpaSaleEquipmentCncl FPA상품판매취소단말기판매저장 */
+/* IO: 이민재,2016-02-25T13:26:27(이민재,2016-02-25T13:18:33) */
+INSERT 
+  INTO  TB_EP_FPA_EQUIPMENT_SALE 
+       (
+        GNRL_SELL_NO            /* 일반 판매 번호 */
+       ,GNRL_SELL_CHG_SEQ       /* 일반 판매 변경 순번 */
+       ,SELL_SEQ                /* 판매순번 */
+       ,CNSL_MGMT_NO            /* 상담관리번호 */
+       ,PROD_SER_NO             /* 상품일련번호 */
+       ,EQP_SER_NO              /* 단말기일련번호 */
+       ,EQP_MDL_CD              /* 모델코드 */
+       ,EQP_COLOR_CD            /* 색상코드 */
+       ,SELL_UPRC               /* 판매단가 */ 
+       ,SELL_PCOST              /* 판매원가 */
+       ,SURTAX                  /* 부가세 */
+       ,SELL_PRC                /* 판매가격 */
+       ,XRATE_APPLY_AMT         /* 환율금액 */       
+       ,SELL_CNCL_YN            /* 판매취소여부 */
+       ,SELL_CNCL_DTM           /* 판매취소일시 */
+       ,DEL_YN                  /* 삭제여부 */
+       ,UPDATE_COUNT            /* UPDATE COUNT */
+	   ,FS_REG_USER_ID          /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM              /* 최초 등록 일시 */
+       ,LS_CHG_USER_ID          /* 최종 변경 사용자 ID */
+       ,LS_CHG_DTM              /* 최종 변경 일시 */
+       )
+SELECT  GNRL_SELL_NO            /* 일반 판매 번호 */
+       ,#GNRL_SELL_CHG_SEQ_NEW# /* 일반 판매 변경 순번 */
+       ,SELL_SEQ                /* 판매순번 */
+       ,CNSL_MGMT_NO            /* 상담관리번호 */
+       ,PROD_SER_NO             /* 상품일련번호 */
+       ,EQP_SER_NO              /* 단말기일련번호 */
+       ,EQP_MDL_CD              /* 모델코드 */
+       ,EQP_COLOR_CD            /* 색상코드 */
+       ,SELL_UPRC               /* 판매단가 */ 
+       ,SELL_PCOST              /* 판매원가 */
+       ,SURTAX                  /* 부가세 */
+       ,SELL_PRC                /* 판매가격 */
+       ,XRATE_APPLY_AMT         /* 환율금액 */       
+       ,SELL_CNCL_YN            /* 판매취소여부 */
+       ,SELL_CNCL_DTM           /* 판매취소일시 */
+       ,DEL_YN                  /* 삭제여부 */
+       ,1                       /* UPDATE COUNT */
+	   ,FS_REG_USER_ID          /* 최초 등록 사용자 ID */
+       ,FS_REG_DTM              /* 최초 등록 일시 */
+       ,#USERNO#                /* 최종 변경 사용자 ID */
+       ,SYSDATE                 /* 최종 변경 일시 */
+  FROM  TB_EP_FPA_EQUIPMENT_SALE
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#]]>
+	</insert>
+	<update id="UFpaSaleEquipmentCncl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.UFpaSaleEquipmentCncl FPA상품판매취소단말기판매수정 */
+/* IO: 이민재,2016-02-25T13:32:57(이민재,2016-02-25T13:32:14) */
+UPDATE  TB_EP_FPA_EQUIPMENT_SALE
+   SET  DEL_YN = 'Y'
+       ,UPDATE_COUNT = UPDATE_COUNT+1
+   	   ,SELL_CNCL_YN = 'Y'                                  /* 판매취소여부 */
+       ,SELL_CNCL_DTM = TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') /* 판매취소일시 */
+       ,LS_CHG_USER_ID = #USERNO#                           /* 최종변경사용자ID */  
+       ,LS_CHG_DTM = SYSDATE                                /* 최종변경일시 */ 
+ WHERE  GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ_NEW#
+   AND  SELL_SEQ = #SELL_SEQ#]]>
+	</update>
+	<select id="SFpaGnrlSaleCount" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfsbase.db.DEPFPASaleMgmt.SFpaGnrlSaleCount FPA상품판매건수조회 */
+/* IO: 이민재,2016-02-25T13:37:22(이민재,2016-02-25T13:36:32) */
+SELECT  COUNT(*) AS CNT 
+  FROM  TB_EP_FPA_SALE A
+       ,TB_EP_FPA_EQUIPMENT_SALE B
+ WHERE  A.GNRL_SELL_NO = B.GNRL_SELL_NO
+   AND  A.GNRL_SELL_CHG_SEQ = B.GNRL_SELL_CHG_SEQ
+   AND  A.GNRL_SELL_NO = #GNRL_SELL_NO#
+   AND  A.GNRL_SELL_CHG_SEQ = #GNRL_SELL_CHG_SEQ#
+   AND  B.SELL_CNCL_YN = 'N']]>
+	</select>
+</sqlMap>

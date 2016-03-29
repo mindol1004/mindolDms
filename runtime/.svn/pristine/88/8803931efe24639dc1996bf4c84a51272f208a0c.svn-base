@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap
+    PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="nexcore.framework.bat.fwk">
+    <select id="selectInstVarValue" parameterClass="map" resultClass="hmap" >/* selectInstVarValue */
+        SELECT VAR_VALUE
+          FROM $instVarSaveTableName$
+         WHERE JOB_ID = #jobId:VARCHAR#
+           AND JOB_INSTANCE_ID = #jobInstanceId:VARCHAR#
+           AND VAR_NAME = #varName:VARCHAR#
+    </select>
+
+    <insert id="insertInstVarValue" parameterClass="map">/* insertInstVarValue */
+        INSERT INTO $instVarSaveTableName$
+               (JOB_ID, JOB_INSTANCE_ID, VAR_NAME, VAR_VALUE, LAST_MODIFIED_DT, LAST_MODIFIED_AGENT)
+        VALUES (#jobId:VARCHAR#, #jobInstanceId:VARCHAR#, #varName:VARCHAR#, #varValue:VARCHAR#, #lastModifiedDt:VARCHAR#, #lastModifiedAgent:VARCHAR#)
+    </insert>
+
+    <update id="updateInstVarValue" parameterClass="map">/* updateInstVarValue */
+        UPDATE $instVarSaveTableName$ 
+           SET VAR_VALUE = #varValue:VARCHAR#,
+               LAST_MODIFIED_DT = #lastModifiedDt:VARCHAR#,
+               LAST_MODIFIED_AGENT = #lastModifiedAgent:VARCHAR#
+         WHERE JOB_ID = #jobId:VARCHAR#
+           AND JOB_INSTANCE_ID = #jobInstanceId:VARCHAR#
+           AND VAR_NAME = #varName:VARCHAR#
+    </update>
+
+    <delete id="deleteInstVarValue" parameterClass="map">/* deleteInstVarValue */
+        DELETE FROM $instVarSaveTableName$ 
+         WHERE JOB_ID = #jobId:VARCHAR#
+           AND JOB_INSTANCE_ID = #jobInstanceId:VARCHAR#
+           AND VAR_NAME = #varName:VARCHAR#
+    </delete>
+</sqlMap>

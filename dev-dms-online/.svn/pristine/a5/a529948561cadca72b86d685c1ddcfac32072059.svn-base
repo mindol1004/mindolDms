@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCAlrtSvcReqBrnMgmt">
+	<select id="SAlrtReqBrndLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcReqBrnMgmt.SAlrtReqBrndLstPaging 알림요청브랜드목록조회 */
+/* IO: 심상준,2014-10-02T16:54:55(심상준,2014-09-22T17:10:34) */
+SELECT                                                            
+        *
+  FROM (                                                          
+        SELECT  ROW_NUMBER() OVER (ORDER BY A.ALRT_SVC_NO) AS ROWNO  
+               ,A.ALRT_SVC_NO                                            /* 알림서비스번호 */   
+               ,A.ALRT_SNO                                               /* 알림일련번호 */     
+               ,A.REQ_BRND_CD                                            /* 요청브랜드코드 */   
+               ,DECODE(A.USE_YN, 'Y', '1', 'N', '0') AS USE_YN           /* 사용여부 */                
+               ,A.FS_REG_USER_ID                                         /* 최초등록사용자ID */ 
+               ,TO_CHAR(A.FS_REG_DTM, 'YYYYMMDDHH24MISS') AS FS_REG_DTM  /* 최초등록일시 */          
+               ,A.LS_CHG_USER_ID                                         /* 최종등록사용자ID */ 
+               ,TO_CHAR(A.LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM  /* 최종등록일시 */             
+          FROM  TB_ALRT_SVC_REQ_BRND A   /* SC_알림서비스요청브랜드 */
+               ,TB_ALRT_SVC B            /* SC_알림서비스 */
+         WHERE  A.ALRT_SVC_NO = B.ALRT_SVC_NO
+           AND  A.ALRT_SVC_NO = #ALRT_SVC_NO#
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SAlrtReqBrndLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcReqBrnMgmt.SAlrtReqBrndLstTotCnt 알림요청브랜드전체건수조회 */
+/* IO: 심상준,2014-09-24T10:33:55(심상준,2014-09-22T17:10:49) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_ALRT_SVC_REQ_BRND A  /* SC_알림서비스요청브랜드 */
+       ,TB_ALRT_SVC B           /* SC_알림서비스 */
+ WHERE  A.ALRT_SVC_NO = B.ALRT_SVC_NO
+   AND  A.ALRT_SVC_NO = #ALRT_SVC_NO#]]>
+	</select>
+	<select id="SAlrtReqBrndLstValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcReqBrnMgmt.SAlrtReqBrndLstValidate 알림요청브랜드사전체크 */
+/* IO: 심상준,2014-09-24T14:04:25(심상준,2014-09-22T17:11:03) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_ALRT_SVC_REQ_BRND  /* SC_알림서비스요청브랜드 */
+ WHERE  ALRT_SVC_NO = #ALRT_SVC_NO#
+   AND  ALRT_SNO = #ALRT_SNO#]]>
+	</select>
+	<insert id="IAlrtReqBrnd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcReqBrnMgmt.IAlrtReqBrnd 알림요청브랜드등록 */
+/* IO: 심상준,2014-10-02T17:00:45(심상준,2014-09-22T17:11:25) */
+INSERT
+  INTO  TB_ALRT_SVC_REQ_BRND      /* SC_알림서비스요청브랜드 */
+       (
+        ALRT_SVC_NO               /* 알림서비스번호 */                     
+       ,ALRT_SNO                  /* 알림일련번호 */                     
+       ,REQ_BRND_CD               /* 요청브랜드코드 */                 
+       ,USE_YN                    /* 사용여부 */               
+       ,FS_REG_USER_ID            /* 최초등록사용자ID */    
+       ,FS_REG_DTM                /* 최초등록일시 */        
+       ,LS_CHG_USER_ID            /* 최종등록사용자ID */    
+       ,LS_CHG_DTM                /* 최종등록일시 */          
+        )
+VALUES  
+       (
+        #ALRT_SVC_NO#            /* 알림서비스번호 */
+       ,(
+         SELECT 
+                NVL(MAX(ALRT_SNO),0)+1 
+           FROM TB_ALRT_SVC_REQ_BRND  /* SC_알림서비스요청브랜드 */
+          WHERE ALRT_SVC_NO=#ALRT_SVC_NO#
+         )
+       ,#REQ_BRND_CD#            /* 요청브랜드코드 */ 
+       ,DECODE(#USE_YN#,'1','Y','0','N', NULL, 'N')  /* 사용여부 */ 
+       ,#USERNO#                 /* 최초등록사용자ID */ 
+       ,SYSDATE                  /* 최초등록일시 */ 
+       ,#USERNO#                 /* 최종등록사용자ID */
+       ,SYSDATE                  /* 최종등록일시 */ 
+        )]]>
+	</insert>
+	<update id="UAlrtReqBrnd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcReqBrnMgmt.UAlrtReqBrnd 알림요청브랜드수정 */
+/* IO: 심상준,2014-09-24T20:41:17(심상준,2014-09-22T17:11:41) */
+UPDATE  
+        TB_ALRT_SVC_REQ_BRND           /* SC_알림서비스요청브랜드 */
+   SET  REQ_BRND_CD = #REQ_BRND_CD#    /* 요청브랜드코드 */
+       ,USE_YN = DECODE(#USE_YN#,'1','Y','0','N')  /* 사용여부 */         
+       ,LS_CHG_USER_ID = #USERNO#      /* 최종등록사용자ID */ 
+       ,LS_CHG_DTM = SYSDATE           /* 최종등록일시 */ 
+ WHERE  ALRT_SVC_NO = #ALRT_SVC_NO#
+   AND  ALRT_SNO = #ALRT_SNO#]]>
+	</update>
+	<delete id="DAlrtReqBrnd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcReqBrnMgmt.DAlrtReqBrnd 알림요청브랜드삭제 */
+/* IO: 심상준,2014-09-24T10:44:38(심상준,2014-09-22T17:12:00) */
+DELETE
+  FROM  TB_ALRT_SVC_REQ_BRND    /* SC_알림서비스요청브랜드 */
+ WHERE  ALRT_SVC_NO = #ALRT_SVC_NO#
+   AND  ALRT_SNO = #ALRT_SNO#]]>
+	</delete>
+	<select id="SAlrtReqBrndLstValidate2" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCAlrtSvcReqBrnMgmt.SAlrtReqBrndLstValidate2 알림요청브랜드사전체크2 */
+/* IO: 이유미,2014-10-29T11:40:05(이유미,2014-10-29T11:32:46) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_ALRT_SVC_REQ_BRND  /* SC_알림서비스요청브랜드 */
+ WHERE  ALRT_SVC_NO = #ALRT_SVC_NO#
+]]><isEqual prepend="AND" property="NC_REC_STATUS" compareValue="updated"><![CDATA[
+        ALRT_SNO != #ALRT_SNO#
+]]></isEqual><![CDATA[
+   AND  REQ_BRND_CD = #REQ_BRND_CD#]]>
+	</select>
+</sqlMap>

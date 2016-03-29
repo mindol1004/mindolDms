@@ -1,0 +1,241 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="MainFrame" classname="MainTemp" inheritanceid="" position="absolute 0 0 1254 608" titletext="Main" onload="MainFrame_onload" scrollbars="none" style="background:transparent URL('theme://Img/img_MF_Bg.png') no-repeat left middle;" onclose="MainFrame_onclose">
+    <Layouts>
+      <Layout width="1254" height="608"/>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_authRol" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="AUTR_ROL_ID" type="STRING" size="256"/>
+          <Column id="AUTR_ROL_NM" type="STRING" size="256"/>
+          <Column id="USE_YN" type="STRING" size="256"/>
+          <Column id="FS_REG_USER_ID" type="STRING" size="256"/>
+          <Column id="FS_REG_DTM" type="STRING" size="256"/>
+          <Column id="LS_CHG_USER_ID" type="STRING" size="256"/>
+          <Column id="LS_CHG_DTM" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+      <Dataset id="ds_param" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="AUTR_ROL_ID" type="STRING" size="256"/>
+          <Column id="AUTR_ROL_NM" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_showDivList" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="FRM_ID" type="STRING" size="256"/>
+          <Column id="FRM_URL" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+    </Objects>
+    <Bind/>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : MainFrame.xfdl
+ * 03. 화면 설명 : 메인화면
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/ 
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/  
+var g_divWidth  = 607;  //div 고정 width값 
+var g_divHeight = 284;  //div 고정 height값 
+var g_topMagin = 20;   //top Margin
+var g_leftMagin = 20;   //left Margin
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onload
+-----------------------------------------------------------------------------------------------*/
+function MainFrame_onload(obj:Form, e:LoadEventInfo)
+{
+	//공통 Form 초기화
+	//gfn_setInitForm(obj, e, "MainFrame");
+	//bShowType = ap_LeftFrame.form.btn_Hide.visible;
+	//div 생성
+	var aComponents = obj.components;
+	
+	if (aComponents.length == 0 &&	fn_setExtendMenu()) {
+	//	fn_setExtendMenu();
+		
+		gfn_setPosition2All(this);
+	}	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form onclose
+-----------------------------------------------------------------------------------------------*/
+function MainFrame_onclose(obj:Form, e:CloseEventInfo)
+{    
+	
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice   : div 생성 및 div 사이즈 조절 
+-----------------------------------------------------------------------------------------------*/
+function fn_setExtendMenu()
+{
+	//권한별 div 항목 활성화
+	 var objDivComp;
+	 var divId;
+	 var divUrl;
+	 var objDiv;
+	 var border =  "1 solid #ebebebff";
+	 var x=g_leftMagin , y=g_topMagin; //div x,y좌표
+
+	 //2015.01.26 gds_menu 에서 메인화면구성 화면리스트만 가져오기 	  
+	 var idx = 0;
+	 gds_menu.filter("SUP_MENU_ID=='ZZ'");
+	 ds_showDivList.copyData(gds_menu,true);
+	 gds_menu.filter("");
+	 var iRowCnt = ds_showDivList.rowcount;	 
+	 //background Img 설정
+	 /*var iNoticeRowNo = fn_showBgImg(ds_showDivList);	 	 	 
+	 //공지사항div 는 마지막 행으로 이동하기 
+	 if(iNoticeRowNo > -1 && iNoticeRowNo != iRowCnt ){
+		ds_showDivList.exchangeRow(iNoticeRowNo,iRowCnt-1);	 	
+	 }*/
+	 
+	 for(var i=0; i<iRowCnt;i++){
+		//div 컴포넌트생성
+		divId = ds_showDivList.getColumn(i,"FRM_ID");		
+		divUrl= ds_showDivList.getColumn(i,"FRM_URL");
+		//공지사항인 경우 postion 설정
+		/*if(iRowCnt<4 && divId == "FSC029D"){ 
+			x = g_divWidth+(g_leftMagin)-1; 
+			y = g_divHeight-1;
+			border = "0 none #ccccccff";
+		} */		
+		objDivComp = new Div(divId, x, y, x+g_divWidth, y+g_divHeight);		
+		
+		this.addChild(divId, objDivComp); 
+		objDiv = eval(divId);
+				
+		//다음 div 의 x,y좌표 구하기 
+		if(i%2 == 0)	{
+			x = g_divWidth+(g_leftMagin)-1; 
+		} else {
+			x =  g_leftMagin; 
+			y += g_divHeight-1;
+		}
+				
+		//---------------------------------------------
+		//div 공통 속성 지정
+		//---------------------------------------------
+		objDiv.border = border;
+		objDiv.scrollbars="none";
+		objDiv.url=divUrl; //url link
+		objDiv.show(); 
+		objDiv.class = "main_chartGroup";
+		objDiv.positiontype = "position2";
+		
+		if(i>1) sleep(500);
+	}
+		
+	//통계화면이 하나도 없는 경우 공지사항을 기본으로 보여준다. 
+	//background Img 설정
+	if(iRowCnt == 0){
+	//	this.style.background =  "transparent URL('theme://Img/img_MF_Bg.png') stretch center middle";		
+			this.style.background =  "transparent URL('theme://Img/img_MF_Bg.png') stretch left middle";		
+		//공지사항 div 생성
+		divId = "noticeDBasic";		
+		divUrl= "FRAME::noticeDBasic.xfdl";
+		//좌표
+		x =  856; 
+		y = 453;
+		objDivComp = new Div(divId, x, y, x+360, y+125);		
+		
+		this.addChild(divId, objDivComp); 
+		objDiv = eval(divId);
+				
+		//---------------------------------------------
+		//div 공통 속성 지정
+		//---------------------------------------------
+		objDiv.border = "0 none #ccccccff";
+		objDiv.scrollbars="none";
+		objDiv.anchor = "left top right";
+		objDiv.url=divUrl; //url link
+		objDiv.show(); 
+		objDiv.class = "";
+		objDiv.positiontype = "position2";
+		
+	 } else {
+		this.style.background = "";
+	 }
+		
+	//스크롤바 설정
+ 	/*if(iRowCnt>4){
+ 		this.scrollbars="fixedvert";
+	} else {
+ 		this.scrollbars="none";
+ 	}
+ 	this.resetScroll();
+ 	*/
+ 	
+ 	return true;
+} 
+
+/*===============================================================================================
+ * [ PART 4 ] Transaction 처리
+================================================================================================*/
+/*===============================================================================================
+ * [ PART 5 ] CallBack 처리
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 6 ] Event Function ( Main Button )
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 7 ] Event Function ( Others )
+================================================================================================*/
+
+
+
+/*===============================================================================================
+ * [ PART 8 ] User Defined Function
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : form background image 설정
+-----------------------------------------------------------------------------------------------*/
+/*
+function fn_showBgImg(obj:Dataset){
+   var dsObj = obj;
+   var iDsCnt = dsObj.rowcount;
+   var iNoticeNO =  dsObj.findRow("FRM_ID","FSC029D");
+   
+   if(iDsCnt == 1 && iNoticeNO > -1){
+		this.style.background =  "#ffffffff URL('theme://Img/img_MF_Bg.png') no-repeat center middle";
+   } else {
+		this.style.background = "";
+   }
+   
+   return iNoticeNO;
+}*/
+
+
+]]></Script>
+  </Form>
+</FDL>

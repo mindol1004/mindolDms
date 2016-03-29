@@ -1,0 +1,489 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="1.5">
+  <TypeDefinition url="..\default_typedef.xml"/>
+  <Form id="Login" classname="login" inheritanceid="" position="absolute 0 0 437 277" titletext="로그인" onkeydown="Login_onkeydown" onload="Login_onload" scrollbars="none" validate="title:ID,required:true,minlength:2,maxlength:20,special:true" class="form_login_bg" layoutselecttype="inner,width">
+    <Layouts>
+      <Layout>
+        <Static id="stc_LoginBg" position="absolute 0 0 430 270" class="sta_login_popBg"/>
+        <Div id="div_bg" position="absolute 2 5 406 32" tabstop="false" taborder="4"/>
+        <Edit id="edt_Password" taborder="1" class="edt_login_input" position="absolute 53 169 276 197" onkillfocus="edit_onkillfocus" password="true" onkeydown="edit_onKeydown" validate="title:비밀번호,required:true,minlength:2,maxlength:20" onsetfocus="edt_Password_onsetfocus" ontextchanged="edt_ontextchanged"/>
+        <Button id="btn_login" position="absolute 286 137 373 197" class="btn_login_login" text="Login" onclick="btn_login_onclick" taborder="3"/>
+        <Button id="btn_close" taborder="6" position="absolute 396 6 423 33" class="btn_login_popClose" onclick="btn_close_onclick"/>
+        <Edit id="edt_UserId" taborder="0" position="absolute 53 137 276 165" class="edt_login_input" onkeydown="edit_onKeydown" onkillfocus="edit_onkillfocus" validate="title:ID,required:true,minlength:2,maxlength:20,special:true" onsetfocus="edt_UserId_onsetfocus" ontextchanged="edt_ontextchanged"/>
+        <Static id="stc_id" position="absolute 64 144 265 162" class="sta_login_id" visible="true" enable="false"/>
+        <Static id="stc_pwd" class="sta_login_password" position="absolute 64 174 265 193" visible="true" enable="false"/>
+        <Static id="stc_Logo" position2="absolute l:18 w:167 t:24 h:57" positiontype="position2" style="background:transparent URL('theme://Img/img_login_text_M.png') left middle;"/>
+        <Static id="stc_Copyright" text="COPYRIGHT © &lt;b v='true'&gt;DMS&lt;/b&gt; ALL RIGHTS RESERVED." usedecorate="true" class="sta_bottom_copyright" style="align:center middle;font:Arial,8,antialias;shadow:drop 0,0 3 #ffffffff;" anchor="default" position="absolute 63 246 384 266"/>
+        <CheckBox id="chk_saveID" taborder="2" text="아이디 저장" position="absolute 195 203 295 223" onchanged="chk_saveID_onchanged" style="buttonborder:1 solid #ddddddff ;color:#666666ff;"/>
+        <Static id="stc_RunMode" text="Local Mode" visible="false" position="absolute 53 201 144 217" style="align:center middle;"/>
+        <Combo id="cbo_CompCd" taborder="7" tabstop="false" value="PART" text="파트너 마케팅 지원시스템" innerdataset="@gds_svcconfig" codecolumn="DOMAIN_CD" datacolumn="SYS_NM_KR" index="1" onitemchanged="cbo_CompCd_onitemchanged" visible="false" position="absolute 53 106 276 134"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_Login" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="USER_ID" type="STRING" size="256"/>
+          <Column id="USER_PWD" type="STRING" size="256"/>
+          <Column id="LINK_SYSTEM" type="STRING" size="256"/>
+          <Column id="FORCED_YN" type="STRING" size="256"/>
+          <Column id="DOMAIN_CD" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="USER_ID"/>
+            <Col id="USER_PWD"/>
+            <Col id="LINK_SYSTEM">NO</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+      <Dataset id="ncFieldMap" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false"/>
+      <Dataset id="ds_AutoLogin" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="IP" type="STRING" size="256"/>
+          <Column id="ID" type="STRING" size="256"/>
+          <Column id="PW" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="IP">220.68.224.169</Col>
+            <Col id="ID">SKCC1011</Col>
+            <Col id="PW">1234</Col>
+          </Row>
+          <Row>
+            <Col id="IP">220.68.224.168</Col>
+            <Col id="ID">SKCC1009</Col>
+            <Col id="PW">QWER1234</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_urlLink" firefirstcount="0" firenextcount="0" useclientlayout="false" updatecontrol="true" enableevent="true" loadkeymode="keep" loadfiltermode="keep" reversesubsum="false">
+        <ColumnInfo>
+          <Column id="NAME" type="STRING" size="256"/>
+          <Column id="URL" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row>
+            <Col id="URL">http://www.happypointcard.com/html/card/card_main.jsp</Col>
+            <Col id="NAME">시스템 로그인이 안 될 경우 Link</Col>
+          </Row>
+          <Row>
+            <Col id="URL">http://www.happypointcard.com/html/card/card_main.jsp</Col>
+            <Col id="NAME">업무화면이 보이지 않을 경우 Link</Col>
+          </Row>
+          <Row>
+            <Col id="URL">http://www.happypointcard.com/html/card/card_main.jsp</Col>
+            <Col id="NAME">보고서가 보이지 않을 경우 Link</Col>
+          </Row>
+        </Rows>
+      </Dataset>
+    </Objects>
+    <Bind>
+      <BindItem id="item0" compid="edt_UserId" propid="value" datasetid="ds_Login" columnid="USER_ID"/>
+      <BindItem id="item1" compid="edt_Password" propid="value" datasetid="ds_Login" columnid="USER_PWD"/>
+      <BindItem id="item2" compid="cbo_CompCd" propid="value" datasetid="ds_Login" columnid="DOMAIN_CD"/>
+    </Bind>
+    <Script type="xscript4.0"><![CDATA[/*
+ * 01. 업무구분 : 공통
+ * 02. 화면 : Login.xfdl
+ * 03. 화면 설명 : Login 화면
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+ ************************************************************************************************
+ */
+ 
+/*===============================================================================================
+ * [ PART 1 ] Form에서 Include 할 라이브러리(xjs)파일 정의
+================================================================================================*/
+include "LIB::common.xjs"; //공통함수 호출
+
+/*===============================================================================================
+ * [ PART 2 ] Form에서 사용될 전역변수를 선언
+================================================================================================*/
+var strAdminFg = "";
+
+/*===============================================================================================
+ * [ PART 3 ] Form Event 처리
+================================================================================================*/
+/*----------------------------------------------------------------------------------------------
+ * Notice   : Form Load Event
+-----------------------------------------------------------------------------------------------*/
+function Login_onload(obj:Form, e:LoadEventInfo)
+{
+    fn_setExecuteUrl();	//executeUrl 셋팅
+    
+//     gv_LinkSystem = "GW";
+//     gv_SsoUserId = "pb310team";  
+    
+	if(gv_RunMode == "Local") //로컬
+	{
+		stc_RunMode.text    = "Local Mode";
+		stc_RunMode.visible = true;
+		cbo_CompCd.visible = true;
+    } 
+    else if(gv_RunMode == "Dev") //개발
+    {
+		stc_RunMode.text = "Dev Mode";
+		stc_RunMode.visible = true;
+		cbo_CompCd.visible = true;
+    } 
+    else if(gv_RunMode == "Prod") //운영
+    {
+		stc_RunMode.text = ""; 
+		stc_RunMode.visible = false;
+    }
+	
+	if(gv_LinkSystem == "GW" || gv_LinkSystem == "VOC")
+	{	ds_Login.setColumn(0, "USER_ID", gv_SsoUserId);
+		ds_Login.setColumn(0, "USER_PWD", "");
+		ds_Login.setColumn(0, "LINK_SYSTEM", gv_LinkSystem);
+		btn_login.click();
+	}
+
+	//ID 저장처리
+	if (!gfn_isNull(application.getPrivateProfile("LoginId"))){
+		ds_Login.setColumn(0,"USER_ID",application.getPrivateProfile("LoginId"));
+		chk_saveID.value = true;
+	} else {
+		chk_saveID.value = false;
+	}
+
+	cbo_CompCd.value = gv_domainCd;
+	fn_setStaticControl() ;
+	//로그인 화면을 최상위에 띄운다
+	var objExt = new ExtCommon();
+	objExt.SetTopWindow(1); 
+	// For Test
+	//if(gv_RunMode == "L" || gv_RunMode == "D") fn_setDefaultUser();
+	
+}
+
+/*===============================================================================================
+ * [ PART 4 ] Transaction 처리
+ * sSvcID 				: Service ID
+ * sSvcURL 				: Service URL
+ * sInputDs 			: Insert Dataset(Ex: "dsEmployee=dsEmployee:u")
+ * sOutputDs 			: Outer Dataset(Ex: "dsEmployee=dsEmployee")
+ * sArgs	 			: Arguments(Ex: "p_emp_id=" + sEmpID)
+ * sCallBackFnc 		: CallBack ID
+ * bAsync 				: 동기화여부(Default:false)
+ * bWaitCursor 			: Wait Cursor사용여부(Default:true)
+ * iHttptimeout         : Timeout(Default:gvHttpTimeout)
+================================================================================================*/
+/*-----------------------------------------------------------------------------------------------
+ * Notice : 사용자 정보 조회
+ *----------------------------------------------------------------------------------------------*/ 
+function fn_searchUserInfo()
+{
+	// 유져정보 체크
+	if(gv_LinkSystem == "N0" ) {
+		if (!gfn_getValidateCompList(this)) {
+			return false;
+		}
+	}	
+	var sSvcID       = "searchLogin";
+    var sSvcURL      = "PSCLginOp_pLgin";
+    var sPtrn		 = "R";        //입력C,조회R,수정U,삭제D,복합M
+    var sInputDs     = "ncFieldMap=ds_Login";
+    var sOutputDs    = "gds_menu=RS_MENU_AUTR gds_msg=RS_MSG_LIST gds_user=RS_USER gds_userFavi=RS_USER_FAVI gds_frm=RS_FRM_LIST";
+    var sArgs        = "";
+    var sCallBackFnc = "fn_callBack";
+    var bAsync       = false;
+    var bWaitCursor  = true;
+    var iHttptimeout = "";
+    
+	//트랜잭션호출
+	gfn_transaction(sSvcID, sSvcURL, sPtrn, sInputDs, sOutputDs, sArgs, sCallBackFnc, bAsync, bWaitCursor, iHttptimeout, 0, false, false);
+}
+
+/*===============================================================================================
+ * [ PART 5 ] CallBack 처리
+ * sSvcID 		: Service ID ( sSvcID는 입력된 sSvcID와 동일 )
+ * iErrorCode	: Transaction Return Error Code
+ * sErrorMsg 	: Transaction Return Error Message
+================================================================================================*/
+/*-----------------------------------------------------------------------------------------------
+ * Notice : 공통조회 Callback
+ *----------------------------------------------------------------------------------------------*/
+function fn_callBack(sSvcID, iErrorCode, sErrorMsg)
+{
+	if ( sSvcID == "searchLogin") {
+		//메인타이틀에 접속한 WAS 표기(2015-02-23 심상준)
+		//mainframe.titletext = "Device Management System["+wasInstanceId+"]";
+		//mainframe.titletext = "Device Management System";
+		if(iErrorCode > -1) {
+			//fn_addMenu();
+			//개발용 샘플메뉴 추가
+			if (gv_RunMode == "Local" || gv_RunMode == "Dev") {
+				//최상위 개발자용 샘플 메뉴만 복사하도록 수정(2014-12-17 심상준)
+				gds_menu.copyRow(gds_menu.addRow(), gds_devMenu, 0);
+				gds_devMenu.deleteRow(0); //최상위메뉴삭제(이후 좌측메뉴 선택을 위함)
+			}
+			var objExt = new ExtCommon();
+			objExt.SetTopWindow(0); 
+			ap_TopFrame.form.fn_setTopMenu(); //top menu 생성
+			application.mainframe.visible = true;
+			this.close("OK");
+			
+		} else if (ncMsgId == 'DMS00011' || ncMsgId == 'DMS00013'){     // 비밀번호 초기화(DMS00011) 
+			if (gfn_message('C', ncMsg, 'Q')) {                         // 비밀번호유효기간초과로 비밀번호변경(DMS00013) 2014-11-19 leeym
+				//최상위 띄우는것 해제
+				var objExt = new ExtCommon();
+				objExt.SetTopWindow(0); 
+			    var sParam01 = edt_UserId.value;
+				var arrArgs = {argAutoSelect:true, argCallProgram:"Login", argParam01:sParam01};
+				//2014-10-14 by 이유미 : 로그인안한 상태에서 '비밀번호변경' 화면 목록 추가
+				gds_frm.addRow();
+				gds_frm.setColumn(0,"FRM_ID","FSC003P");
+				gds_frm.setColumn(0,"FRM_URL","SC::ChgPwdP.xfdl");
+				var sRtnVal = gfn_dialog("FSC003P", arrArgs);
+			}
+		} 
+		else if (ncMsgId == 'DMS00016'){
+			if (gfn_message('C', ncMsg, 'Q')) {
+			    ds_Login.setColumn(0, "FORCED_YN", 'Y');
+				btn_login.click();
+			} else if (gv_LinkSystem == "GW" || gv_LinkSystem == "VOC") {
+				fn_close();
+			}
+		}
+		else if (ncMsgId == 'DMS00010'){			// 사용자정보를 확인해주세요
+			gfn_message('A', ncMsg, 'I');
+			edt_UserId.setFocus();
+		}			
+		else if (ncMsgId == 'DMS00015'){			// 접근할 수 없는 경로로 로그인하셨습니다.
+			if (gfn_message('A', ncMsg, 'E')) {	    // 2014-11-24 leeym
+				fn_close();
+			}
+		}
+		else if (ncMsgId == 'DMS00012'){			//사용자 상태가 정상이 아닙니다. 운영팀에 문의하세요.
+			if (gfn_message('A', ncMsg, 'E')) {	    // 2014-11-28 leeym
+				fn_close();
+			}
+		}
+		else {
+			gfn_message('A', ncMsg, 'I');
+			if (gv_LinkSystem == "GW" || gv_LinkSystem == "VOC") {
+				fn_close();
+			}
+		}
+    }
+}
+
+/*===============================================================================================
+ * [ PART 6 ] Event Function ( Main Button )
+================================================================================================*/
+
+/*===============================================================================================
+ * [ PART 7 ] Event Function ( Others )
+================================================================================================*/
+/*-----------------------------------------------------------------------------------------------
+ * Notice  : Edit onsetfocus Event
+ *----------------------------------------------------------------------------------------------*/
+function edit_onsetfocus(obj:Edit, e:SetFocusEventInfo)
+{
+	fn_setStaticControl();
+}
+
+/*-----------------------------------------------------------------------------------------------
+ * Notice  : Edit onkillfocus Event
+ *----------------------------------------------------------------------------------------------*/
+function edit_onkillfocus(obj:Edit, e:KillFocusEventInfo)
+{
+	fn_setStaticControl();
+}
+
+/*-----------------------------------------------------------------------------------------------
+ * Notice  : Edit ontextchanged Event
+ *----------------------------------------------------------------------------------------------*/
+function edt_ontextchanged(obj:Edit,  e:TextChangedEventInfo)
+{
+	fn_setStaticControl();
+}
+
+/*-----------------------------------------------------------------------------------------------
+ * Notice  : edt_onsetfocus
+ *----------------------------------------------------------------------------------------------*/
+function edt_UserId_onsetfocus(obj:Edit, e:SetFocusEventInfo)
+{
+	stc_id.visible = false;
+}
+
+function edt_Password_onsetfocus(obj:Edit, e:SetFocusEventInfo)
+{
+	stc_pwd.visible = false;
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : Edit Keydown Event
+-----------------------------------------------------------------------------------------------*/ 
+function edit_onKeydown(obj:Edit, e:KeyEventInfo)
+{
+	if(e.keycode == 13) 
+	{
+		switch ( obj.name ) 
+		{
+			case "edt_UserId" :
+				edt_Password.setFocus();
+				break;
+				
+			case "edt_Password" :
+				btn_login.setFocus();
+				btn_login.click();
+				//fn_searchUserInfo();
+				break;
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : Form Keydown Event
+-----------------------------------------------------------------------------------------------*/ 
+function Login_onkeydown(obj:Form, e:KeyEventInfo)
+{
+	if(e.keycode == KEYCODE_ESC) 	//ESC
+	{
+		if( gfn_message("C", "종료 하시겠습니까?"+gfn_getCharLC()+"(Do you really want to quit?)" ) )
+		{
+			fn_close();
+		}
+	} 
+	else if ( e.keycode == KEYCODE_F3 ) 
+	{
+		if ( gv_RunMode == "Local" || gv_RunMode == "Dev" ) 
+		{
+			if ( !gfn_isNull(edt_UserId.value) ) 
+			{
+				edt_UserId.value   = "";
+				edt_Password.value = "";
+			}
+		}
+	} 
+	else if ( e.keycode == KEYCODE_F4 ) 
+	{
+		if ( gv_RunMode == "Local" ) 
+		{
+			fn_setDefaultUser();
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : 로그인 버튼 클릭시 처리
+-----------------------------------------------------------------------------------------------*/ 
+function btn_login_onclick(obj:Button,  e:ClickEventInfo)
+{
+	fn_searchUserInfo();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : Close 버튼 클릭시 처리
+-----------------------------------------------------------------------------------------------*/ 
+function btn_close_onclick(obj:Button,  e:ClickEventInfo)
+{
+	fn_close();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : 개발시 유저구분 정보 셋팅(가맹점주 구분)
+-----------------------------------------------------------------------------------------------*/
+function cbo_CompCd_onitemchanged(obj:Combo, e:ItemChangeEventInfo)
+{
+	gv_domainCd = obj.value;
+	
+	gds_svcconfig.enableevent = false;
+	gds_svcconfig.rowposition = gds_svcconfig.findRow("DOMAIN_CD",gv_domainCd);
+	gds_svcconfig.enableevent = true;
+	
+	fn_setExecuteUrl();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : close()
+ * Param   : 
+ * Return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_close() 
+{
+	pv_exit = false;
+	exit();
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : ID, Password 이미지 제어
+ * Param   : 
+ * Return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_setStaticControl() 
+{
+	if(gfn_isNull(edt_UserId.text)) {
+		stc_id.visible = true;
+	} else { 
+		stc_id.visible = false;
+	}
+
+	if(gfn_isNull(edt_Password.text)) {
+		stc_pwd.visible = true;
+	} else {
+		stc_pwd.visible = false;
+	}
+}
+/*----------------------------------------------------------------------------------------------
+ * Notice  : 개발시 User정보 Default 셋팅
+ * Param   : 
+ * Return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_setDefaultUser() 
+{
+	// 로그인 로그 IP설정
+	var sIpAddr  = gfn_getIpAddr();
+	//var sMacAddr = gfn_getMacAddr();
+	
+	var nIdx = ds_AutoLogin.findRow("IP", sIpAddr);
+	
+	if(nIdx != -1) 
+	{
+		stc_id.visible  = false;
+		stc_pwd.visible = false;
+			
+		ds_Login.setColumn(0, "USER_ID", ds_AutoLogin.getColumn(nIdx, "ID"));
+		ds_Login.setColumn(0, "USER_PWD", ds_AutoLogin.getColumn(nIdx, "PW"));
+		btn_login.setFocus();
+	} 
+	else 
+	{
+		stc_id.visible  = true;
+		stc_pwd.visible = true;
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : executeURL 설정
+ * Param   : 
+ * Return  : void
+-----------------------------------------------------------------------------------------------*/
+function fn_setExecuteUrl(){
+
+}
+
+/*----------------------------------------------------------------------------------------------
+ * Notice  : ID저장
+ * Param   : 
+ * Return  : void
+-----------------------------------------------------------------------------------------------*/
+function chk_saveID_onchanged(obj:CheckBox, e:CheckBoxChangeEventInfo)
+{
+	if (obj.isChecked() == true){
+		application.setPrivateProfile("LoginId", ds_Login.getColumn(0,"USER_ID"));
+	} else {
+		application.setPrivateProfile("LoginId", "");
+	}
+}
+]]></Script>
+  </Form>
+</FDL>

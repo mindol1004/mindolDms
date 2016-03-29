@@ -1,0 +1,139 @@
+package dms.nr.nrbxmbase.biz;
+
+import java.util.Map;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [PU]손해배상금정산관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-08-10 13:36:53</li>
+ * <li>작성자 : 정동현 (jjddhh123)</li>
+ * </ul>
+ *
+ * @author 정동현 (jjddhh123)
+ */
+public class PNRCmpXclMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PNRCmpXclMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>손해배상금정산정보조회</pre>
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-10 13:36:53
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL_YM [정산년월]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : EQP_JDG_RSLT_CD [손해배상금유형]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMP_XCL_LST
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : DMS_PEN_AMT [DMS금액]
+	 *		- field : UKEY_PEN_AMT [UKEY금액]
+	 *		- field : XCL_UKEY_INV_AMT [차액]
+	 *		- field : PEN_RECV_AMT [수납액]
+	 *		- field : OP_PROC_DT [업무처리일자]
+	 *		- field : PP_EQP_JDG_RSLT_CD [손해배상금정책유형]
+	 *		- field : XCL_CL_CD [필드1]
+	 *		- field : PP_XCL_CL_CD [필드1]
+	 *		- field : UN_DIV_DMG [미납액]
+	 * </pre>
+	 */
+	public IDataSet pInqCmpXclLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqCmpXclLst", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>손해배상금정산정보상세 조회</pre>
+	 *
+	 * @author 정동현 (jjddhh123)
+	 * @since 2015-08-10 13:36:53
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : XCL [정산년월]
+	 *	- field : EQP_MDL_CD [단말기모델코드]
+	 *	- field : EQP_MDL_NM [단말기모델명]
+	 *	- field : EQP_JDG_RSLT_CD [손해배상금유형]
+	 *	- field : PP_EQP_JDG_RSLT_CD [손해배상금정책유형구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CMP_XCL_DTL
+	 *		- field : EQP_MDL_CD [단말기모델코드]
+	 *		- field : EQP_MDL_NM [단말기모델명]
+	 *		- field : EQP_CMP_AMT_TOT [DMS금액]
+	 *		- field : OP_PROC_DT [업무처리일자]
+	 *		- field : SVC_MGMTNO [서비스관리번호]
+	 *		- field : SVC_NO [이동전화번호]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_IN_DT [단말기입고일자]
+	 *		- field : JDG_ARRV_DT [감정승인일자]
+	 *		- field : EQP_JDG_RSLT_CD [감정결과코드]
+	 *		- field : RENTAL_CNTRT_STA_DT [렌탈계약시작일자]
+	 *		- field : RENTAL_CNTRT_END_DT [렌탈계약종료일자]
+	 *		- field : PP_EQP_JDG_RSLT_CD [손해배상금정책유형구분]
+	 *		- field : PP_XCL_CL_CD [필드1]
+	 *		- field : UN_DIV_DMG [미납액]
+	 * </pre>
+	 */
+	public IDataSet pInqCmpXclDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("nr.NRSXMBase", "fInqCmpXclDtl", requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+        // 2. 결과값 리턴
+        responseData.setOkResultMessage("DMS00001", null); // 정상 조회되었습니다.
+    
+        return responseData;
+    }
+  
+}

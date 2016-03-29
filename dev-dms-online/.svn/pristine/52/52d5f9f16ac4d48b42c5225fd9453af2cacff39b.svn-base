@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DNRSaleAsmptMgmt">
+	<select id="SsaleAsmptTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRSaleAsmptMgmt.SsaleAsmptTotCnt 매출추정정보조회총건수 */
+/* IO: 김혁범,2015-08-24T14:48:40(김혁범,2015-08-03T10:29:25) */
+SELECT  COUNT(1) AS TOTAL_CNT 
+  FROM  (
+           SELECT  IA.SALE_ASMPT_CONF_CL																			/*매출추정확정구분*/
+                  ,IA.SALE_ASMPT_YM																					/*매출추정년월*/
+                  ,IA.CUST_TYP   																					/*고객유형*/
+                  ,IA.SALE_CL_CD 																					/*계정*/
+                  ,IA.EQP_MDL_CD 																					/*모델코드*/
+                  ,IB.EQP_MDL_NM																					/*모델명*/
+                  ,IA.OP_TYP_CD  																					/*계약상태*/
+                  ,(SELECT  COUNT(*) 
+                      FROM  TB_SALE_ASMPT 
+                     WHERE  SALE_ASMPT_CONF_CL = IA.SALE_ASMPT_CONF_CL
+                       AND  SALE_ASMPT_YM = IA.SALE_ASMPT_YM
+                       AND  SALE_ASMPT_YM_TS = IA.SALE_ASMPT_YM_TS
+                       AND  SALE_CL_CD = IA.SALE_CL_CD
+                       AND  EQP_MDL_CD = IA.EQP_MDL_CD
+                       AND  OP_TYP_CD = IA.OP_TYP_CD
+                       AND  ADD_MONTHS(TO_DATE(SALE_ASMPT_YM,'YYYYMM'),-1) = TO_DATE(IA.SALE_ASMPT_YM,'YYYYMM') ) AS BF_RENTAL_QTY	 	/*전월매출건수*/
+                  ,(SELECT  NVL(SUM(SALE_AMT),0)
+                      FROM  TB_SALE_ASMPT 
+                     WHERE  SALE_ASMPT_CONF_CL = IA.SALE_ASMPT_CONF_CL
+                       AND  SALE_ASMPT_YM = IA.SALE_ASMPT_YM
+                       AND  SALE_ASMPT_YM_TS = IA.SALE_ASMPT_YM_TS
+                       AND  SALE_CL_CD = IA.SALE_CL_CD
+                       AND  EQP_MDL_CD = IA.EQP_MDL_CD
+                       AND  OP_TYP_CD = IA.OP_TYP_CD
+                       AND  ADD_MONTHS(TO_DATE(SALE_ASMPT_YM,'YYYYMM'),-1) = TO_DATE(IA.SALE_ASMPT_YM,'YYYYMM') ) AS BF_MTH_RENTAL_FEE  /*전월매출금액*/
+                  ,COUNT(*) AS RENTAL_QTY 																								/*매출건수*/
+                  ,SUM(SALE_AMT) AS MTH_RENTAL_FEE 																						/*매출액*/ 
+             FROM  TB_SALE_ASMPT IA
+                  ,TB_EQP_MDL IB
+            WHERE  IA.EQP_MDL_CD =  IB.EQP_MDL_CD(+)
+              AND  IA.SALE_ASMPT_CONF_CL = 'AS'
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+                   IA.SALE_ASMPT_YM = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                   IA.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+                   IA.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+
+          GROUP  BY IA.SALE_ASMPT_CONF_CL																								/*매출추정확정구분*/
+                   ,IA.SALE_ASMPT_YM																									/*매출추정년월*/
+                   ,IA.SALE_ASMPT_YM_TS																									/*매출추정년월차수*/
+                   ,IA.CUST_TYP   																										/*고객유형*/
+                   ,IA.SALE_CL_CD 																										/*계정*/
+                   ,IA.EQP_MDL_CD 																										/*모델코드*/
+                   ,IB.EQP_MDL_NM 																										/*모델명*/
+                   ,IA.OP_TYP_CD  																										/*계약상태*/
+       )PA]]>
+	</select>
+	<select id="SsaleAsmptLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRSaleAsmptMgmt.SsaleAsmptLstPaging 매출추정정보조회 */
+/* IO: 김혁범,2015-08-24T14:52:37(김혁범,2015-08-03T10:29:45) */
+SELECT PA.*
+FROM (
+      SELECT ROW_NUMBER() OVER(ORDER BY A.EQP_MDL_CD ASC) AS ROWNO
+             , A.*
+        FROM(SELECT  IA.SALE_ASMPT_CONF_CL															/*매출추정확정구분*/
+              ,IA.SALE_ASMPT_YM																		/*매출추정년월*/
+              ,IA.CUST_TYP   																		/*고객유형*/
+              ,IA.SALE_CL_CD 																		/*매출구분코드*/
+              ,IA.EQP_MDL_CD 																		/*모델코드*/	
+              ,IB.EQP_MDL_NM																		/*모델명*/
+              ,IA.OP_TYP_CD  																		/*계약상태*/
+              ,(SELECT  COUNT(*) 
+                  FROM  TB_SALE_ASMPT 
+                 WHERE  SALE_ASMPT_CONF_CL = IA.SALE_ASMPT_CONF_CL
+                   AND  SALE_ASMPT_YM = IA.SALE_ASMPT_YM
+                   AND  SALE_ASMPT_YM_TS = IA.SALE_ASMPT_YM_TS
+                   AND  SALE_CL_CD = IA.SALE_CL_CD
+                   AND  EQP_MDL_CD = IA.EQP_MDL_CD
+                   AND  OP_TYP_CD = IA.OP_TYP_CD
+                   AND  ADD_MONTHS(TO_DATE(SALE_ASMPT_YM,'YYYYMM'),-1) = TO_DATE(IA.SALE_ASMPT_YM,'YYYYMM') ) AS BF_RENTAL_QTY      /*전월건수*/
+              ,(SELECT  NVL(SUM(SALE_AMT),0)
+                  FROM  TB_SALE_ASMPT 
+                 WHERE  SALE_ASMPT_CONF_CL = IA.SALE_ASMPT_CONF_CL
+                   AND  SALE_ASMPT_YM = IA.SALE_ASMPT_YM
+                   AND  SALE_ASMPT_YM_TS = IA.SALE_ASMPT_YM_TS
+                   AND  SALE_CL_CD = IA.SALE_CL_CD
+                   AND  EQP_MDL_CD = IA.EQP_MDL_CD
+                   AND  OP_TYP_CD = IA.OP_TYP_CD
+                   AND  ADD_MONTHS(TO_DATE(SALE_ASMPT_YM,'YYYYMM'),-1) = TO_DATE(IA.SALE_ASMPT_YM,'YYYYMM') ) AS BF_MTH_RENTAL_FEE  /*전월금액*/
+              ,COUNT(*) AS RENTAL_QTY 																								/*매출건수*/
+              ,SUM(SALE_AMT) AS MTH_RENTAL_FEE 																						/*매출액*/ 
+         FROM  TB_SALE_ASMPT IA
+              ,TB_EQP_MDL IB
+        WHERE  IA.EQP_MDL_CD =  IB.EQP_MDL_CD(+)
+          AND  IA.SALE_ASMPT_CONF_CL = 'AS'
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+               IA.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CUST_TYP" compareValue="%"><![CDATA[
+               IA.CUST_TYP = #CUST_TYP#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="SALE_CL_CD" compareValue="%"><![CDATA[
+               IA.SALE_CL_CD = #SALE_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+               IA.SALE_ASMPT_YM = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+               IA.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[              
+        GROUP  BY IA.SALE_ASMPT_CONF_CL																/*매출추정확정구분*/
+                 ,IA.SALE_ASMPT_YM																	/*매출추정년월*/
+                 ,IA.SALE_ASMPT_YM_TS																/*매출추정년월차수*/
+                 ,IA.CUST_TYP   																	/*고객유형*/
+                 ,IA.SALE_CL_CD 																	/*계정*/
+                 ,IA.EQP_MDL_CD 																	/*모델코드*/
+                 ,IB.EQP_MDL_NM 																	/*모델명*/
+                 ,IA.OP_TYP_CD  																	/*계약상태*/
+     )A
+) PA
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SsaleAsmptLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRSaleAsmptMgmt.SsaleAsmptLst 기준일자 리스트조회 */
+/* IO: 김혁범,2015-08-28T10:36:58(김혁범,2015-08-04T10:40:50) */
+SELECT  TO_CHAR(A.FS_REG_DTM,'YYYYMMDD') AS FS_REG_DTM										/*기준일자*/
+        ,(SELECT  COUNT(*)
+            FROM  TB_SALE_ASMPT C
+           WHERE  TO_DATE(C.SALE_ASMPT_YM,'YYYYMM')  = ADD_MONTHS(TO_DATE(C.SALE_ASMPT_YM,'YYYYMM'),-12)
+         	 AND  C.SALE_ASMPT_CONF_CL = 'AS'
+         ) AS BF_YY_RENTAL_QTY 															/*전년당월건수*/
+        ,(SELECT  SUM(D.SALE_AMT)
+            FROM  TB_SALE_ASMPT D
+           WHERE  TO_DATE(D.SALE_ASMPT_YM,'YYYYMM')  = ADD_MONTHS(TO_DATE(D.SALE_ASMPT_YM,'YYYYMM'),-12)
+             AND  D.SALE_ASMPT_CONF_CL = 'AS'
+         ) AS BF_YY_MTH_RENTAL_FEE 														/*전년당월금액*/
+        ,(SELECT  COUNT(*)
+            FROM  TB_SALE_ASMPT E
+           WHERE  TO_DATE(E.SALE_ASMPT_YM,'YYYYMM')  = ADD_MONTHS(TO_DATE(E.SALE_ASMPT_YM,'YYYYMM'),-1)
+             AND  E.SALE_ASMPT_CONF_CL = 'AS'	
+         ) AS BF_DD_RENTAL_QTY 															/*전월매출건수*/    
+        ,(SELECT  SUM(F.SALE_AMT)
+            FROM  TB_SALE_ASMPT F
+           WHERE  TO_DATE(F.SALE_ASMPT_YM,'YYYYMM')  = ADD_MONTHS(TO_DATE(F.SALE_ASMPT_YM,'YYYYMM'),-1)
+             AND  F.SALE_ASMPT_CONF_CL = 'AS'
+         ) AS BF_DD_MTH_RENTAL_FEE 														/*전월매출액*/
+        ,(SELECT  COUNT(*)
+            FROM  TB_SALE_ASMPT G
+           WHERE  TO_DATE(G.SALE_ASMPT_YM,'YYYYMM')  = TO_DATE(G.SALE_ASMPT_YM,'YYYYMM')
+             AND  G.SALE_ASMPT_CONF_CL = 'AS'
+             AND  G.SALE_ASMPT_YM = #YDATE#
+         ) AS TOT_RENTAL_QTY  															/*총건수*/
+        ,(SELECT  SUM(H.SALE_AMT)
+            FROM  TB_SALE_ASMPT H
+           WHERE  TO_DATE(H.SALE_ASMPT_YM,'YYYYMM')  = TO_DATE(H.SALE_ASMPT_YM,'YYYYMM')
+             AND  H.SALE_ASMPT_CONF_CL = 'AS'
+             AND  H.SALE_ASMPT_YM = #YDATE#
+         ) AS TOT_MTH_RENTAL_FEE 														/*매출액*/ 
+  FROM  TB_SALE_ASMPT A
+       ,TB_EQP_MDL    B
+ WHERE  A.EQP_MDL_CD =  B.EQP_MDL_CD(+)
+   AND  A.SALE_ASMPT_CONF_CL = 'AS'
+]]><isNotEmpty prepend="AND" property="YDATE"><![CDATA[
+        A.SALE_ASMPT_YM = #YDATE#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+        A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+	<select id="SsaleAsmptDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRSaleAsmptMgmt.SsaleAsmptDtlLst 매출추정정보상세 */
+/* IO: 김혁범,2015-08-27T11:25:09(김혁범,2015-08-05T09:45:38) */
+SELECT  A.CUST_TYP 												/*고객유형*/ 
+       ,A.SALE_CL_CD 											/*계정*/
+       ,A.EQP_MDL_CD 											/*모델코드*/
+       ,B.EQP_MDL_NM 											/*모델명*/
+       ,A.SVC_MGMT_NO 											/*서비스관리번호*/
+       ,D.NEW_CNTRTR_NM 										/*고객명*/
+       ,D.SVC_NO_ENPT 												/*이동전화번호*/
+       ,A.AGN_CD 												/*대리점코드*/
+       ,A.CNTRT_STA_DT											/*계약시작일*/
+       ,A.CNTRT_END_DT											/*계약종료일*/
+       ,A.RENTAL_TS												/*렌탈차수*/
+       ,A.OP_TYP_CD												/*계약상태*/
+       ,A.SALE_AMT												/*매출금액*/
+       ,C.DEALCO_NM 											/*대리점명*/
+  FROM  TB_SALE_ASMPT A
+       ,TB_EQP_MDL    B
+       ,TB_DEALCO     C
+       ,TB_NR_CNTRT   D
+ WHERE  A.EQP_MDL_CD = B.EQP_MDL_CD(+)
+   AND  C.DEALCO_CD = A.AGN_CD
+   AND  A.CNTRT_NO = D.CNTRT_NO
+   AND  A.SALE_ASMPT_CONF_CL = 'AS'
+]]><isNotEqual prepend="AND" property="SALE_CL_CD" compareValue="%"><![CDATA[
+        A.SALE_CL_CD = #SALE_CL_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+        A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="CUST_TYP" compareValue="%"><![CDATA[
+        A.CUST_TYP = #CUST_TYP#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="SALE_ASMPT_YM"><![CDATA[
+        A.SALE_ASMPT_YM = #SALE_ASMPT_YM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+	<select id="SsaleAsmptYyLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.nrsxmbase.db.DNRSaleAsmptMgmt.SsaleAsmptYyLst 매출추정정보상세 기준일자 리스트조회 */
+/* IO: 김혁범,2015-08-28T10:37:58(김혁범,2015-08-05T10:30:56) */
+SELECT  TO_CHAR(A.FS_REG_DTM,'YYYYMMDD') AS FS_REG_DTM		/*기준일자*/
+       ,(SELECT  COUNT(*)
+           FROM  TB_SALE_ASMPT C
+          WHERE  TO_DATE(C.SALE_ASMPT_YM,'YYYYMM')  = ADD_MONTHS(TO_DATE(C.SALE_ASMPT_YM,'YYYYMM'),-12)
+            AND  C.SALE_ASMPT_CONF_CL = 'AS'
+        ) AS BF_YY_RENTAL_QTY 		/*전년당월건수*/
+       ,(SELECT  SUM(D.SALE_AMT)
+           FROM  TB_SALE_ASMPT D
+          WHERE  TO_DATE(D.SALE_ASMPT_YM,'YYYYMM')  = ADD_MONTHS(TO_DATE(D.SALE_ASMPT_YM,'YYYYMM'),-12)
+            AND  D.SALE_ASMPT_CONF_CL = 'AS'	
+        ) AS BF_YY_MTH_RENTAL_FEE 	/*전년당월금액*/
+       ,(SELECT  COUNT(*)
+           FROM  TB_SALE_ASMPT E
+          WHERE  TO_DATE(E.SALE_ASMPT_YM,'YYYYMM')  = ADD_MONTHS(TO_DATE(E.SALE_ASMPT_YM,'YYYYMM'),-1)
+            AND  E.SALE_ASMPT_CONF_CL = 'AS'
+        ) AS BF_DD_RENTAL_QTY 		/*전월매출건수*/    
+       ,(SELECT  SUM(F.SALE_AMT)
+           FROM  TB_SALE_ASMPT F
+          WHERE  TO_DATE(F.SALE_ASMPT_YM,'YYYYMM')  = ADD_MONTHS(TO_DATE(F.SALE_ASMPT_YM,'YYYYMM'),-1)
+            AND  F.SALE_ASMPT_CONF_CL = 'AS'
+        ) AS BF_DD_MTH_RENTAL_FEE 	/*전월매출액*/
+       ,(SELECT  COUNT(*)
+           FROM  TB_SALE_ASMPT G
+          WHERE  TO_DATE(G.SALE_ASMPT_YM,'YYYYMM')  = TO_DATE(G.SALE_ASMPT_YM,'YYYYMM')
+            AND  G.SALE_ASMPT_CONF_CL = 'AS'
+            AND  G.SALE_ASMPT_YM = #SALE_ASMPT_YM#
+        ) AS TOT_RENTAL_QTY  		/*총건수*/
+       ,(SELECT SUM(H.SALE_AMT)
+           FROM TB_SALE_ASMPT H
+          WHERE TO_DATE(H.SALE_ASMPT_YM,'YYYYMM')  = TO_DATE(H.SALE_ASMPT_YM,'YYYYMM')
+            AND  H.SALE_ASMPT_CONF_CL = 'AS'
+            AND  H.SALE_ASMPT_YM = #SALE_ASMPT_YM#
+        ) AS TOT_MTH_RENTAL_FEE 	/*매출액*/ 
+  FROM  TB_SALE_ASMPT A
+       ,TB_EQP_MDL    B
+ WHERE  A.EQP_MDL_CD =  B.EQP_MDL_CD(+)
+   AND  A.SALE_ASMPT_CONF_CL = 'AS'
+]]><isNotEmpty prepend="AND" property="SALE_ASMPT_YM"><![CDATA[
+        A.SALE_ASMPT_YM = #SALE_ASMPT_YM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="OP_TYP_CD" compareValue="%"><![CDATA[
+        A.OP_TYP_CD = #OP_TYP_CD#
+]]></isNotEqual><![CDATA[
+]]><isNotEmpty prepend="AND" property="AGN_CD"><![CDATA[
+        A.AGN_CD = #AGN_CD#
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

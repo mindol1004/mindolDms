@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR004">
+	<select id="SSaleAsmpt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR041.SSaleAsmpt 매출추정조회 */
+/* IO: 진병수,2015-08-13T17:39:56(진병수,2015-08-04T15:01:21) */
+WITH STD_DATE AS
+(
+    SELECT 'AS' AS SALE_ASMPT_CONF_CL
+         ,  1   AS SALE_ASMPT_YM_TS
+         ,  TO_DATE(NVL('',TO_CHAR(SYSDATE,'YYYYMMDD')),'YYYYMMDD') AS STD_DT FROM DUAL
+) 
+, COUNT_DATA AS
+(
+SELECT S.*
+     , COUNT(A.ROWID) AS MAXCOUNT
+  FROM TB_SALE_ASMPT A
+     , STD_DATE S
+ WHERE A.SALE_ASMPT_YM      = TO_CHAR(STD_DT, 'YYYYMM')
+   AND A.SALE_ASMPT_CONF_CL = S.SALE_ASMPT_CONF_CL
+   AND A.SALE_ASMPT_YM_TS   = S.SALE_ASMPT_YM_TS
+)
+SELECT STD.SALE_ASMPT_CONF_CL         AS SALE_ASMPT_CONF_CL  /* 매출확정추정구분                    */
+     , TO_CHAR(STD.STD_DT, 'YYYYMM')  AS SALE_ASMPT_YM      /* 매출 년월                           */
+     , STD.SALE_ASMPT_YM_TS           AS SALE_ASMPT_YM_TS   /* 매출추정년월차수                     */
+     , ROWNUM + STD.MAXCOUNT          AS SALE_ASMPT_SEQ     /* 추정순번                             */
+     , TO_CHAR(STD.STD_DT,'YYYYMMDD') AS SALE_ASMPT_STRD_DT /* 기준일자                             */
+     , 'RENT'                         AS SALE_CL_CD         /* 매출구분코드                         */
+     , 'NR'                           AS OP_CL_CD           /* 업무구분코드                         */
+     , A.CNTRT_NO                     AS CNTRT_NO           /* 계약번호                             */ 
+     , A.OP_TYP_CD                    AS OP_TYP_CD          /* 업무유형코드                         */
+     , C.EQP_MDL_CD                   AS EQP_MDL_CD         /* 단말기모델코드                       */
+     , A.AGN_CD                       AS AGN_CD             /* 대리점코드                           */
+     , A.SVC_MGMT_NO                  AS SVC_MGMT_NO        /* 서비스관리번호                       */
+     , A.CUST_TYP                     AS CUST_TYP           /* 고객유형                             */
+     , B.RENTAL_CNTRT_STA_DT          AS CNTRT_STA_DT
+     , B.RENTAL_CNTRT_END_DT          AS CNTRT_END_DT  
+     , CEIL(MONTHS_BETWEEN(  TO_DATE(TO_CHAR(STD.STD_DT-1,'YYYYMM')||'01','YYYYMMDD')
+                           , TO_DATE(SUBSTR(B.RENTAL_CNTRT_STA_DT,1,6)||'01','YYYYMMDD') ))+1 AS RENTAL_TS
+     , CASE WHEN SUBSTR(B.RENTAL_CNTRT_END_DT,1,6) = TO_CHAR(STD.STD_DT -1, 'YYYYMM')
+            THEN TO_DATE(B.RENTAL_CNTRT_END_DT, 'YYYYMMDD') - TO_DATE(TO_CHAR(STD.STD_DT -1, 'YYYYMM') || '01')
+            ELSE C.RENTAL_FEE
+       END 
+       AS SALE_AMT
+     , STD.STD_DT                        AS FS_REG_DTM
+     , 'BAT'                          AS FS_REG_USER_ID
+  FROM PS_MNG.TB_NR_CNTRT     A /*계약    */
+     , PS_MNG.TB_RENTAL_CNTRT B /*렌탈계약*/
+     , PS_MNG.TB_RENTAL_POLY  C /*정책    */
+     , COUNT_DATA             STD
+ WHERE TO_CHAR(STD.STD_DT,'YYYYMMDD') BETWEEN B.RENTAL_CNTRT_STA_DT AND B.RENTAL_CNTRT_END_DT 
+   AND B.CNTRT_NO       = A.CNTRT_NO
+   AND C.RENTAL_POLY_NO = B.RENTAL_POLY_NO]]>
+	</select>
+	<insert id="ISaleAsmpt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR041.ISaleAsmpt 매출추정등록 */
+/* IO: 진병수,2015-08-12T18:35:21(진병수,2015-08-04T15:05:26) */
+INSERT INTO PS_MNG.TB_SALE_ASMPT
+            (
+               SALE_ASMPT_CONF_CL
+             , SALE_ASMPT_YM
+             , SALE_ASMPT_YM_TS
+             , SALE_ASMPT_SEQ
+             , SALE_ASMPT_STRD_DT
+             , SALE_CL_CD
+             , OP_CL_CD
+             , CNTRT_NO
+             , OP_TYP_CD
+             , EQP_MDL_CD
+             , AGN_CD
+             , SVC_MGMT_NO
+             , CNTRT_STA_DT
+             , CNTRT_END_DT
+             , RENTAL_TS
+             , CUST_TYP
+             , SALE_AMT
+             , FS_REG_DTM
+             , LS_CHG_USER_ID
+            )
+            VALUES
+            (
+                #SALE_ASMPT_CONF_CL#
+              , #SALE_ASMPT_YM#
+              , #SALE_ASMPT_YM_TS#
+              , #SALE_ASMPT_SEQ#
+              , #SALE_ASMPT_STRD_DT#
+              , #SALE_CL_CD#
+              , #OP_CL_CD#
+              , #CNTRT_NO#
+              , #OP_TYP_CD#
+              , #EQP_MDL_CD#
+              , #AGN_CD#
+              , #SVC_MGMT_NO#
+              , #CNTRT_STA_DT#
+              , #CNTRT_END_DT#
+              , #RENTAL_TS#
+              , #CUST_TYP#
+              , #SALE_AMT#
+              , #FS_REG_DTM#
+              , #LS_CHG_USER_ID#
+            )]]>
+	</insert>
+</sqlMap>

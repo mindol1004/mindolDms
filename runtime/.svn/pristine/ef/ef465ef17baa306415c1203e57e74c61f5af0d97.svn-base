@@ -1,0 +1,117 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="nexcore.framework.core.Constants"%>
+<%@ page import="nexcore.framework.core.util.BaseUtils"%>
+<%@ page import="nexcore.framework.core.data.user.IUserInfo"%>
+<%@ page import="nexcore.framework.online.channel.util.WebUtils"%>
+<%@page import="java.util.*" %>
+<%@page import="java.text.*" %>
+<%@page import="nexcore.framework.core.data.IDataSet" %>
+<%@page import="nexcore.framework.core.data.IRecordSet" %>
+<%@page import="nexcore.framework.core.data.IRecord" %>
+<%@page import="nexcore.framework.core.data.IResultMessage" %>
+<%@page import="nexcore.framework.core.util.BaseUtils" %>
+<%@page import="nexcore.framework.core.util.ExceptionUtil" %>
+<%@page import="nexcore.framework.core.code.ICode"%>
+<%@page import="fwk.utils.HpcUtils"%>
+<%@page import="fwk.code.HpcCodeManager"%>
+<%@page import="fwk.code.internal.HpcCode"%>
+<!DOCTYPE html>
+<html>
+<head> 
+	<title>로그인</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" >
+	<!-- libraryList include  start -->
+	<jsp:include page="./include/libraryList.jsp"/>
+	<!-- top page include  end -->
+</head>
+<body>
+	<!-- top file include  start -->
+	<%@ include file="include/top.jsp" %>	
+	<!-- top page include  end -->	
+	
+	<!-- content start -->
+	<div id="contentDiv"> 
+		<div id ="contentWrapDiv"> 			
+			<!-- login layout start  -->	
+			<div id="loginWrapDiv">
+				 <div class="page_tit"><img src="<%= request.getContextPath() %>/ext/img/member_title_01.gif" alt="로그인" /></div>
+	                <div class="loginDiv">                	
+	                	<form name="loginForm" method="post" >
+	                	<input type="hidden" name="<%= Constants.TRANSACTION_ID %>">
+						<input type="hidden" name="<%= Constants.TARGET %>">	
+						<input type="hidden" name="ipad" value="<%=request.getRemoteAddr()%>">		
+						<input type="hidden" name="urlReferer" id="urlReferer" value="${urlReferer}"/>
+						<input type="hidden" name="FORCED_YN" value="Y">		
+	                    <div class="login-option">                		
+	                        <ul class="login-form">
+	                            <li>
+	                                <input type="text" name="USER_ID" id="USER_ID" class="input" />
+	                            </li>
+	                            <li class="mt-10">
+	                                <input type="password" name="USER_PWD" id="USER_PWD"  class="input" />
+	                            </li>
+	                            <li class="mt-10">	                                
+	                                    <input type="checkbox" name="saveUserId" id="saveUserId"  />
+	                                    아이디저장
+	                            </li>  
+	                        </ul>
+	                    </div>
+	                    <div class="login_bu"><input type="image" src="<%= request.getContextPath() %>/ext/img/btn_box_login.gif" onClick="javascript:onBeforeLogin();" alt="로그인" /></div>
+	                    </form>	                    
+	                    <div class="member-text-hide"></div><!-- 배경의 이미지를 가리기 위해 필요함. -->
+	                </div> 
+            </div>
+			<!-- login layout end -->
+		</div>
+		<!-- content end -->
+		<!-- footer file include  start -->
+		<%@ include file="include/footer.jsp" %>	
+		<!-- footer page include  end -->	
+	</div>	
+<script>
+
+		function onBeforeLogin() {
+			var saveUserId = $("input[name='saveUserId']").is(":checked");
+			var userId = $("input[name='USER_ID']").val();
+			if (!$("input[name='USER_ID']").val()) {
+				alert("아이디를 입력하세요");
+				$("input[name='USER_ID']").focus();
+				return false;
+			}
+			
+			if (!$("input[name='USER_PWD']").val()) {
+				alert("비밀번호를 입력하세요");
+				$("input[name='USER_PWD']").focus();
+				return false;
+			}
+			if(saveUserId){$.cookie('admin_id', userId, {path:'/', expires:30});}
+			else{$.cookie('admin_id', null, {path:'/'});}
+					
+			doLogin();
+		
+		}
+
+		function doLogin(){
+			document.loginForm.<%= Constants.TRANSACTION_ID %>.value="PSCLginOp_pLginWeb";
+			document.loginForm.<%= Constants.TARGET %>.value="forward:jsp/loginProcess.jsp";
+			document.loginForm.target = "_self";
+			document.loginForm.action = "<%=request.getContextPath()%>/login.cmd";
+			document.loginForm.submit();
+		}
+		
+		$(document).ready(function() {
+			var userId = $.cookie("admin_id");
+			if (typeof userId == "undefined" || userId == null || userId == "") {
+				$("input[name='saveUserId']").removeAttr("checked");
+				$("input[name='USER_ID']").focus();
+			} else {
+				$("input[name='saveUserId']").attr("checked", "checked");
+				$("input[name='USER_ID']").val(userId);
+				$("input[name='USER_PWD']").focus();
+			}
+		});
+	</script>
+</body>
+</html>

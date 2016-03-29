@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.BPR002">
+	<select id="SEqpIn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR002.SEqpIn 단말기입고정보조회 */
+/* IO: 김윤환,2015-08-10T14:18:45(김윤환,2015-08-07T11:26:48) */
+SELECT
+	   A.EQP_MDL_CD	 /* 단말기모델코드 */
+	   ,A.EQP_SER_NUM	 /* 단말기일련번호 */
+       ,A.EQP_IN_DT	 /* 단말기입고일자 */
+  FROM TB_EQP_IN A
+      ,TB_EQP_ASSET B
+ WHERE A.ASSET_NO = B.ASSET_NO
+   AND A.DEL_YN = 'N'
+   AND A.IN_DTL_CD != 10
+   AND B.OP_CL_CD = 'PR'
+   AND B.DEL_YN = 'N'   
+   AND EQP_IN_DT = #PROC_DT#]]>
+	</select>
+	<insert id="ITfPrRCntrInReq" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR002.ITfPrRCntrInReq R센터입고IF대상등록 */
+/* IO: 김윤환,2015-08-10T10:22:52(김윤환,2015-08-07T13:29:31) */
+INSERT 
+  INTO TF_PR_R_CNTR_IN_REG
+   (
+	 IF_PROC_DT			/* IF_처리일자 */
+	 ,IF_FILE_NM		/* IF_파일명 */
+	 ,IF_SEQ			/* IF_순번 */
+	 ,EQP_MDL_CD		/* 단말기모델코드 */
+	 ,EQP_SER_NUM		/* 단말기일련번호 */
+	 ,R_CNTR_CLCT_DT	/* R센터회수일자 */
+	 ,PROC_ST_CD		/* 처리상태코드 */
+	 ,FS_REG_USER_ID	/* 최초등록사용자ID */
+	 ,FS_REG_DTM		/* 최초등록일시 */
+	 ,LS_CHG_USER_ID	/* 최종변경사용자ID */
+	 ,LS_CHG_DTM		/* 최종변경일시 */
+   )VALUES(
+	 #IF_PROC_DT#			
+	 ,#IF_FILE_NM#		
+	 ,#IF_SEQ#
+	 ,#EQP_MDL_CD#
+	 ,#EQP_SER_NUM#		
+	 ,#EQP_IN_DT#	
+	 ,'09'		
+	 ,'BAT'	
+	 ,SYSDATE		
+	 ,'BAT'	
+	 ,SYSDATE		
+   )]]>
+	</insert>
+</sqlMap>

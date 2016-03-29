@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.pr.BPR006">
+	<select id="SEqpRemPrc" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.BPR006.SEqpRemPrc 단말기잔존가치정보조회 */
+/* IO: 김윤환,2015-08-11T14:15:42(김윤환,2015-08-11T14:15:42) */
+SELECT 
+	   A.EQP_MDL_CD		/* 단말기모델코드 */
+	  ,A.EQP_SER_NUM	/* 단말기일련번호 */
+	  ,C.RENT_MM_DT		/* 렌트년월 */
+	  ,C.REM_PRC		/* 잔존금액 */
+ FROM TB_EQP_ASSET A
+	  ,TB_EQP_CNTRT B
+	  ,TB_EQP_CNTRT_DTL C
+WHERE A.ASSET_NO = B.ASSET_NO
+  AND B.ASSET_NO = C.ASSET_NO
+  AND B.CNTRT_NO = C.CNTRT_NO
+  AND A.OP_CL_CD = 'PR'
+  AND (A.DEL_YN = 'N' AND B.DEL_YN = 'N' AND C.DEL_YN = 'N')
+  AND C.RENT_MM_DT = TO_CHAR(TO_DATE(#PROC_DT#,'YYYYMMDD'),'YYYYMM')
+  AND #PROC_DT# BETWEEN B.RENT_STA_DT AND NVL(B.RENT_END_DT,'20150831')]]>
+	</select>
+	<insert id="ITfEqpRemPrc" parameterClass="map" ><![CDATA[/* Biz: dms.pr.BPR006.ITfEqpRemPrc IF단말기잔존가치정보드록 */
+/* IO: 김윤환,2015-08-11T14:20:58(김윤환,2015-08-11T14:20:58) */
+INSERT 
+  INTO TF_EQP_REM_PRC
+  (
+	IF_PROC_DT	  		/* IF처리일자 */
+	,IF_FILE_NM			/* IF파일명 */
+	,IF_SEQ				/* IF순번 */
+	,REM_CSPT_STD_YM	/* 잔존가치기준년월 */
+	,EQP_MDL_CD			/* 단말기모델코드 */
+	,EQP_SER_NUM		/* 단말기일련번호 */
+	,EQP_REM_PRC		/* 단말기잔존금액 */
+	,PROC_ST_CD			/* 처리상태코드 */
+	,FS_REG_USER_ID		/* 최초등록사용자ID */
+	,FS_REG_DTM			/* 최초등록일시 */
+	,LS_CHG_USER_ID		/* 최종변경사용자ID */
+	,LS_CHG_DTM			/* 최종변경일시 */
+  )VALUES(
+	#IF_PROC_DT#
+	,#IF_FILE_NM#
+	,#IF_SEQ#
+	,#REM_CSPT_STD_YM#	/* 잔존가치기준년월 */
+	,#EQP_MDL_CD#		/* 단말기모델코드 */
+	,#EQP_SER_NUM#		/* 단말기일련번호 */
+	,#EQP_REM_PRC#		/* 단말기잔존금액 */
+	,'09'		
+	,'BAT'	
+	,SYSDATE		
+	,'BAT'	
+	,SYSDATE
+  )]]>
+	</insert>
+</sqlMap>

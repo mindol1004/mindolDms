@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR031">
+	<select id="SBkagAmt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR031.SBkagAmt 단말에 대한 평균 working-damaged 차액 건수 */
+/* IO: 안진갑,2016-03-02T17:56:48(안진갑,2016-02-26T11:24:55) */
+SELECT  COUNT(1) AS CNT
+  FROM  TB_EQP_USED_DSPSL A
+       ,TB_EQP_ASSET B
+       ,TH_NR_CNTRT_HST C
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  A.CNTRT_NO = C.CNTRT_NO(+)
+   AND  C.OP_TYP_CD (+) = '07'
+   AND  A.FPA_GRADE = 'B'
+   AND  C.OP_TYP_CD IS NULL
+   AND  B.EQP_MDL_CD NOT IN (
+                              SELECT  EQP_MDL_CD
+                                FROM  TB_EQP_BKAG_AMT
+                               WHERE  APPLY_DT = #FPA_DSPSL_DT#
+                            )
+   AND  A.SELL_GRADE_SEQ = (
+                              SELECT  MAX(SELL_GRADE_SEQ)
+                                FROM  TB_EQP_USED_DSPSL
+                               WHERE  CNTRT_NO = A.CNTRT_NO
+                           )                            
+   AND  A.USED_DSPSL_ST = '01']]>
+	</select>
+	<select id="STargetList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR031.STargetList FPA재고이관대상 조회 */
+/* IO: 안진갑,2016-03-14T14:29:08(안진갑,2016-02-26T15:42:42) */
+SELECT  A.CNTRT_NO
+       ,A.SELL_GRADE_SEQ
+       ,#FPA_DSPSL_DT# AS FPA_DSPSL_DT
+       ,A.FPA_GRADE
+       ,B.ASSET_NO
+       ,A.SELL_PRC
+       ,A.PRCH_PRC
+       ,C.EQP_BKAG_AMT
+       ,GET_FPA_AMT4CNTRT(A.CNTRT_NO, #FPA_DSPSL_DT#) AS SELL_DT_FPA_AMT       
+       ,A.MID_TERM_YN
+       ,A.INVE_ASMT_DMT_AMT
+       ,A.PLAN_EXPT_DSPSL_AMT
+  FROM  TB_EQP_USED_DSPSL A
+       ,TB_EQP_ASSET B
+       ,TB_EQP_BKAG_AMT C
+ WHERE  A.ASSET_NO = B.ASSET_NO
+   AND  B.EQP_MDL_CD = C.EQP_MDL_CD(+)
+   AND  C.APPLY_DT (+)= #FPA_DSPSL_DT#
+   AND  A.USED_DSPSL_ST = '01'
+   AND  B.INVE_ST_CD = '45'
+   AND  A.SELL_GRADE_SEQ = (
+                              SELECT  MAX(SELL_GRADE_SEQ)
+                                FROM  TB_EQP_USED_DSPSL
+                               WHERE  CNTRT_NO = A.CNTRT_NO
+                           )]]>
+	</select>
+	<update id="UEqpUsedDspsl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR031.UEqpUsedDspsl 단말기중고매각테이블 상태 업데이트 */
+/* IO: 안진갑,2016-03-14T14:24:32(안진갑,2016-02-26T17:26:26) */
+UPDATE  TB_EQP_USED_DSPSL
+   SET  FPA_DSPSL_DT = #FPA_DSPSL_DT#
+       ,SELL_PRC = #SELL_PRC#
+       ,EQP_BKAG_AMT = #EQP_BKAG_AMT#
+       ,SELL_DT_FPA_AMT = #SELL_DT_FPA_AMT#
+       ,INVE_ASMT_DMT_AMT = #INVE_ASMT_DMT_AMT#
+       ,USED_DSPSL_ST = '02'
+       ,INV_MOV_REQS_DT = #FPA_DSPSL_DT#
+       ,INV_MOV_REQ_SEQ = #INV_MOV_REQ_SEQ#
+       ,USED_SYS_TRMS_DTM = SYSDATE
+       ,TRMS_RSLT_CD = 'S'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  CNTRT_NO = #CNTRT_NO#
+   AND  SELL_GRADE_SEQ = #SELL_GRADE_SEQ#]]>
+	</update>
+	<update id="UEqpUsedDspslSt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR031.UEqpUsedDspslSt 오류상태업데이트 */
+/* IO: 안진갑,2016-02-29T17:26:19(안진갑,2016-02-29T17:25:42) */
+UPDATE  TB_EQP_USED_DSPSL
+   SET  TRMS_RSLT_CD = 'F'
+       ,LS_CHG_USER_ID = #USER_NO#
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  CNTRT_NO = #CNTRT_NO#
+   AND  SELL_GRADE_SEQ = #SELL_GRADE_SEQ#]]>
+	</update>
+	<update id="UEqpAsstSt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR031.UEqpAsstSt 단말상태업데이트(매각) */
+/* IO: 안진갑,2016-03-02T10:41:40(안진갑,2016-03-02T10:39:19) */
+UPDATE  TB_EQP_ASSET
+   SET  INVE_ST_CD = '60'
+ WHERE  ASSET_NO = #ASSET_NO#]]>
+	</update>
+	<select id="SInvMovReqSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR031.SInvMovReqSeq 일별 RESEALE READY 순번 조회 */
+/* IO: 안진갑,2016-03-03T16:41:53(안진갑,2016-03-03T16:40:55) */
+SELECT  NVL(MAX(INV_MOV_REQ_SEQ),0) + 1 AS INV_MOV_REQ_SEQ
+  FROM  TB_EQP_USED_DSPSL
+ WHERE  FPA_DSPSL_DT = #FPA_DSPSL_DT#
+   AND  TRMS_RSLT_CD = 'S']]>
+	</select>
+</sqlMap>

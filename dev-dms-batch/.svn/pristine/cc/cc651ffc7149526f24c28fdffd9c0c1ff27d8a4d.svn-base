@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.BNR003">
+	<select id="SEqpClctInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR003.SEqpClctInfo 단말기회수정보IF조회 */
+/* IO: 장미진,2015-08-07T15:22:20(장미진,2015-08-04T17:18:40) */
+SELECT 
+	    IF_PROC_DT		  	/* IF_처리일자 */
+	   ,IF_FILE_NM		  	/* IF_파일명 */
+	   ,IF_SEQ			  	/* IF_순번 */
+	   ,EQP_MDL_CD		  	/* 단말기모델코드 */
+	   ,EQP_SER_NUM			/* 단말기일련번호 */
+	   ,EQP_COLOR_CD
+	   ,RTN_REG_BR_CD AS AGN_CD		/* 반납등록영업장코드 */
+	   ,TO_CHAR(TO_DATE(RTN_REG_DT,'YYYYMMDD')+1,'YYYYMMDD') AS IN_SCHD_DT 	/* 입고예정일자 */
+       ,CLCT_OBJ_REG_DT     /* 회수대상등록일자 */  
+	   ,RTN_REG_DT			/* 반납등록일자 */
+	   ,PROC_ST_CD			/* 처리상태코드 */
+	   ,SKN_CLCT_DT	   		/* SKN 입고 */
+	   ,FS_REG_USER_ID		/* 최초등록사용자ID */
+	   ,FS_REG_DTM			/* 최초등록일시 */
+	   ,LS_CHG_USER_ID		/* 최종변경사용자ID */
+	   ,LS_CHG_DTM			/* 최종변경일시 */
+  FROM  TF_SKN_IN 
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UEqpClctInfo" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR003.UEqpClctInfo 단말기회수정보IF수정 */
+/* IO: 장미진,2015-08-07T12:36:21(장미진,2015-08-04T17:19:34) */
+UPDATE  TF_SKN_IN
+   SET  PROC_ST_CD = '01'	/* 처리상태: 01(처리), 09(미처리) */
+	   ,LS_CHG_USER_ID = 'BAT'
+	   ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<insert id="IEqpClctObj" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR003.IEqpClctObj 단말기회수정보입력 */
+/* IO: 장미진,2015-08-07T14:21:48(장미진,2015-08-04T17:20:07) */
+]]><selectKey resultClass="String" keyProperty="EQP_IN_CLCT_NO" type="pre"><![CDATA[
+SELECT 'EC'||LPAD(SQ01_TB_EQP_CLCT_OBJ.NEXTVAL,10,0)
+  FROM DUAL
+]]></selectKey><![CDATA[
+INSERT
+  INTO  TB_EQP_CLCT_OBJ                          /* 단말회수정보관리 */ 
+       (
+        EQP_IN_CLCT_NO							/* 입고대상번호 */
+       ,EQP_MDL_CD                              /* 단말기모델코드 */
+       ,EQP_SER_NUM                             /* 단말기일련번호 */ 
+       ,OP_CL_CD                              	/* 업무구분코드 */ 
+       ,IN_OBJ_DTL_CD                           /* 회수구분코드 */
+       ,EQP_COLOR_CD                            /* 단말기색상 */
+       ,AGN_CD						            /* 대리점코드 */
+       ,RTN_REG_DT					        	/* 대리점반납일 */
+       ,DEL_YN                          		/* 삭제여부 */
+       ,SKN_CLCT_DT                             /* SKN회수일 */
+       ,CLCT_OBJ_REG_DT							/* 회수대상등록일 */
+       ,FS_REG_USER_ID							/* 최초등록사용자ID */
+       ,FS_REG_DTM                              /* 최초등록일시 */
+       ,LS_CHG_USER_ID                          /* 최종변경사용자ID */
+       ,LS_CHG_DTM                              /* 최종변경일시 */ 
+       )
+VALUES
+       (
+        #EQP_IN_CLCT_NO#						/* 입고대상번호 */
+       ,#EQP_MDL_CD#                            /* 단말기모델코드 */
+       ,#EQP_SER_NUM#                           /* 단말기일련번호 */ 
+       ,'NR'                              		/* 업무구분코드 */ 
+       ,#IN_OBJ_DTL_CD#                         /* 회수구분코드 */
+       ,#EQP_COLOR_CD#                          /* 단말기색상 */
+       ,#AGN_CD#						        /* 대리점코드 */
+       ,#RTN_REG_DT#					        /* 대리점반납일 */
+       ,'N'                          		/* 삭제여부 */
+       ,#SKN_CLCT_DT#
+       ,#CLCT_OBJ_REG_DT#
+       ,'BAT'								/* 최초등록사용자ID */
+       ,SYSDATE                              	/* 최초등록일시 */
+       ,'BAT'                         		/* 최종변경사용자ID */
+       ,SYSDATE                              	/* 최종변경일시 */
+        )]]>
+	</insert>
+</sqlMap>

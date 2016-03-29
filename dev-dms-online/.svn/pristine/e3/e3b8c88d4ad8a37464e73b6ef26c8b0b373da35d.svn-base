@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DSCCmCdMgmt">
+	<select id="SCmCdLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmCdMgmt.SCmCdLstPaging 공통코드목록조회 */
+/* IO: 심상준,2014-10-24T17:55:59(심상준,2014-07-25T17:17:51) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY A.CM_CD_SORT_ORD, A.CM_CD_ID ASC) AS ROWNO
+               ,A.CM_GRP_CD_ID                                             /* 공통그룹코드ID */         
+               ,B.CM_GRP_CD_NM                                             /* 공통그룹코드명 */         
+               ,A.CM_CD_ID                                                 /* 공통코드ID */             
+               ,A.CM_CD_NM                                                 /* 공통코드명 */             
+               ,A.CM_CD_DESC                                               /* 공통코드설명 */           
+               ,A.CM_CD_SORT_ORD                                           /* 공통코드정렬순서 */       
+               ,DECODE(A.USE_YN,'Y','1','N','0') AS USE_YN                 /* 사용여부 */               
+               ,A.SUP_CM_GRP_CD_ID                                         /* 상위공통그룹코드ID */     
+               ,A.SUP_CM_CD_ID                                             /* 상위공통코드ID */         
+               ,A.MGMT_ITEM_CD1                                            /* 관리항목코드1 */          
+               ,A.MGMT_ITEM_CD2                                            /* 관리항목코드2 */          
+               ,A.MGMT_ITEM_CD3                                            /* 관리항목코드3 */          
+               ,A.MGMT_ITEM_CD4                                            /* 관리항목코드4 */          
+               ,A.MGMT_ITEM_CD5                                            /* 관리항목코드5 */          
+               ,A.MGMT_ITEM_CD6                                            /* 관리항목코드6 */          
+               ,A.MGMT_ITEM_CD7                                            /* 관리항목코드7 */          
+               ,A.MGMT_ITEM_CD8                                            /* 관리항목코드8 */
+               ,A.MGMT_ITEM_CD9                                            /* 관리항목코드9 */          
+               ,A.MGMT_ITEM_CD10                                           /* 관리항목코드10 */         
+               ,A.FS_REG_USER_ID                                           /* 최초등록사용자ID */           
+               ,TO_CHAR(A.FS_REG_DTM, 'YYYYMMDDHH24MISS') AS FS_REG_DTM    /* 최초등록일시 */                 
+               ,A.LS_CHG_USER_ID                                           /* 최종등록사용자ID */           
+               ,TO_CHAR(A.LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM     /* 최종등록일시 */    
+          FROM  TB_CM_CD A          /* SC_공통코드 */
+               ,TB_CM_GRP_CD B      /* SC_공통그룹코드 */
+         WHERE  A.CM_GRP_CD_ID = B.CM_GRP_CD_ID
+           AND  A.CM_GRP_CD_ID = #CM_GRP_CD_ID#
+         ]]><isNotEmpty prepend="AND" property="CM_CD_ID"><![CDATA[
+                A.CM_CD_ID LIKE '%'||#CM_CD_ID#||'%'
+         ]]></isNotEmpty><![CDATA[              
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="ICmCd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmCdMgmt.ICmCd 공통코드등록 */
+/* IO: 심상준,2014-09-26T17:11:16(심상준,2014-07-25T17:18:14) */
+INSERT
+  INTO  TB_CM_CD    /* SC_공통코드 */ 
+       (     
+        CM_GRP_CD_ID                    /* 공통그룹코드ID */
+       ,CM_CD_ID                        /* 공통코드ID */
+       ,CM_CD_NM                        /* 공통코드명 */
+       ,CM_CD_DESC                      /* 공통코드설명 */
+       ,CM_CD_SORT_ORD                  /* 공통코드정렬순서 */
+       ,USE_YN                          /* 사용여부 */
+       ,SUP_CM_GRP_CD_ID                /* 상위공통그룹코드ID */
+       ,SUP_CM_CD_ID                    /* 상위공통코드ID */
+       ,FS_REG_USER_ID                  /* 최초등록사용자ID */  
+       ,FS_REG_DTM                      /* 최초등록일시 */
+       ,LS_CHG_USER_ID                  /* 최종등록사용자ID */
+       ,LS_CHG_DTM                      /* 최종등록일시 */ 
+       ,MGMT_ITEM_CD1                   /* 관리항목코드1 */
+       ,MGMT_ITEM_CD2                   /* 관리항목코드2 */ 
+       ,MGMT_ITEM_CD3                   /* 관리항목코드3 */ 
+       ,MGMT_ITEM_CD4                   /* 관리항목코드4 */ 
+       ,MGMT_ITEM_CD5                   /* 관리항목코드5 */ 
+       ,MGMT_ITEM_CD6                   /* 관리항목코드6 */ 
+       ,MGMT_ITEM_CD7                   /* 관리항목코드7 */ 
+       ,MGMT_ITEM_CD8                   /* 관리항목코드8 */ 
+       ,MGMT_ITEM_CD9                   /* 관리항목코드9 */
+       ,MGMT_ITEM_CD10                  /* 관리항목코드10 */
+        )
+VALUES  
+       (
+        #CM_GRP_CD_ID#                               /* 공통그룹코드ID */     
+       ,#CM_CD_ID#                                   /* 공통코드ID */         
+       ,#CM_CD_NM#                                   /* 공통코드명 */         
+       ,#CM_CD_DESC#                                 /* 공통코드설명 */       
+       ,#CM_CD_SORT_ORD#                             /* 공통코드정렬순서 */   
+       ,DECODE(#USE_YN#,'1','Y','0','N', NULL, 'N')  /* 사용여부 */           
+       ,#SUP_CM_GRP_CD_ID#                           /* 상위공통그룹코드ID */ 
+       ,#SUP_CM_CD_ID#                               /* 상위공통코드ID */     
+       ,#USERNO#                                     /* 최초등록사용자ID */   
+       ,SYSDATE                                      /* 최초등록일시 */       
+       ,#USERNO#                                     /* 최종등록사용자ID */   
+       ,SYSDATE                                      /* 최종등록일시 */       
+       ,#MGMT_ITEM_CD1#                              /* 관리항목코드1 */      
+       ,#MGMT_ITEM_CD2#                              /* 관리항목코드2 */      
+       ,#MGMT_ITEM_CD3#                              /* 관리항목코드3 */      
+       ,#MGMT_ITEM_CD4#                              /* 관리항목코드4 */      
+       ,#MGMT_ITEM_CD5#                              /* 관리항목코드5 */      
+       ,#MGMT_ITEM_CD6#                              /* 관리항목코드6 */      
+       ,#MGMT_ITEM_CD7#                              /* 관리항목코드7 */      
+       ,#MGMT_ITEM_CD8#                              /* 관리항목코드8 */      
+       ,#MGMT_ITEM_CD9#                              /* 관리항목코드9 */      
+       ,#MGMT_ITEM_CD10#                             /* 관리항목코드10 */     
+        )]]>
+	</insert>
+	<update id="UCmCd" parameterClass="map" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmCdMgmt.UCmCd 공통코드수정 */
+/* IO: 심상준,2014-09-26T17:11:25(심상준,2014-07-25T17:18:28) */
+UPDATE 
+        TB_CM_CD     /* SC_공통코드 */           
+   SET  CM_CD_ID = #CM_CD_ID#                       /* 공통코드ID */          
+       ,CM_CD_NM = #CM_CD_NM#                       /* 공통코드명 */          
+       ,CM_CD_DESC = #CM_CD_DESC#                   /* 공통코드설명 */        
+       ,CM_CD_SORT_ORD = #CM_CD_SORT_ORD#           /* 공통코드정렬순서 */    
+       ,USE_YN = DECODE(#USE_YN#,'1','Y','0','N')   /* 사용여부 */            
+       ,SUP_CM_GRP_CD_ID = #SUP_CM_GRP_CD_ID#       /* 상위공통그룹코드ID */  
+       ,SUP_CM_CD_ID = #SUP_CM_CD_ID#               /* 상위공통코드ID */      
+       ,LS_CHG_USER_ID = #USERNO#                   /* 최종등록사용자ID */       
+       ,LS_CHG_DTM = SYSDATE                        /* 최종등록일시 */           
+       ,MGMT_ITEM_CD1 = #MGMT_ITEM_CD1#             /* 관리항목코드1 */       
+       ,MGMT_ITEM_CD2 = #MGMT_ITEM_CD2#             /* 관리항목코드2 */       
+       ,MGMT_ITEM_CD3 = #MGMT_ITEM_CD3#             /* 관리항목코드3 */       
+       ,MGMT_ITEM_CD4 = #MGMT_ITEM_CD4#             /* 관리항목코드4 */       
+       ,MGMT_ITEM_CD5 = #MGMT_ITEM_CD5#             /* 관리항목코드5 */       
+       ,MGMT_ITEM_CD6 = #MGMT_ITEM_CD6#             /* 관리항목코드6 */       
+       ,MGMT_ITEM_CD7 = #MGMT_ITEM_CD7#             /* 관리항목코드7 */       
+       ,MGMT_ITEM_CD8 = #MGMT_ITEM_CD8#             /* 관리항목코드8 */       
+       ,MGMT_ITEM_CD9 = #MGMT_ITEM_CD9#             /* 관리항목코드9 */       
+       ,MGMT_ITEM_CD10 = #MGMT_ITEM_CD10#           /* 관리항목코드10 */      
+WHERE  CM_GRP_CD_ID = #CM_GRP_CD_ID#                 
+  AND  CM_CD_ID = #CM_CD_ID#]]>
+	</update>
+	<select id="SCmCdLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmCdMgmt.SCmCdLstTotCnt 공통코드전체건수조회 */
+/* IO: 심상준,2014-09-26T17:10:29(심상준,2014-08-25T09:31:43) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_CM_CD A           /* SC_공통코드 */ 
+       ,TB_CM_GRP_CD B       /* SC_공통그룹코드 */                                                               
+ WHERE  A.CM_GRP_CD_ID = B.CM_GRP_CD_ID                                                             
+   AND  A.CM_GRP_CD_ID = #CM_GRP_CD_ID#]]>
+	</select>
+	<select id="SCmCdLstValidate" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: hpc.SC.SCbbase.db.DSCCmCdMgmt.SCmCdLstValidate 공통코드저장사전체크 */
+/* IO: 심상준,2014-12-26T16:39:59(심상준,2014-08-25T09:32:12) */
+SELECT  
+        COUNT(1) AS ROW_CNT
+  FROM  TB_CM_CD A                  /* SC_공통코드 */ 
+       ,TB_CM_GRP_CD B              /* SC_공통그룹코드 */                                           
+ WHERE  A.CM_GRP_CD_ID = B.CM_GRP_CD_ID                                                             
+   AND  A.CM_GRP_CD_ID = #CM_GRP_CD_ID#
+   AND  A.CM_CD_ID = #CM_CD_ID#]]>
+	</select>
+	<select id="SSupCmCdLstPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCCmCdMgmt.SSupCmCdLstPaging 상위공통코드검색 */
+/* IO: admin,2016-02-18T13:46:18(심상준,2014-09-01T10:59:29) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY A.CM_GRP_CD_ID ASC, B.CM_CD_SORT_ORD ASC) AS ROWNO
+               ,A.CM_GRP_CD_ID                 /* 공통그룹코드ID */         
+               ,A.CM_GRP_CD_NM                 /* 공통그룹코드명 */         
+               ,B.CM_CD_ID                     /* 공통코드ID */             
+               ,B.CM_CD_NM                     /* 공통코드명 */             
+               ,B.CM_CD_DESC                   /* 공통코드설명 */
+               ,B.MGMT_ITEM_CD1                /* 관리항목코드1 */          
+               ,B.MGMT_ITEM_CD2                /* 관리항목코드2 */          
+               ,B.MGMT_ITEM_CD3                /* 관리항목코드3 */          
+               ,B.MGMT_ITEM_CD4                /* 관리항목코드4 */          
+               ,B.MGMT_ITEM_CD5                /* 관리항목코드5 */          
+               ,B.MGMT_ITEM_CD6                /* 관리항목코드6 */          
+               ,B.MGMT_ITEM_CD7                /* 관리항목코드7 */          
+               ,B.MGMT_ITEM_CD8                /* 관리항목코드8 */
+               ,B.MGMT_ITEM_CD9                /* 관리항목코드9 */          
+               ,B.MGMT_ITEM_CD10               /* 관리항목코드10 */                             
+          FROM  TB_CM_GRP_CD A                 /* SC_공통그룹코드 */ 
+               ,TB_CM_CD B                     /* SC_공통코드 */                                                             
+         WHERE  A.CM_GRP_CD_ID = B.CM_GRP_CD_ID
+         ]]><isNotEmpty prepend="AND" property="CM_GRP_CD_ID"><![CDATA[
+                A.CM_GRP_CD_ID LIKE '%'||#CM_GRP_CD_ID#||'%'
+         ]]></isNotEmpty><![CDATA[
+         ]]><isNotEmpty prepend="AND" property="CM_GRP_CD_NM"><![CDATA[
+                A.CM_GRP_CD_NM LIKE '%'||#CM_GRP_CD_NM#||'%'
+         ]]></isNotEmpty><![CDATA[
+         ]]><isNotEmpty prepend="AND" property="CM_CD_ID"><![CDATA[
+                UPPER(B.CM_CD_ID) LIKE '%'||UPPER(#CM_CD_ID#)||'%'
+         ]]></isNotEmpty><![CDATA[
+         ]]><isNotEmpty prepend="AND" property="CM_CD_NM"><![CDATA[
+                UPPER(B.CM_CD_NM) LIKE '%'||UPPER(#CM_CD_NM#)||'%'
+         ]]></isNotEmpty><![CDATA[                                                
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SSupCmCdLstTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.sc.scbbase.db.DSCCmCdMgmt.SSupCmCdLstTotCnt 상위공통코드전체건수조회 */
+/* IO: admin,2016-02-18T13:45:14(심상준,2014-09-01T11:04:42) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_CM_GRP_CD A   /* SC_공통그룹코드 */ 
+       ,TB_CM_CD B       /* SC_공통코드 */                                                         
+ WHERE  A.CM_GRP_CD_ID = B.CM_GRP_CD_ID
+]]><isNotEmpty prepend="AND" property="CM_GRP_CD_ID"><![CDATA[
+        A.CM_GRP_CD_ID LIKE '%'||#CM_GRP_CD_ID#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CM_GRP_CD_NM"><![CDATA[
+        A.CM_GRP_CD_NM LIKE '%'||#CM_GRP_CD_NM#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CM_CD_ID"><![CDATA[
+        UPPER(B.CM_CD_ID) LIKE '%'||UPPER(#CM_CD_ID#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="CM_CD_NM"><![CDATA[
+        UPPER(B.CM_CD_NM) LIKE '%'||UPPER(#CM_CD_NM#)||'%'
+]]></isNotEmpty><![CDATA[]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,293 @@
+package dms.ep.epbfsbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [PU]FPA판매대행상품판매관리</li>
+ * <li>설  명 : <pre>FPA판매대행상품판매관리 PU</pre></li>
+ * <li>작성일 : 2016-02-18 09:55:05</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class PEPFPAProxySaleMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPFPAProxySaleMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>FPA판매대행상품판매조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 09:55:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : SELL_STA_DTM [시작일]
+	 *	- field : SELL_END_DTM [종료일]
+	 *	- field : SALEPLC [매출처]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqFpaProxySaleList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSFSBase", "fInqFpaProxySaleList", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA판매대행상품판매등록상세조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 09:55:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : GNRL_SELL_NO [일반판매번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqFpaProxySaleSaveDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSFSBase", "fInqFpaProxySaleSaveDtl", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA판매대행상품판매등록</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 09:55:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_SALE_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SURTAX [부가세]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *	- record : RS_MASTER_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHRGR_ID [판매담당자ID]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : SELL_CHG_DTM [판매변경일시]
+	 *		- field : SELL_CHGR_ID [판매변경자ID]
+	 *		- field : RMK [비고]
+	 *		- field : SALEPLC [매출처코드]
+	 *		- field : SALEPLC_NM [매출처명]
+	 *		- field : ATFIL_ID [첨부파일ID]
+	 *		- field : SELL_CL_CD [판매구분]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : CUR_CL_CD [화폐 구분 코드]
+	 *		- field : XRATE_APPLY_AMT [환율적용금액]
+	 *		- field : XRATE_APPLY_DT [환율적용일자]
+	 *		- field : XCL_SLIP_NO [전표번호]
+	 *		- field : XCL_SLIP_ST [전표상태]
+	 *	- record : RS_DEL_LIST
+	 *		- field : GNRL_SELL_NO [일반판매번호]
+	 *		- field : GNRL_SELL_CHG_SEQ [일반판매변경순번]
+	 *		- field : SELL_DTM [판매일시]
+	 *		- field : SELL_CHG_HST_CL [판매변경이력구분]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : SELL_SEQ [판매순번]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : EQP_COLOR_CD [색상]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SURTAX [부가세]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : MFACT_CD [제조사코드]
+	 *	- record : NC_FILE_LIST
+	 *		- field : fullpath [파일경로]
+	 *		- field : UPLD_FILE_NO [파일번호]
+	 *		- field : FILE_ID [파일ID]
+	 *		- field : FILE_NM [파일명]
+	 *		- field : FILE_TYP_VAL [파일타입]
+	 *		- field : FILE_SIZE [파일크기]
+	 *		- field : FS_REG_USER_ID [최초등록자ID]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종등록자ID]
+	 *		- field : LS_CHG_DTM [최종등록일시]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveFpaProxySale(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+
+        try {
+            
+            //파일업로드 DB삭제 FM호출
+            if(!StringUtils.isEmpty(requestData.getField("UPLD_FILE_NO"))) {
+                callSharedBizComponentByDirect("sc.SCSBase", "fDelUpFileInfo", requestData, onlineCtx);
+            }
+            
+            IRecordSet upFileListRs = requestData.getRecordSet(DmsConstants.UPLOAD_FILE_LIST);
+            if(upFileListRs.getRecordCount() == 0) {
+                requestData.putField("UPLD_FILE_NO", "");
+            } else {
+                //파일업로드 DB등록 FM호출
+                requestData.putField("USER_NO", ca.getUserNo());
+                IDataSet fileInfo = callSharedBizComponentByDirect("sc.SCSBase", "fRegUpFileInfo", requestData, onlineCtx);
+                requestData.putField("UPLD_FILE_NO", fileInfo.getField("UPLD_FILE_NO"));
+            }
+            
+            callSharedBizComponentByDirect("ep.EPSFSBase", "fRegFpaProxySaleSave", requestData, onlineCtx);
+                
+            // 3. 결과값 리턴
+            responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); //시스템 오류
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA판매대행상품판매엑셀업로드검증</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 09:55:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_IN_EXCEL_LIST
+	 *		- field : EQP_MDL_CD [모델코드]
+	 *		- field : PROD_SER_NO [상품일련번호]
+	 *		- field : SELL_AMT [판매가격]
+	 *		- field : XRATE_APPLY_AMT [환율금액]
+	 *		- field : ERR_DESC [오류내용]
+	 *		- field : EQP_COLOR_CD [색상코드]
+	 *		- field : EQP_SER_NO [일련번호]
+	 *		- field : PROD_CL [상품구분]
+	 *		- field : CNSL_MGMT_NO [상담일련번호]
+	 *		- field : SELL_CHG_HST_CL [구분]
+	 *		- field : MFACT_CD [제조사코드]
+	 *		- field : EQP_MDL_NM [모델명]
+	 *		- field : SALE_QTY [판매수량]
+	 *		- field : SELL_PCOST [판매원가]
+	 *		- field : SELL_UPRC [판매단가]
+	 *		- field : SURTAX [부가세]
+	 *	- field : SELL_CL_CD [판매구분]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqFpaProxySaleExcelErrLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSFSBase", "fInqFpaProxySaleExcelErrLst", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>FPA판매대행상품판매재고조회</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2016-02-18 09:55:05
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : PROD_SER_NO [상품일련번호]
+	 *	- field : MFACT_CD [제조사코드]
+	 *	- field : EQP_SER_NO [일련번호]
+	 *	- field : CNSL_MGMT_NO [접수번호]
+	 *	- field : EQP_MDL_CD [모델코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pInqFpaProxySaleDisList(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        try {
+            // 1. FM 호출
+            responseData = callSharedBizComponentByDirect("ep.EPSFSBase", "fInqFpaProxySaleDisList", requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+  
+}

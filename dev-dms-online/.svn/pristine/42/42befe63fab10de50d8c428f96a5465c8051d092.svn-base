@@ -1,0 +1,108 @@
+package dms.nr.nrsxmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]렌탈비정산정보조회</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-07 19:14:02</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class FNRRentalFeeCctlMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRRentalFeeCctlMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-07 19:14:54
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqRentalFeeCctlInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		 
+		try {
+			// 1. DU lookup
+			DNRRentalFeeCctlMgmt dNRRentalFeeCctlMgmt = (DNRRentalFeeCctlMgmt) lookupDataUnit(DNRRentalFeeCctlMgmt.class);
+
+			// 2. main list
+			responseData = dNRRentalFeeCctlMgmt.dSRentalFeeCctlInfoLstPaging(reqDs, onlineCtx);
+			IRecordSet usrListRs = responseData.getRecordSet("RS_RENTAL_FEE_INFO_LIST");
+			responseData.putField("RENTAL_YM", reqDs.getField("RENTAL_YM"));
+			
+			//3.second list						
+			if(usrListRs == null){
+				return responseData;
+			}
+			
+			IDataSet dsRtn = dNRRentalFeeCctlMgmt.dSRentalFeeCctlInfoLstPagingDtl(responseData, onlineCtx);
+			IRecordSet usrDListRs = dsRtn.getRecordSet("RS_RENTAL_FEE_INFO_DETAIL");
+			responseData.putRecordSet(usrDListRs);
+				
+			} catch ( BizRuntimeException e ) {
+				throw e; //시스템 오류가 발생하였습니다.
+			}
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-09 15:27:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqRentalFeeCctlInfoLstDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+	    
+	    try {
+			// 1. DU lookup
+			DNRRentalFeeCctlMgmt dNRRentalFeeCctlMgmt = (DNRRentalFeeCctlMgmt) lookupDataUnit(DNRRentalFeeCctlMgmt.class);
+
+			// 2.main list
+			responseData = dNRRentalFeeCctlMgmt.dSRentalFeeCctlInfoLstDtlM(reqDs, onlineCtx);
+			//responseData.putRecordSet(usrListRs.getRecordSet("RS_RENTAL_FEE_DTL"));
+			
+			//3.grid list						
+			
+			IDataSet dsRtn = dNRRentalFeeCctlMgmt.dSRentalFeeCctlInfoLstDtlG(reqDs, onlineCtx);
+			responseData.putRecordSet(dsRtn.getRecordSet("RS_RENTAL_INFO"));	
+			} catch ( BizRuntimeException e ) {
+				throw e; //시스템 오류가 발생하였습니다.
+			}
+	    
+	    
+	    return responseData;
+	}
+  
+}

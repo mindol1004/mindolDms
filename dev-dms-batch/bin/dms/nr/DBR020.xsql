@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR020">
+	<select id="SInsuRecvItm" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR020.SInsuRecvItm 보증보험수납내역(UKEY) */
+/* IO: 안진갑,2016-02-15T17:47:11(안진갑,2016-02-15T17:09:50) */
+SELECT  'SKT'                       AS CO_CD
+       ,A.INV_RSLT_SVC_NO           AS SVC_NO
+       ,A.INV_RSLT_SVC_NO_ENPT      AS SVC_NO_ENPT
+       ,B.SGI_CTZ_COPREG_NO         AS CTZ_COPREG_NO
+       ,B.SGI_CTZ_COPREG_NO_ENPT    AS CTZ_COPREG_NO_ENPT
+       ,A.INV_RSLT_INSURE_MGMT_NO   AS INSU_MGMT_NO
+       ,A.INV_RSLT_SVC_MGMT_NO      AS SVC_MGMT_NO
+       ,A.INV_RSLT_SVC_SCRB_YMD     AS SVC_SCRB_DT
+       ,A.INV_RSLT_SVC_TERM_DT      AS SVC_TERM_DT
+       ,A.INV_RSLT_INSURE_SCUR_NO   AS INSU_SCUR_NO
+       ,A.INV_RSLT_INSUM_INV_DT     AS INSU_INV_DT
+       ,A.INV_RSLT_INSUM_INV_AMT    AS INSU_INV_AMT
+       ,A.INV_RSLT_INSUM_RECV_DT    AS INSU_RECV_DT
+       ,A.INV_RSLT_INSUM_RECV_AMT   AS INSU_RECV_AMT
+       ,A.INV_RSLT_ST_CD            AS ST_CD
+       ,'60' AS INSU_CL_CD
+  FROM  TB_INSU_INV_RSLT A
+       ,TB_INSU_SGI B
+ WHERE  A.SGI_INSU_NO = B.SGI_INSU_NO
+   AND  B.OP_TYP_CD = 'A1'
+   AND  SUBSTR(A.IF_PROC_DT,0,4) = TO_CHAR(ADD_MONTHS(TO_DATE(#PROC_DT#,'YYYYMMDD'), -1),'YYYYMM')]]>
+	</select>
+	<insert id="IInsuRecvItm" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR020.IInsuRecvItm 보증보험수납내역등록(UKEY) */
+/* IO: 안진갑,2016-02-15T17:40:32(안진갑,2016-02-15T17:37:55) */
+INSERT INTO TF_INSU_RECV_ITM
+(
+   IF_PROC_DT
+  ,IF_FILE_NM
+  ,IF_SEQ
+  ,CO_CD
+  ,SVC_NO
+  ,SVC_NO_ENPT
+  ,CTZ_COPREG_NO
+  ,CTZ_COPREG_NO_ENPT
+  ,INSU_MGMT_NO
+  ,SVC_MGMT_NO
+  ,SVC_SCRB_DT
+  ,SVC_TERM_DT
+  ,INSU_SCUR_NO
+  ,INSU_INV_DT
+  ,INSU_INV_AMT
+  ,INSU_RECV_DT
+  ,INSU_RECV_AMT
+  ,ST_CD
+  ,INSU_CL_CD
+  ,NEWLINE
+  ,PROC_ST_CD
+  ,FS_REG_USER_ID
+  ,FS_REG_DTM
+  ,LS_CHG_USER_ID
+  ,LS_CHG_DTM
+)
+VALUES(
+   #IF_PROC_DT#
+  ,#IF_FILE_NM#
+  ,#IF_SEQ#
+  ,#CO_CD#
+  ,#SVC_NO#
+  ,#SVC_NO_ENPT#
+  ,#CTZ_COPREG_NO#
+  ,#CTZ_COPREG_NO_ENPT#
+  ,#INSU_MGMT_NO#
+  ,#SVC_MGMT_NO#
+  ,#SVC_SCRB_DT#
+  ,#SVC_TERM_DT#
+  ,#INSU_SCUR_NO#
+  ,#INSU_INV_DT#
+  ,#INSU_INV_AMT#
+  ,#INSU_RECV_DT#
+  ,#INSU_RECV_AMT#
+  ,#ST_CD#
+  ,#INSU_CL_CD#
+  ,''
+  ,'09'
+  ,'BAT'
+  ,SYSDATE
+  ,'BAT'
+  ,SYSDATE
+)]]>
+	</insert>
+</sqlMap>

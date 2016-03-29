@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.ep.DBE004">
+	<select id="SIfConsultDtl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE004.SIfConsultDtl IF상담관리상세정보조회(현장) */
+/* IO: 김상오,2016-01-19T14:50:35(김윤환,2015-08-11T14:15:42) */
+SELECT  IF_PROC_DT
+         ,IF_FILE_NM
+         ,IF_SEQ
+         ,CNSL_MGMT_NO
+         ,CNSL_MGMT_SEQ              /*상담관리순번 CNSL_SER_NO*/
+         ,DTL_CL                     /*상세구분 DTL_CL*/
+         ,CL_CD                      /*구분코드 CL_CD*/
+         ,EQP_MDL_CD
+         ,CMPT_PROD_CD               /*구성품상품코드    */
+         ,QTY                        /*수량              */
+         ,NORM_QTY                   /*정상수량          */
+         ,HLD_QTY                    /*보유수량          */
+         ,DDCT_AMT                   /*차감금액          */
+         ,DEL_YN                     /*삭제여부          */
+         ,UPDATE_CNT                 /*UPDATE건수        */
+         ,UKEY_REG_DTM               /*UKEY등록일시      */
+         ,UKEY_REG_USER_ID           /*UKEY등록사용자ID  */
+         ,UKEY_CHG_DTM               /*UKEY변경일시      */
+         ,UKEY_CHG_USER_ID           /*UKEY변경사용자ID  */
+    FROM  TF_CNRL_MGMT_SCN_DTL
+   WHERE  IF_PROC_DT = #PROC_DT#	 /*전문송신일자*/
+     AND  PROC_ST_CD = '09'
+
+ORDER BY  IF_SEQ]]>
+	</select>
+	<insert id="IConsultDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE004.IConsultDtl 상담관리상세등록 */
+/* IO: 이준우,2015-10-02T09:28:09(이준우,2015-07-29T10:19:57) */
+INSERT INTO  TB_EP_CST_CONSULT_DTL (
+             CNSL_MGMT_NO
+            ,CNSL_SER_NO
+            ,DTL_CL                       
+            ,CL_CD                        
+            ,EQP_MDL_CD                   
+            ,CMPT_PROD_CD                 
+            ,QTY                          
+            ,NORM_QTY                     
+            ,HLD_QTY                      
+            ,DDCT_AMT                     
+            ,DEL_YN                       
+            ,UPDATE_COUNT                 
+            ,FS_REG_DTM                   
+            ,FS_REG_USER_ID               
+            ,LS_CHG_DTM                   
+            ,LS_CHG_USER_ID               
+            ,SKN_SMPL_QTY                 
+             )
+     VALUES  (
+             #CNSL_MGMT_NO#
+            ,#CNSL_SER_NO#
+            ,TO_CHAR(TO_NUMBER(#DTL_CL#))     /*상세 구분              */          
+            ,#CL_CD#                          /*구분 코드              */          
+            ,#EQP_MDL_CD#                     /*단말기 모델 코드       */             
+            ,#CMPT_PROD_CD#                   /*구성품 상품 코드       */             
+            ,#QTY#                            /*수량                   */        
+            ,#NORM_QTY#                       /*정상 수량              */          
+            ,#HLD_QTY#                        /*보유 수량              */          
+            ,#DDCT_AMT#                       /*차감 금액              */          
+            ,#DEL_YN#                         /*삭제 여부              */          
+            ,NVL(#UPDATE_COUNT#,0)            /*UPDATE COUNT           */      
+            ,SYSDATE                          /*최초 등록 일시         */            
+            ,'BAT'                            /*최초 등록 사용자 ID    */             
+            ,SYSDATE                          /*최종 변경 일시         */            
+            ,'BAT'                            /*최종 변경 사용자 ID    */             
+            ,#HLD_QTY#                        /*SKN 샘플 수량          */          
+             )]]>
+	</insert>
+	<select id="SConsultDtlCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE004.SConsultDtlCnt 상담관리상세카운트 */
+/* IO: 이준우,2015-11-18T15:54:03(이준우,2015-09-30T13:09:13) */
+SELECT  COUNT(*) AS CNT
+    FROM  TB_EP_CST_CONSULT_DTL
+   WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#
+     AND  CNSL_SER_NO  = #CNSL_SER_NO#
+     ]]>
+	</select>
+	<select id="SPrchsMgmtCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE004.SPrchsMgmtCnt 매입관리카운트 */
+/* IO: 이준우,2015-09-30T13:17:19(이준우,2015-09-30T13:15:09) */
+  SELECT  COUNT(*) AS CNT
+    FROM  TB_EP_CST_PRCHS_MGMT
+   WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#
+     AND  DEL_YN = 'N'
+     ]]>
+	</select>
+	<update id="UIfConsultDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE004.UIfConsultDtl IF상담관리상세수정(현장) */
+/* IO: 이준우,2015-10-02T09:51:57(이준우,2015-09-30T13:24:28) */
+UPDATE  TF_CNRL_MGMT_SCN_DTL
+   SET  PROC_ST_CD = '01'
+       ,UKEY_CHG_DTM     = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_PROC_DT = #SPECI_PROC_DT#
+   AND  IF_FILE_NM = #SPECI_PROC_TIME#
+   AND  IF_SEQ = #SPECI_SER_NO#]]>
+	</update>
+	<select id="SConsultMgmtCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.DBE004.SConsultMgmtCnt 상담관리카운트 */
+/* IO: 이준우,2015-09-30T19:24:38(이준우,2015-09-30T13:26:32) */
+SELECT  COUNT(*) AS CNT
+  FROM  TB_EP_CST_CONSULT_MGMT
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#
+   AND  DEL_YN = 'N'
+   ]]>
+	</select>
+	<delete id="DConsultDtl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.DBE004.DConsultDtl 상담관리상세삭제 */
+/* IO: 이준우,2015-09-30T19:26:09(이준우,2015-09-30T19:26:09) */
+DELETE  FROM TB_EP_CST_CONSULT_DTL
+ WHERE  CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</delete>
+</sqlMap>

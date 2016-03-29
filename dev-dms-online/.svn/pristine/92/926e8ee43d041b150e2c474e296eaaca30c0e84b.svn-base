@@ -1,0 +1,167 @@
+package dms.pr.prsimbase.biz;
+
+import java.util.Map;
+
+
+
+
+import fwk.common.CommonArea;
+import fwk.utils.PagenateUtils;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [FU]회수대상임대폰조회</li>
+ * <li>설  명 : <pre>회수대상임대폰조회</pre></li>
+ * <li>작성일 : 2015-07-14 20:47:57</li>
+ * <li>작성자 : 이준우 (elmsliw)</li>
+ * </ul>
+ *
+ * @author 이준우 (elmsliw)
+ */
+public class FPRReqpClctInRgst extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FPRReqpClctInRgst(){
+		super();
+	}
+
+	/**
+	 * <pre>회수대상임대폰조회</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-07-16 13:34:42
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqReqpClctLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet dsCnt = new DataSet();
+//IDataSet dsVal = new DataSet();
+	//	IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+		IRecordSet rsPagingList = null;
+		int intTotalCnt = 0;
+//String strEqpInNo = "";
+		
+		try {
+			// 1. DU lookup
+			DPRReqpClctInRgst dPRReqpClctInRgst = (DPRReqpClctInRgst) lookupDataUnit(DPRReqpClctInRgst.class);
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dPRReqpClctInRgst.dSReqpClctLstTotCnt(requestData, onlineCtx);
+//dsVal = dPRReqpClctInRgst.dIReqpClct(requestData, onlineCtx);
+			
+			intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+//strEqpInNo = String.valueOf(dsCnt.getField("EQP_IN_NO"));
+			
+			
+			
+			PagenateUtils.setPagenatedParamsToDataSet(requestData);
+			//PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+			// 3. LISTDM호출
+			responseData = dPRReqpClctInRgst.dSReqpClctLstPaging(requestData, onlineCtx);
+
+			rsPagingList = responseData.getRecordSet("RS_EQP_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);
+			
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}		
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰회수입고상태등록</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-07-16 13:34:42
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegReqpClctIn(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    try {
+			// 1. DU lookup
+	    	DPRReqpClctInRgst dPRReqpClctInRgst = (DPRReqpClctInRgst) lookupDataUnit(DPRReqpClctInRgst.class);
+			
+	    	// 2. Validation DM호출
+//			IDataSet valDS = dPRReqpClctInRgst.dSInveEqpChk(requestData, onlineCtx);
+//			if ( Integer.parseInt(valDS.getField("ROW_CNT")) > 0 ) {
+//				throw new BizRuntimeException("DMS00003"); //중복입력 된 데이터가 존재합니다.
+//			}
+			//단말기자산 일련번호조회
+//			valDS = dPREqpReqpInMgmt.dSInveNum(requestData, onlineCtx);
+//			requestData.putField("ASSET_NUM", valDS.getField("ASSET_NUM"));
+			//단말기입고 일련번호조회
+//			valDS = dPREqpReqpInMgmt.dSEqpInNum(requestData, onlineCtx);
+//			requestData.putField("EQP_IN_NUM", valDS.getField("EQP_IN_NUM"));
+	    	
+	    	// 2. 단말기 입고 번호 채번
+	    	IDataSet seqNoDs = dPRReqpClctInRgst.dSReqpClctLstSeq(requestData, onlineCtx);
+	    	requestData.putField("EQP_IN_NO", seqNoDs.getField("EQP_IN_NO"));
+
+			// 3. 단말기 입고정보 등록
+	    	
+			responseData = dPRReqpClctInRgst.dIReqpClct(requestData, onlineCtx);
+
+			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+	    return responseData;
+	}
+
+	/**
+	 * <pre>임대폰회수입고상태수정</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-07-16 13:34:42
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fUpdReqpClctIn(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    	    
+	    try {
+			// 1. DU lookup
+	    	DPRReqpClctInRgst dPRReqpClctInRgst = (DPRReqpClctInRgst) lookupDataUnit(DPRReqpClctInRgst.class);
+	    	
+			// 3. 임대폰회수 입고 상태수정, 단말기 입고정보 수정, 단말기자산정보수정
+	    	
+			responseData = dPRReqpClctInRgst.dUReqpClct(requestData, onlineCtx);
+			responseData = dPRReqpClctInRgst.dUReqpClctTbEqpIn(requestData, onlineCtx);
+			responseData = dPRReqpClctInRgst.dUReqpClctTbEqpAsset(requestData, onlineCtx);
+				    	
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} 
+	
+	    return responseData;
+	}
+  
+}

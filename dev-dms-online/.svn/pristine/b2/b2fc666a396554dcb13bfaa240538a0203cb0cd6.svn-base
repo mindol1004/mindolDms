@@ -1,0 +1,216 @@
+package dms.sc.scsbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+import com.surem.api.sms.SureSMSAPI;
+import com.surem.net.SendReport;
+import com.surem.net.sms.SureSMSDeliveryReport;
+
+import fwk.constants.DmsConstants;
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/업무공통</li>
+ * <li>단위업무명: FSCAlrtMgmt</li>
+ * <li>설  명 : 알림관리</li>
+ * <li>작성일 : 2014-08-21 13:50:46</li>
+ * <li>작성자 : 김석영 (kimsukyoung)</li>
+ * </ul>
+ *
+ * @author 김석영 (kimsukyoung)
+ */
+public class FSCAlrtMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+    //알림구분코드(ALRT_WORK_CL_CD)
+    private final static String ALRT_WORK_CL_CD_SMS     = "S";    // 알림채널구분코드 : SMS
+    private final static String ALRT_WORK_CL_CD_LMS     = "L";    // 알림채널구분코드 : LMS
+    private final static String ALRT_WORK_CL_CD_EMAIL   = "E";    // 알림채널구분코드 : EMAIL
+    
+    //수신자구분코드
+    private final static String REVR_CL_CNTRTR      = "10";//계약자
+    private final static String REVR_CL_USER           = "20";//DMS사용자
+    private final static String REVR_CL_DEAL_CO   = "30";//대리점주
+    
+	/**
+	 * Default Constructor
+	 */
+	public FSCAlrtMgmt() {
+		super();
+	}
+
+	/**
+	 * <pre>알림발송</pre>
+	 *
+	 * @author admin (admin)
+	 * @since 2015-07-13 12:41:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ALRT_WORK_CL_CD [알림업무구분코드]
+	 *	- field : ALRT_MSG_ID [알림메시지ID(공통메시지)]
+	 *	- field : REVR_CL_CD [수신자구분코드]
+	 *	- field : RETN_TEL_NO_ENPT [수신전화번호(암호화값)]
+	 *	- field : MSG_PARAMS [파라미터[]]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- field : SUCCESS [발송성공여부]
+	 * </pre>
+	 */
+	public IDataSet fSndAlrt(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet reqData = (IDataSet) requestData.clone();
+		try {
+			// 필수값 체크
+			if ( StringUtils.isEmpty(reqData.getField("ALRT_WORK_CL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("ALRT_WORK_CL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+            } else if ( StringUtils.isEmpty(reqData.getField("ALRT_MSG_ID")) ) {
+                throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("ALRT_MSG_ID") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} else if ( StringUtils.isEmpty(reqData.getField("REVR_CL_CD")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("REVR_CL_CD") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			} else if ( StringUtils.isEmpty(reqData.getField("RETN_TEL_NO_ENPT")) ) {
+				throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("RETN_TEL_NO") }); // 필수입력항목 {0}이/가 누락되었습니다.
+			}
+
+	         //알림업무구분코드 입력값 Check
+            if ( HpcUtils.getCode("DMS013", reqData.getField("ALRT_WORK_CL_CD")) == null ) {
+                throw new BizRuntimeException("DMS00086", new String[] { HpcUtils.getLangMsg("REVR_CL_CD") }); // 유효한 코드가 아닙니다.
+            }
+            
+			//수신자구분코드 입력값 Check
+			if ( HpcUtils.getCode("DMS014", reqData.getField("REVR_CL_CD")) == null ) {
+				throw new BizRuntimeException("DMS00086", new String[] { HpcUtils.getLangMsg("REVR_CL_CD") }); // 유효한 코드가 아닙니다.
+			}
+			
+			// SMS 발송서비스 파라미터
+			String alrtWorkClCd = reqData.getField("ALRT_WORK_CL_CD");
+			String recvMphNo = HpcUtils.decodeByAES(reqData.getField("RETN_TEL_NO_ENPT"));   // 수신전화번호(복호화)
+			recvMphNo = StringUtils.trim(recvMphNo.replaceAll("-", "")); //"-"제거, trim
+			String[] msgParams = (String[]) reqData.getObjectField("MSG_PARAMS");  // 파라미터(String[])
+            String msgCtt = HpcUtils.getMessage(reqData.getField("ALRT_MSG_ID"), msgParams); //메시지 조립
+            if ( StringUtils.isEmpty(msgCtt) ) {
+                throw new BizRuntimeException("DMS00002", new String[] { HpcUtils.getLangMsg("ALRT_MSG_CTT") }); // 필수입력항목 {0}이/가 누락되었습니다.
+            }
+    		
+    		//----------------------------------------------------------------------
+    		// 알림발송구분코드별 분기처리 (SMS,LMS)
+    		//----------------------------------------------------------------------
+    		if ( StringUtils.equals(alrtWorkClCd, ALRT_WORK_CL_CD_SMS) || StringUtils.equals(alrtWorkClCd, ALRT_WORK_CL_CD_LMS) ) {
+    		    // SMS/LMS 발송
+    	        SureSMSAPI messageApi = new SureSMSAPI() {
+    	            
+    	            public void report(SureSMSDeliveryReport deliveryReport) {
+    	                // System.out.println(String.format("DR: %s", deliveryReport));
+    	            }
+    
+    	        };
+    	 
+                SendReport sReport = messageApi.sendMain(1, "skeco", "XA-UXH-JM",
+                    "DMS", 
+                    recvMphNo.substring(0,3), 
+                    recvMphNo.substring(3,7), 
+                    recvMphNo.substring(7), 
+                    "심상준", 
+                    "02", 
+                    "6400", 
+                    "3593",
+                    msgCtt, 
+                    "00000000", 
+                    "000000");
+                
+                //전송 성공일 경우 알림발송내역 테이블에 등록
+                if (StringUtils.equals(sReport.getStatus(),"0")) {
+                  
+                    IDataSet reqAlrtHstDs = (IDataSet) reqData.clone();
+                    reqAlrtHstDs.putField("RETN_TEL_NO", recvMphNo != null ? HpcUtils.maskingTelNo(recvMphNo) : "");
+                    reqAlrtHstDs.putField("ALRT_MSG_CTT", msgCtt);
+                    // 1. DU lookup
+                    DSCAlrtMgmt dSCAlrtMgmt = (DSCAlrtMgmt) lookupDataUnit(DSCAlrtMgmt.class);
+                    dSCAlrtMgmt.dIAlrtSndItm(reqAlrtHstDs, onlineCtx);
+                }
+                
+    		}
+    			
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+
+		responseData.putField(DmsConstants.IS_SUCCESS, true);
+		return responseData;
+	}
+
+	/**
+	 * 알림서비스발송이력조회
+	 *
+	 * @author 이유미 (leeyoumee)
+	 * @since 2014-08-21 13:50:46
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : ALRT_SND_REQ_MM [알림발송요청월]
+	 *	- field : ALRT_SVC_NO [알림서비스번호]
+	 *	- field : REVR_CL_CD [수신자구분코드]
+	 *	- field : REVR_NO [수신자번호]
+	 *	- field : RETN_TEL_NO [수신전화번호]
+	 *	- field : RETN_TEL_NO_ENPT [수신전화번호암호화]
+	 *	- field : RETN_EML_ADDR [수신이메일주소]
+	 *	- field : RETN_EML_ADDR_ENPT [수신이메일주소암호화]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_ALRT_SVC_SND_LIST
+	 *		- field : ALRT_SND_REQ_DTM [알림발송요청일시]
+	 *		- field : ALRT_SVC_NO [알림서비스번호]
+	 *		- field : ALRT_SND_REQ_CHNL_CD [알림발송요청채널코드]
+	 *		- field : ALRT_SND_REQ_CHNL_CD_NM [알림발송요청채널코드명]
+	 *		- field : ALRT_WORK_CL_CD [알림업무구분코드]
+	 *		- field : ALRT_WORK_CL_CD_NM [알림업무구분코드명]
+	 *		- field : ALRT_CHNL_CL_CD [알림채널구분코드]
+	 *		- field : ALRT_CHNL_CL_CD_NM [알림채널구분코드명]
+	 *		- field : REVR_CL_CD [수신자구분]
+	 *		- field : REVR_NO [수신자번호]
+	 *		- field : RETN_TEL_NO [수신전화번호]
+	 *		- field : RETN_EML_ADDR [수신이메일주소]
+	 *		- field : ALRT_MSG_CTT [알림메시지내용]
+	 *		- field : SND_ST_CD [전송결과코드]
+	 *		- field : SND_FAIL_RSN_CTT [발송실패사유내용]
+	 * </pre>
+	 */
+	public IDataSet fInqAlrtSvcSndHst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet dsCnt = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone(); //원거래의 DataSet 훼손을 막기 위한 clone
+		IRecordSet alrtSvcHstRs = null;
+		int alrtSvcHstTtCnt = 0;
+		try {
+			// 1. DU lookup
+			DSCAlrtMgmt dSCAlrtMgmt = (DSCAlrtMgmt) lookupDataUnit(DSCAlrtMgmt.class);
+			// 2. TOTAL COUNT DM호출
+			dsCnt = dSCAlrtMgmt.dSAlrtSvcSndHstTotCnt(requestData, onlineCtx);
+			alrtSvcHstTtCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+			PagenateUtils.setPagenatedParamsToDataSet(reqDs);
+			// 3. LIST DM 호출
+			responseData = dSCAlrtMgmt.dSAlrtSvcSndHstPaging(reqDs, onlineCtx);
+			alrtSvcHstRs = responseData.getRecordSet("RS_ALRT_SVC_SND_LIST");
+			PagenateUtils.setPagenatedParamToRecordSet(alrtSvcHstRs, reqDs, alrtSvcHstTtCnt);
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		}
+		return responseData;
+	}
+
+}

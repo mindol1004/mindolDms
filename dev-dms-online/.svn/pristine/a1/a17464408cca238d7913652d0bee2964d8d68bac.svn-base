@@ -1,0 +1,158 @@
+package dms.nr.nrsfxbase.biz;
+
+import fwk.common.CommonArea;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]FPA판매감정관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2016-01-26 11:22:52</li>
+ * <li>작성자 : 안진갑 (bella21cjk)</li>
+ * </ul>
+ *
+ * @author 안진갑 (bella21cjk)
+ */
+public class FNRFpaSaleJdgMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRFpaSaleJdgMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2016-01-26 11:22:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqSaleJdgLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+            // 1. DU lookup
+	        DNRFpaSaleJdgMgmt dNRFpaSaleJdgMgmt = (DNRFpaSaleJdgMgmt) lookupDataUnit(DNRFpaSaleJdgMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNRFpaSaleJdgMgmt.dSSaleJdgLst(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        } 
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 안진갑 (bella21cjk)
+	 * @since 2016-01-26 11:26:28
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqSaleJdgDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	
+	    try {
+            // 1. DU lookup
+	        DNRFpaSaleJdgMgmt dNRFpaSaleJdgMgmt = (DNRFpaSaleJdgMgmt) lookupDataUnit(DNRFpaSaleJdgMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNRFpaSaleJdgMgmt.dSSaleJdgDtlLst(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        } 
+	
+	    return responseData;
+	}
+
+    /**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2016-01-26 11:22:52
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveSaleJdgDtl(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        CommonArea ca = getCommonArea(onlineCtx);
+    
+        try {
+            // 1. DU lookup
+            DNRFpaSaleJdgMgmt dNRFpaSaleJdgMgmt = (DNRFpaSaleJdgMgmt) lookupDataUnit(DNRFpaSaleJdgMgmt.class);
+
+            requestData.putField("USER_NO", ca.getUserNo());
+            // 2. LISTDM호출
+            dNRFpaSaleJdgMgmt.dISaveSaleJdgDtl(requestData, onlineCtx);
+            
+            // 3. interface 호출
+            responseData = dNRFpaSaleJdgMgmt.dSIFPAEqpInfo01(requestData, onlineCtx);
+            
+            // 판매감정후 1차 이관
+            responseData = callSharedBizComponentByDirect("ep.EPSFEBase", "fIFPAEqpRgst", responseData, onlineCtx);
+            
+            if( StringUtils.isNotEmpty(responseData.getField("RESULT")) ){
+            	throw new BizRuntimeException("기등록된 단말기가 있습니다.");
+            }
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        } 
+    
+        return responseData;
+    }
+
+    /**
+	 *
+	 *
+	 * @author 진병수 (greatjin)
+	 * @since 2016-02-15 16:18:18
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fSaveEqpBkagAmt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        CommonArea ca = getCommonArea(onlineCtx);
+        
+        try {
+            // 1. DU lookup
+            DNRFpaSaleJdgMgmt dNRFpaSaleJdgMgmt = (DNRFpaSaleJdgMgmt) lookupDataUnit(DNRFpaSaleJdgMgmt.class);
+
+            requestData.putField("USER_NO", ca.getUserNo());
+            // 2. LISTDM호출
+            responseData = dNRFpaSaleJdgMgmt.dISaveEqpBkagAmt(requestData, onlineCtx);
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        } 
+    
+        return responseData;
+    }
+  
+}

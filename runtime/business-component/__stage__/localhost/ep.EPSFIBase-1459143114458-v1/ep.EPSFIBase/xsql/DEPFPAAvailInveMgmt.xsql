@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPFPAAvailInveMgmt">
+	<select id="SInqFPAAvailInveListPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfibase.db.DEPFPAAvailInveMgmt.SInqFPAAvailInveListPaging FPA가용재고조회목록 */
+/* IO: 양재석,2016-03-02T14:12:13(양재석,2016-02-17T14:22:23) */
+SELECT *
+FROM
+  (
+  SELECT /*+ ORDERED USE_HASH(A B C D) */
+         ROW_NUMBER() OVER(ORDER BY A.EQP_SER_NO,A.EQP_MDL_CD ASC) AS ROWNO 
+         ,A.CNSL_MGMT_NO                  /* 상담 관리 번호      */
+         ,A.EQP_MDL_CD                   /* 단말기 모델 코드    */
+         ,B.EQP_MDL_NM                   /* 단말기 모델 명    */
+         ,A.EQP_SER_NO                   /* 단말기 일련 번호    */
+         ,A.EQP_COLOR_CD                 /* 단말기 색상 코드    */
+         ,A.IMEI                         /* IMEI      */
+         ,A.PRCH_AMT                     /* 매입 금액           */
+         ,A.SELL_GRADE                   /* 판매 등급           */
+         ,A.SELL_PRC                     /* 판매 가격           */
+         ,A.IN_CONF_DT                   /* 입고 확정 일자      */
+         ,A.IN_PROC_CHRGR_ID             /* 입고 처리 담당자 ID */
+         ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.IN_PROC_CHRGR_ID) IN_PROC_CHRGR_NM /* 입고 처리 담당자 명 */
+         ,A.INPT                         /* 검수자              */
+         ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.INPT) INPT_NM /* 검수자 명 */
+         ,A.TLY_DT                       /* 검수 일자           */
+         ,A.MID_TERM_YN                  /* 중도 해지 여부      */
+         ,A.PRCH_CONF_YN                 /* 매입 확정 여부      */
+         ,A.PRCH_CONF_DT                 /* 매입 확정 일자      */
+         ,A.BOX_NO                       /* 박스 번호           */
+         ,A.BOX_PROC_CHRGR               /* 박스 처리 담당자    */
+         ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.BOX_PROC_CHRGR) BOX_PROC_CHRGR_NM /* 박스 처리 담당자 명 */
+         ,A.BOX_PROC_DTM                 /* 박스 처리 일시      */
+         ,A.PROGR_ST                     /* 진행 상태           */
+         ,A.SELL_YN                      /* 판매 여부           */
+         ,A.SELL_PROXY_YN                /* 판매 대행 여부      */
+         ,A.PROD_SER_NO                  /* 상품 일련 번호      */
+         ,B.MFACT_CD                     /* 제조사코드          */
+    FROM TB_EP_FPA_EQP_MGMT A
+         ,TB_EQP_MDL B
+         ,(SELECT IC.CNSL_MGMT_NO
+                  ,SUBSTR(ID.SELL_DTM,1,8) AS SELL_DT
+]]><isNotEmpty property="PROGR_ST"><![CDATA[
+]]><isEqual property="PROGR_ST" compareValue="40"><![CDATA[
+             FROM TB_EP_FPA_EQUIPMENT_SALE_PROXY IC
+                  ,TB_EP_FPA_SALE_PROXY ID
+            WHERE IC.SELL_PROXY_NO = ID.SELL_PROXY_NO
+              AND IC.SELL_PROXY_CHG_SEQ = ID.SELL_PROXY_CHG_SEQ
+              AND ID.SELL_PROXY_CHG_SEQ = (SELECT MAX(SELL_PROXY_CHG_SEQ)
+                                             FROM TB_EP_FPA_SALE_PROXY
+                                            WHERE SELL_PROXY_NO = ID.SELL_PROXY_NO)
+              AND IC.DEL_YN = 'N'
+              AND ID.DEL_YN = 'N'
+              AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+]]></isEqual><![CDATA[
+]]><isNotEqual property="PROGR_ST" compareValue="40"><![CDATA[
+             FROM TB_EP_FPA_EQUIPMENT_SALE IC
+                  ,TB_EP_FPA_SALE ID
+            WHERE IC.GNRL_SELL_NO = ID.GNRL_SELL_NO
+              AND IC.GNRL_SELL_CHG_SEQ = ID.GNRL_SELL_CHG_SEQ
+              AND ID.GNRL_SELL_CHG_SEQ = (SELECT MAX(GNRL_SELL_CHG_SEQ)
+                                            FROM TB_EP_FPA_SALE
+                                           WHERE GNRL_SELL_NO = ID.GNRL_SELL_NO)
+              AND IC.DEL_YN = 'N'
+              AND ID.DEL_YN = 'N'
+              AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+]]></isNotEqual><![CDATA[
+]]></isNotEmpty><![CDATA[
+]]><isEmpty property="PROGR_ST"><![CDATA[
+             FROM TB_EP_FPA_EQUIPMENT_SALE IC
+                  ,TB_EP_FPA_SALE ID
+            WHERE IC.GNRL_SELL_NO = ID.GNRL_SELL_NO
+              AND IC.GNRL_SELL_CHG_SEQ = ID.GNRL_SELL_CHG_SEQ
+              AND ID.GNRL_SELL_CHG_SEQ = (SELECT MAX(GNRL_SELL_CHG_SEQ)
+                                            FROM TB_EP_FPA_SALE
+                                           WHERE GNRL_SELL_NO = ID.GNRL_SELL_NO)
+              AND IC.DEL_YN = 'N'
+              AND ID.DEL_YN = 'N'
+              AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+]]></isEmpty><![CDATA[
+         ) C
+   WHERE A.EQP_MDL_CD = B.EQP_MDL_CD
+     AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+     AND A.DEL_YN = 'N'
+     AND B.DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[
+         A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+         A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+         A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEqual prepend="AND" property="SELL_GRADE" compareValue="%"><![CDATA[ 
+         A.SELL_GRADE = #SELL_GRADE#
+]]></isNotEqual><![CDATA[    
+]]><isNotEqual prepend="AND" property="MID_TERM_YN" compareValue="%"><![CDATA[ 
+         A.MID_TERM_YN = #MID_TERM_YN#
+]]></isNotEqual><![CDATA[    
+]]><isNotEmpty prepend="AND" property="MFACT_CD"><![CDATA[                     /*제조사 DMS101처리*/
+         B.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PRCH_CONF_YN"><![CDATA[
+         NVL(A.PRCH_CONF_YN,'N') = #PRCH_CONF_YN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[
+         A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEqual prepend="AND" property="SELL_YN" compareValue="%"><![CDATA[ 
+         NVL(A.SELL_YN,'N') = #SELL_YN#
+]]></isNotEqual><![CDATA[    
+]]><isNotEmpty prepend="AND" property="SELL_PROXY_YN"><![CDATA[
+         NVL(A.SELL_PROXY_YN,'N') = #SELL_PROXY_YN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="PROD_SER_NO"><![CDATA[
+         A.PROD_SER_NO = #PROD_SER_NO#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="SALEFROMDTM"><![CDATA[                  /*판매일시_시작*/ 
+         C.SELL_DT >= #SALEFROMDTM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="SALETODTM"><![CDATA[                    /*판매일시_종료*/ 
+         C.SELL_DT <= #SALETODTM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="TLYFROMDT"><![CDATA[                  /*검수일시_시작*/ 
+         A.TLY_DT >= #TLYFROMDT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="TLYTODT"><![CDATA[                    /*검수일시_종료*/ 
+         A.TLY_DT <= #TLYTODT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PRCHFROMDT"><![CDATA[                  /*매입일시_시작*/ 
+         A.PRCH_CONF_DT >= #PRCHFROMDT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="PRCHTODT"><![CDATA[                    /*매입일시_종료*/ 
+         A.PRCH_CONF_DT <= #PRCHTODT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="MQ_SELL_YN" compareValue="%"><![CDATA[ 
+         NVL(A.MQ_YN,'N') = #MQ_SELL_YN#
+]]></isNotEqual><![CDATA[    
+]]><isNotEqual prepend="AND" property="PROGR_ST" compareValue="%"><![CDATA[ 
+         A.PROGR_ST = #PROGR_ST#
+]]></isNotEqual><![CDATA[
+ )
+WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SInqFPAAvailInveListTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epsfibase.db.DEPFPAAvailInveMgmt.SInqFPAAvailInveListTotCnt FPA가용재고조회목록총건수 */
+/* IO: 양재석,2016-03-02T14:11:57(양재석,2016-02-17T13:41:55) */
+SELECT COUNT(*) AS TOTAL_CNT                             /*전체건수*/	
+  FROM TB_EP_FPA_EQP_MGMT A
+       ,TB_EQP_MDL B
+       ,(SELECT IC.CNSL_MGMT_NO
+                ,SUBSTR(ID.SELL_DTM,1,8) AS SELL_DT
+]]><isNotEmpty property="PROGR_ST"><![CDATA[
+]]><isEqual property="PROGR_ST" compareValue="40"><![CDATA[ /*판매대행*/
+           FROM TB_EP_FPA_EQUIPMENT_SALE_PROXY IC
+                ,TB_EP_FPA_SALE_PROXY ID
+          WHERE IC.SELL_PROXY_NO = ID.SELL_PROXY_NO
+            AND IC.SELL_PROXY_CHG_SEQ = ID.SELL_PROXY_CHG_SEQ
+            AND ID.SELL_PROXY_CHG_SEQ = (SELECT MAX(SELL_PROXY_CHG_SEQ)
+                                           FROM TB_EP_FPA_SALE_PROXY
+                                          WHERE SELL_PROXY_NO = ID.SELL_PROXY_NO)
+            AND IC.DEL_YN = 'N'
+            AND ID.DEL_YN = 'N'
+            AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+]]></isEqual><![CDATA[    
+]]><isNotEqual property="PROGR_ST" compareValue="40"><![CDATA[ 
+           FROM TB_EP_FPA_EQUIPMENT_SALE IC
+                ,TB_EP_FPA_SALE ID
+          WHERE IC.GNRL_SELL_NO = ID.GNRL_SELL_NO
+            AND IC.GNRL_SELL_CHG_SEQ = ID.GNRL_SELL_CHG_SEQ
+            AND ID.GNRL_SELL_CHG_SEQ = (SELECT MAX(GNRL_SELL_CHG_SEQ)
+                                          FROM TB_EP_FPA_SALE
+                                         WHERE GNRL_SELL_NO = ID.GNRL_SELL_NO)
+            AND IC.DEL_YN = 'N'
+            AND ID.DEL_YN = 'N'
+            AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+]]></isNotEqual><![CDATA[
+]]></isNotEmpty><![CDATA[
+]]><isEmpty property="PROGR_ST"><![CDATA[
+           FROM TB_EP_FPA_EQUIPMENT_SALE IC
+                ,TB_EP_FPA_SALE ID
+          WHERE IC.GNRL_SELL_NO = ID.GNRL_SELL_NO
+            AND IC.GNRL_SELL_CHG_SEQ = ID.GNRL_SELL_CHG_SEQ
+            AND ID.GNRL_SELL_CHG_SEQ = (SELECT MAX(GNRL_SELL_CHG_SEQ)
+                                          FROM TB_EP_FPA_SALE
+                                         WHERE GNRL_SELL_NO = ID.GNRL_SELL_NO)
+            AND IC.DEL_YN = 'N'
+            AND ID.DEL_YN = 'N'
+            AND NVL(IC.SELL_CNCL_YN,'N') = 'N'
+]]></isEmpty><![CDATA[
+       ) C
+ WHERE A.EQP_MDL_CD = B.EQP_MDL_CD
+   AND A.CNSL_MGMT_NO = C.CNSL_MGMT_NO(+)
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+]]><isNotEmpty prepend="AND" property="CNSL_MGMT_NO"><![CDATA[
+       A.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+       A.EQP_MDL_CD = #EQP_MDL_CD#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="EQP_SER_NO"><![CDATA[
+       A.EQP_SER_NO = #EQP_SER_NO#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEqual prepend="AND" property="SELL_GRADE" compareValue="%"><![CDATA[ 
+       A.SELL_GRADE = #SELL_GRADE#
+]]></isNotEqual><![CDATA[    
+]]><isNotEqual prepend="AND" property="MID_TERM_YN" compareValue="%"><![CDATA[ 
+       A.MID_TERM_YN = #MID_TERM_YN#
+]]></isNotEqual><![CDATA[    
+]]><isNotEmpty prepend="AND" property="MFACT_CD"><![CDATA[                     /*제조사 DMS101처리*/
+       B.MFACT_CD = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PRCH_CONF_YN"><![CDATA[
+       NVL(A.PRCH_CONF_YN,'N') = #PRCH_CONF_YN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="BOX_NO"><![CDATA[
+       A.BOX_NO = #BOX_NO#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEqual prepend="AND" property="SELL_YN" compareValue="%"><![CDATA[ 
+       NVL(A.SELL_YN,'N') = #SELL_YN#
+]]></isNotEqual><![CDATA[    
+]]><isNotEmpty prepend="AND" property="SELL_PROXY_YN"><![CDATA[
+       NVL(A.SELL_PROXY_YN,'N') = #SELL_PROXY_YN#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="PROD_SER_NO"><![CDATA[
+       A.PROD_SER_NO = #PROD_SER_NO#
+]]></isNotEmpty><![CDATA[	   
+]]><isNotEmpty prepend="AND" property="SALEFROMDTM"><![CDATA[                  /*판매일시_시작*/ 
+       C.SELL_DT >= #SALEFROMDTM#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="SALETODTM"><![CDATA[                    /*판매일시_종료*/ 
+       C.SELL_DT <= #SALETODTM#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="TLYFROMDT"><![CDATA[                  /*검수일시_시작*/ 
+       A.TLY_DT >= #TLYFROMDT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="TLYTODT"><![CDATA[                    /*검수일시_종료*/ 
+       A.TLY_DT <= #TLYTODT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="PRCHFROMDT"><![CDATA[                  /*매입일시_시작*/ 
+       A.PRCH_CONF_DT >= #PRCHFROMDT#
+]]></isNotEmpty><![CDATA[ 
+]]><isNotEmpty prepend="AND" property="PRCHTODT"><![CDATA[                    /*매입일시_종료*/ 
+       A.PRCH_CONF_DT <= #PRCHTODT#
+]]></isNotEmpty><![CDATA[
+]]><isNotEqual prepend="AND" property="MQ_SELL_YN" compareValue="%"><![CDATA[ 
+       NVL(A.MQ_YN,'N') = #MQ_SELL_YN#
+]]></isNotEqual><![CDATA[
+]]><isNotEqual prepend="AND" property="PROGR_ST" compareValue="%"><![CDATA[ 
+       A.PROGR_ST = #PROGR_ST#
+]]></isNotEqual><![CDATA[]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBS005">
+	<select id="SIFInsuInvRsltAprv" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBS005.SIFInsuInvRsltAprv 보증보험청구결과승인 IF조회 */
+/* IO: 장미진,2015-12-14T12:59:55(장미진,2015-12-14T10:42:43) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,CO_CL_CD
+       ,SVC_NO
+       ,SVC_NO_ENPT
+       ,CTZ_COPREG_NO
+       ,CTZ_COPREG_NO_ENPT
+       ,INSU_MGMT_NO
+       ,SVC_MGMT_NO
+       ,SVC_SCRB_DT
+       ,SVC_TERM_DT
+       ,INSU_SCUR_NO
+       ,INSU_INV_DT
+       ,INSU_INV_AMT
+       ,INSU_RECV_DT
+       ,INSU_RECV_AMT
+       ,ST_CD
+       ,INSURE_CL_CD
+  FROM  TF_INSU_INV_RSLT_APRV
+ WHERE  PROC_ST_CD = '09'
+   AND  IF_PROC_DT BETWEEN SUBSTR(#PROC_DT#,0,6)||'01' AND SUBSTR(#PROC_DT#,0,6)||'31']]>
+	</select>
+	<update id="UIFInsuInvRsltAprv" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.UIFInsuInvRsltAprv 보증보험청구결과IF상태변경 */
+/* IO: 장미진,2015-12-14T12:59:50(장미진,2015-12-14T10:46:01) */
+UPDATE  TF_INSU_INV_RSLT_APRV
+   SET  PROC_ST_CD = '01'
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  IF_PROC_DT BETWEEN SUBSTR(#PROC_DT#,0,6)||'01' AND SUBSTR(#PROC_DT#,0,6)||'31']]>
+	</update>
+	<update id="UInsuInvStAprv" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBS005.UInsuInvStAprv 보증보험청구완료처리 */
+/* IO: 장미진,2015-12-14T12:51:10(장미진,2015-12-14T11:17:05) */
+UPDATE  TB_INSU_INV
+   SET  INV_ST_CD = '07'					 /* 청구확정*/
+       ,LS_CHG_USER_ID = 'BAT'
+       ,LS_CHG_DTM = SYSDATE
+ WHERE  UKEY_INSU_NO = #INSU_SCUR_NO#   	 /* 보증보험증권번호*/
+        UKEY_INSURE_MGMT_NO = #INSU_MGMT_NO# /*	보증보험관리번호*/]]>
+	</update>
+</sqlMap>

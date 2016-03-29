@@ -1,0 +1,462 @@
+package dms.sc.scbbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+import org.apache.commons.logging.Log;
+
+import fwk.common.CommonArea;
+import fwk.utils.HpcUtils;
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : HPC/서비스공통</li>
+ * <li>단위업무명: PSCUserMgmt</li>
+ * <li>설  명 : 사용자관리</li>
+ * <li>작성일 : 2014-07-22 17:05:53</li>
+ * <li>작성자 : 심상준 (simair)</li>
+ * </ul>
+ *
+ * @author 심상준 (simair)
+ */
+public class PSCUserMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PSCUserMgmt() {
+		super();
+	}
+
+	/**
+	 * <pre>사용자목록조회</pre>
+	 *
+	 * @author admin (admin)
+	 * @since 2015-06-22 16:59:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : LGIN_ID [로그인ID]
+	 *	- field : USER_NM [사용자명]
+	 *	- field : USER_CL_CD [사용자구분]
+	 *	- field : DEAL_CO_CD [대리점]
+	 *	- field : EML_ADDR [이메일]
+	 *	- field : HP_NO [핸드폰]
+	 *	- field : USER_NO [사용자번호]
+	 *	- field : USER_ST_CD [사용자상태코드]
+	 *	- field : GRPC_CO_CD [회사코드]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_USER_LIST
+	 *		- field : USER_NO [사용자번호]
+	 *		- field : USER_NM [사용자명]
+	 *		- field : USER_CL_CD [사용자구분]
+	 *		- field : USER_ST_CD [사용자상태]
+	 *		- field : LGIN_ID [로그인ID]
+	 *		- field : PWD [필드1]
+	 *		- field : PWD_ERR_CNT [비밀번호오류횟수]
+	 *		- field : LS_LGIN_DTM [최종로그인일시]
+	 *		- field : EML_ADDR [이메일]
+	 *		- field : HP_NO [핸드폰번호]
+	 *		- field : GRPC_CO_CD [회사코드]
+	 *		- field : DEAL_CO_CD [대리점코드]
+	 *		- field : DEAL_CO_NM [대리점명]
+	 *		- field : GRPC_DEPT_CD [조직]
+	 *		- field : GRPC_JOBR_CD [직급]
+	 *		- field : GRPC_JTIL_CD [직책]
+	 *		- field : EMP_NO [사원번호]
+	 *		- field : FS_REG_USER_ID [최초등록자]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqUserLst(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();
+		try {
+			// 1. FU lookup
+			FSCUserMgmt fSCUserMgmt = (FSCUserMgmt) lookupFunctionUnit(FSCUserMgmt.class);
+			// 2. FM 호출
+			//2015.1.6 임지후 사용자명은 암호화하지 않기로 결정됨
+			//if (StringUtils.isNotEmpty(reqDs.getField("USER_NM"))){
+			//	reqDs.putField("USER_NM_ENPT", HpcUtils.encodeByAES(reqDs.getField("USER_NM")));
+			//}
+			if ( StringUtils.isNotEmpty(reqDs.getField("EML_ADDR")) ) {
+				reqDs.putField("EML_ADDR_ENPT", HpcUtils.encodeByAES(reqDs.getField("EML_ADDR")));
+			}
+			if ( StringUtils.isNotEmpty(reqDs.getField("HP_NO")) ) {
+				reqDs.putField("HP_NO_ENPT", HpcUtils.encodeByAES(reqDs.getField("HP_NO")));
+			}
+
+			responseData = fSCUserMgmt.fInqUserLst(reqDs, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * <pre>사용자저장</pre>
+	 *
+	 * @author admin (admin)
+	 * @since 2015-06-22 16:59:55
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_USER_LIST
+	 *		- field : USER_NO [사용자번호]
+	 *		- field : USER_NM [사용자명]
+	 *		- field : USER_CL_CD [사용자구분]
+	 *		- field : USER_ST_CD [사용자상태]
+	 *		- field : LGIN_ID [로그인ID]
+	 *		- field : PWD [비밀번호]
+	 *		- field : PWD_ERR_CNT [비밀번호오류횟수]
+	 *		- field : LS_LGIN_DTM [최종로그인일시]
+	 *		- field : EML_ADDR [이메일]
+	 *		- field : HP_NO [핸드폰번호]
+	 *		- field : GRPC_CO_CD [회사코드]
+	 *		- field : DEAL_CO_CD [대리점]
+	 *		- field : GRPC_DEPT_CD [조직]
+	 *		- field : GRPC_JOBR_CD [직급]
+	 *		- field : GRPC_JTIL_CD [직책]
+	 *		- field : EMP_NO [사원번호]
+	 *		- field : FS_REG_USER_ID [최초등록자]
+	 *		- field : FS_REG_DTM [최초등록일시]
+	 *		- field : LS_CHG_USER_ID [최종변경자]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 *		- field : USER_NM_CHG_YN [사용자명수정여부]
+	 *		- field : EMAIL_CHG_YN [이메일수정여부]
+	 *		- field : HP_NO_CHG_YN [휴대전화수정여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pSaveUser(IDataSet requestData, IOnlineContext onlineCtx) {
+
+		IDataSet responseData = new DataSet();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. FU lookup
+			FSCUserMgmt fSCUserMgmt = (FSCUserMgmt) lookupFunctionUnit(FSCUserMgmt.class);
+			// 2. 입력 RS설정
+			requestData.putFieldMap(requestData.getRecordSet("RS_USER_LIST").getRecordMap(0));
+
+			/*
+			 * 2015.1.5 사용자명 암호화 안함 if (requestData.getField("USER_NM") != null && requestData.getField("USER_NM_CHG_YN").equals("Y")){
+			 * requestData.putField("USER_NM_ENPT", HpcUtils.encodeByAES(requestData.getField("USER_NM"))); requestData.putField("USER_NM_MASK",
+			 * HpcUtils.maskingName(requestData.getField("USER_NM"))); }
+			 */
+			if ( StringUtils.isNotEmpty(requestData.getField("EML_ADDR")) && StringUtils.equals("Y", requestData.getField("EMAIL_CHG_YN")) ){
+				requestData.putField("EML_ADDR_ENPT", HpcUtils.encodeByAES(requestData.getField("EML_ADDR")));
+				requestData.putField("EMIL_ADDR_MASK", HpcUtils.maskingEmail(requestData.getField("EML_ADDR")));
+			} else if ( StringUtils.isEmpty(requestData.getField("EML_ADDR")) ) {
+				requestData.putField("EML_ADDR_ENPT", "");
+				requestData.putField("EMIL_ADDR_MASK", "");
+			}
+
+			if ( StringUtils.isNotEmpty(requestData.getField("HP_NO")) && StringUtils.equals("Y",requestData.getField("HP_NO_CHG_YN")) ){
+				requestData.putField("HP_NO_ENPT", HpcUtils.encodeByAES(requestData.getField("HP_NO")));
+				requestData.putField("HP_NO_MASK", HpcUtils.maskingTelNo(requestData.getField("HP_NO")));
+			} else if ( StringUtils.isEmpty(requestData.getField("HP_NO")) ) {
+				requestData.putField("HP_NO_ENPT", "");
+				requestData.putField("HP_NO_MASK", "");
+			}
+
+			requestData.putField("userNo", ca.getUserNo());  // TODO		
+			// 3. 레코드셋 상태에 따른 분기
+			if ( "I".equals(ca.getTrnPtrnDvcd()) ) { // INSERT
+				fSCUserMgmt.fRegUser(requestData, onlineCtx);
+			} else if ( "U".equals(ca.getTrnPtrnDvcd()) ) { // UPDATE
+				fSCUserMgmt.fUpdUser(requestData, onlineCtx);
+			}
+			// 4. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 로그인ID중복체크
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : LGIN_ID [필드1]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pChkLginId(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			// 1. FU lookup
+			FSCUserMgmt fSCUserMgmt = (FSCUserMgmt) lookupFunctionUnit(FSCUserMgmt.class);
+			// 2. FM 호출
+			responseData = fSCUserMgmt.fChkLoginID(requestData, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 비밀번호변경
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CHG_PWD
+	 *		- field : USER_NO [필드1]
+	 *		- field : LGIN_ID [필드2]
+	 *		- field : PWD [필드3]
+	 *		- field : PWD_ORG [필드1]
+	 *		- field : PWD_NEW [필드2]
+	 *		- field : PWD_CHK [필드3]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pChgPwd(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();
+		try {
+			// 1. FU lookup
+			FSCUserMgmt fSCUserMgmt = (FSCUserMgmt) lookupFunctionUnit(FSCUserMgmt.class);
+			// 2. 입력 RS설정
+			reqDs.putFieldMap(reqDs.getRecordSet("RS_CHG_PWD").getRecordMap(0));
+			reqDs.putField("PWD_ENPT_NEW", HpcUtils.encryptTextBySHA256(reqDs.getField("PWD_NEW")));
+			reqDs.putField("PWD_ENPT_ORG", HpcUtils.encryptTextBySHA256(reqDs.getField("PWD_ORG")));  // 사용자가 입력한 현재 비밀번호
+			// 3. FM 호출    
+			fSCUserMgmt.fChgPwd(reqDs, onlineCtx);
+			// 4. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 내정보변경
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- record : RS_CHG_MY_INFO
+	 *		- field : USER_NO [사용자번호]
+	 *		- field : LGIN_ID [로그인ID]
+	 *		- field : PWD [비밀번호]
+	 *		- field : PWD_ORG [현재 비밀번호]
+	 *		- field : PWD_NEW [새 비밀번호]
+	 *		- field : PWD_CHK [새 비밀번호 확인]
+	 *		- field : LS_PWD_CHG_DT [최종비밀번호변경일자]
+	 *		- field : EML_ADDR [이메일주소]
+	 *		- field : EML_ADDR_ENPT [이메일주소 암호화]
+	 *		- field : HP_NO [휴대전화번호]
+	 *		- field : HP_NO_ENPT [휴대전화번호암호화]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 *		- field : EMAIL_CHG_YN [이메일수정여부]
+	 *		- field : HP_NO_CHG_YN [휴대폰번호수정여부]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pChgMyInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();
+		CommonArea ca = getCommonArea(onlineCtx);
+
+		try {
+			// 1. FU lookup
+			FSCUserMgmt fSCUserMgmt = (FSCUserMgmt) lookupFunctionUnit(FSCUserMgmt.class);
+			// 2. 입력 RS설정
+			reqDs.putFieldMap(reqDs.getRecordSet("RS_CHG_MY_INFO").getRecordMap(0));
+			reqDs.putField("PWD_ENPT_NEW", HpcUtils.encryptTextBySHA256(reqDs.getField("PWD_NEW")));
+			reqDs.putField("PWD_ENPT_ORG", HpcUtils.encryptTextBySHA256(reqDs.getField("PWD_ORG")));  // 사용자가 입력한 현재 비밀번호
+
+			if ( reqDs.getField("EML_ADDR") != null && StringUtils.equals("Y", reqDs.getField("EMAIL_CHG_YN")) ) {
+				reqDs.putField("EML_ADDR_ENPT", HpcUtils.encodeByAES(reqDs.getField("EML_ADDR")));
+				reqDs.putField("EMIL_ADDR_MASK", HpcUtils.maskingEmail(reqDs.getField("EML_ADDR")));
+			}
+			if ( reqDs.getField("HP_NO") != null && StringUtils.equals("Y", reqDs.getField("HP_NO_CHG_YN")) ) {
+				reqDs.putField("HP_NO_ENPT", HpcUtils.encodeByAES(reqDs.getField("HP_NO")));
+				reqDs.putField("HP_NO_MASK", HpcUtils.maskingTelNo(reqDs.getField("HP_NO")));
+			}
+			reqDs.putField("userNo", ca.getUserNo());  // TODO
+			// 3. FM 호출
+			fSCUserMgmt.fChgMyInfo(reqDs, onlineCtx);
+			// 4. 결과값 리턴
+			responseData.setOkResultMessage("DMS00000", null); //정상 처리되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 사용자조회
+	 *
+	 * @author
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : USER_NO [사용자번호]
+	 *	- field : LGIN_ID [로그인 ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_USER_LIST
+	 *		- field : USER_NO [사용자번호]
+	 *		- field : USER_CL_CD [사용자구분코드]
+	 *		- field : LGIN_ID [로그인 ID]
+	 *		- field : PWD [비밀번호]
+	 *		- field : EML_ADDR [이메일주소]
+	 *		- field : HP_NO [핸드폰번호]
+	 *		- field : LS_CHG_USER_ID [최종변경사용자ID]
+	 *		- field : LS_CHG_DTM [최종변경일시]
+	 * </pre>
+	 */
+	public IDataSet pInqUser(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();
+		try {
+			// 1. FU lookup
+			FSCUserMgmt fSCUserMgmt = (FSCUserMgmt) lookupFunctionUnit(FSCUserMgmt.class);
+			// 2. FM 호출
+			if ( requestData.getField("EML_ADDR") != null ) {
+				requestData.putField("EML_ADDR_ENPT", HpcUtils.encodeByAES(reqDs.getField("EML_ADDR")));
+			}
+			if ( requestData.getField("HP_NO") != null ) {
+				requestData.putField("HP_NO_ENPT", HpcUtils.encodeByAES(reqDs.getField("HP_NO")));
+			}
+			responseData = fSCUserMgmt.fInqUser(requestData, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 비밀번호초기화변경
+	 *
+	 * @author 이유미 (leeyoumee)
+	 * @since 2014-07-22 17:05:53
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : INIT_GB [초기화구분]
+	 *	- field : USER_NO [사용자번호]
+	 *	- field : LGIN_ID [로그인ID]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet pChgPwdInit(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		IDataSet reqDs = (IDataSet) requestData.clone();
+		CommonArea ca = getCommonArea(onlineCtx);
+		try {
+			// 1. FU lookup
+			FSCUserMgmt fSCUserMgmt = (FSCUserMgmt) lookupFunctionUnit(FSCUserMgmt.class);
+			// 2. 입력 RS설정
+			if ( StringUtils.equals("1",reqDs.getField("INIT_GB")) ) {		   // 초기화구분 : 1 => 비밀번호 초기화
+				// 비밀번호 생성 규칙 : 사용자번호에서 USR 제외하고 숫자 암호화
+				//2015.03.10 임지후 (비밀번호 생성규칙 변경 : 로그인ID+1234 )  
+				String userNo = reqDs.getField("LGIN_ID");
+				String newPwd;
+				newPwd = userNo.concat("1234");
+				reqDs.putField("PWD", HpcUtils.encryptTextBySHA256(newPwd));
+				reqDs.putField("USER_ST_CD", "00");
+			} else if ( StringUtils.equals("2", reqDs.getField("INIT_GB")) ) {		// 초기화구분 : 2 => 비밀번호  오류횟수 초기화
+				reqDs.putField("PWD_ERR_CNT", 0);
+			} else {
+				throw new BizRuntimeException("HPC00235", new String[] { HpcUtils.getLangMsg("INIT_CL") });  //입력항목 '초기화구분'이 유효하지 않습니다.
+			}
+			reqDs.putField("userNo", ca.getUserNo());  // TODO
+			responseData = fSCUserMgmt.fUpdUser(reqDs, onlineCtx);
+
+			responseData.setOkResultMessage("SKFI0001", null);//별도의 파라미터 없이 메시지 그대로 내보내는 경우
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e);  //시스템 오류
+		}
+		return responseData;
+	}
+
+	/**
+	 * 사용자테이블의 암호컬럼조회
+	 *
+	 * @author 임지후 (jihooyim)
+	 * @since 2014-07-22 17:05:53
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : USER_NO [사용자번호]
+	 *	- field : TARGET_COL_ID [대상컬럼]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_USER_INFO
+	 *		- field : USER_NO [사용자번호]
+	 *		- field : EML_ADDR_ENPT [이메일주소암호화]
+	 *		- field : HP_NO_ENPT [핸드폰번호암호화]
+	 * </pre>
+	 */
+	public IDataSet pInqUserSecure(IDataSet requestData, IOnlineContext onlineCtx) {
+		IDataSet responseData = new DataSet();
+		try {
+			// 1. FU lookup
+			FSCUserMgmt fSCUserMgmt = (FSCUserMgmt) lookupFunctionUnit(FSCUserMgmt.class);
+			// 2. FM 호출			
+			responseData = fSCUserMgmt.fInqUserSecure(requestData, onlineCtx);
+			// 3. 결과값 리턴
+			responseData.setOkResultMessage("DMS00001", null); //정상 조회되었습니다.
+		} catch ( BizRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); //시스템 오류
+		}
+		return responseData;
+	}
+
+}

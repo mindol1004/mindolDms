@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.DBR027">
+	<select id="SIFCntrt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.DBR027.SIFCntrt 인터페이스수납정보조회 */
+/* IO: 이영진,2015-12-16T14:30:06(안진갑,2015-08-28T18:28:37) */
+SELECT  IF_PROC_DT
+       ,IF_FILE_NM
+       ,IF_SEQ
+       ,SVC_MGMT_NO
+       ,RECV_PROC_DT
+       ,RECV_PROC_TMS
+       ,RECV_DT
+       ,AUTO_TRNSF_DT
+       ,INV_DT
+       ,SALE_ITM_CD
+       ,RECV_CL_CD
+       ,RECV_AMT
+       ,RENTAL_SER_NO
+       ,RECV_MTHD_CD
+       ,U_LAST_CHG_DTM
+       ,FILLER
+  FROM  TF_RECV_REFD_LIST_SECT
+ WHERE  IF_PROC_DT = #PROC_DT#
+   AND  PROC_ST_CD = '09']]>
+	</select>
+	<update id="UIFCntrt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR027.UIFCntrt 인터페이스테이블상태 변경 */
+/* IO: 이영진,2015-12-16T14:35:10(안진갑,2015-08-28T19:07:59) */
+UPDATE TF_RECV_REFD_LIST_SECT
+    SET PROC_ST_CD = '01'
+ WHERE  IF_PROC_DT = #IF_PROC_DT#
+        AND IF_FILE_NM = #IF_FILE_NM#
+        AND IF_SEQ = #IF_SEQ#]]>
+	</update>
+	<insert id="IPayRfndDtl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR027.IPayRfndDtl 수납이력등록 */
+/* IO: 이영진,2015-12-16T14:34:25(안진갑,2015-09-17T15:29:21) */
+INSERT INTO TB_NR_PAY_RFND_DTL_SYNC
+(
+  SVC_MGMT_NO
+ ,RECV_DT
+ ,SALE_ITM_CD
+ ,RECV_CL_CD
+ ,RECV_PROC_DT
+ ,RECV_PROC_TMS
+ ,AUTO_TRNSF_DT
+ ,INV_DT
+ ,RECV_AMT
+ ,RENTAL_SER_NO
+ ,RECV_MTHD_CD
+ ,LAST_CHG_TIME
+ ,FS_REG_USER_ID
+ ,FS_REG_DTM
+ ,LS_CHG_USER_ID
+ ,LS_CHG_DTM
+)
+VALUES
+(
+  #SVC_MGMT_NO#
+ ,#RECV_DT#
+ ,#SALE_ITM_CD#
+ ,#RECV_CL_CD#
+ ,#RECV_PROC_DT#
+ ,#RECV_PROC_TMS#
+ ,#AUTO_TRNSF_DT#
+ ,#INV_DT#
+ ,#RECV_AMT#
+ ,#RENTAL_SER_NO#
+ ,#RECV_MTHD_CD#
+ ,#U_LAST_CHG_DTM#
+ ,'BAT'
+ ,SYSDATE
+ ,'BAT'
+ ,SYSDATE
+)]]>
+	</insert>
+	<update id="UInsuInv" parameterClass="map" ><![CDATA[/* Biz: dms.nr.DBR027.UInsuInv 보증보험 청구테이블에 수납데이타 업데이트 */
+/* IO: 안진갑,2016-01-08T13:42:20(안진갑,2016-01-08T13:27:12) */
+UPDATE  TB_INSU_INV
+   SET  UKEY_RECV_DT = #RECV_DT#
+       ,UKEY_RECV_AMT = NVL(UKEY_RECV_AMT,0) + NVL(#RECV_AMT#,0)
+       ,INV_ST_CD = DECODE(INV_ST_CD,'02','06',INV_ST_CD)
+ WHERE  SVC_MGMT_NO = #SVC_MGMT_NO#
+   AND  INSU_RENTAL_SER_NO = #RENTAL_SER_NO#
+   AND  UKEY_INV_DT < #RECV_DT#]]>
+	</update>
+</sqlMap>

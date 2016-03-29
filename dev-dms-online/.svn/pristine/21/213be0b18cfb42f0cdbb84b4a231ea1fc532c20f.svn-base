@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPEqpPreDcXclMgmt">
+	<select id="SEqpDcinadXclPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPreDcXclMgmt.SEqpDcinadXclPaging 단말기대금선할인정산목록조회 */
+/* IO: 김상오,2015-11-27T17:19:15(김윤환,2015-10-28T17:55:36) */
+SELECT 
+		PA.*
+FROM (
+      SELECT 
+             ROW_NUMBER() OVER(ORDER BY A.DCINAD_XCL_NO ) AS ROWNO				
+             ,A.DCINAD_XCL_NO								/* 선할인 정산 번호 */
+             ,A.DCINAD_STRD_YM								/* 선할인 기준 년월 */
+             ,A.REPV_AGN_ORG_CD								/* 대표 대리점 조직 코드 */
+             ,B.DEALCO_NM 									/* 상호명 */
+             ,B.DEALCO_BLICENS_NO 							/* 사업자번호 */
+             ,A.DCINAD_AMT									/* 선할인 금액 */
+             ,A.SURTAX_AMT	                                /* 부가세금액 */
+             ,A.SPLY_PRC	                                    /* 공급가격 */
+             ,A.DCINAD_XCL_CNT								/* 선할인 정산 건수 */
+             ,A.DCINAD_SLIP_DT								/* 선할인 전표 일자 */
+             ,A.DCINAD_SLIP_NO								/* 선할인 전표 번호 */
+             ,A.DCINAD_SLIP_ST								/* 선할인 전표 상태 */
+             ,A.DCINAD_CNCL_SLIP_DT							/* 선할인 취소 전표 일자 */
+             ,A.DCINAD_CNCL_SLIP_NO							/* 선할인 취소 전표 번호 */
+             ,NVL(C.SLIP_ST_CD,'00') AS SLIP_ST_CD  		/* 전표상태코드 */
+             ,C.SLIP_DT										/* 전표일자 */
+        FROM TB_EP_DCINAD_XCL A
+             ,TB_DEALCO B
+             ,TB_SLIP C
+       WHERE A.REPV_AGN_ORG_CD = B.UKEY_AGN_CD
+         AND A.DCINAD_SLIP_NO = C.SLIP_NO(+)
+         AND B.DEALCO_CL_1 = 'A1'
+         AND A.DEL_YN = 'N'
+         AND B.DEL_YN = 'N'
+         AND A.DCINAD_STRD_YM = #DCINAD_STRD_YM#
+          ORDER BY DEALCO_BLICENS_NO
+    ) PA   
+WHERE PA.ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<select id="SEqpDcinadXclDtlExcelLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPreDcXclMgmt.SEqpDcinadXclDtlExcelLst 단말기대금선할인정산상세엑셀목록조회 */
+/* IO: 김윤환,2015-11-13T14:15:36(김윤환,2015-10-29T16:22:08) */
+SELECT 
+       A.*
+  FROM (
+        SELECT 
+               ROW_NUMBER() OVER(ORDER BY IA.DCINAD_XCL_DTL_SEQ ) AS ROWNO
+               ,COUNT(*) OVER (PARTITION BY IA.DCINAD_XCL_NO) AS EXCEL_TOTAL_CNT
+               ,IB.CNSL_DT	/* 상담 일자 */
+               ,IB.CLCT_DT 	/* 회수 일자(반영일자) */
+               ,IB.CNSL_MGMT_NO	/* 상담 관리 번호 */
+               ,IB.SCRB_MTHD	/* 가입 방법 A: T에코, C: NEW보상*/ 
+               ,DECODE(IB.SCRB_MTHD,'A','T에코','C','NEW보상','가입방법없음') AS SCRB_NM /* 추후수정*/
+               ,IB.SKN_CL	/* SKN 구분 */
+               ,IB.PRE_DC_CL /* 선할인 구분 */
+               ,IC.FEE_DEDC_YN /* 공제처리여부 */
+               ,IC.AMT_RMT_YN /* 계좌송금여부 */
+               ,IA.DEDC_TYP_CD /* 공제유형코드 */
+               ,IB.DPSTR	/* 예금주 */
+               ,IB.EQP_MDL_CD	 /* 단말기 모델 코드 */
+               ,ID.EQP_MDL_NM /* 단말기 모델명 */
+               ,IB.EQP_SER_NO	/* 단말기 일련 번호 */
+               ,IB.EQP_ST	/* 단말기 상태 */
+               ,IB.CNSL_AMT	/* 상담 금액 */
+               ,IC.EQP_ST AS JDG_EQP_ST	/* 단말기 상태(재감정 등급) */
+               ,IC.PRCH_AMT AS JDG_PRCH_AMT/* 매입 금액(재감정 금액) */
+               ,'' AS JDG_DTL /* 감정상세 */
+               ,CASE WHEN (IB.CNSL_AMT-IC.PRCH_AMT) > 0 THEN 'Y'
+                ELSE 'N' END ERR_JDG_YN /* 오감정 여부*/
+               ,IA.SKN_JDG_AMT AS ASSET_AMT /* 자산가액 */ 
+               ,IA.SKN_SMPL_JDG_DAMT	/* 대리점오류금액 */
+               ,IA.AGN_DDCT_AMT /* 대리점 차감금액 */
+               ,IA.AGN_EXPNS_CONF_AMT /* 대리점 비용 확정 금액 */ 
+               ,IA.XCL_AMT /* 총정산액 */
+               ,TO_CHAR(IB.FS_REG_DTM,'YYYYMMDD') AS SC_DT /* 현장감정일 */
+               ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = IB.FST_RGSTR) AS FST_RGSTR_NM /* 최초 등록자명 */
+               ,IB.FST_RGSTR	/* 최초 등록자 */
+               ,IB.SVC_MGMT_NO	/* 서비스 관리 번호 */
+               ,IB.CNSL_DT AS SVC_CHG_DT /* 변경일자 */
+               ,'' AS SVC_CHG /* 서비스변경 */
+               ,'' AS SVC_CHG_DTL /* 서비스변경사유 */
+               ,IF.HEADQ_NM /* 본부명 */
+               ,IF.MKT_TEAM_NM	/* 마케팅 팀 명 */
+               ,IE.AGN_ORG_CD /* 대리점코드 */
+               ,IE.DEALCO_NM AS AGN_ORG_NM /* 대리점명 */
+               ,IE.UKEY_AGN_CD /* 대리점코드2 */
+               ,(SELECT DEALCO_NM FROM TB_DEALCO
+                  WHERE DEALCO_CL_1 = 'A1'
+                    AND DEL_YN = 'N'
+                    AND UKEY_AGN_CD = IE.UKEY_AGN_CD) AS UKEY_AGN_NM /* 대리점명2 */
+               ,(SELECT DEALCO_BLICENS_NO FROM TB_DEALCO
+                  WHERE DEALCO_CL_1 = 'A1'
+                    AND DEL_YN = 'N'
+                    AND UKEY_AGN_CD = IE.UKEY_AGN_CD) AS UKEY_AGN_BLICENS_NO /* 대리점명2_사업자번호 */
+          FROM TB_EP_DCINAD_XCL_DTL IA
+               ,TB_EP_CST_CONSULT_MGMT IB
+               ,TB_EP_CST_PRCHS_MGMT IC
+               ,TB_EQP_MDL ID
+               ,TB_DEALCO IE
+               ,TB_EP_BAS_DEAL_CO_MARKETING IF
+         WHERE IA.CNSL_MGMT_NO = IB.CNSL_MGMT_NO
+           AND (IB.PRE_DC_CL = 'Y' OR IC.FEE_DEDC_YN = '1' OR IC.AMT_RMT_YN = 'Y')
+           AND IB.CNSL_MGMT_NO = IC.CNSL_MGMT_NO
+           AND IB.EQP_MDL_CD = ID.EQP_MDL_CD
+           AND IB.CNSL_DEALCO_CD = IE.DEALCO_CD
+           AND IE.UKEY_AGN_CD = IF.UKEY_AGN_CD(+)
+           AND IA.DEL_YN = 'N'
+           AND IB.DEL_YN = 'N' 
+           AND IC.DEL_YN = 'N' 
+           AND ID.DEL_YN = 'N'
+           AND IE.DEL_YN(+) = 'N'
+           AND IF.DEL_YN(+) = 'N'
+           AND NVL(IF.STA_DT,IB.CNSL_DT) <= IB.CNSL_DT
+           AND NVL(IF.END_DT,IB.CNSL_DT) >= IB.CNSL_DT
+           AND IB.CLCT_DT BETWEEN TO_CHAR(ADD_MONTHS(TO_DATE(#DCINAD_STRD_YM#,'YYYYMM'),-1) ,'YYYYMM')||'15' AND #DCINAD_STRD_YM#||'14'
+		   AND SUBSTR(IB.CNSL_DT,1,6) = TO_CHAR(ADD_MONTHS(TO_DATE(#DCINAD_STRD_YM#,'YYYYMM'),-1) ,'YYYYMM')
+           AND IE.UKEY_AGN_CD = #UKEY_AGN_CD#
+      ) A
+WHERE A.ROWNO BETWEEN #EXCEL_FIRST# AND #EXCEL_LAST#]]>
+	</select>
+	<select id="SEqpDcinadXclTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPreDcXclMgmt.SEqpDcinadXclTotCnt 단말기대금선할인정산총건수 */
+/* IO: 김윤환,2015-10-30T09:29:50(김윤환,2015-10-28T17:55:58) */
+SELECT 
+       COUNT(*) AS TOTAL_CNT /*전체건수*/
+  FROM TB_EP_DCINAD_XCL A
+       ,TB_DEALCO B
+       ,TB_SLIP C
+ WHERE A.REPV_AGN_ORG_CD = B.UKEY_AGN_CD
+   AND A.DCINAD_SLIP_NO = C.SLIP_NO(+)
+   AND B.DEALCO_CL_1 = 'A1'
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.DCINAD_STRD_YM = #DCINAD_STRD_YM#]]>
+	</select>
+	<select id="SEqpPreDcSlipYn" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPreDcXclMgmt.SEqpPreDcSlipYn 단말기대금선할인전표발행여부 */
+/* IO: 김윤환,2015-10-30T10:22:35(김윤환,2015-10-30T10:22:17) */
+SELECT 
+       COUNT(*) AS CHK_CNT 
+  FROM TB_EP_DCINAD_XCL A             
+       ,TB_SLIP B
+ WHERE A.DCINAD_SLIP_NO = B.SLIP_NO
+   AND A.DEL_YN = 'N'         
+   AND B.SLIP_ST_CD IN ('10','20','30')
+   AND A.DCINAD_STRD_YM = #DCINAD_STRD_YM#]]>
+	</select>
+	<select id="SEqpBlicensNoCheckList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epssxbase.db.DEPEqpPreDcXclMgmt.SEqpBlicensNoCheckList 전표발행대상사업자번호ERP체크리스트 */
+/* IO: 김상오,2015-11-30T10:39:53(김상오,2015-11-27T18:15:08) */
+SELECT DEALCO_BLICENS_NO
+  FROM TB_EP_DCINAD_XCL A
+     , TB_DEALCO        C
+ WHERE A.DEL_YN                    = 'N'
+   AND A.DCINAD_STRD_YM           = #DCINAD_STRD_YM#
+   AND NVL(A.DCINAD_SLIP_ST,'05') = '05'      /*삭제이거나 미진행상태인애들만*/
+   AND C.UKEY_AGN_CD     = A.REPV_AGN_ORG_CD
+   AND C.DEALCO_CL_1     = 'A1'
+   AND C.DEL_YN          = 'N'
+ ORDER BY DEALCO_BLICENS_NO]]>
+	</select>
+</sqlMap>

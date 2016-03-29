@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DEPCnclInveRevdSlipRgst">
+	<select id="SInqCnclInveEqpXclSlipInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveEqpXclSlipInfo 취소재고단말기정산전표정보조회 */
+/* IO: 양재석,2015-11-18T14:50:20(양재석,2015-11-17T18:14:55) */
+SELECT A.INVE_TYP_CD         /*재고 유형 코드*/
+       , NVL(A.CNCL_SLIP_YN,'N') CNCL_SLIP_YN     /*취소 전표 여부*/
+       , A.INVE_SLIP_NO      /*재고 전표 일자*/
+       , A.INVE_SLIP_DT      /*재고 전표 번호*/
+       , B.XCL_AMT           /*정산 금액    */
+       , B.ASMT_DMG_AMT      /*평가 손해 금액*/
+       , B.CNSL_MGMT_NO
+       , #PRCH_MGMT_NO# PRCH_MGMT_NO
+       , B.CNSL_DT	         /*상담 일자*/
+       , B.PRCH_DT	         /*매입 일자*/
+  FROM TB_EP_INVE_XCL A
+       , TB_EP_INVE_XCL_DTL B
+ WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND B.CNSL_MGMT_NO = (SELECT CNSL_MGMT_NO FROM TB_EP_CST_PRCHS_MGMT WHERE PRCH_MGMT_NO = #PRCH_MGMT_NO# AND DEL_YN = 'N')]]>
+	</select>
+	<insert id="ICnclInveXclDtlRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.ICnclInveXclDtlRgst 취소재고정산상세등록 */
+/* IO: 양재석,2015-11-18T15:55:04(양재석,2015-11-18T15:43:08) */
+INSERT
+  INTO TB_EP_INVE_XCL_DTL
+       (
+       INVE_XCL_NO            /*재고 정산 번호*/     
+       ,INVE_XCL_DTL_SEQ       /*재고 정산 상세 순번*/
+       ,CNSL_MGMT_NO           /*상담 관리 번호*/     
+       ,PRCH_MGMT_NO           /*매입 관리 번호*/     
+       ,CNSL_DT                /*상담 일자*/          
+       ,PRCH_DT                /*매입 일자*/          
+       ,XCL_AMT                /*정산 금액*/          
+       ,ASMT_DMG_AMT           /*평가 손해 금액*/     
+       ,INVE_SLIP_DT           /*재고 전표 일자*/     
+       ,INVE_SLIP_NO           /*재고 전표 번호*/     
+       ,DEL_YN                 /*삭제 여부*/          
+       ,FS_REG_USER_ID         /*최초등록사용자ID*/   
+       ,FS_REG_DTM             /*최초등록일시*/       
+       ,LS_CHG_USER_ID         /*최종변경사용자ID*/   
+       ,LS_CHG_DTM             /*최종변경일시*/       
+       )
+VALUES (
+       #INVE_XCL_NO#            /*재고 정산 번호*/     
+       ,#INVE_XCL_DTL_SEQ#       /*재고 정산 상세 순번*/
+       ,#CNSL_MGMT_NO#           /*상담 관리 번호*/     
+       ,#PRCH_MGMT_NO#           /*매입 관리 번호*/     
+       ,#CNSL_DT#                /*상담 일자*/          
+       ,#PRCH_DT#                /*매입 일자*/          
+       ,#XCL_AMT#                /*정산 금액*/          
+       ,#ASMT_DMG_AMT#           /*평가 손해 금액*/     
+       ,#INVE_SLIP_DT#           /*재고 전표 일자*/     
+       ,#INVE_SLIP_NO#           /*재고 전표 번호*/     
+       ,'N'
+       ,#FS_REG_USER_ID#         /*최초등록사용자ID*/   
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#         /*최종변경사용자ID*/   
+       ,SYSDATE
+       )]]>
+	</insert>
+	<select id="SInqCnclInveInveXclSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveInveXclSeq 취소재고정산일련번호채번 */
+/* IO: 양재석,2015-11-18T15:47:03(양재석,2015-11-18T15:47:03) */
+SELECT TO_CHAR(LPAD(SQ01_TB_EP_INVE_XCL.NEXTVAL,10,0)) INVE_XCL_NO
+  FROM DUAL]]>
+	</select>
+	<select id="SInqCnclInveXclSumList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveXclSumList 취소재고정산합계조회 */
+/* IO: 양재석,2015-11-18T16:38:17(양재석,2015-11-18T16:04:09) */
+SELECT INVE_XCL_NO
+       ,SUM(NVL(XCL_AMT,0)) XCL_AMT
+       ,SUM(NVL(ASMT_DMG_AMT,0)) ASMT_DMG_AMT
+       ,COUNT(INVE_XCL_NO) INVE_XCL_CNT
+  FROM TB_EP_INVE_XCL_DTL
+ WHERE INVE_XCL_NO = #INVE_XCL_NO#
+   AND DEL_YN = 'N'
+ GROUP BY INVE_XCL_NO]]>
+	</select>
+	<insert id="ICnclInveXclRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.ICnclInveXclRgst 취소재고정산등록 */
+/* IO: 양재석,2015-11-18T16:24:55(양재석,2015-11-18T16:24:55) */
+INSERT
+  INTO TB_EP_INVE_XCL
+       (
+       INVE_XCL_NO
+       ,XCL_STRD_DT
+       ,XCL_STRD_STA_DT
+       ,XCL_STRD_END_DT
+       ,SKN_CL
+       ,INVE_CL_CD
+       ,DEDC_TYP_CD
+       ,INVE_TYP_CD
+       ,ASMT_DMG_AMT
+       ,XCL_AMT
+       ,INVE_XCL_CNT
+       ,INVE_SLIP_DT
+       ,INVE_SLIP_NO
+       ,INVE_SLIP_ST
+       ,CNCL_SLIP_YN
+       ,DEL_YN
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+       #INVE_XCL_NO#
+       ,#XCL_STRD_DT#
+       ,#XCL_STRD_STA_DT#
+       ,#XCL_STRD_END_DT#
+       ,#SKN_CL#
+       ,#INVE_CL_CD#
+       ,#DEDC_TYP_CD#
+       ,#INVE_TYP_CD#
+       ,#ASMT_DMG_AMT#
+       ,#XCL_AMT#
+       ,#INVE_XCL_CNT#
+       ,#INVE_SLIP_DT#
+       ,#INVE_SLIP_NO#
+       ,#INVE_SLIP_ST#
+       ,NVL(#CNCL_SLIP_YN#,'N')
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<select id="SInqCnclInveEqpXclSlipInfoCnsl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveEqpXclSlipInfoCnsl 취소재고단말기정산전표정보조회상담 */
+/* IO: 양재석,2015-11-18T16:51:21(양재석,2015-11-18T16:51:13) */
+SELECT A.INVE_TYP_CD         /*재고 유형 코드*/
+       , NVL(A.CNCL_SLIP_YN,'N') CNCL_SLIP_YN     /*취소 전표 여부*/
+       , A.INVE_SLIP_NO      /*재고 전표 일자*/
+       , A.INVE_SLIP_DT      /*재고 전표 번호*/
+       , B.XCL_AMT           /*정산 금액    */
+       , B.ASMT_DMG_AMT      /*평가 손해 금액*/
+       , B.CNSL_MGMT_NO
+       , #PRCH_MGMT_NO# PRCH_MGMT_NO
+       , B.CNSL_DT	         /*상담 일자*/
+       , B.PRCH_DT	         /*매입 일자*/
+  FROM TB_EP_INVE_XCL A
+       , TB_EP_INVE_XCL_DTL B
+ WHERE A.INVE_XCL_NO = B.INVE_XCL_NO
+   AND A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND B.CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</select>
+	<select id="SInqCnclInveAccoRmtXclInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveAccoRmtXclInfo 취소재고계좌송금정산정보조회 */
+/* IO: 양재석,2015-11-19T08:47:03(양재석,2015-11-18T17:50:16) */
+SELECT A.ACCO_RMT_XCL_NO	/*계좌 송금 정산 번호*/
+       ,A.INVE_TYP_CD	/*재고 유형 코드*/
+       ,A.CNSL_MGMT_NO	/*상담 관리 번호*/
+       ,A.PRCH_MGMT_NO	/*매입 관리 번호*/
+       ,A.EQP_MDL_CD	/*단말기 모델 코드*/
+       ,A.EQP_SER_NO	/*단말기 일련 번호*/
+       ,A.CNSL_DT	/*상담 일자*/
+       ,A.CLCT_DT	/*회수 일자*/
+       ,A.RMT_DT	/*송금 일자*/
+       ,A.XCL_AMT	/*정산 금액*/
+       ,B.XCL_STRD_STA_DT	/*정산 기준 시작 일자*/
+       ,B.XCL_STRD_END_DT	/*정산 기준 종료 일자*/
+       ,B.ACCO_RMT_SLIP_DT	/*계좌 송금 전표 일자*/
+       ,B.ACCO_RMT_SLIP_NO	/*계좌 송금 전표 번호*/
+       ,NVL(B.CNCL_SLIP_YN,'N') CNCL_SLIP_YN	/*취소 전표 여부*/
+  FROM TB_EP_ACCO_RMT_XCL_DTL A
+       , TB_EP_ACCO_RMT_XCL B
+ WHERE A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.ACCO_RMT_XCL_NO = B.ACCO_RMT_XCL_NO
+   AND A.PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</select>
+	<select id="SInqCnclInveAccoRmtXclSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveAccoRmtXclSeq 취소재고계좌송금정산일련번호채번 */
+/* IO: 양재석,2015-11-18T18:34:24(양재석,2015-11-18T18:34:24) */
+SELECT TO_CHAR(LPAD(SQ01_TB_EP_ACCO_RMT_XCL.NEXTVAL,15,0)) AS ACCO_RMT_XCL_NO
+  FROM DUAL]]>
+	</select>
+	<insert id="ICnclInveAccoRmtXclDtlRgst" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.ICnclInveAccoRmtXclDtlRgst 취소재고계좌송금정산상세등록 */
+/* IO: 양재석,2015-11-19T12:34:36(양재석,2015-11-18T19:28:59) */
+INSERT
+  INTO  TB_EP_ACCO_RMT_XCL_DTL
+       (
+        ACCO_RMT_XCL_NO         /* 계좌 송금 정산 번호 */
+       ,ACCO_RMT_XCL_DTL_SEQ    /* 계좌 송금 정산 상세 순번 */
+       ,INVE_TYP_CD             /* 재고 유형 코드 */
+       ,CNSL_MGMT_NO            /* 상담 관리 번호 */
+       ,PRCH_MGMT_NO            /* 매입 관리 번호 */
+       ,EQP_MDL_CD              /* 모델코드 */
+       ,EQP_SER_NO              /* 일련번호 */
+       ,CNSL_DT                 /* 상담 일자 */
+       ,CLCT_DT                 /* 회수 일자 */
+       ,RMT_DT                  /* 송금일자 */
+       ,XCL_AMT                 /* 정산 금액 */
+       ,ACCO_RMT_SLIP_DT	    /* 계좌 송금 전표 일자 */
+       ,ACCO_RMT_SLIP_NO	    /* 계좌 송금 전표 번호 */
+       ,DEL_YN                  /* 삭제여부 */
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+        #ACCO_RMT_XCL_NO#         /* 계좌 송금 정산 번호 */
+       ,#ACCO_RMT_XCL_DTL_SEQ#    /* 계좌 송금 정산 상세 순번 */
+       ,#INVE_TYP_CD#             /* 재고 유형 코드 */
+       ,#CNSL_MGMT_NO#            /* 상담 관리 번호 */
+       ,#PRCH_MGMT_NO#            /* 매입 관리 번호 */
+       ,#EQP_MDL_CD#              /* 모델코드 */
+       ,#EQP_SER_NO#              /* 일련번호 */
+       ,#CNSL_DT#                 /* 상담 일자 */
+       ,#CLCT_DT#                 /* 회수 일자 */
+       ,#RMT_DT#                  /* 송금일자 */
+       ,#XCL_AMT#                 /* 정산 금액 */
+       ,#ACCO_RMT_SLIP_DT#	    /* 계좌 송금 전표 일자 */
+       ,#ACCO_RMT_SLIP_NO#	    /* 계좌 송금 전표 번호 */
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<select id="SInqCnclInveAccoRmtXclSumList" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveAccoRmtXclSumList 취소재고계좌송금정산합계조회 */
+/* IO: 양재석,2015-11-18T19:45:32(양재석,2015-11-18T19:35:56) */
+SELECT ACCO_RMT_XCL_NO
+       ,SUM(NVL(XCL_AMT,0)) ACCO_RMT_AMT
+       ,COUNT(ACCO_RMT_XCL_NO) ACCO_RMT_XCL_CNT
+  FROM TB_EP_ACCO_RMT_XCL_DTL
+ WHERE ACCO_RMT_XCL_NO = #ACCO_RMT_XCL_NO#
+   AND DEL_YN = 'N'
+ GROUP BY ACCO_RMT_XCL_NO]]>
+	</select>
+	<insert id="ICnclInveAccoRmtXcl" parameterClass="map" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.ICnclInveAccoRmtXcl 취소재고계좌송금정산등록 */
+/* IO: 양재석,2015-11-19T13:49:45(양재석,2015-11-18T19:41:52) */
+INSERT
+  INTO  TB_EP_ACCO_RMT_XCL
+       (
+        ACCO_RMT_XCL_NO                          /* 계좌송금 정산 번호 */
+       ,XCL_STRD_STA_DT                          /* 정산 기준 시작 일자 */
+       ,XCL_STRD_END_DT                          /* 정산 기준 종료 일자 */
+       ,XCL_DEALCO_CD                            /* 정산 거래처 코드 */
+       ,INVE_TYP_CD                              /* 재고 유형 코드 */
+       ,ACCO_RMT_AMT                             /* 계좌송금 금액 */
+       ,ACCO_RMT_XCL_CNT                         /* 계좌송금 정산 건수 */
+       ,CNCL_SLIP_YN                             /* 취소 전표 여부 */
+       ,DEL_YN                                   /* 삭제여부 */
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+        #ACCO_RMT_XCL_NO#                          /* 계좌송금 정산 번호 */
+       ,#XCL_STRD_STA_DT#                          /* 정산 기준 시작 일자 */
+       ,#XCL_STRD_END_DT#                          /* 정산 기준 종료 일자 */
+       ,#XCL_DEALCO_CD#                            /* 정산 거래처 코드 */
+       ,#INVE_TYP_CD#                              /* 재고 유형 코드 */
+       ,#ACCO_RMT_AMT#                             /* 계좌송금 금액 */
+       ,#ACCO_RMT_XCL_CNT#                         /* 계좌송금 정산 건수 */
+       ,NVL(#CNCL_SLIP_YN#,'N')                    /* 취소 전표 여부 */
+       ,'N'
+       ,#FS_REG_USER_ID#
+       ,SYSDATE
+       ,#LS_CHG_USER_ID#
+       ,SYSDATE
+       )]]>
+	</insert>
+	<select id="SInqCnclInveAccoRmtXclInfoCnsl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveAccoRmtXclInfoCnsl 취소재고계좌송금정산정보조회상담 */
+/* IO: 양재석,2015-11-19T13:32:21(양재석,2015-11-19T13:32:21) */
+SELECT A.ACCO_RMT_XCL_NO	/*계좌 송금 정산 번호*/
+       ,A.INVE_TYP_CD	/*재고 유형 코드*/
+       ,A.CNSL_MGMT_NO	/*상담 관리 번호*/
+       ,A.PRCH_MGMT_NO	/*매입 관리 번호*/
+       ,A.EQP_MDL_CD	/*단말기 모델 코드*/
+       ,A.EQP_SER_NO	/*단말기 일련 번호*/
+       ,A.CNSL_DT	/*상담 일자*/
+       ,A.CLCT_DT	/*회수 일자*/
+       ,A.RMT_DT	/*송금 일자*/
+       ,A.XCL_AMT	/*정산 금액*/
+       ,B.XCL_STRD_STA_DT	/*정산 기준 시작 일자*/
+       ,B.XCL_STRD_END_DT	/*정산 기준 종료 일자*/
+       ,B.ACCO_RMT_SLIP_DT	/*계좌 송금 전표 일자*/
+       ,B.ACCO_RMT_SLIP_NO	/*계좌 송금 전표 번호*/
+       ,NVL(B.CNCL_SLIP_YN,'N') CNCL_SLIP_YN	/*취소 전표 여부*/
+  FROM TB_EP_ACCO_RMT_XCL_DTL A
+       , TB_EP_ACCO_RMT_XCL B
+ WHERE A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.ACCO_RMT_XCL_NO = B.ACCO_RMT_XCL_NO
+   AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</select>
+	<select id="SInqCnclInveFeeDedcXclInfoCnsl" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveFeeDedcXclInfoCnsl 취소재고요금공제정산정보조회 */
+/* IO: 양재석,2015-11-26T16:21:41(양재석,2015-11-26T15:45:54) */
+SELECT A.FEE_PPAY_XCL_NO                /*요금 선납 정산 번호*/
+       ,A.INVE_TYP_CD	                  /*재고 유형 코드*/
+       ,A.CNSL_MGMT_NO	                /*상담 관리 번호*/
+       ,A.EQP_SER_NO	                  /*단말기 일련 번호*/
+       ,A.EQP_MDL_CD	                  /*단말기 모델 코드*/
+       ,A.PRCH_MGMT_NO	                /*매입 관리 번호*/
+       ,A.CNSL_DT	                      /*상담 일자*/
+       ,A.CLCT_DT	                      /*회수 일자*/
+       ,A.FEE_DEDC_PROC_DT	            /*요금 공제 처리 일자*/
+       ,A.XCL_AMT	                      /*정산 금액*/
+       ,B.FEE_PPAY_SLIP_DT	            /*요금 선납 전표 일자*/
+       ,B.FEE_PPAY_SLIP_NO	            /*요금 선납 전표 번호*/
+       ,NVL((SELECT NVL(IB.CNCL_SLIP_YN,'N') CNCL_SLIP_YN	/*취소 전표 여부*/
+               FROM TB_EP_ACCO_RMT_XCL_DTL IA
+                    , TB_EP_ACCO_RMT_XCL IB
+              WHERE IA.DEL_YN = 'N'
+                AND IB.DEL_YN = 'N'
+                AND IB.CNCL_SLIP_YN = 'Y'
+                AND IA.ACCO_RMT_XCL_NO = IB.ACCO_RMT_XCL_NO
+                AND IA.CNSL_MGMT_NO = #CNSL_MGMT_NO#
+                AND NVL(IA.ACCO_RMT_SLIP_NO,' ') = NVL(B.FEE_PPAY_SLIP_NO,' ') /*원전표번호비교*/
+       ),'N') CNCL_SLIP_YN /*요금공제 취소 전표 여부*/
+  FROM TB_EP_FEE_PPAY_XCL_DTL A
+       , TB_EP_FEE_PPAY_XCL B
+ WHERE A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.FEE_PPAY_XCL_NO = B.FEE_PPAY_XCL_NO
+   AND A.CNSL_MGMT_NO = #CNSL_MGMT_NO#]]>
+	</select>
+	<select id="SInqCnclInveFeeDedcXclInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.ep.epscsbase.db.DEPCnclInveRevdSlipRgst.SInqCnclInveFeeDedcXclInfo 취소재고요금공제정산정보조회 */
+/* IO: 양재석,2015-11-26T16:21:55(양재석,2015-11-26T15:54:53) */
+SELECT A.FEE_PPAY_XCL_NO                /*요금 선납 정산 번호*/
+       ,A.INVE_TYP_CD	                  /*재고 유형 코드*/
+       ,A.CNSL_MGMT_NO	                /*상담 관리 번호*/
+       ,A.EQP_SER_NO	                  /*단말기 일련 번호*/
+       ,A.EQP_MDL_CD	                  /*단말기 모델 코드*/
+       ,A.PRCH_MGMT_NO	                /*매입 관리 번호*/
+       ,A.CNSL_DT	                      /*상담 일자*/
+       ,A.CLCT_DT	                      /*회수 일자*/
+       ,A.FEE_DEDC_PROC_DT	            /*요금 공제 처리 일자*/
+       ,A.XCL_AMT	                      /*정산 금액*/
+       ,B.FEE_PPAY_SLIP_DT	            /*요금 선납 전표 일자*/
+       ,B.FEE_PPAY_SLIP_NO	            /*요금 선납 전표 번호*/
+       ,NVL((SELECT NVL(IB.CNCL_SLIP_YN,'N') CNCL_SLIP_YN	/*취소 전표 여부*/
+               FROM TB_EP_ACCO_RMT_XCL_DTL IA
+                    , TB_EP_ACCO_RMT_XCL IB
+              WHERE IA.DEL_YN = 'N'
+                AND IB.DEL_YN = 'N'
+                AND IB.CNCL_SLIP_YN = 'Y'
+                AND IA.ACCO_RMT_XCL_NO = IB.ACCO_RMT_XCL_NO
+                AND IA.PRCH_MGMT_NO = #PRCH_MGMT_NO#
+                AND NVL(IA.ACCO_RMT_SLIP_NO,' ') = NVL(B.FEE_PPAY_SLIP_NO,' ') /*원전표번호비교*/
+       ),'N') CNCL_SLIP_YN /*요금공제 취소 전표 여부*/
+  FROM TB_EP_FEE_PPAY_XCL_DTL A
+       , TB_EP_FEE_PPAY_XCL B
+ WHERE A.DEL_YN = 'N'
+   AND B.DEL_YN = 'N'
+   AND A.FEE_PPAY_XCL_NO = B.FEE_PPAY_XCL_NO
+   AND A.PRCH_MGMT_NO = #PRCH_MGMT_NO#]]>
+	</select>
+</sqlMap>

@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DBIEqpMdlMgmt">
+	<select id="SEqpMdlTotCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.SEqpMdlTotCnt 단말기총건수 */
+/* IO: 이영진,2015-08-03T13:39:25(개발자,2015-06-29T11:21:22) */
+SELECT  
+        COUNT(1) AS TOTAL_CNT
+  FROM  TB_EQP_MDL       /* 단말기모델 */ 
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+        UPPER(EQP_MDL_NM) LIKE '%'||UPPER(#EQP_MDL_NM#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        EQP_MDL_CD LIKE '%'||#EQP_MDL_CD#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="MFACT_CD"><![CDATA[
+        MFACT_CD   = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="NR_EQP_MDL_YN"><![CDATA[
+        EQP_MDL_CD IN (SELECT EQP_MDL_CD FROM TB_EQP_STRD_INFO WHERE OP_CL_CD = #NR_EQP_MDL_YN#)
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<select id="SEqpMdlPaging" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.SEqpMdlPaging 단말기모델목록 */
+/* IO: 이영진,2015-08-04T08:30:55(개발자,2015-06-29T11:30:56) */
+SELECT  
+        *
+  FROM (
+        SELECT  
+                ROW_NUMBER() OVER (ORDER BY EQP_MDL_CD ASC) AS ROWNO  
+                ,EQP_MDL_CD                                             /* 모델코드 */
+                ,EQP_MDL_NM                                             /* 모델명 */
+                ,PET_NM                                                 /* 펫네임 */
+                ,MFACT_CD                                               /* 제조사코드 */
+                ,MFACT_NM				                                /* 제조사명 */
+                ,DSTRB_EQP_YN											/* 유통단말기여부 */
+                ,FS_REG_USER_ID                                         /* 최초등록사용자ID */  
+                ,TO_CHAR(FS_REG_DTM, 'YYYYMMDD') AS FS_REG_DTM  		/* 최초등록일시 */
+                ,LS_CHG_USER_ID                                         /* 최종등록사용자ID */
+                ,TO_CHAR(LS_CHG_DTM, 'YYYYMMDDHH24MISS') AS LS_CHG_DTM  /* 최종등록일시 */ 
+          FROM  TB_EQP_MDL A                                            /* 단말기모델 */
+               ,(SELECT CM_CD_ID, CM_CD_NM MFACT_NM FROM TB_CM_CD 
+                  WHERE CM_GRP_CD_ID = 'DMS101') IV1          
+         WHERE  A.MFACT_CD = IV1.CM_CD_ID(+)   
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+                 UPPER(EQP_MDL_NM) LIKE '%'||UPPER(#EQP_MDL_NM#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+                 EQP_MDL_CD LIKE '%'||#EQP_MDL_CD#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="MFACT_CD"><![CDATA[
+                 MFACT_CD   = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="NR_EQP_MDL_YN"><![CDATA[
+                 EQP_MDL_CD IN (SELECT EQP_MDL_CD FROM TB_EQP_STRD_INFO WHERE OP_CL_CD = #NR_EQP_MDL_YN#)
+]]></isNotEmpty><![CDATA[
+        ) PA
+ WHERE  ROWNO BETWEEN #nc_firstRowIndex# AND #nc_lastRowIndex#]]>
+	</select>
+	<insert id="IEqpMdl" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.IEqpMdl 단말기모델등록 */
+/* IO: 이영진,2015-08-28T17:32:44(이영진,2015-06-30T18:01:51) */
+INSERT
+  INTO  TB_EQP_MDL                              /* 단말기모델 */ 
+       (
+        EQP_MDL_CD                              /* 단말기모델코드 */
+       ,EQP_MDL_NM                              /* 단말기모델명 */ 
+       ,PET_NM                                  /* 펫네임 */  
+       ,MFACT_CD                                /* 제조사코드 */
+       ,DSTRB_EQP_YN                            /* 유통단말기여부 */
+       ,LAUNC_DT                                /* 출시 일자         */
+       ,CNSG_DT                                 /* 단종 일자         */
+       ,PROD_CL                                 /* 상품 구분         */
+       ,SER_NO_LENG                             /* 일련 번호 길이    */
+       ,PROD_CHRTIC_1                           /* 상품 특성 1       */
+       ,PROD_CHRTIC_2                           /* 상품 특성 2       */
+       ,COMC                                    /* 통신방식          */
+       ,REPV_PROD_CD                            /* 대표 상품 코드    */
+       ,BARCD_TYP                               /* 바코드 유형       */
+       ,SELL_STOP_YN                            /* 판매 중단 여부    */
+       ,SELL_STOP_DT                            /* 판매 중단 일자    */
+       ,PRCH_YN                                 /* 매입 여부         */
+       ,PRCH_STOP_DT                            /* 매입 중단 일자    */
+       ,PROD_DEFI_CL                            /* 상품 정의 구분    */
+       ,PREFR_PRC_CL                            /* 선호도 가격 구분  */
+       ,SLFCO_CL                                /* 자사 구분         */
+       ,SETOFF_COFC                             /* 상계 계수         */
+       ,HLMT_PRC                                /* 상한 가격         */
+       ,OUT_PRC                                 /* 출고 가격         */
+       ,GRADE_CL                                /* 등급 구분         */
+       ,FIX_PRC_YN                              /* 고정 가격 여부    */
+       ,RMK                                     /* 비고              */
+       ,DEL_YN                                  /* 삭제 여부         */
+       ,UPDATE_COUNT                            /* UPDATE COUNT      */
+       ,FS_REG_USER_ID                          /* 최초등록사용자ID */
+       ,FS_REG_DTM                              /* 최초등록일시 */
+       ,LS_CHG_USER_ID                          /* 최종변경사용ID */
+       ,LS_CHG_DTM                              /* 최종변경일시 */ 
+        )
+VALUES
+       (
+        #EQP_MDL_CD#                             /* 단말기모델코드 */
+       ,#EQP_MDL_NM#                             /* 단말기모델명 */
+       ,#PET_NM#                                 /* 펫네임 */  
+       ,#MFACT_CD#                               /* 제조사코드 */
+       ,#DSTRB_EQP_YN#                           /* 유통단말기여부 */
+       ,#LAUNC_DT#                               /* 출시 일자         */
+       ,#CNSG_DT#                                /* 단종 일자         */
+       ,#PROD_CL#                                /* 상품 구분         */
+       ,#SER_NO_LENG#                            /* 일련 번호 길이    */
+       ,#PROD_CHRTIC_1#                          /* 상품 특성 1       */
+       ,#PROD_CHRTIC_2#                          /* 상품 특성 2       */
+       ,#COMC#                                   /* 통신방식          */
+       ,#REPV_PROD_CD#                           /* 대표 상품 코드    */
+       ,#BARCD_TYP#                              /* 바코드 유형       */
+       ,#SELL_STOP_YN#                           /* 판매 중단 여부    */
+       ,#SELL_STOP_DT#                           /* 판매 중단 일자    */
+       ,#PRCH_YN#                                /* 매입 여부         */
+       ,#PRCH_STOP_DT#                           /* 매입 중단 일자    */
+       ,#PROD_DEFI_CL#                           /* 상품 정의 구분    */
+       ,#PREFR_PRC_CL#                           /* 선호도 가격 구분  */
+       ,#SLFCO_CL#                               /* 자사 구분         */
+       ,#SETOFF_COFC#                            /* 상계 계수         */
+       ,#HLMT_PRC#                               /* 상한 가격         */
+       ,#OUT_PRC#                                /* 출고 가격         */
+       ,#GRADE_CL#                               /* 등급 구분         */
+       ,#FIX_PRC_YN#                             /* 고정 가격 여부    */
+       ,#RMK#                                    /* 비고              */
+       ,#DEL_YN#                                 /* 삭제 여부         */
+       ,#UPDATE_COUNT#                           /* UPDATE COUNT      */
+       ,#USERNO#                                 /* 최초등록사용자ID */
+       ,SYSDATE                                  /* 최초등록일시 */
+       ,#USERNO#                                 /* 최종변경사용ID */
+       ,SYSDATE                                  /* 최종변경일시 */ 
+        )]]>
+	</insert>
+	<select id="SEqpMdlListChk" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.SEqpMdlListChk 모델저장사전체크 */
+/* IO: 이영진,2015-06-30T18:10:41(박강일,2014-08-22T09:27:44) */
+SELECT  
+        COUNT(1) AS ROW_CNT   /* 사전체크 카운트 */
+  FROM  TB_EQP_MDL                /* 단말기모델 */
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD#]]>
+	</select>
+	<update id="UEqpMdl" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.UEqpMdl 단말기모델수정 */
+/* IO: 이영진,2015-08-04T08:34:46(이영진,2015-07-01T08:46:32) */
+UPDATE 
+        TB_EQP_MDL                                          /* SC화면 */
+   SET  EQP_MDL_NM=#EQP_MDL_NM#                             /* 단말기모델명 */   
+       ,MFACT_CD=#MFACT_CD#                                 /* 제조사코드 */ 
+       ,PET_NM=#PET_NM#                                     /* 펫네임 */
+       ,DSTRB_EQP_YN=#DSTRB_EQP_YN#                         /* 유통단말기여부 */  
+       ,LS_CHG_USER_ID=#USERNO#                             /* 최종변경사용자ID */  
+       ,LS_CHG_DTM=SYSDATE                                  /* 최종변경일시 */ 
+ WHERE  EQP_MDL_CD= #EQP_MDL_CD#                            /* 단말기모델코드 */]]>
+	</update>
+	<update id="DEqpMdl" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.DEqpMdl 단말기모델삭제 */
+/* IO: 이영진,2015-07-01T09:00:46(이영진,2015-07-01T08:48:29) */
+UPDATE	TB_EQP_MDL					/* 단말기모델 */
+  SET  DEL_YN = 'Y'            		/* 삭제여부 */
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD# 	/* 단말기모델코드  */]]>
+	</update>
+	<select id="SEqpColorLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.SEqpColorLst 단말기색상목록 */
+/* IO: 이영진,2015-08-04T15:23:19(이영진,2015-08-04T15:03:28) */
+SELECT
+        EQP_MDL_CD
+       ,COLOR_CD
+       ,'N' CHECKED
+  FROM  TB_EQP_COLOR
+ WHERE  EQP_MDL_CD IN (
+        	SELECT  
+                    EQP_MDL_CD
+          	  FROM  TB_EQP_MDL
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_NM"><![CDATA[
+        			UPPER(EQP_MDL_NM) LIKE '%'||UPPER(#EQP_MDL_NM#)||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="EQP_MDL_CD"><![CDATA[
+        			EQP_MDL_CD LIKE '%'||#EQP_MDL_CD#||'%'
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="MFACT_CD"><![CDATA[
+        			MFACT_CD   = #MFACT_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty prepend="AND" property="NR_EQP_MDL_YN"><![CDATA[
+        			EQP_MDL_CD IN (SELECT EQP_MDL_CD FROM TB_EQP_STRD_INFO WHERE OP_CL_CD = #NR_EQP_MDL_YN#)
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[
+)]]>
+	</select>
+	<delete id="DEqpColor" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.DEqpColor 단말기색상삭제 */
+/* IO: 이영진,2015-08-04T17:37:14(이영진,2015-08-04T17:36:15) */
+DELETE  FROM	 TB_EQP_COLOR			/* 단말기색상 */
+ WHERE  EQP_MDL_CD = #EQP_MDL_CD# 	/* 단말기모델코드  */
+   AND  COLOR_CD = #COLOR_CD#]]>
+	</delete>
+	<insert id="IEqpColor" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIEqpMdlMgmt.IEqpColor 단말기색상입력 */
+/* IO: 이영진,2015-08-04T17:39:39(이영진,2015-08-04T17:38:14) */
+INSERT
+  INTO  TB_EQP_COLOR                            /* 단말기색상 */ 
+       (
+        EQP_MDL_CD                              /* 단말기모델코드 */
+       ,COLOR_CD                                /* 단말기색상코드 */ 
+       ,FS_REG_USER_ID                          /* 최초등록사용자ID */
+       ,FS_REG_DTM                              /* 최초등록일시 */
+       ,LS_CHG_USER_ID                          /* 최종변경사용ID */
+       ,LS_CHG_DTM                              /* 최종변경일시 */ 
+        )
+VALUES
+       (
+        #EQP_MDL_CD#                             /* 단말기모델코드 */
+       ,#COLOR_CD#                               /* 단말기색상코드 */
+       ,#USERNO#                                 /* 최초등록사용자ID */
+       ,SYSDATE                                  /* 최초등록일시 */
+       ,#USERNO#                                 /* 최종변경사용ID */
+       ,SYSDATE                                  /* 최종변경일시 */ 
+        )]]>
+	</insert>
+</sqlMap>

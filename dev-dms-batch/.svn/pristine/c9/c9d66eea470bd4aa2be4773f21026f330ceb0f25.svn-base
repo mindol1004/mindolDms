@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR010">
+	<select id="SJDGLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.BNR049.SJDGLst 손해배상금목록조회 */
+/* IO: 진병수,2015-08-12T15:18:17(진병수,2015-08-06T19:18:25) */
+SELECT  'NR'                                     AS OP_CL_CD
+      , TO_CHAR(TO_DATE(IB.OP_PROC_DT),'YYYYMM') AS BOND_XCL_YM
+      , 'JD'                          AS XCL_CL
+      ,  IB.SVC_MGMT_NO               AS BOND_DEALCO_CD
+      , 'IN'                          AS XCL_ITM_CL    
+      , SUM(IE.EQP_CMP_AMT_TOT)      AS  BOND_ITM_AMT              
+      , SUM(IE.EQP_CMP_AMT_TOT)*0.1  AS  BOND_SURTAX               
+      , NULL                         AS BOND_SLIP_NO
+      , 'DEL'                        AS ACNT_CD
+      , TO_CHAR(SYSDATE,'YYYYMMDD')  AS BOND_SLIP_DT
+      , NULL                         AS BOND_ORGL_SLIP_NO
+      , NULL                         AS BOND_CNCL_SLIP_NO
+      , NULL                         AS BOND_CNCL_DT
+      , 'BAT'                        AS FS_REG_USER_ID
+      , SYSDATE                      AS FS_REG_DTM                         
+  FROM  TB_RENTAL_CNTRT  IA
+      , TB_NR_CNTRT  IB
+      , TB_EQP_CNTRT  IC
+      , TB_EQP_ASSET  ID
+      , TB_EQP_JDG  IE
+      , TB_EQP_MDL  IF
+ WHERE  IA.CNTRT_NO = IB.CNTRT_NO
+   AND  IA.CNTRT_NO = IC.CNTRT_NO
+   AND  IC.ASSET_NO = ID.ASSET_NO
+   AND  ID.ASSET_NO = IE.ASSET_NO
+   AND  IF.EQP_MDL_CD = ID.EQP_MDL_CD(+)
+   AND  IB.OP_TYP_CD = '02'   
+   AND  SUBSTR(IB.OP_PROC_DT,1,6) = NVL('', TO_CHAR(SYSDATE, 'YYYYMM'))  
+GROUP  BY IB.SVC_MGMT_NO 
+     , TO_CHAR(TO_DATE(IB.OP_PROC_DT),'YYYYMM')]]>
+	</select>
+	<insert id="IJDGBond" parameterClass="map" ><![CDATA[/* Biz: dms.nr.BNR049.IJDGBond 손해배상금등록_채권 */
+/* IO: 진병수,2015-08-12T15:18:44(진병수,2015-08-06T19:19:04) */
+INSERT INTO TB_XCL_BOND
+            (
+              OP_CL_CD
+            , BOND_XCL_YM
+            , XCL_CL
+            , BOND_DEALCO_CD
+            , XCL_ITM_CL
+            , BOND_ITM_AMT
+            , BOND_SURTAX
+            , BOND_SLIP_NO
+            , ACNT_CD
+            , BOND_SLIP_DT
+            , BOND_ORGL_SLIP_NO
+            , BOND_CNCL_SLIP_NO
+            , BOND_CNCL_DT
+            , FS_REG_USER_ID
+            , FS_REG_DTM
+            )
+            VALUES
+            (
+              #OP_CL_CD#
+            , #BOND_XCL_YM#
+            , #XCL_CL#
+            , #BOND_DEALCO_CD#
+            , #XCL_ITM_CL#
+            , #BOND_ITM_AMT#
+            , #BOND_SURTAX#
+            , #BOND_SLIP_NO#
+            , #ACNT_CD#
+            , #BOND_SLIP_DT#
+            , #BOND_ORGL_SLIP_NO#
+            , #BOND_CNCL_SLIP_NO#
+            , #BOND_CNCL_DT#
+            , #FS_REG_USER_ID#
+            , #FS_REG_DTM#
+            )]]>
+	</insert>
+</sqlMap>

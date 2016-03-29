@@ -1,0 +1,125 @@
+package dms.ep.epbimbase.biz;
+
+import java.util.Map;
+
+import fwk.common.CommonArea;
+import fwk.constants.DmsConstants;
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.util.StringUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/중고</li>
+ * <li>단위업무명: [PU]상품이력조회</li>
+ * <li>설  명 : <pre>[PU]상품이력조회</pre></li>
+ * <li>작성일 : 2015-07-22 18:02:48</li>
+ * <li>작성자 : 이준우 (elmsliw)</li>
+ * </ul>
+ *
+ * @author 이준우 (elmsliw)
+ */
+public class PEPProdHstMgmt extends fwk.base.ProcessUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public PEPProdHstMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>[PM]상품이력조회</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-31 09:26:41
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : BF_SER_NO [박스번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PH_LIST
+	 *		- field : FS_REG_DTM [발생일자]
+	 *		- field : OUT_DEALCO_NM [출고처]
+	 *		- field : IN_DEALCO_NM [입고처]
+	 *		- field : IN_OUT_DT [입출고일자]
+	 *		- field : IN_OUT_NM [입출고구분]
+	 *		- field : IN_OUT_DTL_NM [입출고상세구분]
+	 *		- field : EQP_SER_NO [상품일련번호]
+	 *		- field : FS_REG_USER_NM [발생자]
+	 *		- field : CNSL_MGMT_NO [상담관리번호]
+	 * </pre>
+	 */
+    public IDataSet pInqProdHstLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    	
+        try {
+            responseData = callSharedBizComponentByDirect("ep.EPSIMBase", "fInqProdHstLst", requestData, onlineCtx);
+    		
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+        
+        return responseData;
+    }
+
+    /**
+	 * <pre>[PM]상품정보조회</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-31 09:26:41
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * <pre>
+	 *	- field : BF_SER_NO [이전시리얼번호]
+	 * </pre>
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 * <pre>
+	 *	- record : RS_PH_INFO
+	 *		- field : EQP_MDL_CD [단말기 모델 코드]
+	 *		- field : EQP_MDL_NM [단말기 모델명]
+	 *		- field : EQP_COLOR_CD [단말기 색상 코드]
+	 *		- field : EQP_COLOR_NM [단말기생상]
+	 *		- field : EQP_SER_NO [단말기 일련 번호]
+	 *		- field : EQP_ST [단말기 상태]
+	 *		- field : INVE_ST [재고 상태]
+	 *		- field : BF_SER_NO [이전 일련 번호]
+	 *		- field : CNSL_MGMT_NO [상담 관리 번호]
+	 *		- field : HOLD_AMT [유보금]
+	 * </pre>
+	 */
+    public IDataSet pInqProdHstInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    	
+        try {
+            responseData = callSharedBizComponentByDirect("ep.EPSIMBase", "fInqProdHstInfo", requestData, onlineCtx);
+    		
+    	} catch ( BizRuntimeException e ) {
+    		throw e;
+    	} catch ( Exception e ) {
+    		throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+    	}
+        
+        return responseData;
+    }
+} 
+
+

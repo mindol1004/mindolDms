@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="dms.nr.XCR013">
+	<select id="SClsComLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR013.SClsComLst 수수료집계목록조회 */
+/* IO: 안진갑,2016-01-11T13:18:53(정동현,2015-08-20T14:33:41) */
+SELECT 
+        'NR'                              AS  OP_CL_CD
+       ,A.XCL_YM                          AS  DEBT_XCL_YM
+       ,'IN'                              AS  XCL_CL
+       ,'1048636968'                      AS  DEBT_BIZ_REG_NO
+       ,'TC'                              AS  XCL_ITM_CL
+       ,'62176'                           AS  DEBT_DEALCO_CD
+       ,'D18074A000'                      AS  DEBT_AGN_CD
+       ,SUM(NVL(EQP_INSURE_FEE_TOT,0))    AS  DEBT_ITM_AMT
+       ,0                                 AS  DEBT_SURTAX
+       ,NULL                              AS  DEBT_SLIP_NO
+       ,NULL                              AS  DEBT_ORGL_SLIP_NO
+       ,NULL                              AS  DEBT_CNCL_SLIP_NO
+       ,NULL                              AS  DEBT_CNCL_DT
+  FROM  TB_EQP_INSURE_CMMS A
+ WHERE  A.XCL_YM = #FILE_DT#
+ GROUP  BY  A.XCL_YM]]>
+	</select>
+	<insert id="IDebt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR005.IDebt 수수료채무등록 */
+/* IO: 진병수,2015-10-08T18:42:39(진병수,2015-08-06T19:19:04) */
+INSERT INTO TB_XCL_DEBT
+            (
+              OP_CL_CD
+            , DEBT_XCL_YM
+            , XCL_CL
+            , DEBT_DEALCO_CD
+            , DEBT_AGN_CD
+            , DEBT_BIZ_REG_NO            
+            , XCL_ITM_CL
+            , DEBT_ITM_AMT
+            , DEBT_SURTAX
+            , DEBT_SLIP_NO
+            , DEBT_SLIP_DT
+            , DEBT_ORGL_SLIP_NO
+            , DEBT_CNCL_SLIP_NO
+            , DEBT_CNCL_DT
+            , DEBT_ADJ_BF_AMT
+            , DEBT_ADJ_DAMT
+            , DEBT_PRCH_TS
+            , FS_REG_USER_ID
+            , FS_REG_DTM
+            , LS_CHG_USER_ID
+            , LS_CHG_DTM
+            )
+            VALUES
+            (
+              #OP_CL_CD#
+            , #DEBT_XCL_YM#
+            , #XCL_CL#
+            , #DEBT_DEALCO_CD#
+            , #DEBT_AGN_CD#
+            , #DEBT_BIZ_REG_NO#
+            , #XCL_ITM_CL#
+            , #DEBT_ITM_AMT#
+            , #DEBT_SURTAX#
+            , #DEBT_SLIP_NO#
+            , #DEBT_SLIP_DT#
+            , #DEBT_ORGL_SLIP_NO#
+            , #DEBT_CNCL_SLIP_NO#
+            , #DEBT_CNCL_DT#
+            , NVL(#DEBT_ADJ_BF_AMT#,0)
+            , NVL(#DEBT_ADJ_DAMT#,  0)
+            , NVL(#DEBT_PRCH_TS#,  1)
+            , NVL(#USR_NO#, 'BAT')
+            , SYSDATE
+            , NVL(#USR_NO#, 'BAT')
+            , SYSDATE
+            
+            )]]>
+	</insert>
+	<insert id="IEtcXcl" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR005.IEtcXcl 수수료기타정산등록 */
+/* IO: 진병수,2015-10-07T11:25:12(진병수,2015-08-20T15:32:36) */
+INSERT INTO TB_ETC_XCL
+  (
+     ETC_XCL_NO
+    ,CNTRT_NO
+    ,XCL_DEPT_CD  
+    ,XCL_DT       
+    ,XCL_ITM_CD   
+    ,XCL_DEALCO_CD
+    ,XCL_CL_CD 
+    ,ACNT_CD
+    ,XCL_ST_CD
+    ,XCL_AMT
+    ,ASSET_NO
+    ,SPLY_PRC
+    ,SURTAX_AMT
+    ,FS_REG_USER_ID
+    ,FS_REG_DTM
+    ,LS_CHG_USER_ID
+    ,LS_CHG_DTM    
+    ,DEL_YN
+  )
+  VALUES
+  (
+     SQ01_TB_ETC_XCL.NEXTVAL         
+    , #CNTRT_NO#
+    , #XCL_DEPT_CD#
+    , #XCL_DT#
+    , #XCL_ITM_CD#
+    , #XCL_DEALCO_CD#
+    , #XCL_CL_CD#
+    , #ACNT_CD#
+    , #XCL_ST_CD#
+    , #XCL_AMT#
+    , #ASSET_NO#
+    , #SPLY_PRC#
+    , #SURTAX_AMT#
+    , NVL(#USER_NO#, 'BAT')
+    , SYSDATE
+    , NVL(#USER_NO#, 'BAT')
+    , SYSDATE
+    , 'N'
+    )]]>
+	</insert>
+	<select id="SSalesCom2Etc" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR013.SSalesCom2Etc 수수료계약목록조회 */
+/* IO: 안진갑,2016-01-11T13:51:45(진병수,2015-08-20T15:50:39) */
+SELECT E.CNTRT_NO                  AS CNTRT_NO
+     , '501802'                    AS XCL_DEPT_CD
+     , TO_CHAR(SYSDATE,'YYYYMMDD') AS XCL_DT
+     , 'TC'                        AS XCL_ITM_CD
+     , '62176'                     AS XCL_DEALCO_CD
+     , '01'                        AS XCL_CL_CD
+     , NULL                        AS ACNT_CD
+     , NULL                        AS XCL_ST_CD
+     , E.EQP_INSURE_FEE_TOT        AS XCL_AMT
+     , 0                           AS SPLY_PRC
+     , 0                           AS SURTAX_AMT
+     , NULL                        AS SURTAX_CL  
+     , NULL                        AS TAXBILL_NO
+     , NULL                        AS TAXBILL_DT
+     , NULL                        AS UPD_TAXBILL_NO
+     , NULL                        AS XCL_SCHD_DT
+     , NULL                        AS XCL_PROC_DT
+     , NULL                        AS XCL_SLIP_NO
+     , 'N'                         AS DEL_YN
+     , A.ASSET_NO                  AS ASSET_NO
+     , 'BAT'                       AS FS_REG_USER_ID            
+     ,  SYSDATE                    AS FS_REG_DTM
+  FROM TB_EQP_ASSET    A
+     , TB_EQP_CNTRT    B
+     , TB_EQP_INSURE_CMMS E
+ WHERE A.ASSET_NO  = B.ASSET_NO
+   AND B.CNTRT_NO  = E.CNTRT_NO
+   AND A.OP_CL_CD  = 'NR'
+   AND E.XCL_YM = #FILE_DT#]]>
+	</select>
+	<delete id="DXclEtcByYM" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR013.DXclEtcByYM 기타정산정보삭제 */
+/* IO: 안진갑,2016-01-11T13:57:21(진병수,2015-09-15T09:36:58) */
+DELETE TB_ETC_XCL
+ WHERE XCL_ITM_CD = 'TC'
+   AND XCL_DT LIKE SUBSTR(#FILE_DT#,1,6) || '%']]>
+	</delete>
+	<select id="SExtDebtInfo" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR013.SExtDebtInfo 채권에기등록된데이터조회 */
+/* IO: 안진갑,2016-01-11T14:31:55(진병수,2015-09-30T19:56:58) */
+SELECT A.*
+      ,S.SLIP_NO
+      ,NVL(S.SLIP_ST_CD,'05') AS SLIP_ST_CD 
+   FROM TB_XCL_DEBT A
+      , TB_SLIP     S
+  WHERE A.DEBT_SLIP_NO = S.SLIP_NO(+)  
+    AND A.OP_CL_CD    = 'NR'
+    AND A.DEBT_XCL_YM = #FILE_DT#
+    AND A.XCL_ITM_CL  = 'TC']]>
+	</select>
+	<delete id="DXclDebt" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR013.DXclDebt 기타정산정보삭제 */
+/* IO: 안진갑,2016-01-11T14:56:57(진병수,2015-09-15T09:36:58) */
+DELETE TB_XCL_DEBT
+ WHERE OP_CL_CD       = 'NR'
+   AND DEBT_XCL_YM    = #DEBT_XCL_YM#
+   AND DEBT_DEALCO_CD = #DEBT_DEALCO_CD#
+   AND XCL_CL         = #XCL_CL#
+   AND XCL_ITM_CL     = #XCL_ITM_CL#
+   AND DEBT_PRCH_TS   = #DEBT_PRCH_TS#]]>
+	</delete>
+	<delete id="DEqpInsuCmms" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR013.DEqpInsuCmms 단말보험수수료대상 삭제 */
+/* IO: 안진갑,2016-02-17T14:21:40(안진갑,2016-01-08T17:23:24) */
+DELETE
+  FROM  TB_EQP_INSURE_CMMS
+ WHERE  A.XCL_YM = #FILE_DT#]]>
+	</delete>
+	<select id="SEqpInsuCmms" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR013.SEqpInsuCmms 단말보험수수료대상 조회 */
+/* IO: 안진갑,2016-01-08T17:26:07(안진갑,2016-01-08T17:23:43) */
+SELECT  TA.XCL_YM
+       ,TA.CNTRT_NO
+       ,TA.EQP_INSURE_FEE
+       ,TRUNC(TA.DAYS_FEE,0) AS EQP_DAY_INSURE_FEE
+       ,TA.SCRB_NOD       
+       ,TRUNC(TA.DAYS_FEE*TA.SCRB_NOD,0) AS EQP_INSURE_FEE_TOT
+  FROM  (
+         SELECT
+                    #FILE_DT# AS XCL_YM
+                   ,A.CNTRT_NO
+                   ,C.EQP_INSURE_FEE/D.MONTH_DAYS AS DAYS_FEE
+                   ,CASE WHEN B.OP_TYP_CD = '07' AND D.BASE_DT = SUBSTR(B.OP_PROC_DT,0,6) AND SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) = SUBSTR(A.RENTAL_CNTRT_END_DT,0,6) 
+                              THEN TO_NUMBER(SUBSTR(A.RENTAL_CNTRT_END_DT,7))-TO_NUMBER(SUBSTR(A.RENTAL_CNTRT_STA_DT,7))+1
+                         WHEN B.OP_TYP_CD = '07' AND D.BASE_DT = SUBSTR(B.OP_PROC_DT,0,6) 
+                              THEN TO_NUMBER(SUBSTR(B.OP_PROC_DT,7))
+                         WHEN B.OP_TYP_CD != '07' AND D.BASE_DT = SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6) 
+                              THEN D.MONTH_DAYS-TO_NUMBER(SUBSTR(A.RENTAL_CNTRT_STA_DT,7))+1
+                         ELSE D.MONTH_DAYS
+                     END AS SCRB_NOD
+                   ,C.EQP_INSURE_FEE
+              FROM  TB_RENTAL_CNTRT A 
+                   ,TB_NR_CNTRT B
+                   ,TB_EQP_INSURE C
+                   ,(SELECT  TO_CHAR(ADD_MONTHS(TO_DATE(#FILE_DT#, 'YYYYMM'),-1),'YYYYMM') AS BASE_DT /* 집계 기준년월*/
+                            ,TO_NUMBER(TO_CHAR(LAST_DAY(ADD_MONTHS(TO_DATE(#FILE_DT#, 'YYYYMM'),-1)),'DD')) AS MONTH_DAYS
+                       FROM  DUAL) D
+             WHERE  A.CNTRT_NO = B.CNTRT_NO
+               AND  A.EQP_MDL_CD = C.EQP_MDL_CD
+               AND  B.OP_TYP_CD != '06'
+               AND  D.BASE_DT BETWEEN SUBSTR(A.RENTAL_CNTRT_STA_DT,0,6)AND DECODE(B.OP_TYP_CD,'07',SUBSTR(B.OP_PROC_DT,0,6),SUBSTR(A.RENTAL_CNTRT_END_DT,0,6))
+      ) TA]]>
+	</select>
+	<insert id="IEqpInsuCmms" parameterClass="map" ><![CDATA[/* Biz: dms.nr.XCR013.IEqpInsuCmms 단말보험수수료대상 등록 */
+/* IO: 안진갑,2016-01-08T17:25:41(안진갑,2016-01-08T17:25:20) */
+INSERT INTO TB_EQP_INSURE_CMMS
+(
+	XCL_YM
+   ,CNTRT_NO
+   ,EQP_INSURE_FEE
+   ,EQP_DAY_INSURE_FEE
+   ,SCRB_NOD
+   ,EQP_INSURE_FEE_TOT
+   ,FS_REG_USER_ID
+   ,FS_REG_DTM
+   ,LS_CHG_USER_ID
+   ,LS_CHG_DTM
+)
+VALUES(
+	#XCL_YM#
+   ,#CNTRT_NO#
+   ,#EQP_INSURE_FEE#
+   ,#EQP_DAY_INSURE_FEE#
+   ,#SCRB_NOD#
+   ,#EQP_INSURE_FEE_TOT#
+   ,NVL(#USERNO#,'BAT')
+   ,SYSDATE
+   ,NVL(#USERNO#,'BAT')
+   ,SYSDATE
+)]]>
+	</insert>
+	<select id="SSlipCnt" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.nr.XCR013.SSlipCnt 전표처리중인 건수 조회 */
+/* IO: 안진갑,2016-02-17T14:10:11(안진갑,2016-02-17T14:05:54) */
+SELECT COUNT(A.CNTRT_NO) AS CNT
+  FROM TB_EQP_INSURE_CMMS A
+      ,TB_SLIP B
+ WHERE A.SLIP_NO = B.SLIP_NO
+   AND B.SLIP_ST_CD IS NOT NULL 
+   AND B.SLIP_ST_CD != '05'
+   AND A.XCL_YM = #FILE_DT#]]>
+	</select>
+</sqlMap>

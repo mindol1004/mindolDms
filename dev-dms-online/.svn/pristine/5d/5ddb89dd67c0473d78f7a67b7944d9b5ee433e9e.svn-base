@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DPRReqpJdgRgst">
+	<select id="SReqpJdgRgstLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpJdgRgst.SReqpJdgRgstLst 임대폰감정등록조회 */
+/* IO: 김상오,2015-08-06T16:07:04(이영진,2015-07-21T17:15:21) */
+SELECT 
+        A.DCP_NO AS DMG_CMP_AMT_POLY_NO
+        ,A.INSP_CL_CD
+        ,A.INSP_ITM_CD
+        ,A.INSP_DTL_ITM_CD
+        ,A.INDF_AMT
+        ,#ASSET_NO# ASSET_NO
+		,NVL(MAX(B.EQP_JDG_SEQ) OVER (PARTITION BY A.DCP_NO)
+		 ,NVL((SELECT MAX(EQP_JDG_SEQ)+1 FROM TB_EQP_JDG 
+		 WHERE ASSET_NO = #ASSET_NO# AND EQP_IN_DT <> #IN_DT#),1)) EQP_JDG_SEQ
+        ,MAX(B.EQP_JDG_DT) OVER (PARTITION BY A.DCP_NO) EQP_JDG_DT
+		,MAX(B.EQP_JDG_RSLT_CD) OVER (PARTITION BY A.DCP_NO) EQP_JDG_RSLT_CD
+		,MAX(B.EQP_CMP_AMT_TOT) OVER (PARTITION BY A.DCP_NO) EQP_CMP_AMT_TOT
+		,MAX(B.JDG_CHRGR_NO) OVER (PARTITION BY A.DCP_NO) JDG_CHRGR_NO
+		,MAX(B.JDG_CHRGR_NM) OVER (PARTITION BY A.DCP_NO) JDG_CHRGR_NM
+		,MAX(B.JDG_APRV_YN) OVER (PARTITION BY A.DCP_NO) JDG_APRV_YN
+		,MAX(B.JDG_APRV_DT) OVER (PARTITION BY A.DCP_NO) JDG_APRV_DT
+        ,#IN_DT# EQP_IN_DT
+        ,DECODE(B.DEL_YN,'Y','0',NULL,'0','1') USE_YN
+        ,NVL(B.PEN, A.INDF_AMT) PEN
+        ,NVL(B.DEL_YN,'Y') DEL_YN
+        ,ATCH_FILE_NO
+ FROM (
+    WITH INSP AS (
+                     SELECT  * 
+                       FROM (
+                             SELECT  (SELECT SUP_CM_CD_ID FROM TB_CM_CD WHERE CM_GRP_CD_ID = A.SUP_CM_GRP_CD_ID AND CM_CD_ID = A.SUP_CM_CD_ID AND ROWNUM = 1) AS INSP_CL_CD
+                                    ,SUP_CM_CD_ID AS INSP_ITM_CD                                                                                           
+                                    ,CM_CD_ID     AS INSP_DTL_ITM_CD
+                                    ,CM_CD_SORT_ORD
+                               FROM  TB_CM_CD A
+                              WHERE  1=1
+                              AND MGMT_ITEM_CD2 = 'Y'
+                              START  WITH CM_GRP_CD_ID = 'DMS105'
+                            CONNECT  BY PRIOR CM_GRP_CD_ID = SUP_CM_GRP_CD_ID
+                                AND  PRIOR CM_CD_ID = SUP_CM_CD_ID
+                      ORDER  BY  CM_CD_SORT_ORD
+                            ) CD
+                      WHERE  INSP_CL_CD IS NOT NULL
+                    )
+    SELECT   A.DCP_NO
+            ,B.INSP_CL_CD
+            ,B.INSP_ITM_CD
+            ,A.INSP_DTL_ITM_CD
+            ,A.INDF_AMT
+            ,A.DCP_ITM_RMK AS RMK
+            ,A.DCP_ITM_USE_YN AS USE_YN
+            ,B.CM_CD_SORT_ORD
+      FROM  TB_DMG_CMP_POLY_DTL_ITM A
+            , INSP B
+            , TB_DMG_CMP_POLY C
+     WHERE  A.INSP_DTL_ITM_CD = B.INSP_DTL_ITM_CD
+       AND  A.DCP_NO = C.DCP_NO
+       AND  C.EQP_MDL_CD = #EQP_MDL_CD#
+       AND  C.DCP_NO = (
+         SELECT DCP_NO
+          FROM TB_RENTAL_CNTRT
+          WHERE CNTRT_NO = (
+            SELECT CNTRT_NO 
+            FROM TB_EQP_CNTRT 
+            WHERE ASSET_NO = #ASSET_NO# 
+            AND RENT_END_DT IS NULL
+            AND ROWNUM = 1
+          )
+       )
+     ORDER  BY CM_CD_SORT_ORD
+) A, (
+    SELECT
+    JM.ASSET_NO
+    ,JM.EQP_JDG_SEQ
+    ,JM.EQP_JDG_DT
+    ,JM.EQP_JDG_RSLT_CD
+    ,JM.EQP_CMP_AMT_TOT
+    ,JM.JDG_CHRGR_NO
+    ,(SELECT USER_NM FROM TB_USER WHERE USER_NO = JM.JDG_CHRGR_NO) AS JDG_CHRGR_NM
+    ,JM.JDG_APRV_YN
+    ,JM.JDG_APRV_DT
+    ,JM.EQP_IN_DT
+    ,JD.DCP_NO
+    ,JD.INSP_DTL_ITM_CD
+    ,JD.EQP_INDF_AMT AS PEN
+    ,JD.DEL_YN
+    ,JM.ATCH_FILE_NO
+    FROM TB_EQP_JDG JM, TB_EQP_JDG_DTL JD
+    WHERE JM.ASSET_NO = JD.ASSET_NO(+)
+    AND JM.EQP_JDG_SEQ = JD.EQP_JDG_SEQ(+)
+    AND JM.ASSET_NO = #ASSET_NO#
+    AND JM.EQP_IN_DT = #IN_DT# 
+) B
+WHERE A.DCP_NO = B.DCP_NO(+)
+      AND A.INSP_DTL_ITM_CD = B.INSP_DTL_ITM_CD(+)
+ORDER BY A.CM_CD_SORT_ORD]]>
+	</select>
+	<update id="UReqpJdg" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpJdgRgst.UReqpJdg 임대폰감정저장 */
+/* IO: 김상오,2015-08-06T14:08:11(이영진,2015-07-23T16:24:53) */
+MERGE INTO  TB_EQP_JDG A
+USING DUAL
+ON (
+        A.ASSET_NO = #ASSET_NO# 
+    AND A.EQP_JDG_SEQ = #EQP_JDG_SEQ#
+    )
+WHEN MATCHED THEN
+     UPDATE 
+        SET  EQP_JDG_DT = #EQP_JDG_DT#
+            ,EQP_JDG_RSLT_CD = #EQP_JDG_RSLT_CD#
+            ,EQP_CMP_AMT_TOT = #EQP_CMP_AMT_TOT#
+            ,JDG_CHRGR_NO = #userNo#
+            ,EQP_IN_DT = #EQP_IN_DT#
+            ,LS_CHG_USER_ID = #userNo#
+            ,LS_CHG_DTM = SYSDATE
+            ,ATCH_FILE_NO = #ATCH_FILE_NO#
+      WHERE  ASSET_NO = #ASSET_NO#
+        AND  EQP_JDG_SEQ = #EQP_JDG_SEQ#
+WHEN NOT MATCHED THEN
+     INSERT
+            ( 
+             ASSET_NO               
+            ,EQP_JDG_SEQ              
+            ,EQP_JDG_DT       
+            ,EQP_JDG_RSLT_CD         
+            ,EQP_CMP_AMT_TOT         
+            ,JDG_CHRGR_NO           
+            ,EQP_IN_DT          
+            ,FS_REG_USER_ID     
+            ,FS_REG_DTM        
+            ,LS_CHG_USER_ID  
+            ,LS_CHG_DTM
+            ,ATCH_FILE_NO
+             )	
+     VALUES  
+            (
+             #ASSET_NO#                                            
+            ,#EQP_JDG_SEQ#                                              
+            ,#EQP_JDG_DT#                                
+            ,#EQP_JDG_RSLT_CD#
+            ,#EQP_CMP_AMT_TOT#
+            ,#userNo#
+            ,#EQP_IN_DT#
+            ,#userNo#                                                
+            ,SYSDATE                                                 
+            ,#userNo#                                                 
+            ,SYSDATE                                                  
+            ,#ATCH_FILE_NO#
+             )]]>
+	</update>
+	<update id="UReqpJdgDtl" parameterClass="map" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpJdgRgst.UReqpJdgDtl 임대폰감정상세저장 */
+/* IO: 이영진,2015-07-28T19:42:24(이영진,2015-07-23T16:26:14) */
+MERGE INTO  TB_EQP_JDG_DTL A
+USING DUAL
+ON (
+    A.ASSET_NO = #ASSET_NO# 
+    AND A.EQP_JDG_SEQ = #EQP_JDG_SEQ#
+    AND A.DCP_NO = #DMG_CMP_AMT_POLY_NO#
+    AND A.INSP_DTL_ITM_CD = #INSP_DTL_ITM_CD#
+    )
+WHEN MATCHED THEN
+     UPDATE 
+        SET  EQP_INDF_AMT = #PEN#
+            ,DEL_YN = DECODE(#USE_YN#,'1','N','Y')
+            ,LS_CHG_USER_ID = #userNo#
+            ,LS_CHG_DTM = SYSDATE
+      WHERE  ASSET_NO = #ASSET_NO#
+        AND  EQP_JDG_SEQ = #EQP_JDG_SEQ#
+        AND  DCP_NO = #DMG_CMP_AMT_POLY_NO#
+        AND  INSP_DTL_ITM_CD = #INSP_DTL_ITM_CD#
+WHEN NOT MATCHED THEN
+     INSERT
+            ( 
+             ASSET_NO               
+            ,EQP_JDG_SEQ              
+            ,DCP_NO       
+            ,INSP_DTL_ITM_CD         
+            ,EQP_INDF_AMT
+            ,DEL_YN
+            ,FS_REG_USER_ID     
+            ,FS_REG_DTM        
+            ,LS_CHG_USER_ID  
+            ,LS_CHG_DTM
+             )	
+     VALUES  
+            (
+             #ASSET_NO#                                            
+            ,#EQP_JDG_SEQ#                                              
+            ,#DMG_CMP_AMT_POLY_NO#                                
+            ,#INSP_DTL_ITM_CD#
+            ,#PEN#
+            ,DECODE(#USE_YN#,'1','N','Y')
+            ,#userNo#                                                
+            ,SYSDATE                                                 
+            ,#userNo#                                                 
+            ,SYSDATE                                                  
+             )]]>
+	</update>
+	<select id="SReqpJdgRgstCLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.pr.prsimbase.db.DPRReqpJdgRgst.SReqpJdgRgstCLst 임대폰감정등록구성품조회 */
+/* IO: 이영진,2015-07-30T16:58:06(이영진,2015-07-30T16:56:42) */
+SELECT  CMPT_CD
+  FROM  TB_CMPT_UPRC
+ WHERE  CNTRT_NO = (
+        SELECT CNTRT_NO 
+            FROM TB_EQP_CNTRT 
+            WHERE ASSET_NO = #ASSET_NO# 
+            AND RENT_END_DT IS NULL
+            AND ROWNUM = 1
+          )]]>
+	</select>
+</sqlMap>

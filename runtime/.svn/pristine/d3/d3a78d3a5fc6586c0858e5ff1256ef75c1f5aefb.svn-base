@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 프레임워크 배치 컴포넌트를 정의한다. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <!-- ################################################################## -->
+    <!-- 배치 공통 컴포넌트                                                 -->
+    <!-- ################################################################## -->
+        
+    <!-- 로컬 개발 환경용 -->    
+    <bean id="nc.bat.agent.MockScheduler"
+        class="nexcore.framework.bat.test.MockScheduler"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[Batch Agent Test Proxy RMI Service]]></description>
+        <property name = "agentClient">
+            <bean class="nexcore.framework.bat.agent.client.AgentClientByRmi" init-method="init" destroy-method="destroy">
+                <property name="agentService">
+                    <bean class="org.springframework.remoting.rmi.RmiProxyFactoryBean">
+                        <property name="serviceUrl"                   value="rmi://localhost:${nexcore.bat.agent.rmi.server.port.${system.id}}/BatchAgent"/>
+                        <property name="serviceInterface"             value="nexcore.framework.bat.IAgentService"/>
+                        <property name="refreshStubOnConnectFailure"  value="true"/> 
+                        <property name="lookupStubOnStartup"          value="false"/>
+                    </bean>
+                </property>
+            </bean>
+        </property>
+        <property name = "globalParameters">
+            <map>
+                <entry key="APP_CODE"               value="${!LOWER ${!SUBSTRING ${JOB_ID} 1 4}}"/>
+                <entry key="DATA_ROOT"              value="/dat"/>
+                <entry key="NAS_ROOT"               value="/nas"/>
+                <entry key="STAGE_CODE"             value="L"/>
+            </map>
+        </property>
+        <!-- property name="jobEndPostProcessor">
+            <bean class="slm.fwk.batch.SLMJobEndPostProcessor" init-method="init" destroy-method="destroy">
+            </bean>
+        </property-->
+        <property name="componentNameMapperForOnDemand">
+            <!-- bean class="slm.fwk.batch.SLMComponentNameMapperForOnDemand" init-method="init" destroy-method="destroy" /-->
+            <bean class="nexcore.framework.bat.test.DbSelectComponentNameMapperForOnDemand" init-method="init" destroy-method="destroy">
+                <description>Can be used for finding component name from the scheduler database</description>
+                <property name="dataSource">
+                    <bean class="org.springframework.jndi.JndiObjectFactoryBean">
+                        <property name="jndiName"    value="jdbc/NexcoreDS"/>
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+    
+    <bean id="nc.bat.agent.MockSchedulerRMIExporter" class="org.springframework.remoting.rmi.RmiServiceExporter">
+        <property name = "serviceName"       value = "BatchController"/>
+        <property name = "service"           ref   = "nc.bat.agent.MockScheduler"/>
+        <property name = "serviceInterface"  value = "nexcore.framework.bat.IControllerService"/>
+        <property name = "registryPort"      value = "${nexcore.bat.agent.mockscheduler.rmi.server.port.${system.id}}"/>
+    </bean>
+
+    <bean id="nc.bat.agent.AgentTestServerRMIExporter" class="nexcore.framework.bat.agent.internal.AgentRmiServiceExporter">
+        <property name = "enable"            value = "${nexcore.bat.agent.enable.${system.id}}"/>
+        <property name = "serviceName"       value = "BatchAgentTestProxy"/>
+        <property name = "service"           ref   = "nc.bat.agent.AgentServiceTestProxy"/>
+        <property name = "serviceInterface"  value = "nexcore.framework.bat.IAgentServiceTestProxy"/>
+        <property name = "registryPort"      value = "${nexcore.bat.agent.rmi.server.port.${system.id}}"/>
+    </bean>
+
+    <bean id="nc.bat.agent.AgentServiceTestProxy"
+        class="nexcore.framework.bat.agent.internal.AgentServiceTestProxyImpl"
+        init-method="init" destroy-method="destroy">
+        <description><![CDATA[Batch Agent Test Proxy RMI Service]]></description>
+        <property name="agentMain"   ref="nc.bat.agent.AgentMain"/>
+    </bean>
+    
+</beans>

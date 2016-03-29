@@ -1,0 +1,527 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script type="xscript4.0"><![CDATA[/************************************************************************************************
+ * 01. 업무구분 : 공통
+ * 02. js :  comFrame.xjs
+ * 03. js 설명 : Frame 관련 Script
+ * 04. 관련 화면/서비스 : 
+ * 05. 작성자 : 심상준 
+ * 06. 작성일 : 2015.06.01
+ * 07. 수정이력 :
+ ************************************************************************************************
+ *     수정일        이  름    사유
+ ************************************************************************************************
+ *     2015.06.01    심상준    최초 작성
+*************************************************************************************************/
+/************************************************************************************************
+ * Function : 메인메뉴를 MDI에 구현
+ * @param   : sMainMenuId - menu ID
+ * @param   : sMainMenuNm - menu Name
+ * @param   : sMainMenuUrl - menu URL
+ * Return   : void
+************************************************************************************************/
+function gfn_openMainMenu() 
+{
+	//trace("gfn_openMainMenu>>>>>");
+ 	ap_WorkMain.formurl = "FRAME::MainFrame.xfdl"; 	
+	var winKey = "WorkMain";
+	
+	ap_activeWinId = winKey;
+
+	//메인폼 활성화
+	ap_WorkMain.visible = true;
+	ap_WorkFrame.visible = false;
+	//2015.1.29 메인화면이 오픈된 경우에만 reload하기 
+	if(!gfn_isNull(ap_WorkMain.form)){
+		ap_WorkMain.form.reload();
+	}
+	
+	ap_WorkMain.setFocus();
+	
+	ap_TabFrame.form.btn_Home.class = "btn_MDI_home_S";
+	ap_TabFrame.form.fn_setNotSelect();
+}
+
+/************************************************************************************************
+ * Function : 메뉴 아이디를 기준으로 신규 윈도우 화면을 생성하고 open 시킴
+ * @param   : menuid - menu ID
+ * Return   : void
+************************************************************************************************/
+function gfn_chkOpenMenu(menuid, objDs) {
+
+	var nRow = objDs.findRow("MENU_ID", menuid);	
+	
+	if (gfn_isNull(menuid) == true) {
+		var sMsg    = "Menu가 존재하지 않습니다.";
+		var bResult = ap_VFrameSet.alert(sMsg);
+		return;
+	}
+	
+	if(gfn_isNull(objDs.getColumn(nRow, "FRM_URL"))==true)
+	{
+		return;
+	}
+
+	var winKey = gds_openMenu.lookup("MENU_ID", menuid, "WINID");
+	
+	if(gfn_isNull(winKey) == false) {
+		//setfocus 중복 문제로 해당 소스 막음 2014.11.12 심상준
+		//if(gfn_activeFrame(winKey) == true)
+		//{
+			ap_TabFrame.form.fn_activeTabpage(winKey);
+			return;
+		//}
+	}
+	//화면에서 화면을 호출한뒤에 메뉴 클릭시 동일한 창이 열리는 문제 막음 2015.09.15 이영진
+	var winKeyf = gds_openMenu.lookup("MENU_ID", objDs.getColumn(nRow, "FRM_ID"), "WINID");
+	
+	if(gfn_isNull(winKeyf) == false) {
+		ap_TabFrame.form.fn_activeTabpage(winKeyf);
+		return;
+	}
+
+	if(parseInt(gds_openMenu.rowcount) >= MAX_SCRN_CNT)
+	{
+		gfn_message("A", "DMS00088", "I", "", MAX_SCRN_CNT);
+		return;
+	}
+
+	if(gfn_isNull(objDs.getColumn(nRow, "MENU_ID")) == true) return; 
+	
+	winKey = menuid + "_" + gds_openMenu.getRowCount()+ "_" + parseInt(Math.random() * 100);
+ 
+	var objNewWin = new ChildFrame;
+	objNewWin.init(winKey, 0, 0, ap_initWidth, ap_initHeight);
+	objNewWin.formurl = "FRAME::WorkFrame.xfdl";
+	objNewWin.arguments = [];	
+	
+	var tmpNewPgmId = objDs.getColumn(nRow, "FRM_ID");
+//	var tmpNewPgmId = objDs.getColumn(nRow, "FRM_URL");
+//	var arrtmpNewPgmId = tmpNewPgmId.split("::");
+//	    tmpNewPgmId = arrtmpNewPgmId[1].replace(".xfdl","");
+// 	if(objDs.getColumn(nRow, "FRM_URL").indexOf("xfdl?")>0)
+// 	{
+// 		var tmpPgmId = objDs.getColumn(nRow, "FRM_URL");		
+// 		tmpNewPgmId = tmpPgmId.substr(0,tmpPgmId.indexOf("xfdl?") + 4);
+// 		var tmpNewParam = tmpPgmId.substr(tmpPgmId.indexOf("xfdl?") + 5);
+// 		objNewWin.arguments["args"]   =  tmpNewParam;
+// 	}
+	 
+  
+	objNewWin.arguments["winKey"]   =  winKey;
+	objNewWin.arguments["menuId"]   =  objDs.getColumn(nRow, "MENU_ID");
+	objNewWin.arguments["menuUrl"]   =  objDs.getColumn(nRow, "FRM_URL");
+	objNewWin.arguments["programId"]   =  tmpNewPgmId;
+	objNewWin.arguments["menuTitle"] =  objDs.getColumn(nRow, "MENU_NM");
+	objNewWin.arguments["menuTitle2"] =  objDs.getColumn(nRow, "FULL_PATH_NM");
+	//objNewWin.arguments["helpUrl"] = objDs.getColumn(nRow, "HELP_PATH_NM");;
+	objNewWin.openstatus = "maximize";
+
+	ap_WorkFrame.addChild(winKey, objNewWin);
+	
+	//신규 생성된 윈도우 화면을 DsOpenwininfo 에 등록
+	gds_menu.filter("");
+	var curRow = gds_openMenu.addRow();
+	gds_openMenu.setColumn(curRow, "WINID", winKey);
+	gds_openMenu.setColumn(curRow, "MENU_ID", objDs.getColumn(nRow, "MENU_ID"));
+	gds_openMenu.setColumn(curRow, "MENU_NM", objDs.getColumn(nRow, "MENU_NM"));
+	
+	objNewWin.dragmovetype = "all";
+	
+	objNewWin.autosize = false;
+	objNewWin.showtitlebar = false;
+	//objNewWin.resizable = true;
+	objNewWin.show();	
+    gfn_arrangeWin("maximize");
+	ap_TabFrame.form.fn_setNaviAdd(winKey, objDs.getColumn(nRow, "MENU_NM"));
+	ap_TabFrame.form.fn_activeTabpage(winKey);
+	ap_activeWinId = winKey;
+}
+
+/************************************************************************************************
+ * Function : 화면아이디를 기준으로 신규 윈도우 화면을 생성하고 open 시킴
+ * @param   : frmId - 화면 ID
+ * Return   : void
+************************************************************************************************/
+function gfn_openFrm(frmId) {
+    var objDs = gds_frm;
+	var nRow = objDs.findRow("FRM_ID", frmId);	
+	
+	if (gfn_isNull(frmId) == true) {
+		var sMsg    = "화면ID가 존재하지 않습니다.";
+		var bResult = ap_VFrameSet.alert(sMsg);
+		return;
+	}
+	
+	if(gfn_isNull(objDs.getColumn(nRow, "FRM_URL"))==true)
+	{
+		return;
+	}
+
+	var winKey = gds_openMenu.lookup("MENU_ID", frmId, "WINID");
+
+	if(gfn_isNull(winKey) == false) {
+		//setfocus 중복 문제로 해당 소스 막음 2014.11.12 심상준
+		//if(gfn_activeFrame(winKey) == true)
+		//{
+			ap_TabFrame.form.fn_activeTabpage(winKey);
+			return;
+		//}
+	}
+	//화면에서 화면을 호출한뒤에 메뉴 클릭시 동일한 창이 열리는 문제 막음 2015.09.15 이영진
+	var winKeym = gds_openMenu.lookup("MENU_ID", objDs.getColumn(nRow, "MENU_ID"), "WINID");
+
+	if(gfn_isNull(winKeym) == false) {
+		ap_TabFrame.form.fn_activeTabpage(winKeym);
+		return;
+	}
+
+	if(parseInt(gds_openMenu.rowcount) >= MAX_SCRN_CNT)
+	{
+		gfn_message("A", "DMS00088", "I", "", MAX_SCRN_CNT);
+		return;
+	}
+
+	if(gfn_isNull(objDs.getColumn(nRow, "FRM_ID")) == true) return; 
+	
+	winKey = frmId + "_" + gds_openMenu.getRowCount()+ "_" + parseInt(Math.random() * 100);
+ 
+	var objNewWin = new ChildFrame;
+	objNewWin.init(winKey, 0, 0, ap_initWidth, ap_initHeight);
+	objNewWin.formurl = "FRAME::WorkFrame.xfdl";
+	objNewWin.arguments = [];	
+	
+	var tmpNewPgmId = objDs.getColumn(nRow, "FRM_ID");
+  
+	objNewWin.arguments["winKey"]   =  winKey;
+	objNewWin.arguments["menuId"]   =  objDs.getColumn(nRow, "FRM_ID");
+	objNewWin.arguments["menuUrl"]   =  objDs.getColumn(nRow, "FRM_URL");
+	objNewWin.arguments["programId"]   =  tmpNewPgmId;
+	objNewWin.arguments["menuTitle"] =  objDs.getColumn(nRow, "FRM_NM");
+	objNewWin.arguments["menuTitle2"] =  objDs.getColumn(nRow, "FRM_NM");
+	//objNewWin.arguments["helpUrl"] = objDs.getColumn(nRow, "HELP_PATH_NM");;
+	objNewWin.openstatus = "maximize";
+
+	ap_WorkFrame.addChild(winKey, objNewWin);
+	
+	//신규 생성된 윈도우 화면을 DsOpenwininfo 에 등록
+	gds_menu.filter("");
+	var curRow = gds_openMenu.addRow();
+	gds_openMenu.setColumn(curRow, "WINID", winKey);
+	gds_openMenu.setColumn(curRow, "MENU_ID", objDs.getColumn(nRow, "FRM_ID"));
+	gds_openMenu.setColumn(curRow, "MENU_NM", objDs.getColumn(nRow, "FRM_NM"));
+	
+	objNewWin.dragmovetype = "all";
+	
+	objNewWin.autosize = false;
+	objNewWin.showtitlebar = false;
+	//objNewWin.resizable = true;
+	objNewWin.show();	
+    gfn_arrangeWin("maximize");
+	ap_TabFrame.form.fn_setNaviAdd(winKey, objDs.getColumn(nRow, "FRM_NM"));
+
+	ap_TabFrame.form.fn_activeTabpage(winKey);
+	ap_activeWinId = winKey;
+	return winKey;
+}
+
+
+/************************************************************************************************
+ * Function : 윈도우 화면 닫힘 처리
+ * @param   : strID - 윈도우 생성키
+ * Return   : void
+************************************************************************************************/
+function gfn_frameOnClose(winKey)
+{
+	ap_TabFrame.form.fn_deleteTabpage(winKey);
+	gfn_delGblDSMenu(winKey);	
+}
+
+/************************************************************************************************
+ * Function : 윈도우 타이틀 탭 닫힘 처리
+ * @param   : winKey	-  윈도우 생성키
+ * Return   : true/false 정상닫힘/닫힘취소 
+************************************************************************************************/
+function gfn_tabOnClose(winKey)
+{
+	if (gfn_isNull(winKey)) return false;
+	
+	ap_WorkFrame[winKey].form.close();
+	
+	return true;
+}
+
+/************************************************************************************************
+ * Function : 윈도우 탭 닫힘 처리
+ * @param   : frmId - 화면 ID
+ * Return   : true/false 정상닫힘/닫힘취소 
+************************************************************************************************/
+function gfn_closeFrm(frmId)
+{
+	var winKey = gds_openMenu.lookup("MENU_ID", frmId, "WINID");
+	if (gfn_isNull(winKey)) return false;
+	
+	try {
+		ap_WorkFrame[winKey].form.close();
+	} catch(e){
+		return false;
+	}
+	
+	return true;
+}
+
+/************************************************************************************************
+ * Function : 생성된 윈도우 화면을 DsOpenwininfo 에서 삭제
+ * @param   : strID - 윈도우 생성키
+ * Return   : void
+************************************************************************************************/
+function gfn_delGblDSMenu(strID) {
+	var iRow = gds_openMenu.findRow("WINID", strID);
+	gds_openMenu.deleteRow(iRow);
+	if(gds_openMenu.rowcount==0) {
+		//메인폼 활성화
+		ap_WorkMain.visible = true;
+		ap_WorkFrame.visible = false;
+		ap_TabFrame.form.btn_Home.class = "btn_MDI_home_S";
+		ap_WorkMain.setFocus();
+		
+		ap_TabFrame.form.btnAllClose.visible = false;
+	} else {
+		ap_TabFrame.form.btnAllClose.visible = true;
+	}
+}
+
+/************************************************************************************************
+ * Function : 열려있는 윈도우 화면을 정렬
+ * @param   : strType - 정렬 타입
+ * Return   : void
+************************************************************************************************/
+function gfn_arrangeWin(strType) {
+	var strWinKey;
+	
+	if (gds_openMenu.getRowCount() < 1) return;
+
+	if (strType == "maximize") {
+		for (var i=0; i<gds_openMenu.rowcount; i++) {
+			
+			strWinKey = gds_openMenu.getColumn(i, "WINID");
+			ap_WorkFrame.frames[strWinKey].openstatus = "normal";
+			ap_WorkFrame.frames[strWinKey].showtitlebar = false;
+			ap_WorkFrame.frames[strWinKey].style.border = "0 solid #006666ff";
+			
+			if(ap_WorkFrame.frames[strWinKey].openstatus!="maximize") {
+				ap_WorkFrame.frames[strWinKey].openstatus = strType;
+			}
+		}	
+	} else if (strType == "closeAll") {	
+	
+		for (var i=gds_openMenu.rowcount-1; i>=0; i--) {			
+			strWinKey = gds_openMenu.getColumn(i, "WINID");
+	            gfn_tabOnClose(strWinKey);
+	            sleep(100);
+		}
+	} else {
+		for (var i=0; i<gds_openMenu.rowcount; i++) {
+			strWinKey = gds_openMenu.getColumn(i, "WINID");
+			ap_WorkFrame.frames[strWinKey].showtitlebar = true;
+			ap_WorkFrame.frames[strWinKey].style.border = "1 solid #006666ff";
+			ap_WorkFrame.frames[strWinKey].openstatus = "normal";
+		}
+		ap_WorkFrame.arrange(strType);
+	}
+}
+
+/************************************************************************************************
+ * Function : 윈도우 키를 기준으로 열려있는 화면일 경우 focus, maximize 처리
+ * @param   : winKey: 윈도우 생성 키
+ * Return   : true/false
+************************************************************************************************/
+function gfn_activeFrame(winKey) 
+{
+	ap_WorkFrame.visible = true;
+	ap_WorkMain.visible = false;
+	ap_TabFrame.form.btn_Home.class = "btn_MDI_home";
+	
+	var fs_main_info = ap_WorkFrame.frames;
+	if(fs_main_info[winKey]) {
+		fs_main_info[winKey].setFocus();
+		return true;
+	}
+	return false;
+}
+
+/************************************************************************************************
+ * Function : 공통 Modal(Modeless) Dialog를 실행 한다.
+ * @param  : strId  : Dialog ID
+             strURL : Form URL //gds_frm 에서 가져오게 변경함 14.09.19
+             strArgument: Dialog 로 전달될 Argument - {strMessage1:'E'}
+             bModeless  : Dialog Modeless로 할지 여부 (Default : false(Modal))
+             bLayered   : Dialog Layered=true 여부(Default : true)
+             bResizable : Dialog resizable가능여부(Default:false)
+             bShowTitle : Dialog TitleBar를 표시 할지 여부 (Default : false)
+             strAlign : Dialog 의 위치( strAlign지정시 nLeft, nTop의 위치는 무시됨)
+                        ( 예: "center middle" )
+						- halign : left   : 좌측 정렬
+							       center : 중앙 정렬
+                                   right  : 우측 정렬
+                        - valign : top    : 상단 정렬
+                                   middle : 중앙 정렬
+                                   bottom : 하단 정렬                                   
+             nLeft  : Dialog Left Position
+             nTop   : Dialog TOP Position
+             nWidth : Dialog Width ( nWidth, nHeight 모두 입력시 Autosize = false)
+             nHeight: Dialog Height
+ * Return   : return value
+************************************************************************************************/
+function gfn_dialog(strId, strArgument, bModeless, bLayered, bResizable, bShowTitle, strAlign, nLeft, nTop, nWidth, nHeight)
+{
+	//Dialog ID
+	if(gfn_isNull(strId)) {
+		strId = "dialog_" + new Date().getTime();
+	}
+	
+	var strURL = gds_frm.getColumn(gds_frm.findRow("FRM_ID",strId),"FRM_URL");
+	if(gfn_isNull(strURL)) {
+		//20150915 jihooyim 수정 (확인버튼만 나오도록 변경) gfn_message("A","DMS00051","I");
+		gfn_message("A","DMS00051","I");
+	}
+    var newChild = null;
+    var objParentFrame = this.getOwnerFrame();
+
+    var bAutoSize;
+    var nRight, nBottom;
+
+	// nLeft, nTop, nWidth, nHeight에 위치하고자 하는경우
+	// strAlign = "" 로 셋팅하여야 합니다.
+	if(gfn_isNull(strAlign)) {
+		if ( gfn_isNull(nLeft) || gfn_isNull(nTop) ) {
+			strAlign = "center middle";
+			
+			nLeft = 0;
+			nTop  = 0;
+		} else {
+			nLeft = system.clientToScreenX(objParentFrame, nLeft);
+			nTop  = system.clientToScreenY(objParentFrame, nTop);
+		}
+	}
+    
+    if ( gfn_isNull(nWidth) || gfn_isNull(nHeight) ) {
+		bAutoSize = true;
+		
+		nRight   = 0;
+		nBottom  = 0;
+	} else {
+		bAutoSize = false;
+		
+		nRight  = nLeft + nWidth;
+		nBottom = nTop  + nHeight;
+	}
+	//trace("bAutoSize==="+bAutoSize+"     strAlign==="+strAlign);
+	
+	// ChildFrame 생성
+	//try {
+		newChild = new ChildFrame;
+		newChild.init(strId, nLeft, nTop, nRight, nBottom, strURL);
+// 	} catch (e) { 
+// 		return;
+// 	};
+    
+    if ( bResizable ) {
+		newChild.border = "2 solid #454545ff";
+	} else  {
+		newChild.border = "0 solid #454545ff";
+	}
+	
+	//Tatlebar 표시 : false
+    newChild.showstatusbar 		= false;
+	// objParentFrame내 Dialog 위치
+	if(!gfn_isNull(strAlign)) newChild.openalign = strAlign;
+    // Dialog Auto Size여부
+	newChild.autosize = bAutoSize;
+
+    // Dialog TitleBar를 표시 할지 여부 (Default : false)
+    if (gfn_isNull(bShowTitle)) {
+		newChild.showtitlebar = false;
+	} else {
+		newChild.showtitlebar = bShowTitle;
+	}
+
+	// Dialog Layered=true 여부(Default : true)
+    if (gfn_isNull(bLayered)) {
+		newChild.layered = true;
+	} else {
+		newChild.layered = bLayered;
+	}
+
+    // Dialog resizable가능여부(Default:false)
+    if (gfn_isNull(bResizable)) {
+		newChild.resizable = false;
+	} else {
+		newChild.resizable = bResizable;
+	}
+	
+	//Dialog Modeless로 할지 여부 (Default : false(Modal))
+	var result;
+	
+    if (gfn_isNull(bModeless)) bModeless = false;
+
+	/*if ( bModeless ) {
+		result = newChild.showModeless(ap_WorkFrame, strArgument);
+	} else {
+		result = newChild.showModal(ap_WorkFrame, strArgument);
+	}
+	
+    //Dialog 의 위치
+	this.removeChild(newChild.name);
+	newChild.destroy();
+	newChild = null;
+
+	return result;
+	*/
+	
+	//20150914 jihooyim modeless 모드일 때 팝업 open 되도록 수정
+	if ( bModeless ) {
+		result = newChild.showModeless(ap_WorkFrame, strArgument);
+		return true;
+	} else {
+		result = newChild.showModal(ap_WorkFrame, strArgument);
+		//Dialog 의 위치
+		this.removeChild(newChild.name);
+		newChild.destroy();
+		newChild = null;
+
+		return result;
+	}
+}
+
+/*******************************************************************************
+* Function : 팝업을 닫는다.
+* @param : sPopId 팝업ID
+* Return : Parameter String
+*******************************************************************************/
+function gfn_closePop(sPopId)
+{
+	for(var i=0; i<application.popupframes.length; i++) { 
+		if( application.popupframes[i].name == sPopId ) {
+			application.popupframes[i].form.close();
+		}
+	}
+}
+
+/************************************************************************************************
+ * Function : 오픈된 프레임 찾기
+ * @param   : frmId - 화면 ID
+ * Return   : frmame
+************************************************************************************************/
+function gfn_getFrm(frmId)
+{
+	try{
+		var winKey = gds_openMenu.lookup("MENU_ID", frmId, "WINID");
+		if (gfn_isNull(winKey) == true) {
+			var menuId = gds_frm.lookup("FRM_ID",frmId, "MENU_ID");
+			winKey = gds_openMenu.lookup("MENU_ID", menuId, "WINID");
+		}
+		return ap_WorkFrame.frames[winKey].form.DivWork;
+	} catch(e) {
+		return ;
+	}
+}]]></Script>

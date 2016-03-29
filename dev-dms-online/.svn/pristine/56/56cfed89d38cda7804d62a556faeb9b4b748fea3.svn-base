@@ -1,0 +1,271 @@
+package dms.nr.nrseabase.biz;
+
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.xml.DataSetXmlTransformer;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.ibm.icu.text.SimpleDateFormat;
+
+import java.util.Calendar;
+
+import fwk.common.CommonArea;
+import fwk.utils.HpcUtils;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]단말자산취득관리</li>
+ * <li>설  명 : </li>
+ * <li>작성일 : 2015-09-22 17:06:01</li>
+ * <li>작성자 : 장미진 (kuramotojin)</li>
+ * </ul>
+ *
+ * @author 장미진 (kuramotojin)
+ */
+public class FNREqpPrchInfoMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNREqpPrchInfoMgmt(){
+		super();
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-22 17:06:39
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqEqpPrchInfoLst(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet temp = new DataSet();
+	    int intTotalCnt = 0;
+	    
+		try {
+			// 1. DU lookup
+			DNREqpPrchInfoMgmt dNREqpPrchInfoMgmt = (DNREqpPrchInfoMgmt) lookupDataUnit(DNREqpPrchInfoMgmt.class);
+			
+			 temp = dNREqpPrchInfoMgmt.dSEqpPrchInfoLstTotCnt(requestData, onlineCtx);
+			 IRecordSet sumListRs = temp.getRecordSet("RS_SUM_LIST");
+			 
+			 String cnt = sumListRs.get(0,"M_CNT");
+			 intTotalCnt = Integer.parseInt(cnt);
+			 PagenateUtils.setPagenatedParamsToDataSet(requestData);
+			
+			  // 2. LISTDM호출
+			 temp = dNREqpPrchInfoMgmt.dSEqpPrchInfoLstPaging(requestData, onlineCtx);
+			 IRecordSet usrListRs = temp.getRecordSet("RS_EQP_PRCH_LIST");
+			
+			if(usrListRs == null){
+				return responseData;
+			}
+			
+			requestData.putRecordSet("RS_SUM_LIST",sumListRs);
+			responseData.putRecordSet("RS_EQP_PRCH_LIST",usrListRs);
+			
+			// 3. 합계전표용 그리드조회정보 호출
+			temp = dNREqpPrchInfoMgmt.dSEqpPrchInfoTotalSlip(requestData, onlineCtx);
+			IRecordSet slipListRs = temp.getRecordSet("RS_SLIP_LIST"); 
+			IRecordSet sumRs = temp.getRecordSet("RS_SUM_LIST");
+			responseData.putRecordSet("RS_SUM_LIST",sumRs);
+			PagenateUtils.setPagenatedParamToRecordSet(sumRs, requestData, intTotalCnt);
+			responseData.putRecordSet("RS_SLIP_LIST",slipListRs);
+			PagenateUtils.setPagenatedParamToRecordSet(slipListRs, requestData, intTotalCnt);
+
+		} catch ( BizRuntimeException e ) {
+			throw e; //시스템 오류가 발생하였습니다.
+		}
+	
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-22 17:06:01
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fEqpPrchInfoSlipCreate(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	
+	    try {
+	    	// T_CNT = 총건수 , T_PRC = 총 금액, YYYY = 해당년도,YYYYMM = 해당년월
+	    	IRecordSet prchRs = requestData.getRecordSet("RS_SLIP_LIST");		
+	    	
+	    	for(int i=0; i<prchRs.getRecordCount(); i++){
+	    		IRecord ir = prchRs.getRecord(i);
+	    		if("10".equals(ir.get("SLIP_ST_CD")) || "20".equals(ir.get("SLIP_ST_CD")) || "30".equals(ir.get("SLIP_ST_CD"))){
+	    			throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+	    		}
+	    	}
+	    		requestData.putField("SLIP_TYPE", "ASSET_AA");//전표유형
+	    		requestData.putField("USER_NO", ca.getUserNo());
+	    		//배치로직호출 -- 전표생성
+	    		ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+	    		DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+	    		String dsXml = bout.toString("UTF-8");
+
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR010");
+			    params.put("TASK_NM", "전표발행");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR010");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR010", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+		    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+			    
+	    		
+ 		} catch ( BizRuntimeException e ) {
+ 			throw e; //시스템 오류가 발생하였습니다.
+ 		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+				
+		
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-09-23 17:17:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqEqpPrchAllExcel(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    IDataSet temp = new DataSet();
+	    
+	    try {
+	  
+		   // 1. DU lookup
+            DNREqpPrchInfoMgmt dNREqpPrchInfoMgmt = (DNREqpPrchInfoMgmt) lookupDataUnit(DNREqpPrchInfoMgmt.class);
+
+            // 2. LISTDM호출
+            responseData = dNREqpPrchInfoMgmt.dSEqpPrchAllExcel(requestData, onlineCtx); 
+	            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+	
+	    return responseData;
+	}
+
+	/**
+	 *
+	 *
+	 * @author 장미진 (kuramotojin)
+	 * @since 2015-10-15 14:50:50
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fEqpPrchInfoSlipCancle(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+	    CommonArea ca = getCommonArea(onlineCtx);
+	    
+	    String current = null;
+	    
+	    try {
+	    	// T_CNT = 총건수 , T_PRC = 총 금액, YYYY = 해당년월,YYYYMM = 해당년월
+	    	IRecordSet prchRs = requestData.getRecordSet("RS_SLIP_LIST");
+		  
+//	    	Calendar now = Calendar.getInstance();
+//	    	Calendar before = Calendar.getInstance();
+	    	   
+		    for(int i=0; i<prchRs.getRecordCount(); i++){
+		    	IRecord ir = prchRs.getRecord(i);
+		    	
+//		    	current = ir.get("CURRENT_TIME");
+//		    	int year = Integer.parseInt(current.substring(0, 4));
+//		    	int month = Integer.parseInt(current.substring(4, 6));
+//		    	int date = Integer.parseInt(current.substring(6, 8));
+//		    	int hour = Integer.parseInt(current.substring(8, 10));
+//		    	int minute = Integer.parseInt(current.substring(10, 12));
+//		    	
+//		    	
+//		    	before.set(year, month-1, date, hour, minute);
+//		    	before.add(Calendar.MINUTE, 1);
+//
+//		    	if ( before.getTimeInMillis() - now.getTimeInMillis()>0 )// 현재에서 미래로
+//		    	{
+//		    		throw new BizRuntimeException("DMS00111"); //조회 후 다시 처리하십시요.
+//		    	}
+		  
+		    	
+			    if(StringUtils.isEmpty(ir.get("SLIP_ST_CD")) || "00".equals(ir.get("SLIP_ST_CD")) || "05".equals(ir.get("SLIP_ST_CD"))){
+			    	throw new BizRuntimeException("DMS00071"); // 이미 처리된 건이 있습니다.
+		    	}else if("20".equals(ir.get("SLIP_ST_CD")) || "30".equals(ir.get("SLIP_ST_CD"))){
+		    		throw new BizRuntimeException("DMS00087"); //{0} 건은 처리가 불가능 합니다.--승인완료인
+		    	}
+			    
+		    
+		    }
+				requestData.putField("USER_NO", ca.getUserNo());
+		    	
+				ByteArrayOutputStream bout = new ByteArrayOutputStream(1024);
+				DataSetXmlTransformer.dataSetToXml(requestData, bout, "UTF-8");
+				String dsXml = bout.toString("UTF-8");
+		
+				// call on-demand batch job
+				HashMap params = new HashMap<String,String>();
+				params.put("TASK_ID", "EPR011");
+			    params.put("TASK_NM", "전표삭제");
+			    params.put("USER_NO", ca.getUserNo());
+			    params.put("COMPONENTNAME_LOCAL_ONLY", "dms.inf.EPR011");				
+				params.put("POST_SLIP_DATASET", dsXml);
+				String jobExecutionId = callBatchJob("EPR011", params, onlineCtx);
+			    waitBatchJobEnd(jobExecutionId, 10000);
+			    int result = getJobReturnCode(jobExecutionId);
+		    
+			    if(result == -1) throw new BizRuntimeException("DMS00009"); // 시스템 오류가 발생하였습니다.
+		    
+	    } catch ( BizRuntimeException e ) {
+	            throw e; //시스템 오류가 발생하였습니다.
+ 		} catch ( Exception e ) {
+			throw new BizRuntimeException("DMS00009", e); // 시스템 오류가 발생하였습니다.
+		}
+	    
+		
+	    return responseData;
+	}
+  
+}

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DBIBoxBarcdMgmt">
+	<select id="SBoxBarcdDtlLst" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcdDtlLst 박스바코드 상세조회 */
+/* IO: 박홍서,2015-07-13T10:24:53(개발자,2015-06-29T13:47:04) */
+SELECT  MGMT_BAR_CD
+      , BOX_BAR_CD
+      , FS_REG_USER_ID
+      , FS_REG_DTM
+      , LS_CHG_USER_ID
+      , LS_CHG_DTM
+  FROM  TB_BOX_BAR_CD_DTL
+]]><dynamic prepend="WHERE"><![CDATA[
+]]><isNotEmpty property="MGMT_BAR_CD" prepend="AND"><![CDATA[
+        MGMT_BAR_CD = #MGMT_BAR_CD#
+]]></isNotEmpty><![CDATA[
+]]><isNotEmpty property="BOX_BAR_CD" prepend="AND"><![CDATA[
+        BOX_BAR_CD = #BOX_BAR_CD#
+]]></isNotEmpty><![CDATA[
+]]></dynamic><![CDATA[]]>
+	</select>
+	<insert id="IBoxBarcd" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.IBoxBarcd 박스바코드 입력 */
+/* IO: 박홍서,2015-07-09T15:54:23(박홍서,2015-07-09T15:54:23) */
+INSERT
+  INTO  TB_BOX_BAR_CD
+       (
+        BOX_BAR_CD
+       ,OP_CL_CD
+       ,BOX_ST_CD
+       ,BOX_ST_SCL_CD
+       ,MAX_QTY
+       ,FS_REG_USER_ID
+       ,FS_REG_DTM
+       ,LS_CHG_USER_ID
+       ,LS_CHG_DTM
+       )
+VALUES
+       (
+        #BOX_BAR_CD#
+       ,#OP_CL_CD#
+       ,#BOX_ST_CD#
+       ,#BOX_ST_SCL_CD#
+       ,#MAX_QTY#
+       ,#USER_NO#
+       ,SYSDATE
+       ,#USER_NO#
+       ,SYSDATE
+      )]]>
+	</insert>
+	<update id="UBoxBarcdSet" parameterClass="map" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.UBoxBarcdSet 박스바코드 세팅 */
+/* IO: 박홍서,2015-07-10T17:42:29(개발자,2015-06-29T17:04:42) */
+MERGE INTO  TB_BOX_BAR_CD_DTL A
+     USING  DUAL
+        ON (
+            A.MGMT_BAR_CD = #MGMT_BAR_CD#
+           )
+WHEN MATCHED THEN
+    UPDATE
+       SET  BOX_BAR_CD = #BOX_BAR_CD#
+           ,LS_CHG_USER_ID = #USER_NO#
+           ,LS_CHG_DTM     = SYSDATE
+WHEN NOT MATCHED THEN
+    INSERT (
+            MGMT_BAR_CD
+           ,BOX_BAR_CD
+           ,FS_REG_USER_ID
+           ,FS_REG_DTM
+           ,LS_CHG_USER_ID
+           ,LS_CHG_DTM
+           )
+   VALUES
+          (
+            #MGMT_BAR_CD#
+           ,#BOX_BAR_CD#
+           ,#USER_NO#
+           ,SYSDATE
+           ,#USER_NO#
+           ,SYSDATE
+          )]]>
+	</update>
+	<select id="SBoxBarcdSeq" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcdSeq 박스바코드 채번 */
+/* IO: 박홍서,2015-07-10T14:28:54(박홍서,2015-07-02T09:10:16) */
+SELECT  #BOX_CD#||LPAD(SQ01_TB_BOX_BAR_CD.NEXTVAL,9,0) AS BOX_BAR_CD
+  FROM  DUAL]]>
+	</select>
+	<select id="SBoxBarcd" parameterClass="map" resultClass="hmap" fetchSize="50" ><![CDATA[/* Biz: dms.bi.bibbase.db.DBIBoxBarcdMgmt.SBoxBarcd 박스바코드 조회 */
+/* IO: 박홍서,2015-07-13T09:31:11(박홍서,2015-07-13T09:31:11) */
+SELECT  BOX_BAR_CD
+      , OP_CL_CD
+      , BOX_ST_CD
+      , BOX_ST_SCL_CD
+      , MAX_QTY
+      , FS_REG_USER_ID
+      , FS_REG_DTM
+      , LS_CHG_USER_ID
+      , LS_CHG_DTM
+  FROM  TB_BOX_BAR_CD
+ WHERE  BOX_BAR_CD = #BOX_BAR_CD#]]>
+	</select>
+</sqlMap>

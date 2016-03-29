@@ -1,0 +1,152 @@
+package dms.nr.nrscmbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+import fwk.utils.PagenateUtils;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/신규R</li>
+ * <li>단위업무명: [FU]SKN여신관리</li>
+ * <li>설  명 : <pre>[FU]SKN여신관리</pre></li>
+ * <li>작성일 : 2015-07-23 09:12:21</li>
+ * <li>작성자 : 박홍서 (uni9401)</li>
+ * </ul>
+ *
+ * @author 박홍서 (uni9401)
+ */
+public class FNRLoanMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FNRLoanMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>SKN여신 리스트 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-23 09:49:26
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqSKNLoanLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DNRLoanMgmt dNRLoanMgmt = (DNRLoanMgmt) lookupDataUnit(DNRLoanMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRLoanMgmt.dSSKNLoanTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+        
+            // 3. LISTDM호출
+            responseData = dNRLoanMgmt.dSSKNLoanPaging(requestData, onlineCtx);
+        
+            rsPagingList = responseData.getRecordSet("RS_SKN_PG");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>SKN여신 리스트 모두 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-23 09:12:21
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqAllSKNLoanLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 1. DU lookup
+            DNRLoanMgmt dNRLoanMgmt = (DNRLoanMgmt) lookupDataUnit(DNRLoanMgmt.class);
+            // 3. LISTDM호출 (RS_SKN_LST)
+            responseData = dNRLoanMgmt.dSSKNLoanLst(requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>SKN여신 상세 리스트 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-23 15:20:07
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqSKNLoanDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        IDataSet dsCnt = new DataSet();
+        IRecordSet rsPagingList = null;
+        int intTotalCnt = 0;
+        
+        try {
+            // 1. DU lookup
+            DNRLoanMgmt dNRLoanMgmt = (DNRLoanMgmt) lookupDataUnit(DNRLoanMgmt.class);
+            // 2. TOTAL COUNT DM호출
+            dsCnt = dNRLoanMgmt.dSSKNLoanDtlTotCnt(requestData, onlineCtx);
+            intTotalCnt = Integer.parseInt(dsCnt.getField("TOTAL_CNT"));
+            PagenateUtils.setPagenatedParamsToDataSet(requestData);
+        
+            // 3. LISTDM호출
+            responseData = dNRLoanMgmt.dSSKNLoanDtlPaging(requestData, onlineCtx);
+        
+            rsPagingList = responseData.getRecordSet("RS_SKN_DTL_PG");
+            PagenateUtils.setPagenatedParamToRecordSet(rsPagingList, requestData, intTotalCnt);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+
+    /**
+	 * <pre>SKN여신 리스트 모두 조회</pre>
+	 *
+	 * @author 박홍서 (uni9401)
+	 * @since 2015-07-23 15:21:11
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fInqAllSKNLoanDtlLst(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        try {
+            // 1. DU lookup
+            DNRLoanMgmt dNRLoanMgmt = (DNRLoanMgmt) lookupDataUnit(DNRLoanMgmt.class);
+            // 3. LISTDM호출 (RS_SKN_DTL_LST)
+            responseData = dNRLoanMgmt.dSSKNLoanDtlLst(requestData, onlineCtx);
+        } catch ( BizRuntimeException e ) {
+            throw e;
+        }
+        return responseData;
+    }
+  
+}

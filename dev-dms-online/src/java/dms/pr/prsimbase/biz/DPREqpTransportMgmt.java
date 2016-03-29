@@ -1,0 +1,193 @@
+package dms.pr.prsimbase.biz;
+
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.log4j.Logger;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecord;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.data.IResultMessage;
+import nexcore.framework.core.data.ResultMessage;
+import nexcore.framework.core.exception.BizRuntimeException;
+import nexcore.framework.core.log.LogManager;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/임대R</li>
+ * <li>단위업무명: [DU]회수대상임대폰조회</li>
+ * <li>설  명 : <pre>회수대상임대폰조회</pre></li>
+ * <li>작성일 : 2015-07-14 20:50:04</li>
+ * <li>작성자 : 이준우 (elmsliw)</li>
+ * </ul>
+ *
+ * @author 이준우 (elmsliw)
+ */
+public class DPREqpTransportMgmt extends fwk.base.DataUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public DPREqpTransportMgmt(){
+		super();
+	}
+
+	/**
+	 * <pre>[DM]단말기운송조회목록총건수</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-03 16:08:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet dSEqpTransInfoLstTotCnt(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+        
+        // 1.쿼리문 호출     
+    	IRecord record = dbSelectSingle("SEqpTransInfoLstTotCnt", requestData, onlineCtx);
+    	
+    	// 2.결과값 셋팅     
+    	responseData.putFieldMap(record);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기운송조회목록</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-03 16:08:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet dSEqpTransInfoLstPaging(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+    	IRecordSet rsReturn = dbSelect("SEqpTransInfoLstPaging", requestData, onlineCtx);
+    	
+    	// 2.결과값 셋팅
+    	responseData.putRecordSet("RS_LIST", rsReturn);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기운송정보수정</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-03 16:08:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet dUEqpTransInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+     	dbUpdate("UEqpTransInfo", requestData, onlineCtx);
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>[DM]단말기운송조회정보등록</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-03 16:08:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet dIEqpTransInfo(IDataSet requestData, IOnlineContext onlineCtx) {
+        IDataSet responseData = new DataSet();
+    
+        // 1.쿼리문 호출
+        dbInsert("IEqpTransInfo", requestData, onlineCtx);
+    
+        return responseData;	
+    }
+
+    /**
+	 * <pre>입고번호채번</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-03 16:08:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet dSEqpTransInfoSeq(IDataSet requestData, IOnlineContext onlineCtx) {
+    	
+        IDataSet responseData = new DataSet();
+        IRecord record = dbSelectSingle("SEqpTransInfoSeq", requestData, onlineCtx);
+        
+    	if ( record != null ) {
+    		responseData.putFieldMap(record);
+    	}
+        return responseData; //입고채번완료
+    
+    }
+
+    /**
+	 * <pre>자산번호채번</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-03 16:08:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet dSEqpTransInfoGetAssetNo(IDataSet requestData, IOnlineContext onlineCtx) {
+    	
+        IDataSet responseData = new DataSet();
+        IRecord record = dbSelectSingle("SEqpTransInfoGetAssetNo", requestData, onlineCtx);
+        
+    	if ( record != null ) {
+    		responseData.putFieldMap(record);
+    	}else{
+    	    throw new BizRuntimeException("DMS00085"); //해당되는 일련번호를 가진 모델이 없습니다.
+    	}
+        return responseData; //자산번호채번완료
+    
+    }
+
+    /**
+	 * <pre>[DU]임대폰회수입고등록번호채번</pre>
+	 *
+	 * @author 이준우 (elmsliw)
+	 * @since 2015-08-03 16:08:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+    public IDataSet dSResqpClctInSeq(IDataSet requestData, IOnlineContext onlineCtx) {
+    	
+        IDataSet responseData = new DataSet();
+        IRecord record = dbSelectSingle("SResqpClctInSeq", requestData, onlineCtx);
+        
+    	if ( record != null ) {
+    		responseData.putFieldMap(record);
+    	}
+        return responseData; //입고채번완료
+    
+    }
+}

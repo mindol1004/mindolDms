@@ -1,0 +1,206 @@
+package dms.ep.epsesbase.biz;
+
+import nexcore.framework.core.data.DataSet;
+import nexcore.framework.core.data.IDataSet;
+import nexcore.framework.core.data.IOnlineContext;
+import nexcore.framework.core.data.IRecordSet;
+import nexcore.framework.core.exception.BizRuntimeException;
+
+
+/**
+ * <ul>
+ * <li>업무 그룹명 : dms/에코폰</li>
+ * <li>단위업무명: [FU]상품관리</li>
+ * <li>설  명 : <pre>상품관리 FU</pre></li>
+ * <li>작성일 : 2015-09-10 18:16:04</li>
+ * <li>작성자 : 이민재 (mindol1004)</li>
+ * </ul>
+ *
+ * @author 이민재 (mindol1004)
+ */
+public class FEPDisSaleMgmt extends fwk.base.FunctionUnit {
+
+	/**
+	 * 이 클래스는 Singleton 객체로 수행됩니다. 
+	 * 여기에 필드를 선언하여 사용하면 동시성 문제를 일으킬 수 있습니다.
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public FEPDisSaleMgmt(){
+		super();
+	}
+
+    /**
+	 * <pre>상품별판매입고</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-09-10 18:16:04
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegDisSaleIn(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        IDataSet masterDs = null;
+        IDataSet saleDs = null;
+        IDataSet delDs = null;
+        IDataSet seqDs = null;
+        
+        try {
+            
+            // 1. DU lookup
+            DEPDisSaleMgmt dEPDisSaleMgmt = (DEPDisSaleMgmt) lookupDataUnit(DEPDisSaleMgmt.class);
+            
+            masterDs = new DataSet();
+            masterDs.putFieldMap(reqDs.getFieldMap());
+            
+            IRecordSet saleRs = reqDs.getRecordSet("RS_SALE_LIST");
+            IRecordSet delRs = reqDs.getRecordSet("RS_DEL_LIST");
+
+            // 판매
+            if (saleRs != null) {
+                for (int i = 0; i < saleRs.getRecordCount(); i++) {
+                    saleDs = new DataSet();
+                    saleDs.putFieldMap(saleRs.getRecordMap(i));
+                    
+                    saleDs.putField("PROD_OUT_MGMT_NO", saleDs.getField("PROD_OUT_MGMT_NO"));
+                    saleDs.putField("SELL_MGMT_NO", masterDs.getField("GNRL_SELL_NO"));
+                    saleDs.putField("GNRL_SELL_CHG_SEQ", masterDs.getField("GNRL_SELL_CHG_SEQ"));
+                    saleDs.putField("USERNO", masterDs.getField("USERNO"));
+
+                    // 출고마스터 :판매변경순번 업데이트
+                    dEPDisSaleMgmt.dUDisProdOut(saleDs, onlineCtx);
+                }
+            }
+
+            //판매취소
+            if (delRs != null) {
+                for (int i = 0; i < delRs.getRecordCount(); i++) {
+                    delDs = new DataSet();
+                    delDs.putFieldMap(delRs.getRecordMap(i));
+
+                    // 입고관리번호 생성
+                    seqDs = new DataSet();
+                    seqDs = dEPDisSaleMgmt.dSDisProdInNo(reqDs, onlineCtx);
+                    
+                    delDs.putField("PROD_IN_MGMT_NO", seqDs.getField("PROD_IN_MGMT_NO"));
+                    delDs.putField("SELL_DTM", masterDs.getField("SELL_DTM") == null ? delDs.getField("SELL_DTM") : masterDs.getField("SELL_DTM"));
+                    delDs.putField("IN_DEALCO_ID", masterDs.getField("SELL_DEALCO_CD") == null ? delDs.getField("SELL_DEALCO_CD") : masterDs.getField("SELL_DEALCO_CD"));
+                    delDs.putField("RMK", masterDs.getField("RMK") == null ? delDs.getField("RMK") : masterDs.getField("RMK"));
+                    delDs.putField("SELL_MGMT_NO", masterDs.getField("GNRL_SELL_NO") == null ? delDs.getField("GNRL_SELL_NO") : masterDs.getField("GNRL_SELL_NO"));
+                    delDs.putField("GNRL_SELL_CHG_SEQ", masterDs.getField("GNRL_SELL_CHG_SEQ") == null ? delDs.getField("GNRL_SELL_CHG_SEQ") : masterDs.getField("GNRL_SELL_CHG_SEQ"));
+                    delDs.putField("PROD_OUT_MGMT_NO", delDs.getField("PROD_OUT_MGMT_NO"));
+                    delDs.putField("SELL_TYP", masterDs.getField("SELL_TYP") == null ? delDs.getField("SELL_TYP") : masterDs.getField("SELL_TYP"));
+                    delDs.putField("TRMS_CL", masterDs.getField("TRMS_CL"));
+                    delDs.putField("USERNO", masterDs.getField("USERNO"));
+                    delDs.putField("IN_CL", "105"); // 판매입고
+                    delDs.putField("IN_ST", "03"); // 입고완료
+                    delDs.putField("IN_OUT_CL", "100"); // 입고
+                    delDs.putField("IN_OUT_DTL_CL", "105"); // 판매입고
+                    delDs.putField("INVE_ST", "01"); // 가용
+                    delDs.putField("SELL_YN", "N");
+
+                    // 출고마스터 :판매변경순번 업데이트
+                    dEPDisSaleMgmt.dUDisProdOut(delDs, onlineCtx);
+                    // 상품입고저장
+                    dEPDisSaleMgmt.dIDisProdIn(delDs, onlineCtx);
+                    // 상품판매취소입고상세 추가
+                    dEPDisSaleMgmt.dIDisProdInDtl(delDs, onlineCtx);
+                    // 상품입출고상세 추가
+                    dEPDisSaleMgmt.dIDisProdInOutHst(delDs, onlineCtx);
+                    // 상품재고 판매취소입고 처리
+                    dEPDisSaleMgmt.dUDisProdDis(delDs, onlineCtx);
+
+                }
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+
+    /**
+	 * <pre>상품별판매출고</pre>
+	 *
+	 * @author 이민재 (mindol1004)
+	 * @since 2015-09-11 17:14:35
+	 *
+	 * @param requestData 요청정보 DataSet 객체
+	 * @param onlineCtx   요청 컨텍스트 정보
+	 * @return 처리결과 DataSet 객체
+	 */
+	public IDataSet fRegDisSaleOut(IDataSet requestData, IOnlineContext onlineCtx) {
+	    IDataSet responseData = new DataSet();
+        IDataSet reqDs = (IDataSet) requestData.clone();//원거래의 DataSet의 훼손을 막기 위한 Clone
+        
+        IDataSet masterDs = null;
+        IDataSet saleDs = null;
+        IDataSet seqDs = null;
+        
+        try {
+            
+            // 1. DU lookup
+            DEPDisSaleMgmt dEPDisSaleMgmt = (DEPDisSaleMgmt) lookupDataUnit(DEPDisSaleMgmt.class);
+            
+            masterDs = new DataSet();
+            masterDs.putFieldMap(reqDs.getFieldMap());
+            
+            IRecordSet saleRs = reqDs.getRecordSet("RS_SALE_LIST");
+
+            // 판매
+            if (saleRs != null) {
+                for (int i = 0; i < saleRs.getRecordCount(); i++) {
+                    saleDs = new DataSet();
+                    saleDs.putFieldMap(saleRs.getRecordMap(i));
+                    
+                    // 출고관리번호 생성
+                    seqDs = new DataSet();
+                    seqDs = dEPDisSaleMgmt.dSDisProdOutNo(reqDs, onlineCtx);
+                    
+                    saleDs.putField("PROD_OUT_MGMT_NO", seqDs.getField("PROD_OUT_MGMT_NO"));
+                    saleDs.putField("SELL_MGMT_NO", masterDs.getField("GNRL_SELL_NO"));
+                    saleDs.putField("GNRL_SELL_CHG_SEQ", masterDs.getField("GNRL_SELL_CHG_SEQ"));
+                    saleDs.putField("OUT_DEALCO_ID", masterDs.getField("SELL_DEALCO_CD"));
+                    saleDs.putField("SELL_DTM", masterDs.getField("SELL_DTM"));
+                    saleDs.putField("RMK", masterDs.getField("RMK"));
+                    saleDs.putField("USERNO", masterDs.getField("USERNO"));
+                    saleDs.putField("INVE_ST", "02"); // 비가용
+                    saleDs.putField("EAPRV_COND_CD", "C");
+                    saleDs.putField("OUT_CL", "205"); // 판매출고
+                    saleDs.putField("IN_OUT_CL", "200"); // 출고
+                    saleDs.putField("IN_OUT_DTL_CL", "205"); // 판매출고
+                    saleDs.putField("SELL_YN", "Y");
+                    
+                    if("04".equals(masterDs.getField("SELL_TYP"))){
+                        saleDs.putField("TRMS_CL", "T");
+                    }else{
+                        saleDs.putField("TRMS_CL", "A");
+                    }
+                    
+                    // 상품판매출고 추가
+                    dEPDisSaleMgmt.dIDisProdOut(saleDs, onlineCtx);
+                    // 상품판매출고상세 추가
+                    dEPDisSaleMgmt.dIDisProdOutDtl(saleDs, onlineCtx);
+                    // 상품입출고상세 추가
+                    dEPDisSaleMgmt.dIDisProdInOutHst(saleDs, onlineCtx);
+                    // 상품재고 판매출고 처리
+                    dEPDisSaleMgmt.dUDisProdDis(saleDs, onlineCtx);
+
+                }
+            }
+            
+        } catch ( BizRuntimeException e ) {
+            throw e; //시스템 오류가 발생하였습니다.
+        }
+    
+        return responseData;
+    }
+  
+}
